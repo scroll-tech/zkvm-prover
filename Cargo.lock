@@ -6477,6 +6477,16 @@ dependencies = [
 [[package]]
 name = "scroll-zkvm-integration"
 version = "0.1.0"
+dependencies = [
+ "eyre",
+ "openvm-build",
+ "openvm-circuit",
+ "openvm-sdk",
+ "openvm-transpiler",
+ "sbv",
+ "scroll-zkvm-prover",
+ "serde_json",
+]
 
 [[package]]
 name = "scroll-zkvm-prover"

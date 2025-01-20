@@ -13,7 +13,8 @@ use openvm_stark_sdk::p3_baby_bear::BabyBear;
 
 use crate::Error;
 
-type F = BabyBear;
+/// Alias for convenience.
+pub type F = BabyBear;
 
 /// Wrapper around [`openvm_sdk::fs::read_exe_from_file`].
 pub fn read_app_exe<P: AsRef<Path>>(path: P) -> Result<VmExe<F>, Error> {
