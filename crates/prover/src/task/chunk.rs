@@ -1,0 +1,36 @@
+use sbv::primitives::types::BlockWitness;
+
+use crate::ProvingTask;
+
+const CHUNK_SANITY_MSG: &str = "chunk must have at least one block";
+
+/// Proving task for the [`ChunkCircuit`][scroll_zkvm_chunk_circuit].
+///
+/// The identifier for a chunk proving task is:
+/// - {first_block_number}-{last_block_number}
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct ChunkProvingTask {
+    /// Witnesses for every block in the chunk.
+    pub block_witnesses: Vec<BlockWitness>,
+}
+
+impl ProvingTask for ChunkProvingTask {
+    fn identifier(&self) -> String {
+        assert!(!self.block_witnesses.is_empty(), "{CHUNK_SANITY_MSG}",);
+
+        let (first, last) = (
+            self.block_witnesses
+                .first()
+                .expect(CHUNK_SANITY_MSG)
+                .header
+                .number,
+            self.block_witnesses
+                .last()
+                .expect(CHUNK_SANITY_MSG)
+                .header
+                .number,
+        );
+
+        format!("{first}-{last}")
+    }
+}

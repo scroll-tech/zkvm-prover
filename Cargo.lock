@@ -6499,6 +6499,7 @@ dependencies = [
  "openvm-stark-sdk",
  "rkyv",
  "sbv",
+ "serde",
  "thiserror 2.0.11",
  "toml",
 ]

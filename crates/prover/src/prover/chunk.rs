@@ -4,7 +4,7 @@ use openvm_circuit::{arch::SingleSegmentVmExecutor, system::program::trace::VmCo
 use openvm_native_recursion::hints::Hintable;
 use openvm_sdk::{Sdk, StdIn, config::SdkVmConfig, verifier::root::types::RootVmVerifierInput};
 
-use crate::{Error, Prover, ProverVerifier, prover::SC};
+use crate::{Error, Prover, ProverVerifier, prover::SC, task::chunk::ChunkProvingTask};
 
 use super::AGG_STARK_PROVING_KEY;
 
@@ -15,7 +15,7 @@ pub type ChunkProver = Prover<SdkVmConfig>;
 type AggregationProof = RootVmVerifierInput<SC>;
 
 impl ProverVerifier for ChunkProver {
-    type Witness = Vec<sbv::primitives::types::BlockWitness>;
+    type ProvingTask = ChunkProvingTask;
 
     type Proof = AggregationProof;
 
@@ -31,14 +31,14 @@ impl ProverVerifier for ChunkProver {
         })
     }
 
-    fn gen_proof(&self, witness: &Self::Witness) -> Result<Self::Proof, Error> {
+    fn gen_proof(&self, task: &Self::ProvingTask) -> Result<Self::Proof, Error> {
         let agg_stark_pk = AGG_STARK_PROVING_KEY
             .get()
             .ok_or(Error::GenProof(String::from(
                 "agg stark pk not initialized! Prover::setup",
             )))?;
 
-        let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(witness)
+        let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&task.block_witnesses)
             .map_err(|e| Error::GenProof(e.to_string()))?;
 
         let mut stdin = StdIn::default();

@@ -9,9 +9,8 @@ use openvm_sdk::{
     keygen::{AggStarkProvingKey, AppProvingKey, Halo2ProvingKey},
 };
 use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Config;
-use rkyv::{api::high::HighSerializer, ser::allocator::ArenaHandle, util::AlignedVec};
 
-use crate::{Error, read_app_exe, read_app_pk};
+use crate::{Error, ProvingTask, read_app_exe, read_app_pk};
 
 mod batch;
 pub use batch::BatchProver;
@@ -53,7 +52,7 @@ pub type SC = BabyBearPoseidon2Config;
 /// Trait that defines required behaviour from a zkvm-based prover/verifier.
 pub trait ProverVerifier: Sized {
     /// The input witness type for proof generation.
-    type Witness: for<'a> rkyv::Serialize<HighSerializer<AlignedVec, ArenaHandle<'a>, rkyv::rancor::Error>>;
+    type ProvingTask: ProvingTask;
 
     /// The output proof type.
     type Proof: Clone;
@@ -84,7 +83,7 @@ pub trait ProverVerifier: Sized {
     ///
     /// [root_proof][openvm_sdk::verifier::root::types::RootVmVerifierInput]
     /// [evm_proof][openvm_native_recursion::halo2::EvmProof]
-    fn gen_proof(&self, witness: &Self::Witness) -> Result<Self::Proof, Error>;
+    fn gen_proof(&self, witness: &Self::ProvingTask) -> Result<Self::Proof, Error>;
 
     /// Verify a [root proof][root_proof] or [evm proof][evm_proof].
     ///
