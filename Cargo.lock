@@ -848,7 +848,7 @@ dependencies = [
  "bitflags 2.8.0",
  "cexpr",
  "clang-sys",
- "itertools 0.10.5",
+ "itertools 0.13.0",
  "proc-macro2",
  "quote",
  "regex",
@@ -1238,7 +1238,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "117725a109d387c937a1533ce01b450cbde6b88abceea8473c4d7a85853cda3c"
 dependencies = [
  "lazy_static",
- "windows-sys 0.48.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -1980,6 +1980,26 @@ name = "gimli"
 version = "0.31.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "07e28edb80900c19c28f1072f2e8aeca7fa06b23cd4169cefe1af5aa3260783f"
+
+[[package]]
+name = "git-version"
+version = "0.3.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1ad568aa3db0fcbc81f2f116137f263d7304f512a1209b35b85150d3ef88ad19"
+dependencies = [
+ "git-version-macro",
+]
+
+[[package]]
+name = "git-version-macro"
+version = "0.3.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "53010ccb100b96a67bc32c0175f0ed1426b31b655d562898e57325f81c023ac0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.96",
+]
 
 [[package]]
 name = "glob"
@@ -4859,6 +4879,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "psm"
+version = "0.1.24"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "200b9ff220857e53e184257720a14553b2f4aa02577d2ed9842d45d4b9654810"
+dependencies = [
+ "cc",
+]
+
+[[package]]
 name = "ptr_meta"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6348,7 +6377,7 @@ dependencies = [
 [[package]]
 name = "sbv"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#8d29347dbb9f23c9d765c865e3132973a97a093f"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Fserde-chunk-info#7a7cf36e12523475aead58146f3a4427e9cef5e2"
 dependencies = [
  "sbv-core",
  "sbv-helpers",
@@ -6360,7 +6389,7 @@ dependencies = [
 [[package]]
 name = "sbv-core"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#8d29347dbb9f23c9d765c865e3132973a97a093f"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Fserde-chunk-info#7a7cf36e12523475aead58146f3a4427e9cef5e2"
 dependencies = [
  "reth-evm",
  "reth-evm-ethereum",
@@ -6382,7 +6411,7 @@ dependencies = [
 [[package]]
 name = "sbv-helpers"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#8d29347dbb9f23c9d765c865e3132973a97a093f"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Fserde-chunk-info#7a7cf36e12523475aead58146f3a4427e9cef5e2"
 dependencies = [
  "revm",
 ]
@@ -6390,7 +6419,7 @@ dependencies = [
 [[package]]
 name = "sbv-kv"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#8d29347dbb9f23c9d765c865e3132973a97a093f"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Fserde-chunk-info#7a7cf36e12523475aead58146f3a4427e9cef5e2"
 dependencies = [
  "auto_impl",
  "hashbrown 0.15.2",
@@ -6400,7 +6429,7 @@ dependencies = [
 [[package]]
 name = "sbv-primitives"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#8d29347dbb9f23c9d765c865e3132973a97a093f"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Fserde-chunk-info#7a7cf36e12523475aead58146f3a4427e9cef5e2"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -6428,7 +6457,7 @@ dependencies = [
 [[package]]
 name = "sbv-trie"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#8d29347dbb9f23c9d765c865e3132973a97a093f"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Fserde-chunk-info#7a7cf36e12523475aead58146f3a4427e9cef5e2"
 dependencies = [
  "alloy-rlp",
  "alloy-trie",
@@ -6492,6 +6521,7 @@ dependencies = [
 name = "scroll-zkvm-prover"
 version = "0.1.0"
 dependencies = [
+ "git-version",
  "once_cell",
  "openvm-circuit",
  "openvm-native-recursion",
@@ -6500,6 +6530,8 @@ dependencies = [
  "rkyv",
  "sbv",
  "serde",
+ "serde_json",
+ "serde_stacker",
  "thiserror 2.0.11",
  "toml",
 ]
@@ -6628,6 +6660,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "87607cb1398ed59d48732e575a4c28a7a8ebf2454b964fe3f224f2afc07909e1"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "serde_stacker"
+version = "0.1.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "babfccff5773ff80657f0ecf553c7c516bdc2eb16389c0918b36b73e7015276e"
+dependencies = [
+ "serde",
+ "stacker",
 ]
 
 [[package]]
@@ -6839,6 +6881,19 @@ name = "stable_deref_trait"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
+
+[[package]]
+name = "stacker"
+version = "0.1.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "799c883d55abdb5e98af1a7b3f23b9b6de8ecada0ecac058672d7635eb48ca7b"
+dependencies = [
+ "cc",
+ "cfg-if",
+ "libc",
+ "psm",
+ "windows-sys 0.59.0",
+]
 
 [[package]]
 name = "static_assertions"

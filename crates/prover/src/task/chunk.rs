@@ -1,7 +1,8 @@
 use sbv::primitives::types::BlockWitness;
 
-use crate::ProvingTask;
+use crate::task::ProvingTask;
 
+/// Message indicating a sanity check failure.
 const CHUNK_SANITY_MSG: &str = "chunk must have at least one block";
 
 /// Proving task for the [`ChunkCircuit`][scroll_zkvm_chunk_circuit].

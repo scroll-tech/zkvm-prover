@@ -1,3 +1,8 @@
+clippy:
+	@cargo clippy --features scroll --manifest-path crates/prover/Cargo.toml
+	@cargo clippy --features scroll --manifest-path crates/integration/Cargo.toml
+	sh openvm-clippy
+
 test-chunk:
 	cargo test --release -p scroll-zkvm-integration --features scroll --test chunk_circuit setup_prove_verify -- --exact --nocapture
 

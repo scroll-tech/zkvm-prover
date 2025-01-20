@@ -10,8 +10,8 @@ impl ProverTester for BundleProverTester {
 
     const PREFIX: &str = "bundle";
 
-    fn gen_witness() -> eyre::Result<<Self::Prover as ProverVerifier>::Witness> {
-        todo!("BundleProverTester: gen_witness not implemented")
+    fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverVerifier>::ProvingTask> {
+        todo!("BundleProverTester: gen_proving_task not implemented")
     }
 }
 
@@ -27,13 +27,14 @@ fn setup_prove_verify() -> eyre::Result<()> {
     let path_pk = BundleProverTester::keygen(app_config)?;
 
     // Setup bundle prover.
-    let bundle_prover = <BundleProverTester as ProverTester>::Prover::setup(&path_exe, &path_pk)?;
+    let bundle_prover =
+        <BundleProverTester as ProverTester>::Prover::setup(&path_exe, &path_pk, None)?;
 
-    // Generate some witness for the bundle-circuit.
-    let witness = BundleProverTester::gen_witness()?;
+    // Generate proving task for the bundle-circuit.
+    let task = BundleProverTester::gen_proving_task()?;
 
     // Construct root proof for the bundle-circuit.
-    let proof = bundle_prover.gen_proof(&witness)?;
+    let proof = bundle_prover.gen_proof(&task)?;
 
     // Verify proof.
     bundle_prover.verify_proof(proof)?;

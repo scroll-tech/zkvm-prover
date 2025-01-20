@@ -7,7 +7,7 @@ use openvm_sdk::{
     fs::{write_app_pk_to_file, write_exe_to_file},
 };
 use openvm_transpiler::elf::Elf;
-use scroll_zkvm_prover::{ProverVerifier, read_app_config};
+use scroll_zkvm_prover::{ProverVerifier, setup::read_app_config};
 
 /// Feature to enable while building the guest program.
 const FEATURE_SCROLL: &str = "scroll";
@@ -68,6 +68,6 @@ pub trait ProverTester {
         Ok(path_pk)
     }
 
-    /// Generate some witness for test purposes.
-    fn gen_witness() -> eyre::Result<<Self::Prover as ProverVerifier>::Witness>;
+    /// Generate proving task for test purposes.
+    fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverVerifier>::ProvingTask>;
 }

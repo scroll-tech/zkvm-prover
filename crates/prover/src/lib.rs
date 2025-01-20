@@ -1,11 +1,14 @@
 mod error;
 pub use error::Error;
 
+mod proof;
+pub use proof::{BatchProof, BundleProof, ChunkProof, WrappedProof};
+
 mod prover;
 pub use prover::{BatchProver, BundleProver, ChunkProver, Prover, ProverVerifier, SC};
 
-mod setup;
-pub use setup::{F, compute_commitments, gen_agg_pk, read_app_config, read_app_exe, read_app_pk};
+pub mod setup;
 
-mod task;
-pub use task::ProvingTask;
+pub mod task;
+
+pub mod utils;

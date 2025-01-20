@@ -3,6 +3,28 @@ use std::path::PathBuf;
 /// Errors encountered by the prover.
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
+    /// Error occurred while doing i/o operations.
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+    /// Error encountered while reading from or writing to files.
+    #[error("error during read/write! path={path}, e={source}")]
+    IoReadWrite {
+        /// The path we tried to read from or write to.
+        path: PathBuf,
+        /// The source error.
+        source: std::io::Error,
+    },
+    /// Error occurred while doing serde operations.
+    #[error(transparent)]
+    Serde(#[from] serde_json::Error),
+    /// Error encountered during JSON serde.
+    #[error("error during read/write json! path={path}, e={source}")]
+    JsonReadWrite {
+        /// The path of the file we tried to serialize/deserialize.
+        path: PathBuf,
+        /// The source error.
+        source: serde_json::Error,
+    },
     /// Covers various errors encountered during the setup phase.
     #[error("failed to read or deserialize {path}: {src}")]
     Setup { path: PathBuf, src: String },

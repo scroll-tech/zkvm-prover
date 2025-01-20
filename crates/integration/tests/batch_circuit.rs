@@ -10,8 +10,8 @@ impl ProverTester for BatchProverTester {
 
     const PREFIX: &str = "batch";
 
-    fn gen_witness() -> eyre::Result<<Self::Prover as ProverVerifier>::Witness> {
-        todo!("BatchProverTester: gen_witness not implemented")
+    fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverVerifier>::ProvingTask> {
+        todo!("BatchProverTester: gen_proving_task not implemented")
     }
 }
 
@@ -27,13 +27,14 @@ fn setup_prove_verify() -> eyre::Result<()> {
     let path_pk = BatchProverTester::keygen(app_config)?;
 
     // Setup batch prover.
-    let batch_prover = <BatchProverTester as ProverTester>::Prover::setup(&path_exe, &path_pk)?;
+    let batch_prover =
+        <BatchProverTester as ProverTester>::Prover::setup(&path_exe, &path_pk, None)?;
 
-    // Generate some witness for the batch-circuit.
-    let witness = BatchProverTester::gen_witness()?;
+    // Generate proving task for the batch-circuit.
+    let task = BatchProverTester::gen_proving_task()?;
 
     // Construct root proof for the batch-circuit.
-    let proof = batch_prover.gen_proof(&witness)?;
+    let proof = batch_prover.gen_proof(&task)?;
 
     // Verify proof.
     batch_prover.verify_proof(proof)?;
