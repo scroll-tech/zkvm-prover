@@ -71,3 +71,28 @@ pub trait ProverTester {
     /// Generate proving task for test purposes.
     fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverVerifier>::ProvingTask>;
 }
+
+pub fn prove_verify_common<T: ProverTester>() -> eyre::Result<()> {
+    // Build the ELF binary from the circuit program.
+    let elf = T::build()?;
+
+    // Transpile the ELF into a VmExe.
+    let (app_config, path_exe) = T::transpile(elf)?;
+
+    // Generate application proving key and get path on disc.
+    let path_pk = T::keygen(app_config)?;
+
+    // Setup prover.
+    let prover = <T as ProverTester>::Prover::setup(&path_exe, &path_pk, None)?;
+
+    // Generate proving task for the circuit.
+    let task = T::gen_proving_task()?;
+
+    // Construct root proof for the circuit.
+    let proof = prover.gen_proof(&task)?;
+
+    // Verify proof.
+    prover.verify_proof(proof)?;
+
+    Ok(())
+}

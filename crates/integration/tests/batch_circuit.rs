@@ -1,4 +1,4 @@
-use scroll_zkvm_integration::ProverTester;
+use scroll_zkvm_integration::{ProverTester, prove_verify_common};
 use scroll_zkvm_prover::{BatchProver, ProverVerifier};
 
 struct BatchProverTester;
@@ -17,29 +17,7 @@ impl ProverTester for BatchProverTester {
 
 #[test]
 fn setup_prove_verify() -> eyre::Result<()> {
-    // Build the ELF binary from the circuit program.
-    let elf = BatchProverTester::build()?;
-
-    // Transpile the ELF into a VmExe.
-    let (app_config, path_exe) = BatchProverTester::transpile(elf)?;
-
-    // Generate application proving key and get path on disc.
-    let path_pk = BatchProverTester::keygen(app_config)?;
-
-    // Setup batch prover.
-    let batch_prover =
-        <BatchProverTester as ProverTester>::Prover::setup(&path_exe, &path_pk, None)?;
-
-    // Generate proving task for the batch-circuit.
-    let task = BatchProverTester::gen_proving_task()?;
-
-    // Construct root proof for the batch-circuit.
-    let proof = batch_prover.gen_proof(&task)?;
-
-    // Verify proof.
-    batch_prover.verify_proof(proof)?;
-
-    Ok(())
+    prove_verify_common::<BatchProverTester>()
 }
 
 #[test]

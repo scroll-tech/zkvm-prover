@@ -1,7 +1,7 @@
 use std::{fs::File, path::Path};
 
 use sbv::primitives::types::BlockWitness;
-use scroll_zkvm_integration::ProverTester;
+use scroll_zkvm_integration::{ProverTester, prove_verify_common};
 use scroll_zkvm_prover::{ChunkProver, ProverVerifier, task::chunk::ChunkProvingTask};
 
 const PATH_BLOCK_WITNESS: &str = "./testdata";
@@ -30,27 +30,5 @@ impl ProverTester for ChunkProverTester {
 
 #[test]
 fn setup_prove_verify() -> eyre::Result<()> {
-    // Build the ELF binary from the circuit program.
-    let elf = ChunkProverTester::build()?;
-
-    // Transpile the ELF into a VmExe.
-    let (app_config, path_exe) = ChunkProverTester::transpile(elf)?;
-
-    // Generate application proving key and get path on disc.
-    let path_pk = ChunkProverTester::keygen(app_config)?;
-
-    // Setup chunk prover.
-    let chunk_prover =
-        <ChunkProverTester as ProverTester>::Prover::setup(&path_exe, &path_pk, None)?;
-
-    // Generate proving task for the chunk-circuit.
-    let task = ChunkProverTester::gen_proving_task()?;
-
-    // Construct root proof for the chunk-circuit.
-    let proof = chunk_prover.gen_proof(&task)?;
-
-    // Verify proof.
-    chunk_prover.verify_proof(proof)?;
-
-    Ok(())
+    prove_verify_common::<ChunkProverTester>()
 }
