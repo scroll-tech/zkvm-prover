@@ -1,25 +1,24 @@
-use std::path::Path;
+use std::{fs::File, path::Path};
 
 use sbv::primitives::types::BlockWitness;
-use scroll_zkvm_integration::Circuit as CircuitTester;
+use scroll_zkvm_integration::ProverTester;
 use scroll_zkvm_prover::{ChunkProver, ProverVerifier};
 
 const PATH_BLOCK_WITNESS: &str = "./testdata";
 
 struct ChunkProverTester;
 
-impl CircuitTester for ChunkProverTester {
+impl ProverTester for ChunkProverTester {
     type Prover = ChunkProver;
 
     const PATH_PROJECT_ROOT: &str = "./../circuits/chunk-circuit";
 
-    const PREFIX: &str = "chunk-";
+    const PREFIX: &str = "chunk";
 
     fn gen_witness() -> eyre::Result<<Self::Prover as ProverVerifier>::Witness> {
         (12508460usize..=12508463)
             .map(|block_n| {
-                let witness =
-                    std::fs::File::open(Path::new(PATH_BLOCK_WITNESS).join(block_n.to_string()))?;
+                let witness = File::open(Path::new(PATH_BLOCK_WITNESS).join(block_n.to_string()))?;
                 Ok(serde_json::from_reader::<_, BlockWitness>(witness)?)
             })
             .collect::<eyre::Result<Vec<BlockWitness>>>()
@@ -38,7 +37,7 @@ fn e2e_chunk_prover() -> eyre::Result<()> {
     let path_pk = ChunkProverTester::keygen(app_config)?;
 
     // Setup chunk prover.
-    let chunk_prover = ChunkProver::setup(&path_exe, &path_pk)?;
+    let chunk_prover = <ChunkProverTester as ProverTester>::Prover::setup(&path_exe, &path_pk)?;
 
     // Generate some witness for the chunk-circuit.
     let witness = ChunkProverTester::gen_witness()?;

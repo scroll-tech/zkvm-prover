@@ -12,24 +12,27 @@ use scroll_zkvm_prover::{ProverVerifier, read_app_config};
 /// Feature to enable while building the guest program.
 const FEATURE_SCROLL: &str = "scroll";
 
-/// Directory where openvm related configs and build results are stored in disc.
-const DIR_OPENVM: &str = ".openvm";
+/// Path to store release assets, root directory of zkvm-prover repository.
+const DIR_OPENVM_ASSETS: &str = "./../../.openvm";
 
-/// File descriptor for app openvm config.
-const FD_APP_CONFIG: &str = "openvm.toml";
+/// Extension for app openvm config.
+const EXT_APP_CONFIG: &str = ".toml";
 
-/// File descriptor for app exe.
-const FD_APP_EXE: &str = "app.vmexe";
+/// Extension for app exe.
+const EXT_APP_EXE: &str = ".vmexe";
 
-/// File descriptor for proving key.
-const FD_APP_PK: &str = "app.pk";
+/// Extension for proving key.
+const EXT_APP_PK: &str = ".pk";
 
 /// Circuit that implements functionality required to run e2e tests.
-pub trait Circuit {
+pub trait ProverTester {
+    /// Prover type that is being tested.
     type Prover: ProverVerifier;
 
+    /// Path to the corresponding circuit's project directory.
     const PATH_PROJECT_ROOT: &str;
 
+    /// Prefix to use while naming app-specific data like app exe, app pk, etc.
     const PREFIX: &str;
 
     /// Build the ELF binary from the circuit program.
@@ -41,13 +44,13 @@ pub trait Circuit {
 
     /// Transpile the ELF into a VmExe.
     fn transpile(elf: Elf) -> eyre::Result<(AppConfig<SdkVmConfig>, PathBuf)> {
-        let app_config = read_app_config(Path::new(Self::PATH_PROJECT_ROOT).join(FD_APP_CONFIG))?;
+        let app_config = read_app_config(
+            Path::new(DIR_OPENVM_ASSETS).join(format!("{}{EXT_APP_CONFIG}", Self::PREFIX)),
+        )?;
         let app_exe = Sdk.transpile(elf, app_config.app_vm_config.transpiler())?;
 
         // Write exe to disc.
-        let path_exe = Path::new(Self::PATH_PROJECT_ROOT)
-            .join(DIR_OPENVM)
-            .join(FD_APP_EXE);
+        let path_exe = Path::new(DIR_OPENVM_ASSETS).join(format!("{}{EXT_APP_EXE}", Self::PREFIX));
         write_exe_to_file(app_exe, &path_exe)?;
 
         Ok((app_config, path_exe))
@@ -58,9 +61,8 @@ pub trait Circuit {
         let app_pk = Sdk.app_keygen(app_config)?;
 
         // Write proving key to disc.
-        let path_pk = Path::new(Self::PATH_PROJECT_ROOT)
-            .join(DIR_OPENVM)
-            .join(FD_APP_PK);
+        let path_pk =
+            Path::new(Self::PATH_PROJECT_ROOT).join(format!("{}{EXT_APP_PK}", Self::PREFIX));
         write_app_pk_to_file(app_pk, &path_pk)?;
 
         Ok(path_pk)
