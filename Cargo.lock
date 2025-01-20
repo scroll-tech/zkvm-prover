@@ -6482,10 +6482,12 @@ version = "0.1.0"
 name = "scroll-zkvm-prover"
 version = "0.1.0"
 dependencies = [
+ "once_cell",
  "openvm-circuit",
  "openvm-native-recursion",
  "openvm-sdk",
  "openvm-stark-sdk",
+ "rkyv",
  "thiserror 2.0.11",
  "toml",
 ]
