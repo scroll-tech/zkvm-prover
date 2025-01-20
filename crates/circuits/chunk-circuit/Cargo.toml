@@ -15,8 +15,7 @@ openvm-keccak256-guest.workspace = true
 openvm-pairing-guest = { workspace = true, features = ["bn254"] }
 openvm-rv32im-guest.workspace = true
 rkyv.workspace = true
-
-sbv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
+sbv.workspace = true
 
 [features]
 scroll = ["sbv/scroll"]

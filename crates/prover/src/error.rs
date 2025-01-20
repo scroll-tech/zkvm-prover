@@ -15,4 +15,7 @@ pub enum Error {
     /// An error encountered during proof generation.
     #[error("failed to generate proof: {0}")]
     GenProof(String),
+    /// An error encountered during proof verification.
+    #[error("failed to verify proof: {0}")]
+    VerifyProof(String),
 }

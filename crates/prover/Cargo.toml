@@ -7,6 +7,7 @@ version.workspace = true
 
 [dependencies]
 rkyv.workspace = true
+sbv.workspace = true
 
 once_cell = "1.20"
 openvm-circuit = { git = "https://github.com/scroll-tech/openvm", branch = "scroll-dev-0116" }
