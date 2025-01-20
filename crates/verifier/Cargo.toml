@@ -1,0 +1,8 @@
+[package]
+name = "scroll-zkvm-verifier"
+edition.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[dependencies]

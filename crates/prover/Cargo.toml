@@ -1,0 +1,14 @@
+[package]
+name = "scroll-zkvm-prover"
+edition.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+openvm-circuit = { git = "https://github.com/scroll-tech/openvm", branch = "scroll-dev-0116" }
+openvm-native-recursion = { git = "https://github.com/scroll-tech/openvm", branch = "scroll-dev-0116" }
+openvm-sdk = { git = "https://github.com/scroll-tech/openvm", branch = "scroll-dev-0116", default-features = false }
+openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", rev = "47a0bda", default-features = false }
+thiserror = "2.0"
+toml = "0.8"
