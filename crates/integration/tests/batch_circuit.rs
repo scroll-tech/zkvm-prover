@@ -16,7 +16,7 @@ impl ProverTester for BatchProverTester {
 }
 
 #[test]
-fn e2e_batch_prover() -> eyre::Result<()> {
+fn setup_prove_verify() -> eyre::Result<()> {
     // Build the ELF binary from the circuit program.
     let elf = BatchProverTester::build()?;
 
@@ -39,4 +39,9 @@ fn e2e_batch_prover() -> eyre::Result<()> {
     batch_prover.verify_proof(proof)?;
 
     Ok(())
+}
+
+#[test]
+fn e2e() -> eyre::Result<()> {
+    unimplemented!()
 }

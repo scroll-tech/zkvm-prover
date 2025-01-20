@@ -26,7 +26,7 @@ impl ProverTester for ChunkProverTester {
 }
 
 #[test]
-fn e2e_chunk_prover() -> eyre::Result<()> {
+fn setup_prove_verify() -> eyre::Result<()> {
     // Build the ELF binary from the circuit program.
     let elf = ChunkProverTester::build()?;
 
