@@ -27,7 +27,7 @@ openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", bra
 openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
 openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
 rkyv = "0.8"
-sbv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/serde-chunk-info" }
+sbv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
 
 scroll-zkvm-prover = { path = "crates/prover" }
 

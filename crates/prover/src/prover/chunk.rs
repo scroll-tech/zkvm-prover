@@ -92,7 +92,7 @@ impl ProverVerifier for ChunkProver {
         Ok(wrapped_proof)
     }
 
-    fn verify_proof(&self, proof: Self::Proof) -> Result<(), Error> {
+    fn verify_proof(&self, proof: &Self::Proof) -> Result<(), Error> {
         let agg_stark_pk = AGG_STARK_PROVING_KEY
             .get()
             .ok_or(Error::VerifyProof(String::from(

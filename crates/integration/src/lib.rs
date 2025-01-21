@@ -9,6 +9,8 @@ use openvm_sdk::{
 use openvm_transpiler::elf::Elf;
 use scroll_zkvm_prover::{ProverVerifier, setup::read_app_config};
 
+pub mod testers;
+
 /// Feature to enable while building the guest program.
 const FEATURE_SCROLL: &str = "scroll";
 
@@ -70,9 +72,54 @@ pub trait ProverTester {
 
     /// Generate proving task for test purposes.
     fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverVerifier>::ProvingTask>;
+
+    /// Generate multiple proving tasks for test purposes.
+    fn gen_multi_proving_tasks() -> eyre::Result<Vec<<Self::Prover as ProverVerifier>::ProvingTask>>
+    {
+        unimplemented!()
+    }
 }
 
-pub fn prove_verify_common<T: ProverTester>() -> eyre::Result<()> {
+/// The outcome of a successful prove-verify run.
+pub struct ProveVerifyOutcome<T, P> {
+    /// Single or multiple proving tasks.
+    pub tasks: Vec<T>,
+    /// Verified proofs for the proving tasks.
+    pub proofs: Vec<P>,
+}
+
+impl<T: Clone, P: Clone> ProveVerifyOutcome<T, P> {
+    pub fn single(task: T, proof: P) -> Self {
+        Self {
+            tasks: vec![task],
+            proofs: vec![proof],
+        }
+    }
+    pub fn multi(tasks: &[T], proofs: &[P]) -> Self {
+        Self {
+            tasks: tasks.to_vec(),
+            proofs: proofs.to_vec(),
+        }
+    }
+}
+
+/// Alias for convenience.
+type ProveVerifyRes<T> = eyre::Result<
+    ProveVerifyOutcome<
+        <<T as ProverTester>::Prover as ProverVerifier>::ProvingTask,
+        <<T as ProverTester>::Prover as ProverVerifier>::Proof,
+    >,
+>;
+
+/// End-to-end test for a single proving task.
+pub fn prove_verify_single<T>(
+    task: Option<<T::Prover as ProverVerifier>::ProvingTask>,
+) -> ProveVerifyRes<T>
+where
+    T: ProverTester,
+    <T::Prover as ProverVerifier>::ProvingTask: Clone,
+    <T::Prover as ProverVerifier>::Proof: Clone,
+{
     // Build the ELF binary from the circuit program.
     let elf = T::build()?;
 
@@ -86,13 +133,50 @@ pub fn prove_verify_common<T: ProverTester>() -> eyre::Result<()> {
     let prover = <T as ProverTester>::Prover::setup(&path_exe, &path_pk, None)?;
 
     // Generate proving task for the circuit.
-    let task = T::gen_proving_task()?;
+    let task = task.unwrap_or(T::gen_proving_task()?);
 
     // Construct root proof for the circuit.
     let proof = prover.gen_proof(&task)?;
 
     // Verify proof.
-    prover.verify_proof(proof)?;
+    prover.verify_proof(&proof)?;
 
-    Ok(())
+    Ok(ProveVerifyOutcome::single(task, proof))
+}
+
+/// End-to-end test for multiple proving tasks of the same prover.
+pub fn prove_verify_multi<T>(
+    tasks: Option<&[<T::Prover as ProverVerifier>::ProvingTask]>,
+) -> ProveVerifyRes<T>
+where
+    T: ProverTester,
+    <T::Prover as ProverVerifier>::ProvingTask: Clone,
+    <T::Prover as ProverVerifier>::Proof: Clone,
+{
+    // Build the ELF binary from the circuit program.
+    let elf = T::build()?;
+
+    // Transpile the ELF into a VmExe.
+    let (app_config, path_exe) = T::transpile(elf)?;
+
+    // Generate application proving key and get path on disc.
+    let path_pk = T::keygen(app_config)?;
+
+    // Setup prover.
+    let prover = <T as ProverTester>::Prover::setup(&path_exe, &path_pk, None)?;
+
+    // Generate proving task for the circuit.
+    let tasks = tasks.map_or_else(|| T::gen_multi_proving_tasks(), |tasks| Ok(tasks.to_vec()))?;
+
+    // For each of the tasks, generate and verify proof.
+    let proofs = tasks
+        .iter()
+        .map(|task| {
+            let proof = prover.gen_proof(task)?;
+            prover.verify_proof(&proof)?;
+            Ok(proof)
+        })
+        .collect::<eyre::Result<Vec<<T::Prover as ProverVerifier>::Proof>>>()?;
+
+    Ok(ProveVerifyOutcome::multi(&tasks, &proofs))
 }

@@ -148,5 +148,5 @@ pub trait ProverVerifier: ProofCachingProver {
     ///
     /// [root_proof][openvm_sdk::verifier::root::types::RootVmVerifierInput]
     /// [evm_proof][openvm_native_recursion::halo2::EvmProof]
-    fn verify_proof(&self, proof: Self::Proof) -> Result<(), Error>;
+    fn verify_proof(&self, proof: &Self::Proof) -> Result<(), Error>;
 }
