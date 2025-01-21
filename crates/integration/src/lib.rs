@@ -54,6 +54,12 @@ pub trait ProverTester {
         fields(path_app_config, path_app_exe)
     )]
     fn transpile(elf: Elf) -> eyre::Result<(AppConfig<SdkVmConfig>, PathBuf)> {
+        // Create the assets directory to store app-specific assets.
+        //
+        // Ignore error as the dir could already exist, in which case we can simply proceed.
+        let path_assets = Path::new(DIR_OPENVM_ASSETS).join(Self::ASSETS_DIR);
+        let _ = std::fs::create_dir(&path_assets);
+
         // First read the app config specified in the project's root directory.
         let path_app_config = Path::new(Self::PATH_PROJECT_ROOT).join(FD_APP_CONFIG);
         let app_config = read_app_config(&path_app_config)?;
@@ -61,18 +67,14 @@ pub trait ProverTester {
         // Copy the app config to assets directory for convenience of export/release.
         //
         // - <openvm-assets>/<assets-dir>/openvm.toml
-        let path_dup_app_config = Path::new(DIR_OPENVM_ASSETS)
-            .join(Self::ASSETS_DIR)
-            .join(FD_APP_CONFIG);
+        let path_dup_app_config = path_assets.join(FD_APP_CONFIG);
         std::fs::copy(&path_app_config, &path_dup_app_config)?;
 
         // Transpile ELF to openvm executable.
         let app_exe = Sdk.transpile(elf, app_config.app_vm_config.transpiler())?;
 
         // Write exe to disc.
-        let path_app_exe = Path::new(DIR_OPENVM_ASSETS)
-            .join(Self::ASSETS_DIR)
-            .join(FD_APP_EXE);
+        let path_app_exe = path_assets.join(FD_APP_EXE);
         write_exe_to_file(app_exe, &path_app_exe)?;
 
         Ok((app_config, path_app_exe))
