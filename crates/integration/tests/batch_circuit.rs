@@ -1,10 +1,12 @@
 use scroll_zkvm_integration::{
-    prove_verify_multi, prove_verify_single,
+    prove_verify_multi, prove_verify_single, setup,
     testers::{batch::BatchProverTester, chunk::MultiChunkProverTester},
 };
 
 #[test]
 fn setup_prove_verify() -> eyre::Result<()> {
+    setup()?;
+
     let _outcome = prove_verify_single::<BatchProverTester>(None)?;
 
     Ok(())
@@ -12,6 +14,8 @@ fn setup_prove_verify() -> eyre::Result<()> {
 
 #[test]
 fn e2e() -> eyre::Result<()> {
+    setup()?;
+
     let outcome = prove_verify_multi::<MultiChunkProverTester>(None)?;
     let (_chunk_tasks, _chunk_proofs) = (outcome.tasks, outcome.proofs);
 

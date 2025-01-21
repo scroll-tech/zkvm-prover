@@ -13,6 +13,7 @@ use openvm_sdk::{
 };
 use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Config;
 use serde::{Serialize, de::DeserializeOwned};
+use tracing::{debug, instrument};
 
 use crate::{
     Error,
@@ -91,6 +92,7 @@ pub trait ProverVerifier: ProofCachingProver {
     const EVM: bool;
 
     /// Read app exe, proving key and return committed data.
+    #[instrument("ProverVerifier::init", fields(path_exe, path_pk))]
     fn init<P: AsRef<Path>>(path_exe: P, path_pk: P) -> InitRes {
         let app_exe = read_app_exe(path_exe)?;
         let app_pk = read_app_pk(path_pk)?;
@@ -105,8 +107,10 @@ pub trait ProverVerifier: ProofCachingProver {
     }
 
     /// File descriptor for the proof saved to disc.
+    #[instrument("ProverVerifier::fd_proof", skip_all, fields(task_id = task.identifier(), path_proof))]
     fn fd_proof(task: &Self::ProvingTask) -> String {
-        format!("{}-{}.json", Self::PREFIX, task.identifier())
+        let path_proof = format!("{}-{}.json", Self::PREFIX, task.identifier());
+        path_proof
     }
 
     /// Setup the [`Prover`] given paths to the application's exe and proving key.
@@ -117,11 +121,17 @@ pub trait ProverVerifier: ProofCachingProver {
 
     /// Early-return if a proof is found in disc, otherwise generate and return the proof after
     /// writing to disc.
+    #[instrument("ProverVerifier::gen_proof", skip_all, fields(task_id))]
     fn gen_proof(&self, task: &Self::ProvingTask) -> Result<Self::Proof, Error> {
+        let task_id = task.identifier();
+
         // Try reading proof from cache if available, and early return in that case.
         if let Some(dir) = self.cache_dir() {
             let path_proof = dir.join(Self::fd_proof(task));
+            debug!(name: "try_read_proof", ?task_id, ?path_proof);
+
             if let Ok(proof) = crate::utils::read_json_deep(&path_proof) {
+                debug!(name: "early_return_proof", ?task_id);
                 return Ok(proof);
             }
         }
@@ -132,6 +142,8 @@ pub trait ProverVerifier: ProofCachingProver {
         // Write proof to disc if caching was enabled.
         if let Some(dir) = self.cache_dir() {
             let path_proof = dir.join(Self::fd_proof(task));
+            debug!(name: "try_write_proof", ?task_id, ?path_proof);
+
             crate::utils::write_json(&path_proof, &proof)?;
         }
 

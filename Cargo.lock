@@ -6515,6 +6515,8 @@ dependencies = [
  "sbv",
  "scroll-zkvm-prover",
  "serde_json",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -6534,6 +6536,7 @@ dependencies = [
  "serde_stacker",
  "thiserror 2.0.11",
  "toml",
+ "tracing",
 ]
 
 [[package]]
