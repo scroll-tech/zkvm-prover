@@ -7,6 +7,15 @@ use crate::ProverTester;
 
 const PATH_BLOCK_WITNESS: &str = "./testdata";
 
+/// Utility function to read and deserialize block witness given the block number.
+///
+/// Expects a file <block_n>.json to be present in the <PATH_BLOCK_WITNESS> directory.
+fn read_block_witness(block_n: usize) -> eyre::Result<BlockWitness> {
+    let path_witness = Path::new(PATH_BLOCK_WITNESS).join(format!("{}.json", block_n));
+    let witness = File::open(&path_witness)?;
+    Ok(serde_json::from_reader::<_, BlockWitness>(witness)?)
+}
+
 pub struct ChunkProverTester;
 
 impl ProverTester for ChunkProverTester {
@@ -20,11 +29,7 @@ impl ProverTester for ChunkProverTester {
     fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverVerifier>::ProvingTask> {
         Ok(ChunkProvingTask {
             block_witnesses: (12508460usize..=12508463)
-                .map(|block_n| {
-                    let witness =
-                        File::open(Path::new(PATH_BLOCK_WITNESS).join(block_n.to_string()))?;
-                    Ok(serde_json::from_reader::<_, BlockWitness>(witness)?)
-                })
+                .map(read_block_witness)
                 .collect::<eyre::Result<Vec<BlockWitness>>>()?,
         })
     }
@@ -51,29 +56,17 @@ impl ProverTester for MultiChunkProverTester {
         Ok(vec![
             ChunkProvingTask {
                 block_witnesses: (12508460usize..=12508460)
-                    .map(|block_n| {
-                        let witness =
-                            File::open(Path::new(PATH_BLOCK_WITNESS).join(block_n.to_string()))?;
-                        Ok(serde_json::from_reader::<_, BlockWitness>(witness)?)
-                    })
+                    .map(read_block_witness)
                     .collect::<eyre::Result<Vec<BlockWitness>>>()?,
             },
             ChunkProvingTask {
                 block_witnesses: (12508461usize..=12508461)
-                    .map(|block_n| {
-                        let witness =
-                            File::open(Path::new(PATH_BLOCK_WITNESS).join(block_n.to_string()))?;
-                        Ok(serde_json::from_reader::<_, BlockWitness>(witness)?)
-                    })
+                    .map(read_block_witness)
                     .collect::<eyre::Result<Vec<BlockWitness>>>()?,
             },
             ChunkProvingTask {
                 block_witnesses: (12508462usize..=12508463)
-                    .map(|block_n| {
-                        let witness =
-                            File::open(Path::new(PATH_BLOCK_WITNESS).join(block_n.to_string()))?;
-                        Ok(serde_json::from_reader::<_, BlockWitness>(witness)?)
-                    })
+                    .map(read_block_witness)
                     .collect::<eyre::Result<Vec<BlockWitness>>>()?,
             },
         ])
