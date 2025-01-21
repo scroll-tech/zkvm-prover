@@ -6,6 +6,8 @@ edition = "2021"
 [dependencies]
 sbv.workspace = true
 scroll-zkvm-prover.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
 
 eyre = "0.6"
 openvm-build = { git = "https://github.com/scroll-tech/openvm", branch = "scroll-dev-0116", default-features = false }

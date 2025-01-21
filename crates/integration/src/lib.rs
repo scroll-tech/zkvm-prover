@@ -8,6 +8,7 @@ use openvm_sdk::{
 };
 use openvm_transpiler::elf::Elf;
 use scroll_zkvm_prover::{ProverVerifier, setup::read_app_config};
+use tracing::instrument;
 
 pub mod testers;
 
@@ -38,6 +39,7 @@ pub trait ProverTester {
     const PREFIX: &str;
 
     /// Build the ELF binary from the circuit program.
+    #[instrument("ProverTester::build", fields(project_root = Self::PATH_PROJECT_ROOT))]
     fn build() -> eyre::Result<Elf> {
         let guest_opts = GuestOptions::default().with_features([FEATURE_SCROLL]);
         let elf = Sdk.build(guest_opts, Self::PATH_PROJECT_ROOT, &Default::default())?;
@@ -45,29 +47,36 @@ pub trait ProverTester {
     }
 
     /// Transpile the ELF into a VmExe.
+    #[instrument(
+        "ProverTester::transpile",
+        skip_all,
+        fields(path_app_config, path_app_exe)
+    )]
     fn transpile(elf: Elf) -> eyre::Result<(AppConfig<SdkVmConfig>, PathBuf)> {
-        let app_config = read_app_config(
-            Path::new(DIR_OPENVM_ASSETS).join(format!("{}{EXT_APP_CONFIG}", Self::PREFIX)),
-        )?;
+        let path_app_config =
+            Path::new(DIR_OPENVM_ASSETS).join(format!("{}{EXT_APP_CONFIG}", Self::PREFIX));
+        let app_config = read_app_config(&path_app_config)?;
         let app_exe = Sdk.transpile(elf, app_config.app_vm_config.transpiler())?;
 
         // Write exe to disc.
-        let path_exe = Path::new(DIR_OPENVM_ASSETS).join(format!("{}{EXT_APP_EXE}", Self::PREFIX));
-        write_exe_to_file(app_exe, &path_exe)?;
+        let path_app_exe =
+            Path::new(DIR_OPENVM_ASSETS).join(format!("{}{EXT_APP_EXE}", Self::PREFIX));
+        write_exe_to_file(app_exe, &path_app_exe)?;
 
-        Ok((app_config, path_exe))
+        Ok((app_config, path_app_exe))
     }
 
     /// Generate proving key and return path on disc.
+    #[instrument("ProverTester::keygen", skip_all, fields(path_app_pk))]
     fn keygen(app_config: AppConfig<SdkVmConfig>) -> eyre::Result<PathBuf> {
         let app_pk = Sdk.app_keygen(app_config)?;
 
         // Write proving key to disc.
-        let path_pk =
+        let path_app_pk =
             Path::new(Self::PATH_PROJECT_ROOT).join(format!("{}{EXT_APP_PK}", Self::PREFIX));
-        write_app_pk_to_file(app_pk, &path_pk)?;
+        write_app_pk_to_file(app_pk, &path_app_pk)?;
 
-        Ok(path_pk)
+        Ok(path_app_pk)
     }
 
     /// Generate proving task for test purposes.
@@ -95,12 +104,23 @@ impl<T: Clone, P: Clone> ProveVerifyOutcome<T, P> {
             proofs: vec![proof],
         }
     }
+
     pub fn multi(tasks: &[T], proofs: &[P]) -> Self {
         Self {
             tasks: tasks.to_vec(),
             proofs: proofs.to_vec(),
         }
     }
+}
+
+/// Setup test environment
+pub fn setup() -> eyre::Result<()> {
+    tracing_subscriber::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .pretty()
+        .init();
+
+    Ok(())
 }
 
 /// Alias for convenience.
@@ -112,6 +132,7 @@ type ProveVerifyRes<T> = eyre::Result<
 >;
 
 /// End-to-end test for a single proving task.
+#[instrument(name = "prove_verify_single", skip_all)]
 pub fn prove_verify_single<T>(
     task: Option<<T::Prover as ProverVerifier>::ProvingTask>,
 ) -> ProveVerifyRes<T>
@@ -145,6 +166,7 @@ where
 }
 
 /// End-to-end test for multiple proving tasks of the same prover.
+#[instrument(name = "prove_verify_multi", skip_all)]
 pub fn prove_verify_multi<T>(
     tasks: Option<&[<T::Prover as ProverVerifier>::ProvingTask]>,
 ) -> ProveVerifyRes<T>
