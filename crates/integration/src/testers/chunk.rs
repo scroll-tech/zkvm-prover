@@ -23,7 +23,7 @@ impl ProverTester for ChunkProverTester {
 
     const PATH_PROJECT_ROOT: &str = "./../circuits/chunk-circuit";
 
-    const PREFIX: &str = "chunk";
+    const ASSETS_DIR: &str = "chunk";
 
     /// [block-12508460, block-12508461, block-12508462, block-12508463]
     fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverVerifier>::ProvingTask> {
@@ -42,7 +42,7 @@ impl ProverTester for MultiChunkProverTester {
 
     const PATH_PROJECT_ROOT: &str = "./../circuits/chunk-circuit";
 
-    const PREFIX: &str = "chunk";
+    const ASSETS_DIR: &str = "chunk";
 
     fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverVerifier>::ProvingTask> {
         unimplemented!()

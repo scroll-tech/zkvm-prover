@@ -9,7 +9,7 @@ impl ProverTester for BundleProverTester {
 
     const PATH_PROJECT_ROOT: &str = "./../circuits/bundle-circuit";
 
-    const PREFIX: &str = "bundle";
+    const ASSETS_DIR: &str = "bundle";
 
     fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverVerifier>::ProvingTask> {
         todo!("BundleProverTester: gen_proving_task not implemented")
