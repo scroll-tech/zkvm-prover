@@ -6377,7 +6377,7 @@ dependencies = [
 [[package]]
 name = "sbv"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Fserde-chunk-info#7a7cf36e12523475aead58146f3a4427e9cef5e2"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#e9918415de1eb2cec2159885cd389e1897046d17"
 dependencies = [
  "sbv-core",
  "sbv-helpers",
@@ -6389,7 +6389,7 @@ dependencies = [
 [[package]]
 name = "sbv-core"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Fserde-chunk-info#7a7cf36e12523475aead58146f3a4427e9cef5e2"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#e9918415de1eb2cec2159885cd389e1897046d17"
 dependencies = [
  "reth-evm",
  "reth-evm-ethereum",
@@ -6411,7 +6411,7 @@ dependencies = [
 [[package]]
 name = "sbv-helpers"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Fserde-chunk-info#7a7cf36e12523475aead58146f3a4427e9cef5e2"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#e9918415de1eb2cec2159885cd389e1897046d17"
 dependencies = [
  "revm",
 ]
@@ -6419,7 +6419,7 @@ dependencies = [
 [[package]]
 name = "sbv-kv"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Fserde-chunk-info#7a7cf36e12523475aead58146f3a4427e9cef5e2"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#e9918415de1eb2cec2159885cd389e1897046d17"
 dependencies = [
  "auto_impl",
  "hashbrown 0.15.2",
@@ -6429,7 +6429,7 @@ dependencies = [
 [[package]]
 name = "sbv-primitives"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Fserde-chunk-info#7a7cf36e12523475aead58146f3a4427e9cef5e2"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#e9918415de1eb2cec2159885cd389e1897046d17"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -6457,7 +6457,7 @@ dependencies = [
 [[package]]
 name = "sbv-trie"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Fserde-chunk-info#7a7cf36e12523475aead58146f3a4427e9cef5e2"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#e9918415de1eb2cec2159885cd389e1897046d17"
 dependencies = [
  "alloy-rlp",
  "alloy-trie",
