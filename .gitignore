@@ -1,2 +1,5 @@
 /target
-*.vmexe
+
+/.output
+
+*.log

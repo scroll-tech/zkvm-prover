@@ -9,6 +9,9 @@ clippy:
 test-chunk:
 	@cargo test --release -p scroll-zkvm-integration --features scroll --test chunk_circuit setup_prove_verify -- --exact --nocapture
 
+test-multi-chunk:
+	@cargo test --release -p scroll-zkvm-integration --features scroll --test chunk_circuit multi_chunk -- --exact --nocapture
+
 test-batch:
 	@cargo test --release -p scroll-zkvm-integration --features scroll --test batch_circuit setup_prove_verify -- --exact --nocapture
 

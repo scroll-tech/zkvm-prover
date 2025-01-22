@@ -48,12 +48,13 @@ impl ProverVerifier for ChunkProver {
         })
     }
 
-    fn metadata(_task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error> {
+    #[instrument("ChunkProver::metadata", skip_all, fields(?task_id = task.identifier()))]
+    fn metadata(task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error> {
         #[cfg(feature = "scroll")]
         let chunk_info = {
-            let chain_id = _task.block_witnesses[0].chain_id;
-            let pre_state_root = _task.block_witnesses[0].pre_state_root;
-            let blocks = _task
+            let chain_id = task.block_witnesses[0].chain_id;
+            let pre_state_root = task.block_witnesses[0].pre_state_root;
+            let blocks = task
                 .block_witnesses
                 .iter()
                 .map(|s| s.build_reth_block())
