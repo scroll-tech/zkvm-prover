@@ -1,11 +1,11 @@
 use scroll_zkvm_integration::{
-    prove_verify_multi, prove_verify_single, setup,
+    prove_verify_multi, prove_verify_single, setup_logger,
     testers::chunk::{ChunkProverTester, MultiChunkProverTester},
 };
 
 #[test]
 fn setup_prove_verify() -> eyre::Result<()> {
-    setup()?;
+    setup_logger()?;
 
     let _outcome = prove_verify_single::<ChunkProverTester>(None)?;
 
@@ -14,7 +14,7 @@ fn setup_prove_verify() -> eyre::Result<()> {
 
 #[test]
 fn multi_chunk() -> eyre::Result<()> {
-    setup()?;
+    setup_logger()?;
 
     let _outcome = prove_verify_multi::<MultiChunkProverTester>(None)?;
 
