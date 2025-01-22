@@ -52,21 +52,20 @@ pub trait ProverTester {
     /// Setup directory structure for the test suite.
     fn setup() -> eyre::Result<()> {
         // If user has set an output directory, use it.
-        let dir_output = std::env::var(ENV_OUTPUT_DIR).map_or(
+        let dir_output = if let Ok(dir) = std::env::var(ENV_OUTPUT_DIR) {
+            Path::new(&dir).join(Self::ASSETS_DIR)
+        } else {
             // Create the <OUTPUT>/<{ASSETS_DIR}-test-{now}>/{ASSETS_DIR} dir to dump
             // assets from this test run.
-            {
-                let test_run = format!(
-                    "{}-tests-{}",
-                    Self::ASSETS_DIR,
-                    chrono::Utc::now().format("%Y%m%d_%H%M%S"),
-                );
-                let dir = Path::new(DIR_OUTPUT).join(test_run).join(Self::ASSETS_DIR);
-                std::fs::create_dir_all(&dir)?;
-                Ok::<PathBuf, std::io::Error>(dir)
-            },
-            |dir| Ok(PathBuf::from(dir)),
-        )?;
+            let test_run = format!(
+                "{}-tests-{}",
+                Self::ASSETS_DIR,
+                chrono::Utc::now().format("%Y%m%d_%H%M%S"),
+            );
+            let dir = Path::new(DIR_OUTPUT).join(test_run).join(Self::ASSETS_DIR);
+            std::fs::create_dir_all(&dir)?;
+            dir
+        };
 
         // Set the assets dir path for later use.
         DIR_ASSETS
