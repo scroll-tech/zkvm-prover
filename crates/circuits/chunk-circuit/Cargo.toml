@@ -6,14 +6,14 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
-openvm = { workspace = true, features = ["std"] }
-openvm-algebra-complex-macros.workspace = true
-openvm-algebra-guest.workspace = true
-openvm-bigint-guest.workspace = true
-openvm-ecc-guest = { workspace = true, features = ["k256"] }
-openvm-keccak256-guest.workspace = true
-openvm-pairing-guest = { workspace = true, features = ["bn254"] }
-openvm-rv32im-guest.workspace = true
+openvm = { git = "https://github.com/openvm-org/openvm.git",  rev = "fc90b5d", features = ["std"] }
+openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git",  rev = "fc90b5d" } 
+openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git",  rev = "fc90b5d" }
+openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git",  rev = "fc90b5d" }
+openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git",  rev = "fc90b5d", features = ["k256"] }
+openvm-keccak256-guest= { git = "https://github.com/openvm-org/openvm.git",  rev = "fc90b5d" }
+openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git",  rev = "fc90b5d", features = ["bn254"] }
+openvm-rv32im-guest= {  git = "https://github.com/openvm-org/openvm.git",  rev = "fc90b5d" }
 rkyv.workspace = true
 sbv.workspace = true
 
