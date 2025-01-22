@@ -132,7 +132,7 @@ impl<T: Clone, P: Clone> ProveVerifyOutcome<T, P> {
 pub fn setup() -> eyre::Result<()> {
     let filters = tracing_subscriber::filter::Targets::new()
         .with_target("scroll_zkvm_prover", Level::INFO)
-        .with_target("scroll_zkvm_prover", Level::DEBUG);
+        .with_target("scroll_zkvm_integration", Level::DEBUG);
 
     let fmt_layer = tracing_subscriber::fmt::layer()
         .pretty()
