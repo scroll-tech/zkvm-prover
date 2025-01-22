@@ -32,6 +32,9 @@ const FD_APP_EXE: &str = "app.vmexe";
 /// File descriptor for proving key.
 const FD_APP_PK: &str = "app.pk";
 
+/// Environment variable used to set the test-run's output directory for assets.
+const ENV_OUTPUT_DIR: &str = "OUTPUT_DIR";
+
 /// Every test run will write assets to a new directory.
 static DIR_ASSETS: OnceCell<PathBuf> = OnceCell::new();
 
@@ -48,19 +51,26 @@ pub trait ProverTester {
 
     /// Setup directory structure for the test suite.
     fn setup() -> eyre::Result<()> {
-        // Create the <OUTPUT>/<{ASSETS_DIR}-test-{now}>/{ASSETS_DIR} dir to dump assets from this
-        // test run.
-        let test_run = format!(
-            "{}-tests-{}",
-            Self::ASSETS_DIR,
-            chrono::Utc::now().format("%Y%m%d_%H%M%S"),
-        );
-        let dir_assets = Path::new(DIR_OUTPUT).join(test_run).join(Self::ASSETS_DIR);
-        std::fs::create_dir_all(&dir_assets)?;
+        // If user has set an output directory, use it.
+        let dir_output = std::env::var(ENV_OUTPUT_DIR).map_or(
+            // Create the <OUTPUT>/<{ASSETS_DIR}-test-{now}>/{ASSETS_DIR} dir to dump
+            // assets from this test run.
+            {
+                let test_run = format!(
+                    "{}-tests-{}",
+                    Self::ASSETS_DIR,
+                    chrono::Utc::now().format("%Y%m%d_%H%M%S"),
+                );
+                let dir = Path::new(DIR_OUTPUT).join(test_run).join(Self::ASSETS_DIR);
+                std::fs::create_dir_all(&dir)?;
+                Ok::<PathBuf, std::io::Error>(dir)
+            },
+            |dir| Ok(PathBuf::from(dir)),
+        )?;
 
         // Set the assets dir path for later use.
         DIR_ASSETS
-            .set(dir_assets)
+            .set(dir_output)
             .map_err(|dir| eyre::eyre!("could not set assets dir: {dir:?}"))?;
 
         Ok(())
