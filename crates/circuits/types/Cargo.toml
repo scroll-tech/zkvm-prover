@@ -1,0 +1,14 @@
+[package]
+name = "circuit-input-types"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+rkyv.workspace = true
+serde.workspace = true
+alloy-serde.workspace = true
+alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }

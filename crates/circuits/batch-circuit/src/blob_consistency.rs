@@ -57,10 +57,10 @@ impl BlobConsistency {
         // blob data proof is [challenge, point_evaluation] mapped into H256
         let challenge_digest = U256::from_be_bytes(challenge_digest.0);
 
-        #[cfg(feature="gen_curve")]
+        #[cfg(feature="common_curve")]
         let (challenge, evaluation) = general::point_evaluation(&self.0, challenge_digest);
 
-        #[cfg(not(feature="gen_curve"))]
+        #[cfg(not(feature="common_curve"))]
         let (challenge, evaluation) = openvm::point_evaluation(&self.0, challenge_digest);
 
         [challenge, evaluation].map(|u|H256::new(u.to_be_bytes()))

@@ -1,10 +1,8 @@
 // copied from sbv's chunk, and enable serialize
 
 use alloy_primitives::B256;
-use serde::{Deserialize, Serialize};
 use tiny_keccak::{Hasher, Keccak};
-use rkyv::option::ArchivedOption;
-pub use scroll_zkvm_prover::task::batch::*;
+pub use circuit_input_types::batch::*;
 
 /// Public input hash for a given chunk is defined as
 /// keccak(

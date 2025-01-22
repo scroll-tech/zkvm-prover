@@ -1,12 +1,11 @@
 use core::iter::Iterator;
 
-use alloy_primitives::{Address, BlockNumber, Bloom, Bytes, B256 as H256, B64, U256};
-use serde::{Deserialize, Serialize};
+use alloy_primitives::B256 as H256;
 use itertools::Itertools;
 
-use super::{chunk::ChunkInfo, blob_data::{BatchData, BatchDataHash, keccak256}, 
+pub use circuit_input_types::batch::{MAX_AGG_CHUNKS, ArchivedBatchTask, ArchivedBatchHeaderV3, BatchHeaderV3};
+use super::{chunk::{public_input_hash, ChunkInfo}, blob_data::{BatchData, BatchDataHash, keccak256}, 
     blob_consistency::BlobConsistency, 
-    types::{ArchivedBatchHeaderV3, BatchHeaderV3},
 };
 use vm_zstd::process;
 
@@ -146,10 +145,10 @@ pub struct PIBuilder {
 struct ChunksSeq<'a> (&'a ChunkInfo, &'a ChunkInfo);
 
 impl<'a> ChunksSeq<'a> {
-    pub fn prev_state_root(&self) -> H256 { self.0.prev_state_root()}
-    pub fn post_state_root(&self) -> H256 { self.1.post_state_root()}
-    pub fn withdraw_root(&self) -> Option<H256> { self.1.withdraw_root()}
-    pub fn chain_id(&self) -> u64 { self.1.chain_id()}
+    pub fn prev_state_root(&self) -> H256 { self.0.prev_state_root}
+    pub fn post_state_root(&self) -> H256 { self.1.post_state_root}
+    pub fn withdraw_root(&self) -> Option<H256> { self.1.withdraw_root}
+    pub fn chain_id(&self) -> u64 { self.1.chain_id}
 
     // verify the input chunks
     pub fn new(chunks_info: impl Iterator<Item = &'a ChunkInfo> + Clone) -> Self {
@@ -157,8 +156,8 @@ impl<'a> ChunksSeq<'a> {
         let first = chunks_info.clone().nth(0);
         let last = chunks_info
         .reduce(|prev, next|{
-            assert_eq!(prev.post_state_root(), next.prev_state_root());
-            assert_eq!(prev.chain_id(), next.chain_id());
+            assert_eq!(prev.post_state_root, next.prev_state_root);
+            assert_eq!(prev.chain_id, next.chain_id);
             next
         });
 
@@ -179,7 +178,7 @@ impl PIBuilder {
         chunks_info
         .zip_eq(tx_bytes_digests)
         .map(|(chunk, tx_bytes_digest)|{
-            chunk.public_input_hash(tx_bytes_digest)
+            public_input_hash(&chunk, tx_bytes_digest)
         })
         .collect()
 
@@ -212,7 +211,7 @@ impl PIBuilder {
         let data_hash_helper = BatchDataHash::<N_MAX_CHUNKS>::from(&batch_data);
 
         let batch_data_hash_preimage = chunks_info.clone()
-            .flat_map(|chunk_info| chunk_info.data_hash().0)
+            .flat_map(|chunk_info| chunk_info.data_hash.0)
             .collect::<Vec<_>>();
         let batch_data_hash = keccak256(batch_data_hash_preimage);
 

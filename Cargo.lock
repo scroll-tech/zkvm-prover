@@ -832,6 +832,7 @@ version = "0.1.0"
 dependencies = [
  "alloy-primitives",
  "bls12_381 0.8.0",
+ "circuit-input-types",
  "ff 0.13.0",
  "itertools 0.14.0",
  "openvm 0.2.0-alpha (git+https://github.com/openvm-org/openvm.git?branch=main)",
@@ -839,8 +840,6 @@ dependencies = [
  "openvm-keccak256-guest 0.2.0-alpha (git+https://github.com/openvm-org/openvm.git?branch=main)",
  "openvm-pairing-guest 0.2.0-alpha (git+https://github.com/openvm-org/openvm.git?branch=main)",
  "rkyv",
- "sbv",
- "scroll-zkvm-prover",
  "serde",
  "tiny-keccak",
  "vm-zstd",
@@ -1207,6 +1206,16 @@ dependencies = [
  "serde",
  "wasm-bindgen",
  "windows-targets 0.52.6",
+]
+
+[[package]]
+name = "circuit-input-types"
+version = "0.1.0"
+dependencies = [
+ "alloy-primitives",
+ "alloy-serde",
+ "rkyv",
+ "serde",
 ]
 
 [[package]]

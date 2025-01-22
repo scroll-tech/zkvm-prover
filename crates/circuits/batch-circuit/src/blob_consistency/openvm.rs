@@ -1,7 +1,7 @@
 
 pub use openvm_pairing_guest::bls12_381::Scalar;
 use openvm_pairing_guest::algebra;
-use algebra::{ExpBytes, Field};
+use algebra::{IntMod, Field};
 use alloy_primitives::U256;
 use std::sync::LazyLock;
 use itertools::Itertools;
@@ -10,27 +10,45 @@ use super::BLOB_WIDTH;
 /// Base 2 logarithm of BLOB_WIDTH.
 const LOG_BLOB_WIDTH: usize = 12;
 
-pub static BLS_MODULUS: LazyLock<U256> = LazyLock::new(|| {
-    use openvm_pairing_guest::algebra::IntMod;
-    U256::from_le_bytes(Scalar::MODULUS)
-});
+// picked from ExpBytes trait, some compilation issue (infinity recursion) raised
+// from the exp_bytes entry and can not resolved it currently
+fn pow_bytes(base: &Scalar, bytes_be: &[u8]) -> Scalar {
+    let x = base.clone();
 
-pub static PRIMITIVE_ROOTS_OF_UNITY: LazyLock<Scalar> = LazyLock::new(|| {
-    use openvm_pairing_guest::algebra::IntMod;
-    Scalar::from_u8(7)
+    let mut res = <Scalar as IntMod>::ONE;
+
+    let x_sq = &x * &x;
+    let ops = [x.clone(), x_sq.clone(), &x_sq * &x];
+
+    for &b in bytes_be.iter() {
+        let mut mask = 0xc0;
+        for j in 0..4 {
+            res = &res * &res * &res * &res;
+            let c = (b & mask) >> (6 - 2 * j);
+            if c != 0 {
+                res *= &ops[(c - 1) as usize];
+            }
+            mask >>= 2;
+        }
+    }
+    res
+}
+
+pub static BLS_MODULUS: LazyLock<U256> = LazyLock::new(|| {
+    U256::from_le_bytes(Scalar::MODULUS)
 });
 
 pub static ROOTS_OF_UNITY: LazyLock<Vec<Scalar>> = LazyLock::new(|| {
 
     // https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/polynomial-commitments.md#constants
-    let primitive_root_of_unity = PRIMITIVE_ROOTS_OF_UNITY.clone();
+    let primitive_root_of_unity = Scalar::from_u8(7);
     let modulus = *BLS_MODULUS;
 
     let exponent = (modulus - U256::from(1)) / U256::from(4096);
     //let root_of_unity = primitive_root_of_unity.pow(exponent.as_limbs());
-    let root_of_unity = ExpBytes::exp_bytes(&primitive_root_of_unity, true, &exponent.to_be_bytes::<32>());
+    let root_of_unity = pow_bytes(&primitive_root_of_unity, &exponent.to_be_bytes::<32>());
 
-    let ascending_order: Vec<_> = std::iter::successors(Some(Scalar::ONE), |x| Some(x.clone() * root_of_unity.clone()))
+    let ascending_order: Vec<_> = std::iter::successors(Some(<Scalar as IntMod>::ONE), |x| Some(x.clone() * root_of_unity.clone()))
         .take(BLOB_WIDTH)
         .collect();
     (0..BLOB_WIDTH)
@@ -43,7 +61,7 @@ pub static ROOTS_OF_UNITY: LazyLock<Vec<Scalar>> = LazyLock::new(|| {
 
 fn interpolate(z: Scalar, coefficients: &[Scalar; BLOB_WIDTH]) -> Scalar {
     let blob_width = u64::try_from(BLOB_WIDTH).unwrap();
-    (ExpBytes::exp_bytes(&z, true, &blob_width.to_be_bytes()) - Scalar::ONE)
+    (pow_bytes(&z, &blob_width.to_be_bytes()) - <Scalar as IntMod>::ONE)
         * ROOTS_OF_UNITY
             .iter()
             .zip_eq(coefficients)
@@ -53,7 +71,6 @@ fn interpolate(z: Scalar, coefficients: &[Scalar; BLOB_WIDTH]) -> Scalar {
 }
 
 pub fn point_evaluation(coefficients : &[U256; BLOB_WIDTH], challenge_digest: U256) -> (U256, U256) {
-    use openvm_pairing_guest::algebra::IntMod;
     // blob polynomial in evaluation form.
     //
     // also termed P(x)
@@ -69,7 +86,7 @@ pub fn point_evaluation(coefficients : &[U256; BLOB_WIDTH], challenge_digest: U2
 
 }
 
-#[cfg(feature="gen_curve")]
+#[cfg(feature="common_curve")]
 #[test]
 fn test_constant_in_openvm() {
 
