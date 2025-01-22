@@ -7,6 +7,7 @@ use openvm_sdk::{
     fs::{write_app_pk_to_file, write_exe_to_file},
 };
 use openvm_transpiler::elf::Elf;
+use sbv::primitives::alloy_eips::merge::ALLOWED_FUTURE_BLOCK_TIME_SECONDS;
 use scroll_zkvm_prover::{ProverVerifier, setup::read_app_config};
 use tracing::{Level, instrument};
 use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::SubscriberInitExt};
@@ -18,6 +19,9 @@ const FEATURE_SCROLL: &str = "scroll";
 
 /// Path to store release assets, root directory of zkvm-prover repository.
 const DIR_OPENVM_ASSETS: &str = "./../../.openvm";
+
+/// Directory to store proofs on disc.
+const DIR_PROOFS: &str = "proofs";
 
 /// File descriptor for app openvm config.
 const FD_APP_CONFIG: &str = "openvm.toml";
@@ -174,7 +178,11 @@ where
     let path_pk = T::keygen(app_config)?;
 
     // Setup prover.
-    let prover = <T as ProverTester>::Prover::setup(&path_exe, &path_pk, None)?;
+    let cache_dir = Path::new(DIR_OPENVM_ASSETS)
+        .join(DIR_PROOFS)
+        .join(<T as ProverTester>::ASSETS_DIR);
+    let _ = std::fs::create_dir(&cache_dir);
+    let prover = <T as ProverTester>::Prover::setup(&path_exe, &path_pk, Some(&cache_dir))?;
 
     // Generate proving task for the circuit.
     let task = task.unwrap_or(T::gen_proving_task()?);
@@ -208,7 +216,11 @@ where
     let path_pk = T::keygen(app_config)?;
 
     // Setup prover.
-    let prover = <T as ProverTester>::Prover::setup(&path_exe, &path_pk, None)?;
+    let cache_dir = Path::new(DIR_OPENVM_ASSETS)
+        .join(DIR_PROOFS)
+        .join(<T as ProverTester>::ASSETS_DIR);
+    let _ = std::fs::create_dir(&cache_dir);
+    let prover = <T as ProverTester>::Prover::setup(&path_exe, &path_pk, Some(&cache_dir))?;
 
     // Generate proving task for the circuit.
     let tasks = tasks.map_or_else(|| T::gen_multi_proving_tasks(), |tasks| Ok(tasks.to_vec()))?;
