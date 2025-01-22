@@ -6,6 +6,7 @@ use std::{
 use openvm_circuit::{arch::SingleSegmentVmExecutor, system::program::trace::VmCommittedExe};
 use openvm_native_recursion::hints::Hintable;
 use openvm_sdk::{Sdk, StdIn, config::SdkVmConfig};
+use tracing::{debug, instrument};
 
 #[cfg(feature = "scroll")]
 use sbv::{
@@ -14,8 +15,9 @@ use sbv::{
 };
 
 use crate::{
-    ChunkProof, Error, Prover, ProverVerifier, WrappedProof, proof::ChunkProofMetadata,
-    task::chunk::ChunkProvingTask,
+    ChunkProof, Error, Prover, ProverVerifier, WrappedProof,
+    proof::ChunkProofMetadata,
+    task::{ProvingTask, chunk::ChunkProvingTask},
 };
 
 use super::AGG_STARK_PROVING_KEY;
@@ -34,6 +36,7 @@ impl ProverVerifier for ChunkProver {
 
     const EVM: bool = false;
 
+    #[instrument("ChunkProver::setup", skip_all, fields(path_exe, path_pk, cache_dir))]
     fn setup<P: AsRef<Path>>(path_exe: P, path_pk: P, cache_dir: Option<P>) -> Result<Self, Error> {
         let (app_committed_exe, app_pk) = Self::init(path_exe, path_pk)?;
 
@@ -64,6 +67,7 @@ impl ProverVerifier for ChunkProver {
         })
     }
 
+    #[instrument("ChunkProver::gen_proof_inner", skip_all, fields(task_id))]
     fn gen_proof_inner(&self, task: &Self::ProvingTask) -> Result<Self::Proof, Error> {
         let agg_stark_pk = AGG_STARK_PROVING_KEY
             .get()
@@ -77,6 +81,9 @@ impl ProverVerifier for ChunkProver {
         let mut stdin = StdIn::default();
         stdin.write_bytes(&serialized);
 
+        let task_id = task.identifier();
+
+        debug!(name: "generate_root_proof", ?task_id);
         let proof = Sdk
             .generate_root_proof(
                 Arc::clone(&self.app_pk),
@@ -86,13 +93,16 @@ impl ProverVerifier for ChunkProver {
             )
             .map_err(|e| Error::GenProof(e.to_string()))?;
 
+        debug!(name: "construct_metadata", ?task_id);
         let metadata = Self::metadata(task)?;
+
         let wrapped_proof = WrappedProof::new(metadata, proof);
 
         Ok(wrapped_proof)
     }
 
-    fn verify_proof(&self, proof: Self::Proof) -> Result<(), Error> {
+    #[instrument("ChunkProver::verify_proof", skip_all, fields(?metadata = proof.metadata))]
+    fn verify_proof(&self, proof: &Self::Proof) -> Result<(), Error> {
         let agg_stark_pk = AGG_STARK_PROVING_KEY
             .get()
             .ok_or(Error::VerifyProof(String::from(
