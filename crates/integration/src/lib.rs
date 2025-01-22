@@ -187,6 +187,9 @@ where
     <T::Prover as ProverVerifier>::ProvingTask: Clone,
     <T::Prover as ProverVerifier>::Proof: Clone,
 {
+    // Setup test-run directories.
+    T::setup()?;
+
     // Build the ELF binary from the circuit program.
     let elf = T::build()?;
 
@@ -226,6 +229,9 @@ where
     <T::Prover as ProverVerifier>::ProvingTask: Clone,
     <T::Prover as ProverVerifier>::Proof: Clone,
 {
+    // Setup test-run directories.
+    T::setup()?;
+
     // Build the ELF binary from the circuit program.
     let elf = T::build()?;
 
