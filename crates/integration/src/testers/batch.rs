@@ -9,7 +9,7 @@ impl ProverTester for BatchProverTester {
 
     const PATH_PROJECT_ROOT: &str = "./../circuits/batch-circuit";
 
-    const PREFIX: &str = "batch";
+    const ASSETS_DIR: &str = "batch";
 
     fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverVerifier>::ProvingTask> {
         todo!("BatchProverTester: gen_proving_task not implemented")
@@ -23,7 +23,7 @@ impl ProverTester for MultiBatchProverTester {
 
     const PATH_PROJECT_ROOT: &str = "./../circuits/batch-circuit";
 
-    const PREFIX: &str = "batch";
+    const ASSETS_DIR: &str = "batch";
 
     fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverVerifier>::ProvingTask> {
         unimplemented!()
