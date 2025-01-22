@@ -201,9 +201,7 @@ where
 
     // Setup prover.
     let path_assets = DIR_ASSETS.get().ok_or(eyre::eyre!("missing assets dir"))?;
-    let cache_dir = path_assets
-        .join(DIR_PROOFS)
-        .join(<T as ProverTester>::ASSETS_DIR);
+    let cache_dir = path_assets.join(DIR_PROOFS);
     std::fs::create_dir_all(&cache_dir)?;
     let prover = <T as ProverTester>::Prover::setup(&path_exe, &path_pk, Some(&cache_dir))?;
 
@@ -243,9 +241,7 @@ where
 
     // Setup prover.
     let path_assets = DIR_ASSETS.get().ok_or(eyre::eyre!("missing assets dir"))?;
-    let cache_dir = path_assets
-        .join(DIR_PROOFS)
-        .join(<T as ProverTester>::ASSETS_DIR);
+    let cache_dir = path_assets.join(DIR_PROOFS);
     std::fs::create_dir_all(&cache_dir)?;
     let prover = <T as ProverTester>::Prover::setup(&path_exe, &path_pk, Some(&cache_dir))?;
 
