@@ -6,6 +6,7 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
+bitcode.workspace = true
 serde.workspace = true
 itertools.workspace = true
 tiny-keccak.workspace = true
