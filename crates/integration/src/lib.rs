@@ -1,5 +1,9 @@
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    process,
+};
 
+use once_cell::sync::OnceCell;
 use openvm_build::GuestOptions;
 use openvm_sdk::{
     Sdk,
@@ -8,7 +12,8 @@ use openvm_sdk::{
 };
 use openvm_transpiler::elf::Elf;
 use scroll_zkvm_prover::{ProverVerifier, setup::read_app_config};
-use tracing::instrument;
+use tracing::{Level, instrument};
+use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::SubscriberInitExt};
 
 pub mod testers;
 
@@ -16,16 +21,25 @@ pub mod testers;
 const FEATURE_SCROLL: &str = "scroll";
 
 /// Path to store release assets, root directory of zkvm-prover repository.
-const DIR_OPENVM_ASSETS: &str = "./../../.openvm";
+const DIR_OUTPUT: &str = "./../../.output";
 
-/// Extension for app openvm config.
-const EXT_APP_CONFIG: &str = ".toml";
+/// Directory to store proofs on disc.
+const DIR_PROOFS: &str = "proofs";
 
-/// Extension for app exe.
-const EXT_APP_EXE: &str = ".vmexe";
+/// File descriptor for app openvm config.
+const FD_APP_CONFIG: &str = "openvm.toml";
 
-/// Extension for proving key.
-const EXT_APP_PK: &str = ".pk";
+/// File descriptor for app exe.
+const FD_APP_EXE: &str = "app.vmexe";
+
+/// File descriptor for proving key.
+const FD_APP_PK: &str = "app.pk";
+
+/// Environment variable used to set the test-run's output directory for assets.
+const ENV_OUTPUT_DIR: &str = "OUTPUT_DIR";
+
+/// Every test run will write assets to a new directory.
+static DIR_ASSETS: OnceCell<PathBuf> = OnceCell::new();
 
 /// Circuit that implements functionality required to run e2e tests.
 pub trait ProverTester {
@@ -36,7 +50,40 @@ pub trait ProverTester {
     const PATH_PROJECT_ROOT: &str;
 
     /// Prefix to use while naming app-specific data like app exe, app pk, etc.
-    const PREFIX: &str;
+    const ASSETS_DIR: &str;
+
+    /// Setup directory structure for the test suite.
+    fn setup() -> eyre::Result<()> {
+        // If user has set an output directory, use it.
+        let dir_output = if let Ok(env_dir) = std::env::var(ENV_OUTPUT_DIR) {
+            let dir = Path::new(&env_dir);
+            if std::fs::exists(dir).is_err() {
+                tracing::error!("OUTPUT_DIR={dir:?} not found");
+                process::exit(1);
+            }
+            let dir = dir.join(Self::ASSETS_DIR);
+            std::fs::create_dir_all(&dir)?;
+            dir
+        } else {
+            // Create the <OUTPUT>/<{ASSETS_DIR}-test-{now}>/{ASSETS_DIR} dir to dump
+            // assets from this test run.
+            let test_run = format!(
+                "{}-tests-{}",
+                Self::ASSETS_DIR,
+                chrono::Utc::now().format("%Y%m%d_%H%M%S"),
+            );
+            let dir = Path::new(DIR_OUTPUT).join(test_run).join(Self::ASSETS_DIR);
+            std::fs::create_dir_all(&dir)?;
+            dir
+        };
+
+        // Set the assets dir path for later use.
+        DIR_ASSETS
+            .set(dir_output)
+            .map_err(|dir| eyre::eyre!("could not set assets dir: {dir:?}"))?;
+
+        Ok(())
+    }
 
     /// Build the ELF binary from the circuit program.
     #[instrument("ProverTester::build", fields(project_root = Self::PATH_PROJECT_ROOT))]
@@ -53,14 +100,23 @@ pub trait ProverTester {
         fields(path_app_config, path_app_exe)
     )]
     fn transpile(elf: Elf) -> eyre::Result<(AppConfig<SdkVmConfig>, PathBuf)> {
-        let path_app_config =
-            Path::new(DIR_OPENVM_ASSETS).join(format!("{}{EXT_APP_CONFIG}", Self::PREFIX));
+        let path_assets = DIR_ASSETS.get().ok_or(eyre::eyre!("missing assets dir"))?;
+
+        // First read the app config specified in the project's root directory.
+        let path_app_config = Path::new(Self::PATH_PROJECT_ROOT).join(FD_APP_CONFIG);
         let app_config = read_app_config(&path_app_config)?;
+
+        // Copy the app config to assets directory for convenience of export/release.
+        //
+        // - <openvm-assets>/<assets-dir>/openvm.toml
+        let path_dup_app_config = path_assets.join(FD_APP_CONFIG);
+        std::fs::copy(&path_app_config, &path_dup_app_config)?;
+
+        // Transpile ELF to openvm executable.
         let app_exe = Sdk.transpile(elf, app_config.app_vm_config.transpiler())?;
 
         // Write exe to disc.
-        let path_app_exe =
-            Path::new(DIR_OPENVM_ASSETS).join(format!("{}{EXT_APP_EXE}", Self::PREFIX));
+        let path_app_exe = path_assets.join(FD_APP_EXE);
         write_exe_to_file(app_exe, &path_app_exe)?;
 
         Ok((app_config, path_app_exe))
@@ -69,11 +125,12 @@ pub trait ProverTester {
     /// Generate proving key and return path on disc.
     #[instrument("ProverTester::keygen", skip_all, fields(path_app_pk))]
     fn keygen(app_config: AppConfig<SdkVmConfig>) -> eyre::Result<PathBuf> {
+        let path_assets = DIR_ASSETS.get().ok_or(eyre::eyre!("missing assets dir"))?;
+
         let app_pk = Sdk.app_keygen(app_config)?;
 
         // Write proving key to disc.
-        let path_app_pk =
-            Path::new(Self::PATH_PROJECT_ROOT).join(format!("{}{EXT_APP_PK}", Self::PREFIX));
+        let path_app_pk = path_assets.join(FD_APP_PK);
         write_app_pk_to_file(app_pk, &path_app_pk)?;
 
         Ok(path_app_pk)
@@ -114,11 +171,19 @@ impl<T: Clone, P: Clone> ProveVerifyOutcome<T, P> {
 }
 
 /// Setup test environment
-pub fn setup() -> eyre::Result<()> {
-    tracing_subscriber::fmt()
-        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+pub fn setup_logger() -> eyre::Result<()> {
+    let filters = tracing_subscriber::filter::Targets::new()
+        .with_target("scroll_zkvm_prover", Level::INFO)
+        .with_target("scroll_zkvm_integration", Level::DEBUG);
+
+    let fmt_layer = tracing_subscriber::fmt::layer()
         .pretty()
-        .init();
+        .with_span_events(FmtSpan::CLOSE);
+
+    tracing_subscriber::registry()
+        .with(fmt_layer)
+        .with(filters)
+        .try_init()?;
 
     Ok(())
 }
@@ -141,6 +206,9 @@ where
     <T::Prover as ProverVerifier>::ProvingTask: Clone,
     <T::Prover as ProverVerifier>::Proof: Clone,
 {
+    // Setup test-run directories.
+    T::setup()?;
+
     // Build the ELF binary from the circuit program.
     let elf = T::build()?;
 
@@ -151,7 +219,10 @@ where
     let path_pk = T::keygen(app_config)?;
 
     // Setup prover.
-    let prover = <T as ProverTester>::Prover::setup(&path_exe, &path_pk, None)?;
+    let path_assets = DIR_ASSETS.get().ok_or(eyre::eyre!("missing assets dir"))?;
+    let cache_dir = path_assets.join(DIR_PROOFS);
+    std::fs::create_dir_all(&cache_dir)?;
+    let prover = <T as ProverTester>::Prover::setup(&path_exe, &path_pk, Some(&cache_dir))?;
 
     // Generate proving task for the circuit.
     let task = task.unwrap_or(T::gen_proving_task()?);
@@ -175,6 +246,9 @@ where
     <T::Prover as ProverVerifier>::ProvingTask: Clone,
     <T::Prover as ProverVerifier>::Proof: Clone,
 {
+    // Setup test-run directories.
+    T::setup()?;
+
     // Build the ELF binary from the circuit program.
     let elf = T::build()?;
 
@@ -185,7 +259,10 @@ where
     let path_pk = T::keygen(app_config)?;
 
     // Setup prover.
-    let prover = <T as ProverTester>::Prover::setup(&path_exe, &path_pk, None)?;
+    let path_assets = DIR_ASSETS.get().ok_or(eyre::eyre!("missing assets dir"))?;
+    let cache_dir = path_assets.join(DIR_PROOFS);
+    std::fs::create_dir_all(&cache_dir)?;
+    let prover = <T as ProverTester>::Prover::setup(&path_exe, &path_pk, Some(&cache_dir))?;
 
     // Generate proving task for the circuit.
     let tasks = tasks.map_or_else(|| T::gen_multi_proving_tasks(), |tasks| Ok(tasks.to_vec()))?;

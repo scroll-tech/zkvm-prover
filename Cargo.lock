@@ -6558,7 +6558,9 @@ dependencies = [
 name = "scroll-zkvm-integration"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "eyre",
+ "once_cell",
  "openvm-build",
  "openvm-circuit",
  "openvm-sdk",
