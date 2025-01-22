@@ -1,12 +1,14 @@
 [workspace]
 members = [
-  "crates/circuits/chunk-circuit",
+  #"crates/circuits/chunk-circuit",
   "crates/circuits/batch-circuit",
   "crates/circuits/bundle-circuit",
   "crates/circuits/types",
   "crates/prover",
   "crates/verifier",
   "crates/integration",
+  "crates/tools/generate-verifier-asm",
+  "crates/tools/flatten-root-proof",
 ]
 resolver = "2"
 
@@ -19,14 +21,25 @@ repository = "https://github.com/scroll-tech/zkvm-prover"
 version = "0.1.0"
 
 [workspace.dependencies]
-openvm = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
-openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
-openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
-openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
-openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
-openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
-openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
-openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
+openvm = { git = "https://github.com/scroll-tech/openvm.git", branch = "scroll-dev-0121" }
+openvm-algebra-complex-macros = { git = "https://github.com/scroll-tech/openvm.git", branch = "scroll-dev-0121" }
+openvm-algebra-guest = { git = "https://github.com/scroll-tech/openvm.git", branch = "scroll-dev-0121" }
+openvm-bigint-guest = { git = "https://github.com/scroll-tech/openvm.git", branch = "scroll-dev-0121" }
+openvm-native-compiler = { git = "https://github.com/scroll-tech/openvm", branch = "scroll-dev-0121" }
+openvm-native-recursion = { git = "https://github.com/scroll-tech/openvm", branch = "scroll-dev-0121" }
+openvm-ecc-guest = { git = "https://github.com/scroll-tech/openvm.git", branch = "scroll-dev-0121" }
+openvm-instructions ={ git = "https://github.com/scroll-tech/openvm", branch = "scroll-dev-0121" }
+openvm-keccak256-guest = { git = "https://github.com/scroll-tech/openvm.git", branch = "scroll-dev-0121" }
+openvm-pairing-guest = { git = "https://github.com/scroll-tech/openvm.git", branch = "scroll-dev-0121" }
+openvm-rv32im-guest = { git = "https://github.com/scroll-tech/openvm.git", branch = "scroll-dev-0121" }
+openvm-rv32im-transpiler = { git = "https://github.com/scroll-tech/openvm", branch = "scroll-dev-0121" }
+openvm-sdk = { git = "https://github.com/scroll-tech/openvm", branch = "scroll-dev-0121", default-features = false}
+openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", rev = "47a0bda" }
+
+bitcode = { version = "0.6.3", default-features = false, features = ["serde", "derive"] }
+derivative = "2.2.0"
+halo2curves-axiom = { version = "0.5.3" }
+p3-field = { git = "https://github.com/Plonky3/Plonky3.git", rev = "b0591e9" }
 rkyv = "0.8"
 tiny-keccak = "2.0"
 itertools = "0.14"
@@ -36,6 +49,14 @@ alloy-serde = { version = "0.8", default-features = false }
 sbv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
 tracing = "0.1"
 tracing-subscriber = "0.3"
+serde_json = { version = "1.0" }
+serde_with = "3.11.0"
+snark-verifier-sdk = { git = "https://github.com/axiom-crypto/snark-verifier", branch = "zkvm-v0.1", default-features = false, features = [
+    "loader_halo2",
+    "halo2-axiom",
+    "display",
+] }
+toml = "0.8.14"
 
 scroll-zkvm-prover = { path = "crates/prover" }
 scroll-zkvm-circuit-input-types = { path = "crates/circuits/types" }
