@@ -13,7 +13,7 @@ use tracing::info;
 
 #[test]
 fn batch_simple_execution() -> eyre::Result<()> {
-    setup()?;
+    setup_logger()?;
 
     // read task
     let task : BatchProvingTask = read_json("testdata/batch-task-with-blob.json")?;
