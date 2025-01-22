@@ -6574,7 +6574,6 @@ dependencies = [
 name = "scroll-zkvm-prover"
 version = "0.1.0"
 dependencies = [
- "alloy-primitives",
  "git-version",
  "once_cell",
  "openvm-circuit",
