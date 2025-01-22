@@ -66,7 +66,7 @@ dependencies = [
  "alloy-rlp",
  "num_enum",
  "serde",
- "strum",
+ "strum 0.26.3",
 ]
 
 [[package]]
@@ -348,7 +348,7 @@ dependencies = [
  "alloy-serde",
  "derive_more 1.0.0",
  "serde",
- "strum",
+ "strum 0.26.3",
 ]
 
 [[package]]
@@ -418,7 +418,7 @@ checksum = "620ae5eee30ee7216a38027dec34e0585c55099f827f92f50d11e3d2d3a4a954"
 dependencies = [
  "alloy-sol-macro-input",
  "const-hex",
- "heck",
+ "heck 0.5.0",
  "indexmap 2.7.0",
  "proc-macro-error2",
  "proc-macro2",
@@ -436,7 +436,7 @@ checksum = "ad9f7d057e00f8c5994e4ff4492b76532c51ead39353aa2ed63f8c50c0f4d52e"
 dependencies = [
  "const-hex",
  "dunce",
- "heck",
+ "heck 0.5.0",
  "proc-macro2",
  "quote",
  "syn 2.0.96",
@@ -829,6 +829,22 @@ checksum = "8c3c1a368f70d6cf7302d78f8f7093da241fb8e8807c05cc9e51a125895a6d5b"
 [[package]]
 name = "batch-circuit"
 version = "0.1.0"
+dependencies = [
+ "alloy-primitives",
+ "bls12_381 0.8.0",
+ "ff 0.13.0",
+ "itertools 0.14.0",
+ "openvm 0.2.0-alpha (git+https://github.com/openvm-org/openvm.git?branch=main)",
+ "openvm-algebra-guest 0.2.0-alpha (git+https://github.com/openvm-org/openvm.git?branch=main)",
+ "openvm-keccak256-guest 0.2.0-alpha (git+https://github.com/openvm-org/openvm.git?branch=main)",
+ "openvm-pairing-guest 0.2.0-alpha (git+https://github.com/openvm-org/openvm.git?branch=main)",
+ "rkyv",
+ "sbv",
+ "scroll-zkvm-prover",
+ "serde",
+ "tiny-keccak",
+ "vm-zstd",
+]
 
 [[package]]
 name = "bincode"
@@ -898,6 +914,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "bitstream-io"
+version = "2.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6099cdc01846bc367c4e7dd630dc5966dccf36b652fae7a74e17b640411a91b2"
+
+[[package]]
 name = "bitvec"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -961,6 +983,19 @@ dependencies = [
  "ff 0.12.1",
  "group 0.12.1",
  "pairing 0.22.0",
+ "rand_core",
+ "subtle",
+]
+
+[[package]]
+name = "bls12_381"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d7bc6d6292be3a19e6379786dac800f551e5865a5bb51ebbe3064ab80433f403"
+dependencies = [
+ "ff 0.13.0",
+ "group 0.13.0",
+ "pairing 0.23.0",
  "rand_core",
  "subtle",
 ]
@@ -1213,7 +1248,7 @@ version = "4.5.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "54b755194d6389280185988721fffba69495eed5ee9feeee9a599b53db80318c"
 dependencies = [
- "heck",
+ "heck 0.5.0",
  "proc-macro2",
  "quote",
  "syn 2.0.96",
@@ -2219,6 +2254,12 @@ dependencies = [
 
 [[package]]
 name = "heck"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "95505c38b4572b2d910cecb0281560f54b440a19336cbbcb27bf6ce6adc6f5a8"
+
+[[package]]
+name = "heck"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
@@ -2555,7 +2596,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a575df5f985fe1cd5b2b05664ff6accfc46559032b954529fd225a2168d27b0f"
 dependencies = [
  "bitvec",
- "bls12_381",
+ "bls12_381 0.7.1",
  "ff 0.12.1",
  "group 0.12.1",
  "rand_core",
@@ -3192,7 +3233,7 @@ dependencies = [
  "serde",
  "serde-big-array",
  "serde_with",
- "strum",
+ "strum 0.26.3",
  "tracing",
 ]
 
@@ -3229,7 +3270,7 @@ dependencies = [
  "openvm-platform 0.2.0-alpha (git+https://github.com/openvm-org/openvm.git?branch=main)",
  "serde",
  "serde-big-array",
- "strum_macros",
+ "strum_macros 0.26.4",
 ]
 
 [[package]]
@@ -3245,7 +3286,7 @@ dependencies = [
  "openvm-platform 0.2.0-alpha (git+https://github.com/scroll-tech/openvm?branch=scroll-dev-0116)",
  "serde",
  "serde-big-array",
- "strum_macros",
+ "strum_macros 0.26.4",
 ]
 
 [[package]]
@@ -3279,8 +3320,8 @@ dependencies = [
  "openvm-stark-backend",
  "openvm-transpiler",
  "rrs-lib",
- "strum",
- "strum_macros",
+ "strum 0.26.3",
+ "strum_macros 0.26.4",
 ]
 
 [[package]]
@@ -3315,7 +3356,7 @@ dependencies = [
  "openvm 0.2.0-alpha (git+https://github.com/openvm-org/openvm.git?branch=main)",
  "openvm-platform 0.2.0-alpha (git+https://github.com/openvm-org/openvm.git?branch=main)",
  "serde",
- "strum_macros",
+ "strum_macros 0.26.4",
 ]
 
 [[package]]
@@ -3328,7 +3369,7 @@ dependencies = [
  "openvm 0.2.0-alpha (git+https://github.com/scroll-tech/openvm?branch=scroll-dev-0116)",
  "openvm-platform 0.2.0-alpha (git+https://github.com/scroll-tech/openvm?branch=scroll-dev-0116)",
  "serde",
- "strum_macros",
+ "strum_macros 0.26.4",
 ]
 
 [[package]]
@@ -3343,7 +3384,7 @@ dependencies = [
  "openvm-stark-backend",
  "openvm-transpiler",
  "rrs-lib",
- "strum",
+ "strum 0.26.3",
 ]
 
 [[package]]
@@ -3484,7 +3525,7 @@ dependencies = [
  "openvm-stark-backend",
  "serde",
  "serde_with",
- "strum",
+ "strum 0.26.3",
 ]
 
 [[package]]
@@ -3510,7 +3551,7 @@ dependencies = [
  "openvm-rv32im-guest 0.2.0-alpha (git+https://github.com/openvm-org/openvm.git?branch=main)",
  "rand",
  "serde",
- "strum_macros",
+ "strum_macros 0.26.4",
 ]
 
 [[package]]
@@ -3536,7 +3577,7 @@ dependencies = [
  "openvm-rv32im-guest 0.2.0-alpha (git+https://github.com/scroll-tech/openvm?branch=scroll-dev-0116)",
  "rand",
  "serde",
- "strum_macros",
+ "strum_macros 0.26.4",
 ]
 
 [[package]]
@@ -3570,7 +3611,7 @@ dependencies = [
  "openvm-stark-backend",
  "openvm-transpiler",
  "rrs-lib",
- "strum",
+ "strum 0.26.3",
 ]
 
 [[package]]
@@ -3586,8 +3627,8 @@ dependencies = [
  "openvm-instructions-derive",
  "openvm-stark-backend",
  "serde",
- "strum",
- "strum_macros",
+ "strum 0.26.3",
+ "strum_macros 0.26.4",
 ]
 
 [[package]]
@@ -3624,7 +3665,7 @@ dependencies = [
  "rand",
  "serde",
  "serde-big-array",
- "strum",
+ "strum 0.26.3",
  "tiny-keccak",
  "tracing",
 ]
@@ -3660,7 +3701,7 @@ dependencies = [
  "openvm-stark-backend",
  "openvm-transpiler",
  "rrs-lib",
- "strum",
+ "strum 0.26.3",
 ]
 
 [[package]]
@@ -3721,7 +3762,7 @@ dependencies = [
  "rand",
  "serde",
  "serde-big-array",
- "strum",
+ "strum 0.26.3",
  "tracing",
 ]
 
@@ -3743,8 +3784,8 @@ dependencies = [
  "openvm-stark-sdk",
  "serde",
  "snark-verifier-sdk",
- "strum",
- "strum_macros",
+ "strum 0.26.3",
+ "strum_macros 0.26.4",
  "zkhash",
 ]
 
@@ -3822,7 +3863,7 @@ dependencies = [
  "openvm-stark-backend",
  "rand",
  "serde",
- "strum",
+ "strum 0.26.3",
 ]
 
 [[package]]
@@ -3831,6 +3872,7 @@ version = "0.2.0-alpha"
 source = "git+https://github.com/openvm-org/openvm.git?branch=main#fc90b5db6660c02f83763a7ca15ca10a43d7513b"
 dependencies = [
  "group 0.13.0",
+ "halo2curves-axiom",
  "hex-literal",
  "itertools 0.13.0",
  "lazy_static",
@@ -3846,7 +3888,7 @@ dependencies = [
  "openvm-rv32im-guest 0.2.0-alpha (git+https://github.com/openvm-org/openvm.git?branch=main)",
  "rand",
  "serde",
- "strum_macros",
+ "strum_macros 0.26.4",
 ]
 
 [[package]]
@@ -3871,7 +3913,7 @@ dependencies = [
  "openvm-rv32im-guest 0.2.0-alpha (git+https://github.com/scroll-tech/openvm?branch=scroll-dev-0116)",
  "rand",
  "serde",
- "strum_macros",
+ "strum_macros 0.26.4",
 ]
 
 [[package]]
@@ -3885,7 +3927,7 @@ dependencies = [
  "openvm-stark-backend",
  "openvm-transpiler",
  "rrs-lib",
- "strum",
+ "strum 0.26.3",
 ]
 
 [[package]]
@@ -3897,7 +3939,7 @@ dependencies = [
  "libm",
  "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?branch=main)",
  "stability",
- "strum_macros",
+ "strum_macros 0.26.4",
 ]
 
 [[package]]
@@ -3909,7 +3951,7 @@ dependencies = [
  "libm",
  "openvm-custom-insn 0.1.0 (git+https://github.com/scroll-tech/openvm?branch=scroll-dev-0116)",
  "stability",
- "strum_macros",
+ "strum_macros 0.26.4",
 ]
 
 [[package]]
@@ -3974,7 +4016,7 @@ dependencies = [
  "rand",
  "serde",
  "serde-big-array",
- "strum",
+ "strum 0.26.3",
  "tracing",
 ]
 
@@ -3984,7 +4026,7 @@ version = "0.2.0-alpha"
 source = "git+https://github.com/openvm-org/openvm.git?branch=main#fc90b5db6660c02f83763a7ca15ca10a43d7513b"
 dependencies = [
  "openvm-platform 0.2.0-alpha (git+https://github.com/openvm-org/openvm.git?branch=main)",
- "strum_macros",
+ "strum_macros 0.26.4",
 ]
 
 [[package]]
@@ -3993,7 +4035,7 @@ version = "0.2.0-alpha"
 source = "git+https://github.com/scroll-tech/openvm?branch=scroll-dev-0116#6fb83df8f1d17f86fef6ed9f7ee0e9272bf45429"
 dependencies = [
  "openvm-platform 0.2.0-alpha (git+https://github.com/scroll-tech/openvm?branch=scroll-dev-0116)",
- "strum_macros",
+ "strum_macros 0.26.4",
 ]
 
 [[package]]
@@ -4008,7 +4050,7 @@ dependencies = [
  "openvm-transpiler",
  "rrs-lib",
  "serde",
- "strum",
+ "strum 0.26.3",
  "tracing",
 ]
 
@@ -4087,7 +4129,7 @@ dependencies = [
  "rand",
  "serde",
  "sha2",
- "strum",
+ "strum 0.26.3",
 ]
 
 [[package]]
@@ -4121,7 +4163,7 @@ dependencies = [
  "openvm-stark-backend",
  "openvm-transpiler",
  "rrs-lib",
- "strum",
+ "strum 0.26.3",
 ]
 
 [[package]]
@@ -4195,7 +4237,7 @@ dependencies = [
  "openvm-platform 0.2.0-alpha (git+https://github.com/scroll-tech/openvm?branch=scroll-dev-0116)",
  "openvm-stark-backend",
  "rrs-lib",
- "strum",
+ "strum 0.26.3",
  "thiserror 1.0.69",
  "tracing",
 ]
@@ -5249,7 +5291,7 @@ dependencies = [
  "reth-trie-common",
  "rustc-hash 2.1.0",
  "serde",
- "strum",
+ "strum 0.26.3",
  "sysinfo",
  "thiserror 2.0.11",
 ]
@@ -5714,7 +5756,7 @@ dependencies = [
  "reth-storage-errors",
  "reth-trie",
  "reth-trie-db",
- "strum",
+ "strum 0.26.3",
  "tokio",
  "tracing",
 ]
@@ -5928,7 +5970,7 @@ dependencies = [
  "alloy-primitives",
  "derive_more 1.0.0",
  "serde",
- "strum",
+ "strum 0.26.3",
 ]
 
 [[package]]
@@ -6521,6 +6563,7 @@ dependencies = [
 name = "scroll-zkvm-prover"
 version = "0.1.0"
 dependencies = [
+ "alloy-primitives",
  "git-version",
  "once_cell",
  "openvm-circuit",
@@ -6915,11 +6958,30 @@ checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
 
 [[package]]
 name = "strum"
+version = "0.25.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "290d54ea6f91c969195bdbcd7442c8c2a2ba87da8bf60a7ee86a235d4bc1e125"
+
+[[package]]
+name = "strum"
 version = "0.26.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8fec0f0aef304996cf250b31b5a10dee7980c85da9d759361292b8bca5a18f06"
 dependencies = [
- "strum_macros",
+ "strum_macros 0.26.4",
+]
+
+[[package]]
+name = "strum_macros"
+version = "0.25.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "23dc1fa9ac9c169a78ba62f0b841814b7abae11bdd047b9c58f893439e309ea0"
+dependencies = [
+ "heck 0.4.1",
+ "proc-macro2",
+ "quote",
+ "rustversion",
+ "syn 2.0.96",
 ]
 
 [[package]]
@@ -6928,7 +6990,7 @@ version = "0.26.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4c6bee85a5a24955dc440386795aa378cd9cf82acd5f764469152d2270e581be"
 dependencies = [
- "heck",
+ "heck 0.5.0",
  "proc-macro2",
  "quote",
  "rustversion",
@@ -7561,6 +7623,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
+name = "vm-zstd"
+version = "0.1.0"
+source = "git+https://github.com/scroll-tech/rust-zstd-decompressor.git?tag=v0.1.0#116712d1b6e37f7631c57e1e9311b68c05f16132"
+dependencies = [
+ "anyhow",
+ "bitstream-io",
+ "itertools 0.11.0",
+ "serde",
+ "strum 0.25.0",
+ "strum_macros 0.25.3",
+]
+
+[[package]]
 name = "wait-timeout"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8046,7 +8121,7 @@ dependencies = [
  "ark-std 0.4.0",
  "bitvec",
  "blake2",
- "bls12_381",
+ "bls12_381 0.7.1",
  "byteorder",
  "cfg-if",
  "group 0.12.1",
