@@ -1,4 +1,7 @@
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    process,
+};
 
 use once_cell::sync::OnceCell;
 use openvm_build::GuestOptions;
@@ -52,8 +55,15 @@ pub trait ProverTester {
     /// Setup directory structure for the test suite.
     fn setup() -> eyre::Result<()> {
         // If user has set an output directory, use it.
-        let dir_output = if let Ok(dir) = std::env::var(ENV_OUTPUT_DIR) {
-            Path::new(&dir).join(Self::ASSETS_DIR)
+        let dir_output = if let Ok(env_dir) = std::env::var(ENV_OUTPUT_DIR) {
+            let dir = Path::new(&env_dir);
+            if std::fs::exists(dir).is_err() {
+                tracing::error!("OUTPUT_DIR={dir:?} not found");
+                process::exit(1);
+            }
+            let dir_assets = dir.join(Self::ASSETS_DIR);
+            std::fs::create_dir_all(dir_assets)?;
+            dir.into()
         } else {
             // Create the <OUTPUT>/<{ASSETS_DIR}-test-{now}>/{ASSETS_DIR} dir to dump
             // assets from this test run.
