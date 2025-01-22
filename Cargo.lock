@@ -6574,7 +6574,11 @@ dependencies = [
 name = "scroll-zkvm-prover"
 version = "0.1.0"
 dependencies = [
+ "alloy-primitives",
+ "base64",
+ "circuit-input-types",
  "git-version",
+ "hex",
  "once_cell",
  "openvm-circuit",
  "openvm-native-recursion",
