@@ -3,9 +3,13 @@ use core::iter::Iterator;
 use alloy_primitives::B256 as H256;
 use itertools::Itertools;
 
-pub use circuit_input_types::batch::{MAX_AGG_CHUNKS, ArchivedBatchTask, ArchivedBatchHeaderV3, BatchHeaderV3};
-use super::{chunk::{public_input_hash, ChunkInfo}, blob_data::{BatchData, BatchDataHash, keccak256}, 
-    blob_consistency::BlobConsistency, 
+use super::{
+    blob_consistency::BlobConsistency,
+    blob_data::{BatchData, BatchDataHash, keccak256},
+    chunk::{ChunkInfo, public_input_hash},
+};
+pub use circuit_input_types::batch::{
+    ArchivedBatchHeaderV3, ArchivedBatchTask, BatchHeaderV3, MAX_AGG_CHUNKS,
 };
 use vm_zstd::process;
 
@@ -16,8 +20,12 @@ pub trait BatchHeader {
 }
 
 impl BatchHeader for BatchHeaderV3 {
-    fn version(&self) -> u8 { self.version }
-    fn index(&self) -> u64 { self.batch_index }
+    fn version(&self) -> u8 {
+        self.version
+    }
+    fn index(&self) -> u64 {
+        self.batch_index
+    }
 
     fn batch_hash(&self) -> H256 {
         // the current batch hash is build as
@@ -51,18 +59,22 @@ impl BatchHeader for BatchHeaderV3 {
 }
 
 impl BatchHeader for ArchivedBatchHeaderV3 {
-    fn version(&self) -> u8 { self.version }
-    fn index(&self) -> u64 { self.batch_index.into() }
+    fn version(&self) -> u8 {
+        self.version
+    }
+    fn index(&self) -> u64 {
+        self.batch_index.into()
+    }
 
     fn batch_hash(&self) -> H256 {
-        let batch_index : u64 = self.batch_index.into();
-        let l1_message_popped : u64 = self.l1_message_popped.into();
-        let total_l1_message_popped : u64 = self.total_l1_message_popped.into();
-        let data_hash : H256 = self.data_hash.into();
-        let blob_versioned_hash : H256 = self.blob_versioned_hash.into();
-        let parent_batch_hash : H256 = self.parent_batch_hash.into();
-        let last_block_timestamp : u64 = self.last_block_timestamp.into();
-        let blob_data_proof : [H256; 2] = self.blob_data_proof.map(|h|h.into());
+        let batch_index: u64 = self.batch_index.into();
+        let l1_message_popped: u64 = self.l1_message_popped.into();
+        let total_l1_message_popped: u64 = self.total_l1_message_popped.into();
+        let data_hash: H256 = self.data_hash.into();
+        let blob_versioned_hash: H256 = self.blob_versioned_hash.into();
+        let parent_batch_hash: H256 = self.parent_batch_hash.into();
+        let last_block_timestamp: u64 = self.last_block_timestamp.into();
+        let blob_data_proof: [H256; 2] = self.blob_data_proof.map(|h| h.into());
         let batch_hash_preimage = [
             vec![self.version].as_slice(),
             batch_index.to_be_bytes().as_ref(),
@@ -96,9 +108,8 @@ impl KnownLastBatchHash for ArchivedBatchHeaderV3 {
     }
 }
 
-
 /// generic for batch header types which also contain information of its parent
-pub struct AsLastBatchHeader<'a, T: KnownLastBatchHash + BatchHeader> (pub &'a T);
+pub struct AsLastBatchHeader<'a, T: KnownLastBatchHash + BatchHeader>(pub &'a T);
 
 impl<'a, T: KnownLastBatchHash + BatchHeader> BatchHeader for AsLastBatchHeader<'a, T> {
     fn batch_hash(&self) -> H256 {
@@ -142,51 +153,49 @@ pub struct PIBuilder {
     // pub(crate) blob_bytes: Vec<u8>,
 }
 
-struct ChunksSeq<'a> (&'a ChunkInfo, &'a ChunkInfo);
+struct ChunksSeq<'a>(&'a ChunkInfo, &'a ChunkInfo);
 
 impl<'a> ChunksSeq<'a> {
-    pub fn prev_state_root(&self) -> H256 { self.0.prev_state_root}
-    pub fn post_state_root(&self) -> H256 { self.1.post_state_root}
-    pub fn withdraw_root(&self) -> Option<H256> { self.1.withdraw_root}
-    pub fn chain_id(&self) -> u64 { self.1.chain_id}
+    pub fn prev_state_root(&self) -> H256 {
+        self.0.prev_state_root
+    }
+    pub fn post_state_root(&self) -> H256 {
+        self.1.post_state_root
+    }
+    pub fn withdraw_root(&self) -> Option<H256> {
+        self.1.withdraw_root
+    }
+    pub fn chain_id(&self) -> u64 {
+        self.1.chain_id
+    }
 
     // verify the input chunks
     pub fn new(chunks_info: impl Iterator<Item = &'a ChunkInfo> + Clone) -> Self {
-
         let first = chunks_info.clone().nth(0);
-        let last = chunks_info
-        .reduce(|prev, next|{
+        let last = chunks_info.reduce(|prev, next| {
             assert_eq!(prev.post_state_root, next.prev_state_root);
             assert_eq!(prev.chain_id, next.chain_id);
             next
         });
 
-        Self(
-            first.expect("at least one"),
-            last.expect("at least one"),
-        )
+        Self(first.expect("at least one"), last.expect("at least one"))
     }
 }
 
 impl PIBuilder {
-
     fn build_chunks_pi<'a>(
-        chunks_info: impl Iterator<Item = &'a ChunkInfo>, 
-        tx_bytes_digests: &[H256]
+        chunks_info: impl Iterator<Item = &'a ChunkInfo>,
+        tx_bytes_digests: &[H256],
     ) -> Vec<H256> {
-
         chunks_info
-        .zip_eq(tx_bytes_digests)
-        .map(|(chunk, tx_bytes_digest)|{
-            public_input_hash(&chunk, tx_bytes_digest)
-        })
-        .collect()
-
+            .zip_eq(tx_bytes_digests)
+            .map(|(chunk, tx_bytes_digest)| public_input_hash(&chunk, tx_bytes_digest))
+            .collect()
     }
 
     /// Build PI with batch header encoded with v3
     /// It require some l1 message information obtained from block traces
-    pub fn construct_with_header_v3<'a, const N_MAX_CHUNKS: usize> (
+    pub fn construct_with_header_v3<'a, const N_MAX_CHUNKS: usize>(
         last_header: impl BatchHeader,
         chunks_info: impl Iterator<Item = &'a ChunkInfo> + Clone,
         blob_bytes: &[u8],
@@ -195,13 +204,16 @@ impl PIBuilder {
         total_l1_message_popped: u64,
         last_block_timestamp: u64,
     ) -> Self {
-
         println!("constructing PI with header v3 protocol");
 
         // handling blob data
         let batch_data = if blob_bytes[0] & 1 == 1 {
             let decoded_bytes = process(&blob_bytes[1..]).unwrap().decoded_data;
-            println!("decoded blob bytes {} -> {}", blob_bytes.len(), decoded_bytes.len());
+            println!(
+                "decoded blob bytes {} -> {}",
+                blob_bytes.len(),
+                decoded_bytes.len()
+            );
             BatchData::from_blob_data(&decoded_bytes, N_MAX_CHUNKS)
         } else {
             println!("direct use blob bytes {}", blob_bytes.len());
@@ -210,12 +222,16 @@ impl PIBuilder {
 
         let data_hash_helper = BatchDataHash::<N_MAX_CHUNKS>::from(&batch_data);
 
-        let batch_data_hash_preimage = chunks_info.clone()
+        let batch_data_hash_preimage = chunks_info
+            .clone()
             .flat_map(|chunk_info| chunk_info.data_hash.0)
             .collect::<Vec<_>>();
         let batch_data_hash = keccak256(batch_data_hash_preimage);
 
-        println!("calculated batch_data_hash {:?}", H256::from(batch_data_hash));
+        println!(
+            "calculated batch_data_hash {:?}",
+            H256::from(batch_data_hash)
+        );
 
         let blob_consistency = BlobConsistency::new(blob_bytes);
         let challenge_digest = data_hash_helper.get_challenge_digest(blob_versioned_hash);
@@ -240,7 +256,6 @@ impl PIBuilder {
         let batch_hash = batch_header.batch_hash();
         println!("re construct batch header for batch hash {:?}", batch_hash);
 
-
         let chunks_seq = ChunksSeq::new(chunks_info.clone());
 
         Self {
@@ -251,7 +266,5 @@ impl PIBuilder {
             chain_id: chunks_seq.chain_id(),
             current_withdraw_root: chunks_seq.withdraw_root().unwrap_or_default(),
         }
-
     }
-
 }

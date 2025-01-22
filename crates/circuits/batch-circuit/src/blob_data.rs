@@ -1,15 +1,14 @@
 use core::iter::Iterator;
 
-use alloy_primitives::{Address, BlockNumber, Bloom, Bytes, B256 as H256, B64, U256};
-use tiny_keccak::{Hasher, Keccak};
+use alloy_primitives::{Address, B64, B256 as H256, BlockNumber, Bloom, Bytes, U256};
 use itertools::Itertools;
+use tiny_keccak::{Hasher, Keccak};
 /// Helper struct for the Batch Data.
 /// It represent the flattened L2 signed transaction data for each chunk
 #[derive(Clone, Debug, Default)]
-pub struct BatchData (pub Vec<Vec<u8>>);
+pub struct BatchData(pub Vec<Vec<u8>>);
 
-
-/// Helper to generate the required challenge base on the constant of protocol 
+/// Helper to generate the required challenge base on the constant of protocol
 #[derive(Clone, Debug, Default)]
 pub struct BatchDataHash<const N_MAX_CHUNKS: usize> {
     pub chunk_data_digest: Vec<H256>,
@@ -31,7 +30,6 @@ pub(crate) fn keccak256<T: AsRef<[u8]>>(bytes: T) -> [u8; 32] {
 }
 
 impl BatchData {
-
     /// The number of bytes in Blob Data to represent the "blob metadata" section: a u16 to
     /// represent the size of chunks and max_chunks * u32 to represent chunk sizes
     pub fn n_bytes_metadata(max_chunks: usize) -> usize {
@@ -52,12 +50,12 @@ impl BatchData {
             .iter()
             .fold(0usize, |acc, &d| acc * 256usize + d as usize);
 
-        let chunk_size_bytes = metadata_bytes[N_BYTES_NUM_CHUNKS..].iter().chunks(N_BYTES_CHUNK_SIZE);
+        let chunk_size_bytes = metadata_bytes[N_BYTES_NUM_CHUNKS..]
+            .iter()
+            .chunks(N_BYTES_CHUNK_SIZE);
         let chunk_lens = chunk_size_bytes
             .into_iter()
-            .map(|chunk_bytes| {
-                chunk_bytes.fold(0usize, |acc, &d| acc * 256usize + d as usize)
-            })
+            .map(|chunk_bytes| chunk_bytes.fold(0usize, |acc, &d| acc * 256usize + d as usize))
             .take(valid_chunks);
 
         // let calculated_len = chunk_lens.sum::<usize>();
@@ -67,13 +65,18 @@ impl BatchData {
         // );
 
         // reconstruct segments
-        let (segmented_batch_data, final_bytes) = 
-        chunk_lens.fold((Vec::new(), batch_bytes), |(mut datas, rest_bytes), size|{
-            datas.push(Vec::from(&rest_bytes[..size]));
-            (datas, &rest_bytes[size..])
-        });
+        let (segmented_batch_data, final_bytes) = chunk_lens.fold(
+            (Vec::new(), batch_bytes),
+            |(mut datas, rest_bytes), size| {
+                datas.push(Vec::from(&rest_bytes[..size]));
+                (datas, &rest_bytes[size..])
+            },
+        );
 
-        assert!(final_bytes.is_empty(), "chunk segmentation len must add up to the correct value");
+        assert!(
+            final_bytes.is_empty(),
+            "chunk segmentation len must add up to the correct value"
+        );
 
         Self(segmented_batch_data)
     }
@@ -81,7 +84,7 @@ impl BatchData {
     /// Construct BatchData from tx_bytes (generally it is recorded in ChunkInfo)
     /// This method is used OUTSIDE OF zkvm to prepare for blob data
     pub fn new<'a>(tx_bytes: impl Iterator<Item = &'a [u8]>) -> Self {
-        Self (tx_bytes.map(Vec::from).collect())
+        Self(tx_bytes.map(Vec::from).collect())
     }
 
     /// Get the blob bytes that encode the batch's metadata.
@@ -96,14 +99,15 @@ impl BatchData {
     /// - num_valid_chunks is u16
     /// - each chunk_size is u32
     pub fn metadata_bytes<const N_MAX_CHUNKS: usize>(&self) -> Vec<u8> {
-
         let mut ret = Vec::from((self.0.len() as u16).to_be_bytes());
-        for bytes in self.0.iter()
-            .map(|chunk_byte|chunk_byte.len())
+        for bytes in self
+            .0
+            .iter()
+            .map(|chunk_byte| chunk_byte.len())
             .chain(std::iter::repeat(0))
-            .map(|chunk_size|(chunk_size as u32).to_be_bytes())
-            .take(N_MAX_CHUNKS){
-
+            .map(|chunk_size| (chunk_size as u32).to_be_bytes())
+            .take(N_MAX_CHUNKS)
+        {
             ret.extend_from_slice(&bytes);
         }
 
@@ -113,15 +117,11 @@ impl BatchData {
     /// Turn into the batch data bytes, blob data is compressed from metadata_bytes | batch_data_bytes
     pub fn to_batch_data_bytes<const N_MAX_CHUNKS: usize>(self) -> Vec<u8> {
         let metadata_bytes = self.metadata_bytes::<N_MAX_CHUNKS>();
-        self.0.into_iter().fold(
-            metadata_bytes,
-            |mut acc, b|{
-                acc.extend_from_slice(&b);
-                acc
-            }
-        )
+        self.0.into_iter().fold(metadata_bytes, |mut acc, b| {
+            acc.extend_from_slice(&b);
+            acc
+        })
     }
-
 }
 
 /// The number data bytes we pack each BLS12-381 scalar into. The most-significant byte is 0.
@@ -134,10 +134,8 @@ const N_BYTES_NUM_CHUNKS: usize = 2;
 const N_BYTES_CHUNK_SIZE: usize = 4;
 
 impl<const N_MAX_CHUNKS: usize> BatchDataHash<N_MAX_CHUNKS> {
-
     /// Get the preimage of the challenge digest.
     pub(crate) fn get_challenge_digest_preimage(&self, versioned_hash: H256) -> Vec<u8> {
-
         // preimage =
         //     metadata_digest ||
         //     chunk[0].chunk_data_digest || ...
@@ -148,10 +146,12 @@ impl<const N_MAX_CHUNKS: usize> BatchDataHash<N_MAX_CHUNKS> {
         // chunk_data_digest.
         let mut preimage = Vec::from(keccak256(&self.meta_data));
         let last_digest = self.chunk_data_digest.last().expect("at least we have one");
-        for chunk_digest in 
-            self.chunk_data_digest.iter()
+        for chunk_digest in self
+            .chunk_data_digest
+            .iter()
             .chain(std::iter::repeat(last_digest))
-            .take(N_MAX_CHUNKS) {
+            .take(N_MAX_CHUNKS)
+        {
             preimage.extend_from_slice(chunk_digest.as_slice());
         }
         preimage.extend_from_slice(versioned_hash.as_slice());
@@ -165,14 +165,14 @@ impl<const N_MAX_CHUNKS: usize> BatchDataHash<N_MAX_CHUNKS> {
         let challenge_digest = keccak256(self.get_challenge_digest_preimage(versioned_hash));
         H256::from(&challenge_digest)
     }
-
 }
 
 impl<const N_MAX_CHUNKS: usize> From<&BatchData> for BatchDataHash<N_MAX_CHUNKS> {
     fn from(batch_data: &BatchData) -> Self {
-
-        let chunk_data_digest = batch_data.0
-            .iter().map(|bytes|H256::from(keccak256(bytes)))
+        let chunk_data_digest = batch_data
+            .0
+            .iter()
+            .map(|bytes| H256::from(keccak256(bytes)))
             .collect();
 
         Self {
@@ -192,7 +192,6 @@ pub struct BlobData {
 //     fn from(chunks: &BlobData) -> Self {
 //     }
 // }
-
 
 // impl<const N_SNARKS: usize> From<&BatchHash<N_SNARKS>> for BatchData<N_SNARKS> {
 //     fn from(batch_hash: &BatchHash<N_SNARKS>) -> Self {

@@ -1,6 +1,6 @@
 use core::unimplemented;
 
-use alloy_primitives::{Address, BlockNumber, Bloom, Bytes, B256 as H256, B64, U256};
+use alloy_primitives::{Address, B64, B256 as H256, BlockNumber, Bloom, Bytes, U256};
 
 // Number of bytes in a u256.
 pub const N_BYTES_U256: usize = 32;
@@ -9,16 +9,15 @@ pub const N_DATA_BYTES_PER_COEFFICIENT: usize = 31;
 pub const BLOB_WIDTH: usize = 4096;
 pub const N_BLOB_BYTES: usize = BLOB_WIDTH * N_DATA_BYTES_PER_COEFFICIENT;
 
-#[cfg(feature="gen_curve")]
+#[cfg(feature = "gen_curve")]
 mod general;
 mod openvm;
 
 /// Helper structures to verify blob data, basically it is just the coefficients parsed from blob data
 #[derive(Debug, Clone, Copy)]
-pub struct BlobConsistency ([U256; BLOB_WIDTH]);
+pub struct BlobConsistency([U256; BLOB_WIDTH]);
 
 impl BlobConsistency {
-
     pub fn new(blob_bytes: &[u8]) -> Self {
         let mut coefficients = [[0u8; N_BYTES_U256]; BLOB_WIDTH];
 
@@ -26,11 +25,11 @@ impl BlobConsistency {
             blob_bytes.len() <= N_BLOB_BYTES,
             "too many bytes in batch data"
         );
-    
+
         for (i, &byte) in blob_bytes.iter().enumerate() {
             coefficients[i / 31][1 + (i % 31)] = byte;
         }
-    
+
         Self(coefficients.map(|coeff| U256::from_be_bytes(coeff)))
     }
 
@@ -57,12 +56,12 @@ impl BlobConsistency {
         // blob data proof is [challenge, point_evaluation] mapped into H256
         let challenge_digest = U256::from_be_bytes(challenge_digest.0);
 
-        #[cfg(feature="common_curve")]
+        #[cfg(feature = "common_curve")]
         let (challenge, evaluation) = general::point_evaluation(&self.0, challenge_digest);
 
-        #[cfg(not(feature="common_curve"))]
+        #[cfg(not(feature = "common_curve"))]
         let (challenge, evaluation) = openvm::point_evaluation(&self.0, challenge_digest);
 
-        [challenge, evaluation].map(|u|H256::new(u.to_be_bytes()))
+        [challenge, evaluation].map(|u| H256::new(u.to_be_bytes()))
     }
-} 
+}

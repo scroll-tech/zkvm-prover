@@ -1,8 +1,8 @@
 // copied from sbv's chunk, and enable serialize
 
 use alloy_primitives::B256;
-use tiny_keccak::{Hasher, Keccak};
 pub use circuit_input_types::batch::*;
+use tiny_keccak::{Hasher, Keccak};
 
 /// Public input hash for a given chunk is defined as
 /// keccak(

@@ -1,8 +1,8 @@
+use alloy_primitives::U256;
 pub use bls12_381::Scalar;
 use ff::PrimeField;
-use alloy_primitives::U256;
-use std::sync::LazyLock;
 use itertools::Itertools;
+use std::sync::LazyLock;
 
 use super::BLOB_WIDTH;
 /// Base 2 logarithm of BLOB_WIDTH.
@@ -20,9 +20,10 @@ pub static ROOTS_OF_UNITY: LazyLock<Vec<Scalar>> = LazyLock::new(|| {
     let exponent = (modulus - U256::from(1)) / U256::from(4096);
     let root_of_unity = primitive_root_of_unity.pow(exponent.as_limbs());
 
-    let ascending_order: Vec<_> = std::iter::successors(Some(Scalar::one()), |x| Some(*x * root_of_unity))
-        .take(BLOB_WIDTH)
-        .collect();
+    let ascending_order: Vec<_> =
+        std::iter::successors(Some(Scalar::one()), |x| Some(*x * root_of_unity))
+            .take(BLOB_WIDTH)
+            .collect();
     (0..BLOB_WIDTH)
         .map(|i| {
             let j = u16::try_from(i).unwrap().reverse_bits() >> (16 - LOG_BLOB_WIDTH);
@@ -42,7 +43,7 @@ fn interpolate(z: Scalar, coefficients: &[Scalar; BLOB_WIDTH]) -> Scalar {
         * Scalar::from(blob_width).invert().unwrap()
 }
 
-pub fn point_evaluation(coefficients : &[U256; BLOB_WIDTH], challenge_digest: U256) -> (U256, U256) {
+pub fn point_evaluation(coefficients: &[U256; BLOB_WIDTH], challenge_digest: U256) -> (U256, U256) {
     // blob polynomial in evaluation form.
     //
     // also termed P(x)
@@ -52,8 +53,11 @@ pub fn point_evaluation(coefficients : &[U256; BLOB_WIDTH], challenge_digest: U2
 
     // y = P(z)
     let y = U256::from_le_bytes(
-        interpolate(Scalar::from_raw(*challenge.as_limbs()), &coefficients_as_scalars).to_bytes(),
+        interpolate(
+            Scalar::from_raw(*challenge.as_limbs()),
+            &coefficients_as_scalars,
+        )
+        .to_bytes(),
     );
     (challenge, y)
-
 }
