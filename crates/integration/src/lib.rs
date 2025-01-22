@@ -61,9 +61,9 @@ pub trait ProverTester {
                 tracing::error!("OUTPUT_DIR={dir:?} not found");
                 process::exit(1);
             }
-            let dir_assets = dir.join(Self::ASSETS_DIR);
-            std::fs::create_dir_all(dir_assets)?;
-            dir.into()
+            let dir = dir.join(Self::ASSETS_DIR);
+            std::fs::create_dir_all(&dir)?;
+            dir
         } else {
             // Create the <OUTPUT>/<{ASSETS_DIR}-test-{now}>/{ASSETS_DIR} dir to dump
             // assets from this test run.
