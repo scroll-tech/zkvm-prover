@@ -8,8 +8,8 @@ use openvm_sdk::{
 };
 use openvm_transpiler::elf::Elf;
 use scroll_zkvm_prover::{ProverVerifier, setup::read_app_config};
-use tracing::instrument;
-use tracing_subscriber::{EnvFilter, fmt::format::FmtSpan};
+use tracing::{Level, instrument};
+use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::SubscriberInitExt};
 
 pub mod testers;
 
@@ -130,11 +130,18 @@ impl<T: Clone, P: Clone> ProveVerifyOutcome<T, P> {
 
 /// Setup test environment
 pub fn setup() -> eyre::Result<()> {
-    tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::from_default_env())
-        .with_span_events(FmtSpan::CLOSE)
+    let filters = tracing_subscriber::filter::Targets::new()
+        .with_target("scroll_zkvm_prover", Level::INFO)
+        .with_target("scroll_zkvm_prover", Level::DEBUG);
+
+    let fmt_layer = tracing_subscriber::fmt::layer()
         .pretty()
-        .init();
+        .with_span_events(FmtSpan::CLOSE);
+
+    tracing_subscriber::registry()
+        .with(fmt_layer)
+        .with(filters)
+        .try_init()?;
 
     Ok(())
 }
