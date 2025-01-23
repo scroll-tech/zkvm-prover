@@ -1,6 +1,10 @@
+use std::path::Path;
+
 use scroll_zkvm_prover::{BatchProver, ProverVerifier};
 
 use crate::ProverTester;
+
+const PATH_BATCH_WITNESS: &str = "./testdata/batch-task.json";
 
 pub struct BatchProverTester;
 
@@ -12,7 +16,9 @@ impl ProverTester for BatchProverTester {
     const ASSETS_DIR: &str = "batch";
 
     fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverVerifier>::ProvingTask> {
-        todo!("BatchProverTester: gen_proving_task not implemented")
+        let path_witness = Path::new(PATH_BATCH_WITNESS);
+        let witness = std::fs::File::open(path_witness)?;
+        Ok(serde_json::from_reader(witness)?)
     }
 }
 
