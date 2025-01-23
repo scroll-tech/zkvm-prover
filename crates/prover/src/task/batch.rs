@@ -7,30 +7,8 @@ pub const MAX_AGG_CHUNKS: usize = 45;
 
 // we grap all definations from zkevm-circuit to parse the json of batch task
 
-/// The innermost SNARK belongs to the following variants.
-#[derive(Copy, Clone, Debug, Deserialize, Serialize, PartialEq)]
-pub enum ChunkKind {
-    /// halo2-based SuperCircuit.
-    Halo2,
-    /// sp1-based STARK with a halo2-backend.
-    Sp1,
-}
-
-impl Default for ChunkKind {
-    fn default() -> Self {
-        Self::Halo2
-    }
-}
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ChunkProofV2Metadata {
-    /// The [`Protocol`][snark_verifier::Protocol] for the SNARK construction for the chunk proof.
-    #[serde(with = "base64")]
-    pub protocol: Vec<u8>,
-    /// The chunk proof can be for either the halo2 or sp1 routes.
-    #[serde(default)]
-    pub chunk_kind: ChunkKind,
-    /// The EVM execution traces as a result of executing all txs in the chunk.
     pub chunk_info: ChunkInfo,
 }
 
