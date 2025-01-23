@@ -1,17 +1,20 @@
-use core::iter::Iterator;
-
 use alloy_primitives::B256 as H256;
+use core::iter::Iterator;
 use itertools::Itertools;
+
+pub use scroll_zkvm_circuit_input_types::{
+    batch::{
+        ArchivedBatchHeaderV3, ArchivedBatchWitness, ArchivedReferenceHeader, BatchHeaderV3,
+        MAX_AGG_CHUNKS,
+    },
+    chunk::ChunkInfo,
+};
+use vm_zstd::process;
 
 use super::{
     blob_consistency::BlobConsistency,
     blob_data::{BatchData, BatchDataHash, keccak256},
 };
-pub use circuit_input_types::chunk::ChunkInfo;
-pub use circuit_input_types::batch::{
-    ArchivedReferenceHeader, ArchivedBatchHeaderV3, ArchivedBatchWitness, BatchHeaderV3, MAX_AGG_CHUNKS,
-};
-use vm_zstd::process;
 
 pub trait BatchHeader {
     fn batch_hash(&self) -> H256;
@@ -111,7 +114,7 @@ impl KnownLastBatchHash for ArchivedBatchHeaderV3 {
 /// generic for batch header types which also contain information of its parent
 pub struct AsLastBatchHeader<'a, T: KnownLastBatchHash + BatchHeader>(pub &'a T);
 
-impl<'a, T: KnownLastBatchHash + BatchHeader> BatchHeader for AsLastBatchHeader<'a, T> {
+impl<T: KnownLastBatchHash + BatchHeader> BatchHeader for AsLastBatchHeader<'_, T> {
     fn batch_hash(&self) -> H256 {
         self.0.parent_batch_hash()
     }
@@ -126,31 +129,22 @@ impl<'a, T: KnownLastBatchHash + BatchHeader> BatchHeader for AsLastBatchHeader<
 /// A batch is a set of N_SNARKS num of continuous chunks
 /// - the first k chunks are from real traces
 /// - the last (#N_SNARKS-k) chunks are from empty traces
+#[allow(dead_code)]
 pub struct PIBuilder {
-    /// The PI for aggregated chunks
+    /// The public input hashes of chunks aggregated in the current batch.
     pub chunks_pi: Vec<H256>,
-    /// The (cached) batch hash for batch PI
+    /// the state root of the parent batch
+    pub parent_state_root: H256,
+    /// the batch header digest of the parent batch.
+    pub parent_batch_hash: H256,
+    /// the state root of the current batch
+    pub current_state_root: H256,
+    /// The batch header digest of the current batch.
     pub batch_hash: H256,
     /// Chain ID of the network.
     pub chain_id: u64,
-    /// the state root of the parent batch
-    pub parent_state_root: H256,
-    /// the state root of the current batch
-    pub current_state_root: H256,
     /// the withdraw root of the current batch
     pub current_withdraw_root: H256,
-    // /// The batch data hash:
-    // /// - keccak256([chunk.hash for chunk in batch])
-    // pub(crate) data_hash: H256,
-    // /// the current batch hash is calculated as:
-    // /// - keccak256( version || batch_index || l1_message_popped || total_l1_message_popped ||
-    // ///   batch_data_hash || versioned_hash || parent_batch_hash || last_block_timestamp ||
-    // ///   z || y)
-    // pub(crate) current_batch_hash: H256,
-    // /// The number of chunks that contain meaningful data, i.e. not padded chunks.
-    // pub(crate) number_of_valid_chunks: usize,
-    // /// The blob bytes (may be encoded batch bytes, or may be raw batch bytes).
-    // pub(crate) blob_bytes: Vec<u8>,
 }
 
 struct ChunksSeq<'a>(&'a ChunkInfo, &'a ChunkInfo);
@@ -183,16 +177,6 @@ impl<'a> ChunksSeq<'a> {
 }
 
 impl PIBuilder {
-    fn build_chunks_pi<'a>(
-        chunks_info: impl Iterator<Item = &'a ChunkInfo>,
-        tx_bytes_digests: &[H256],
-    ) -> Vec<H256> {
-        chunks_info
-            .zip_eq(tx_bytes_digests)
-            .map(|(chunk, tx_bytes_digest)| chunk.public_input_hash(tx_bytes_digest))
-            .collect()
-    }
-
     /// Build PI with batch header encoded with v3
     /// It require some l1 message information obtained from block traces
     pub fn construct_with_header_v3<'a, const N_MAX_CHUNKS: usize>(
@@ -217,7 +201,10 @@ impl PIBuilder {
             );
             BatchData::from_payload(&enveloped_bytes, N_MAX_CHUNKS)
         } else {
-            println!("{} bytes blob, old enveloped format: uncompressed payload", blob_bytes.len());
+            println!(
+                "{} bytes blob, old enveloped format: uncompressed payload",
+                blob_bytes.len()
+            );
             BatchData::from_payload(&blob_bytes[1..], N_MAX_CHUNKS)
         };
 
@@ -240,12 +227,13 @@ impl PIBuilder {
 
         println!("calculated blob proof {:?}", blob_data_proof);
 
+        let parent_batch_hash = last_header.batch_hash();
         let batch_header = BatchHeaderV3 {
             version: last_header.version(),
             batch_index: last_header.index() + 1,
             l1_message_popped,
             total_l1_message_popped,
-            parent_batch_hash: last_header.batch_hash(),
+            parent_batch_hash,
             last_block_timestamp,
             data_hash: batch_data_hash.into(),
             blob_versioned_hash,
@@ -260,12 +248,23 @@ impl PIBuilder {
         let chunks_seq = ChunksSeq::new(chunks_info.clone());
 
         Self {
-            batch_hash,
             chunks_pi: Self::build_chunks_pi(chunks_info, &data_hash_helper.chunk_data_digest),
             parent_state_root: chunks_seq.prev_state_root(),
+            parent_batch_hash,
             current_state_root: chunks_seq.post_state_root(),
+            batch_hash,
             chain_id: chunks_seq.chain_id(),
             current_withdraw_root: chunks_seq.withdraw_root().unwrap_or_default(),
         }
+    }
+
+    fn build_chunks_pi<'a>(
+        chunks_info: impl Iterator<Item = &'a ChunkInfo>,
+        tx_bytes_digests: &[H256],
+    ) -> Vec<H256> {
+        chunks_info
+            .zip_eq(tx_bytes_digests)
+            .map(|(chunk, tx_bytes_digest)| chunk.public_input_hash(tx_bytes_digest))
+            .collect()
     }
 }

@@ -1,14 +1,10 @@
+use openvm_sdk::{Sdk, StdIn};
+use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE};
 use scroll_zkvm_integration::{
     prove_verify_multi, prove_verify_single, setup_logger,
     testers::{batch::BatchProverTester, chunk::MultiChunkProverTester},
 };
-use scroll_zkvm_prover::{utils::read_json, setup::read_app_config, task::batch::BatchProvingTask};
-use openvm_sdk::{
-    config::{AggConfig, AppConfig, SdkVmConfig},
-    prover::AppProver,
-    Sdk, StdIn,
-};
-use openvm_transpiler::{openvm_platform::memory::MEM_SIZE, elf::Elf};
+use scroll_zkvm_prover::{setup::read_app_config, task::batch::BatchProvingTask, utils::read_json};
 use tracing::info;
 
 #[test]
@@ -16,7 +12,7 @@ fn batch_simple_execution() -> eyre::Result<()> {
     setup_logger()?;
 
     // read task
-    let task : BatchProvingTask = read_json("testdata/batch-task-with-blob.json")?;
+    let task: BatchProvingTask = read_json("testdata/batch-task-with-blob.json")?;
     info!("benching task for batch {}", task.batch_header.batch_index);
 
     // suppose we are under `integration` path
@@ -38,9 +34,8 @@ fn batch_simple_execution() -> eyre::Result<()> {
     let sdk = Sdk;
     // 2a. Build the ELF with guest options and a target filter (skipped, simply read elf).
 
-
     let elf_bytes = std::fs::read("../../target/riscv32im-risc0-zkvm-elf/release/batch-circuit")?;
-    let elf = Elf::decode(&elf_bytes, MEM_SIZE as u32)?;    
+    let elf = Elf::decode(&elf_bytes, MEM_SIZE as u32)?;
     // ANCHOR_END: build
 
     // ANCHOR: transpilation
@@ -54,7 +49,11 @@ fn batch_simple_execution() -> eyre::Result<()> {
 
     let start_t = std::time::Instant::now();
     let output = sdk.execute(exe.clone(), vm_config.clone(), stdin.clone())?;
-    info!("complete in {:?}, public values output: {:?}", start_t.elapsed(), output);
+    info!(
+        "complete in {:?}, public values output: {:?}",
+        start_t.elapsed(),
+        output
+    );
 
     Ok(())
 }

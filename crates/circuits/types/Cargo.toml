@@ -1,5 +1,5 @@
 [package]
-name = "circuit-input-types"
+name = "scroll-zkvm-circuit-input-types"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
@@ -8,11 +8,11 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
-rkyv.workspace = true
-tiny-keccak.workspace = true
-serde.workspace = true
-alloy-serde.workspace = true
 alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
+alloy-serde.workspace = true
+rkyv.workspace = true
+serde.workspace = true
+tiny-keccak.workspace = true
 
 [features]
 scroll = []

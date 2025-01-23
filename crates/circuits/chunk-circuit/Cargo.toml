@@ -18,4 +18,5 @@ rkyv.workspace = true
 sbv.workspace = true
 
 [features]
+default = ["scroll"]
 scroll = ["sbv/scroll"]

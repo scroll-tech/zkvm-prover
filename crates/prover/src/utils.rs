@@ -57,18 +57,18 @@ pub fn write_json<P: AsRef<Path>, T: Serialize>(path: P, value: &T) -> Result<()
 }
 
 pub mod base64 {
-    use serde::{Serialize, Deserialize};
-    use serde::{Deserializer, Serializer};
     use base64::prelude::*;
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
     pub fn serialize<S: Serializer>(v: &Vec<u8>, s: S) -> Result<S::Ok, S::Error> {
         let base64 = BASE64_STANDARD.encode(v);
         String::serialize(&base64, s)
     }
-    
+
     pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<Vec<u8>, D::Error> {
         let base64 = String::deserialize(d)?;
-        BASE64_STANDARD.decode(base64.as_bytes())
-            .map_err(|e| serde::de::Error::custom(e))
+        BASE64_STANDARD
+            .decode(base64.as_bytes())
+            .map_err(serde::de::Error::custom)
     }
 }

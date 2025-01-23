@@ -81,7 +81,6 @@ impl BatchData {
         Self(segmented_batch_data)
     }
 
-
     /// Get the blob bytes that encode the batch's metadata.
     ///
     /// metadata_bytes =
@@ -108,7 +107,6 @@ impl BatchData {
 
         ret
     }
-
 }
 
 /// The number of bytes to encode number of chunks in a batch.

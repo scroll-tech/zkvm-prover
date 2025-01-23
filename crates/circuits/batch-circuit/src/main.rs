@@ -1,11 +1,16 @@
-mod batch;
-mod blob_consistency;
-mod blob_data;
-mod utils;
-
-use batch::{ChunkInfo, ArchivedBatchWitness, AsLastBatchHeader, MAX_AGG_CHUNKS, PIBuilder, ArchivedReferenceHeader};
-use openvm::io;
 use rkyv::{access, rancor::BoxedError};
+
+mod batch;
+use batch::{
+    ArchivedBatchWitness, ArchivedReferenceHeader, AsLastBatchHeader, ChunkInfo, MAX_AGG_CHUNKS,
+    PIBuilder,
+};
+
+mod blob_consistency;
+
+mod blob_data;
+
+mod utils;
 
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use {
@@ -20,7 +25,7 @@ openvm_algebra_guest::moduli_setup::moduli_init! {
 openvm::entry!(main);
 
 fn comput_batch_pi(batch: &ArchivedBatchWitness) {
-    let chunks_info: Vec<ChunkInfo> = batch.chunks_info.into_iter().map(|ci| ci.into()).collect();
+    let chunks_info: Vec<ChunkInfo> = batch.chunks_info.iter().map(|ci| ci.into()).collect();
 
     let pi = match &batch.reference_header {
         ArchivedReferenceHeader::V3(header) => {
@@ -66,12 +71,12 @@ fn read_witnesses() -> Vec<u8> {
 // dummy implement to avoid complains
 #[cfg(not(target_os = "zkvm"))]
 fn read_witnesses() -> Vec<u8> {
-    io::read_vec()
+    openvm::io::read_vec()
 }
 
 fn main() {
     let input_data = read_witnesses();
 
     let batch = access::<ArchivedBatchWitness, BoxedError>(&input_data).unwrap();
-    comput_batch_pi(&batch);
+    comput_batch_pi(batch);
 }

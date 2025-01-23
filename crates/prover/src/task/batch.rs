@@ -1,9 +1,10 @@
-use circuit_input_types::chunk::ChunkInfo;
-use circuit_input_types::batch::{BatchHeaderV3, ReferenceHeader, BatchWitness};
-use crate::utils::base64;
+use scroll_zkvm_circuit_input_types::{
+    batch::{BatchHeaderV3, BatchWitness, ReferenceHeader},
+    chunk::ChunkInfo,
+};
 use serde::{Deserialize, Serialize};
 
-pub const MAX_AGG_CHUNKS: usize = 45;
+use crate::utils::base64;
 
 // we grap all definations from zkevm-circuit to parse the json of batch task
 
@@ -36,7 +37,6 @@ pub struct ChunkProofV2 {
     pub git_version: String,
 }
 
-
 /// Defines a proving task for batch proof generation.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct BatchProvingTask {
@@ -55,12 +55,14 @@ pub struct BatchProvingTask {
 impl BatchProvingTask {
     pub fn serialized_into(self) -> rkyv::util::AlignedVec {
         let input_task = BatchWitness {
-            chunks_info: self.chunk_proofs.
-                iter().map(|chunk_proofs|chunk_proofs.inner.chunk_info.clone())
+            chunks_info: self
+                .chunk_proofs
+                .iter()
+                .map(|chunk_proofs| chunk_proofs.inner.chunk_info.clone())
                 .collect(),
             blob_bytes: self.blob_bytes,
             reference_header: ReferenceHeader::V3(self.batch_header),
         };
         rkyv::to_bytes::<rkyv::rancor::Error>(&input_task).unwrap()
-    }   
+    }
 }

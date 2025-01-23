@@ -1,18 +1,17 @@
-use alloy_primitives::U256;
-pub use bls12_381::Scalar;
-use ff::PrimeField;
-use itertools::Itertools;
 use std::sync::LazyLock;
 
-use super::BLOB_WIDTH;
-/// Base 2 logarithm of BLOB_WIDTH.
-const LOG_BLOB_WIDTH: usize = 12;
+use alloy_primitives::U256;
+use bls12_381::Scalar;
+use ff::PrimeField;
+use itertools::Itertools;
 
-pub static BLS_MODULUS: LazyLock<U256> = LazyLock::new(|| {
+use super::{BLOB_WIDTH, LOG_BLOB_WIDTH};
+
+static BLS_MODULUS: LazyLock<U256> = LazyLock::new(|| {
     U256::from_str_radix(&Scalar::MODULUS[2..], 16).expect("BLS_MODULUS from bls crate")
 });
 
-pub static ROOTS_OF_UNITY: LazyLock<Vec<Scalar>> = LazyLock::new(|| {
+static ROOTS_OF_UNITY: LazyLock<Vec<Scalar>> = LazyLock::new(|| {
     // https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/polynomial-commitments.md#constants
     let primitive_root_of_unity = Scalar::from(7);
     let modulus = *BLS_MODULUS;
@@ -24,6 +23,7 @@ pub static ROOTS_OF_UNITY: LazyLock<Vec<Scalar>> = LazyLock::new(|| {
         std::iter::successors(Some(Scalar::one()), |x| Some(*x * root_of_unity))
             .take(BLOB_WIDTH)
             .collect();
+
     (0..BLOB_WIDTH)
         .map(|i| {
             let j = u16::try_from(i).unwrap().reverse_bits() >> (16 - LOG_BLOB_WIDTH);
@@ -59,5 +59,6 @@ pub fn point_evaluation(coefficients: &[U256; BLOB_WIDTH], challenge_digest: U25
         )
         .to_bytes(),
     );
+
     (challenge, y)
 }

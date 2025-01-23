@@ -1,16 +1,42 @@
-use rkyv::{Deserialize, Serialize, Archive, option::ArchivedOption};
-use crate::chunk::ChunkInfo;
 use alloy_primitives::B256;
+use rkyv::{Archive, Deserialize, Serialize};
 
+use crate::chunk::ChunkInfo;
+
+/// The upper bound for the number of chunks that can be aggregated in a single batch.
 pub const MAX_AGG_CHUNKS: usize = 45;
 
 /// Batch header provides additional fields from the context (within recursion)
 /// for constructing the preimage of the batch hash.
+///
 /// A BatchHash from Batch header v3 consists of 2 hashes.
-/// - batchHash := keccak256(version || batch_index || l1_message_popped || total_l1_message_popped ||
-///   batch_data_hash || versioned_hash || parent_batch_hash || last_block_timestamp || z || y)
-/// - batch_data_hash := keccak(chunk_0.data_hash || ... || chunk_k-1.data_hash)
-#[derive(Default, Debug, Clone, Copy, Serialize, Deserialize, Archive, serde::Serialize, serde::Deserialize)]
+///
+/// - batch_hash :=
+///     keccak256(
+///         version ||
+///         batch_index ||
+///         l1_message_popped ||
+///         total_l1_message_popped ||
+///         batch_data_hash ||
+///         versioned_hash ||
+///         parent_batch_hash ||
+///         last_block_timestamp ||
+///         z ||
+///         y
+///     )
+///
+/// - data_hash := keccak(chunk_0.data_hash || ... || chunk_k-1.data_hash)
+#[derive(
+    Default,
+    Debug,
+    Clone,
+    Copy,
+    Serialize,
+    Deserialize,
+    Archive,
+    serde::Serialize,
+    serde::Deserialize,
+)]
 #[rkyv(derive(Debug))]
 pub struct BatchHeaderV3 {
     /// the batch version
@@ -41,17 +67,15 @@ pub struct BatchHeaderV3 {
     pub blob_data_proof: [B256; 2],
 }
 
-
-
-/// Reference header indicate the version of batch header
-/// base on which batch hash should be calculated
+/// Reference header indicate the version of batch header base on which batch hash
+/// should be calculated.
 #[derive(Debug, Clone, Serialize, Deserialize, Archive)]
 #[rkyv(derive(Debug))]
 pub enum ReferenceHeader {
     V3(BatchHeaderV3),
 }
 
-/// Input for batch circuit
+/// Witness input to the batch circuit.
 #[derive(Debug, Clone, Serialize, Deserialize, Archive)]
 #[rkyv(derive(Debug))]
 pub struct BatchWitness {
@@ -64,5 +88,4 @@ pub struct BatchWitness {
     /// header for reference
     #[rkyv()]
     pub reference_header: ReferenceHeader,
-  
 }

@@ -1,5 +1,5 @@
-use rkyv::{Deserialize, Serialize, Archive, option::ArchivedOption};
 use alloy_primitives::B256;
+use rkyv::{Archive, Deserialize, Serialize, option::ArchivedOption};
 use tiny_keccak::{Hasher, Keccak};
 
 /// The chunk info in sbv is not compatible with prover (lacking of withdraw_root)
@@ -25,11 +25,11 @@ impl From<&ArchivedChunkInfo> for ChunkInfo {
             chain_id: ci.chain_id.into(),
             prev_state_root: ci.prev_state_root.into(),
             post_state_root: ci.post_state_root.into(),
-            withdraw_root: match ci.withdraw_root{
+            withdraw_root: match ci.withdraw_root {
                 ArchivedOption::None => None,
                 ArchivedOption::Some(v) => Some(v.into()),
             },
-            data_hash: ci.data_hash.into(),         
+            data_hash: ci.data_hash.into(),
         }
     }
 }
@@ -61,5 +61,4 @@ impl ChunkInfo {
         hasher.finalize(&mut public_input_hash.0);
         public_input_hash
     }
-
 }
