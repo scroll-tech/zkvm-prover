@@ -17,6 +17,7 @@ openvm-circuit = { git = "https://github.com/scroll-tech/openvm", branch = "scro
 openvm-sdk = { git = "https://github.com/scroll-tech/openvm", branch = "scroll-dev-0116", default-features = false }
 openvm-transpiler = { git = "https://github.com/scroll-tech/openvm", branch = "scroll-dev-0116", default-features = false }
 serde_json = "1.0"
+vm-zstd = { git = "https://github.com/scroll-tech/rust-zstd-decompressor.git", tag = "v0.1.1", features = ["zstd"] }
 
 [features]
 default = ["scroll"]

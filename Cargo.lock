@@ -1156,6 +1156,8 @@ version = "1.2.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13208fcbb66eaeffe09b99fffbe1af420f00a7b35aa99ad683dfc1aa76145229"
 dependencies = [
+ "jobserver",
+ "libc",
  "shlex",
 ]
 
@@ -1658,6 +1660,14 @@ dependencies = [
  "serdect",
  "subtle",
  "zeroize",
+]
+
+[[package]]
+name = "encoder"
+version = "0.1.0"
+source = "git+https://github.com/scroll-tech/da-codec.git?tag=v0.1.2#8c5d2f0cd707153151a5154fef702204f6ca40b3"
+dependencies = [
+ "zstd 0.13.0",
 ]
 
 [[package]]
@@ -2558,6 +2568,15 @@ name = "itoa"
 version = "1.0.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d75a2a4b1b190afb6f5425f10f6a8f959d2ea0b9c2b1d79553551850539e4674"
+
+[[package]]
+name = "jobserver"
+version = "0.1.32"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "48d1dbcbbeb6a7fec7e059840aa538bd62aaccf972c7346c4d9d2059312853d0"
+dependencies = [
+ "libc",
+]
 
 [[package]]
 name = "js-sys"
@@ -4756,6 +4775,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "pkg-config"
+version = "0.3.31"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "953ec861398dccce10c670dfeaf3ec4911ca479e9c02154b3a215178c5f566f2"
+
+[[package]]
 name = "portable-atomic"
 version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5596,7 +5621,7 @@ dependencies = [
  "serde",
  "thiserror 2.0.11",
  "tracing",
- "zstd",
+ "zstd 1.1.4",
 ]
 
 [[package]]
@@ -6117,7 +6142,7 @@ name = "reth-zstd-compressors"
 version = "1.1.4"
 source = "git+https://github.com/scroll-tech/reth?branch=fix%2Fscroll#5e42fa0354181292111cae21bf19617a1b63ed77"
 dependencies = [
- "zstd",
+ "zstd 1.1.4",
 ]
 
 [[package]]
@@ -6572,6 +6597,7 @@ dependencies = [
  "serde_json",
  "tracing",
  "tracing-subscriber",
+ "vm-zstd",
 ]
 
 [[package]]
@@ -7643,11 +7669,12 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "vm-zstd"
-version = "0.1.0"
-source = "git+https://github.com/scroll-tech/rust-zstd-decompressor.git?tag=v0.1.0#116712d1b6e37f7631c57e1e9311b68c05f16132"
+version = "0.1.1"
+source = "git+https://github.com/scroll-tech/rust-zstd-decompressor.git?tag=v0.1.1#c7e953fc690d5f56f201892d88311c0f938f2d21"
 dependencies = [
  "anyhow",
  "bitstream-io",
+ "encoder",
  "itertools 0.11.0",
  "serde",
  "strum 0.25.0",
@@ -8159,5 +8186,30 @@ dependencies = [
 
 [[package]]
 name = "zstd"
+version = "0.13.0"
+source = "git+https://github.com/scroll-tech/zstd-rs?branch=hack%2Fmul-block#5c0892b6567dab31394d701477183ce9d6a32aca"
+dependencies = [
+ "zstd-safe",
+]
+
+[[package]]
+name = "zstd"
 version = "1.1.4"
 source = "git+https://github.com/scroll-tech/reth?branch=fix%2Fscroll#5e42fa0354181292111cae21bf19617a1b63ed77"
+
+[[package]]
+name = "zstd-safe"
+version = "7.0.0"
+source = "git+https://github.com/scroll-tech/zstd-rs?branch=hack%2Fmul-block#5c0892b6567dab31394d701477183ce9d6a32aca"
+dependencies = [
+ "zstd-sys",
+]
+
+[[package]]
+name = "zstd-sys"
+version = "2.0.9+zstd.1.5.5"
+source = "git+https://github.com/scroll-tech/zstd-rs?branch=hack%2Fmul-block#5c0892b6567dab31394d701477183ce9d6a32aca"
+dependencies = [
+ "cc",
+ "pkg-config",
+]

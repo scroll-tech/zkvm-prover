@@ -17,6 +17,8 @@ use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::Subsc
 
 pub mod testers;
 
+mod utils;
+
 /// Feature to enable while building the guest program.
 const FEATURE_SCROLL: &str = "scroll";
 
