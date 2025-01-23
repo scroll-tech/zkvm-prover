@@ -1,6 +1,4 @@
-use core::unimplemented;
-
-use alloy_primitives::{Address, B64, B256 as H256, BlockNumber, Bloom, Bytes, U256};
+use alloy_primitives::{B256 as H256, U256};
 
 // Number of bytes in a u256.
 pub const N_BYTES_U256: usize = 32;
@@ -31,25 +29,6 @@ impl BlobConsistency {
         }
 
         Self(coefficients.map(|coeff| U256::from_be_bytes(coeff)))
-    }
-
-    /// Get the versioned hash as per EIP-4844. It has to be calculated OUTSIDE
-    /// of zkvm program
-    pub fn versioned_hash(&self) -> H256 {
-        unimplemented!();
-        // TODO: need the kzg commitment as the hash of coefficients (i.e. BlobHash in evm?)
-
-        // let blob = c_kzg::Blob::from_bytes(
-        //     &coefficients
-        //         .iter()
-        //         .cloned()
-        //         .flat_map(|coeff| self.0.to_be_bytes())
-        //         .collect::<Vec<_>>(),
-        // )
-        // .expect("blob-coefficients to 4844 blob should succeed");
-        // let c = c_kzg::KzgCommitment::blob_to_kzg_commitment(&blob, &KZG_TRUSTED_SETUP)
-        //     .expect("blob to kzg commitment should succeed");
-        // kzg_to_versioned_hash(&c)
     }
 
     pub fn blob_data_proof(&self, challenge_digest: H256) -> [H256; 2] {
