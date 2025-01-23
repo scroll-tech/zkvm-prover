@@ -9,7 +9,7 @@ pub const N_DATA_BYTES_PER_COEFFICIENT: usize = 31;
 pub const BLOB_WIDTH: usize = 4096;
 pub const N_BLOB_BYTES: usize = BLOB_WIDTH * N_DATA_BYTES_PER_COEFFICIENT;
 
-#[cfg(feature = "gen_curve")]
+#[cfg(feature = "common_curve")]
 mod general;
 mod openvm;
 

@@ -1,6 +1,6 @@
 use core::iter::Iterator;
 
-use alloy_primitives::{Address, B64, B256 as H256, BlockNumber, Bloom, Bytes, U256};
+use alloy_primitives::B256 as H256;
 use itertools::Itertools;
 use tiny_keccak::{Hasher, Keccak};
 /// Helper struct for the Batch Data.
@@ -81,11 +81,6 @@ impl BatchData {
         Self(segmented_batch_data)
     }
 
-    /// Construct BatchData from tx_bytes (generally it is recorded in ChunkInfo)
-    /// This method is used OUTSIDE OF zkvm to prepare for blob data
-    pub fn new<'a>(tx_bytes: impl Iterator<Item = &'a [u8]>) -> Self {
-        Self(tx_bytes.map(Vec::from).collect())
-    }
 
     /// Get the blob bytes that encode the batch's metadata.
     ///
@@ -114,18 +109,7 @@ impl BatchData {
         ret
     }
 
-    /// Turn into the batch data bytes, blob data is compressed from metadata_bytes | batch_data_bytes
-    pub fn to_batch_data_bytes<const N_MAX_CHUNKS: usize>(self) -> Vec<u8> {
-        let metadata_bytes = self.metadata_bytes::<N_MAX_CHUNKS>();
-        self.0.into_iter().fold(metadata_bytes, |mut acc, b| {
-            acc.extend_from_slice(&b);
-            acc
-        })
-    }
 }
-
-/// The number data bytes we pack each BLS12-381 scalar into. The most-significant byte is 0.
-pub const N_DATA_BYTES_PER_COEFFICIENT: usize = 31;
 
 /// The number of bytes to encode number of chunks in a batch.
 const N_BYTES_NUM_CHUNKS: usize = 2;
@@ -181,59 +165,3 @@ impl<const N_MAX_CHUNKS: usize> From<&BatchData> for BatchDataHash<N_MAX_CHUNKS>
         }
     }
 }
-
-/// Represent the blob data
-pub struct BlobData {
-    is_compressed: bool,
-    data: Vec<u8>,
-}
-
-// impl<const N_MAX_CHUNKS: usize> From<&BlobData> for BatchData<N_MAX_CHUNKS> {
-//     fn from(chunks: &BlobData) -> Self {
-//     }
-// }
-
-// impl<const N_SNARKS: usize> From<&BatchHash<N_SNARKS>> for BatchData<N_SNARKS> {
-//     fn from(batch_hash: &BatchHash<N_SNARKS>) -> Self {
-//         Self::new(
-//             batch_hash.number_of_valid_chunks,
-//             &batch_hash.chunks_with_padding,
-//         )
-//     }
-// }
-
-// If the chunk data is represented as a vector of u8's this implementation converts data from
-// dynamic number of chunks into BatchData.
-// impl<const N_SNARKS: usize> From<&Vec<Vec<u8>>> for BatchData<N_SNARKS> {
-//     fn from(chunks: &Vec<Vec<u8>>) -> Self {
-//         let num_valid_chunks = chunks.len();
-//         assert!(num_valid_chunks > 0);
-//         assert!(num_valid_chunks <= N_SNARKS);
-
-//         let chunk_sizes: [u32; N_SNARKS] = chunks
-//             .iter()
-//             .map(|chunk| chunk.len() as u32)
-//             .chain(repeat(0))
-//             .take(N_SNARKS)
-//             .collect::<Vec<_>>()
-//             .try_into()
-//             .expect("we have N_SNARKS chunks");
-//         assert!(chunk_sizes.iter().sum::<u32>() <= Self::n_rows_data().try_into().unwrap());
-
-//         let last_chunk_data = chunks.last().expect("last chunk exists");
-//         let chunk_data = chunks
-//             .iter()
-//             .chain(repeat(last_chunk_data))
-//             .take(N_SNARKS)
-//             .cloned()
-//             .collect::<Vec<_>>()
-//             .try_into()
-//             .expect("we have N_SNARKS chunks");
-
-//         Self {
-//             num_valid_chunks: num_valid_chunks.try_into().unwrap(),
-//             chunk_sizes,
-//             chunk_data,
-//         }
-//     }
-// }
