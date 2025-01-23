@@ -120,13 +120,6 @@ fn main() {
     let batch_witness = access::<ArchivedBatchWitness, BoxedError>(&batch_witness_bytes)
         .expect("rkyv decode BatchWitness");
 
-    // TODO(rohit): batch circuit has two major components: proof aggregation and batch execution.
-    //
-    // To simplify conflict merging, maintain the "proof aggregation" part while completely
-    // removing the "batch execution" part (available in remote/batch).
-    //
-    // Come back to this later post-merge.
-
     println!(
         "input.flatten_proof[..30]: {:?}",
         &flattened_proof.flatten_proof[..30]
