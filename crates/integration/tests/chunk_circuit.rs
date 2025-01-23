@@ -1,7 +1,22 @@
 use scroll_zkvm_integration::{
-    prove_verify_multi, prove_verify_single, setup_logger,
+    ProverTester, prove_verify_multi, prove_verify_single, setup_logger,
     testers::chunk::{ChunkProverTester, MultiChunkProverTester},
 };
+
+#[test]
+fn setup() -> eyre::Result<()> {
+    setup_logger()?;
+
+    ChunkProverTester::setup()?;
+
+    let elf = ChunkProverTester::build()?;
+
+    let (app_config, _) = ChunkProverTester::transpile(elf)?;
+
+    ChunkProverTester::keygen(app_config)?;
+
+    Ok(())
+}
 
 #[test]
 fn setup_prove_verify() -> eyre::Result<()> {

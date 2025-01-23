@@ -6,6 +6,9 @@ clippy:
 	@cargo clippy --features scroll --manifest-path crates/integration/Cargo.toml
 	sh openvm-clippy
 
+setup-chunk:
+	@cargo test --release -p scroll-zkvm-integration --features scroll --test chunk_circuit setup -- --exact --nocapture
+
 test-chunk:
 	@cargo test --release -p scroll-zkvm-integration --features scroll --test chunk_circuit setup_prove_verify -- --exact --nocapture
 
