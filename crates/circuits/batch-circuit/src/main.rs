@@ -1,4 +1,5 @@
 use rkyv::{access, rancor::BoxedError};
+use scroll_zkvm_circuit_input_types::proof::FlattenRootProof;
 
 mod batch;
 use batch::{
@@ -24,7 +25,7 @@ openvm_algebra_guest::moduli_setup::moduli_init! {
 
 openvm::entry!(main);
 
-fn comput_batch_pi(batch: &ArchivedBatchWitness) {
+fn compute_batch_pi(batch: &ArchivedBatchWitness) {
     let chunks_info: Vec<ChunkInfo> = batch.chunks_info.iter().map(|ci| ci.into()).collect();
 
     let pi = match &batch.reference_header {
@@ -74,24 +75,27 @@ fn read_witnesses() -> Vec<u8> {
     openvm::io::read_vec()
 }
 
-const EXE_COMMIT : [u32; 8] =[396649651, 1175086036, 1682626845, 471855974, 1659938811, 1981570609, 805067545, 1640289616];
-const LEAF_COMMIT: [u32; 8] = [505034789, 682334490, 407062982, 1227826652, 298205975, 1959777750, 1633765816, 97452666];
-
+const EXE_COMMIT: [u32; 8] = [
+    396649651, 1175086036, 1682626845, 471855974, 1659938811, 1981570609, 805067545, 1640289616,
+];
+const LEAF_COMMIT: [u32; 8] = [
+    505034789, 682334490, 407062982, 1227826652, 298205975, 1959777750, 1633765816, 97452666,
+];
 
 // will terminate inside if fail
 fn exec_kernel(input: &[u32], expect_output: &[u32]) {
-    let mut input_ptr: *const u32 = input.as_ptr();
-    let mut output_ptr: *const u32 = expect_output.as_ptr();
-    let mut buf1: u32 = 0;
-    let mut buf2: u32 = 0;
+    let mut _input_ptr: *const u32 = input.as_ptr();
+    let mut _output_ptr: *const u32 = expect_output.as_ptr();
+    let mut _buf1: u32 = 0;
+    let mut _buf2: u32 = 0;
     #[cfg(all(target_os = "zkvm", target_arch = "riscv32"))]
     unsafe {
         std::arch::asm!(
             include_str!("../../../tools/generate-verifier-asm/root_verifier.asm"),
-            inout("x28") input_ptr,
-            inout("x29") output_ptr,
-            inout("x30") buf1,
-            inout("x31") buf2,
+            inout("x28") _input_ptr,
+            inout("x29") _output_ptr,
+            inout("x30") _buf1,
+            inout("x31") _buf2,
         )
     }
 }
@@ -107,15 +111,14 @@ fn verify_chunk_proof(flatten_proof: &[u32], public_inputs: &[u32]) {
     println!("verified chunk proof successfully");
 }
 
-#[derive(serde::Deserialize)]
-struct FlattenRootProof {
-    flatten_proof: Vec<u32>,
-    public_values: Vec<u32>,
-}
-
 fn main() {
-    let raw_input: Vec<u8> = openvm::io::read_vec();
-    let input: FlattenRootProof = bitcode::deserialize(&raw_input).expect("decode");
+    let flattened_proof_bytes: Vec<u8> = openvm::io::read_vec();
+    let flattened_proof: FlattenRootProof =
+        bitcode::deserialize(&flattened_proof_bytes).expect("bitcode decode FlattenRootProof");
+
+    let batch_witness_bytes = read_witnesses();
+    let batch_witness = access::<ArchivedBatchWitness, BoxedError>(&batch_witness_bytes)
+        .expect("rkyv decode BatchWitness");
 
     // TODO(rohit): batch circuit has two major components: proof aggregation and batch execution.
     //
@@ -126,11 +129,16 @@ fn main() {
 
     println!(
         "input.flatten_proof[..30]: {:?}",
-        &input.flatten_proof[..30]
+        &flattened_proof.flatten_proof[..30]
     );
     println!(
         "input.public_values[..30]: {:?}",
-        &input.public_values[..30]
+        &flattened_proof.public_values[..30]
     );
-    verify_chunk_proof(&input.flatten_proof, &input.public_values);
+
+    verify_chunk_proof(
+        &flattened_proof.flatten_proof,
+        &flattened_proof.public_values,
+    );
+    compute_batch_pi(batch_witness);
 }

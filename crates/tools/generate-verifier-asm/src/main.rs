@@ -1,36 +1,14 @@
-use std::fmt::format;
-use std::sync::Arc;
-
-use openvm_instructions::instruction::DebugInfo;
-use openvm_instructions::program::Program;
-use openvm_instructions::SystemOpcode;
 use openvm_instructions::{
-    instruction::{self, Instruction},
-    PhantomDiscriminant, PublishOpcode,
-    SystemOpcode::{PHANTOM, TERMINATE},
+    PublishOpcode, SystemOpcode,
+    SystemOpcode::PHANTOM,
     VmOpcode,
+    instruction::{DebugInfo, Instruction},
+    program::Program,
 };
-use openvm_native_compiler::{
-    asm::A0, CastfOpcode, NativeBranchEqualOpcode, NativeJalOpcode, NativeLoadStoreOpcode,
-    NativePhantom,
-};
-use openvm_native_recursion::hints::Hintable;
-use openvm_rv32im_transpiler::{BaseAluOpcode, BranchEqualOpcode, MulOpcode, Rv32LoadStoreOpcode};
-use openvm_sdk::fs::read_root_proof_from_file;
-use openvm_sdk::{
-    fs::read_root_pk_from_file, prover::vm::SingleSegmentVmProver, prover::RootVerifierLocalProver,
-    verifier::root::types::RootVmVerifierInput,
-};
-use openvm_stark_sdk::{
-    config::baby_bear_poseidon2::BabyBearPoseidon2Config, p3_baby_bear::BabyBear as F,
-};
+use openvm_native_compiler::{NativeJalOpcode, NativeLoadStoreOpcode, NativePhantom};
+use openvm_sdk::fs::read_root_pk_from_file;
+use openvm_stark_sdk::p3_baby_bear::BabyBear as F;
 use p3_field::{FieldAlgebra, PrimeField32};
-use serde::{Deserialize, Serialize};
-use snark_verifier_sdk::{
-    halo2::aggregation::AggregationCircuit,
-    snark_verifier::system::halo2::{compile, Config},
-    CircuitExt,
-};
 
 pub const DEFAULT_ROOT_PK_PATH: &str = concat!(env!("HOME"), "/.openvm/root.pk");
 
@@ -54,7 +32,7 @@ fn load_root_program() -> Program<F> {
         root_exe.clone()
     };
 
-    //println!("root program: {}", root_program.program);
+    // println!("root program: {}", root_program.program);
     let program = root_exe.program.clone();
     println!(
         "total ins count: {}, {}",
@@ -109,16 +87,13 @@ impl Context {
     }
 }
 
+// Alias for convenience.
+type InstructionsWithDbgInfo = Vec<(Option<(Instruction<F>, Option<DebugInfo>)>, usize)>;
+
 fn dump_root_program(output_file: &str) {
     let mut program = load_root_program();
 
-    let mut new_instructions_and_debug_infos: Vec<(
-        Option<(
-            Instruction<F>,
-            Option<openvm_instructions::instruction::DebugInfo>,
-        )>,
-        usize,
-    )> = vec![];
+    let mut new_instructions_and_debug_infos: InstructionsWithDbgInfo = vec![];
     let mut context = Context::default();
     for (idx, op_elem) in program.instructions_and_debug_infos.iter().enumerate() {
         if let Some(op) = op_elem.as_ref() {
@@ -134,7 +109,7 @@ fn dump_root_program(output_file: &str) {
             if op.0.opcode.as_usize() == op_phantom() {
                 if op.0.c.as_canonical_u32() as usize == NativePhantom::HintInput as usize {
                     // nop
-                    let instructions = vec![Instruction {
+                    let instructions = [Instruction {
                         opcode: VmOpcode::with_default_offset(SystemOpcode::PHANTOM),
                         ..Default::default()
                     }];
@@ -146,7 +121,7 @@ fn dump_root_program(output_file: &str) {
                     continue;
                 }
                 if op.0.c.as_canonical_u32() as usize
-                    == ((AS_NATIVE as usize) << 16 | (NativePhantom::HintBits as usize))
+                    == (AS_NATIVE << 16 | (NativePhantom::HintBits as usize))
                 {
                     context.enable_hint_bits_mode(op.0.b.as_canonical_u32() as usize);
                     new_instructions_and_debug_infos.push((op_elem.clone(), idx * 4));
@@ -193,13 +168,7 @@ fn dump_root_program(output_file: &str) {
     println!("written to {}", output_file);
 }
 
-fn fix_pc(
-    new_instructions_and_debug_infos: &mut Vec<(
-        Option<(Instruction<F>, Option<DebugInfo>)>,
-        usize,
-    )>,
-) {
-    //
+fn fix_pc(new_instructions_and_debug_infos: &mut InstructionsWithDbgInfo) {
     // fix jump and pc
     // step1: for all jal, collect the old_pc=>new_pc mapping
 
@@ -226,14 +195,14 @@ fn fix_pc(
                 }
                 let babybear = F::ORDER_U32 as usize;
                 let old_pc_target = (op_elem.1 + old_pc_diff) % babybear;
-                //println!("old pc: {}", old_pc);
+                // println!("old pc: {}", old_pc);
                 // find the idx of new_instructions_and_debug_infos where element.1 == old_pc
                 let new_idx = new_instructions_and_debug_infos
                     .iter()
                     .enumerate()
                     .find(|(_, x)| x.1 == old_pc_target)
                     .map(|x| x.0);
-                //if !new_pc.map(|x| x == old_pc).unwrap_or(false) {
+                // if !new_pc.map(|x| x == old_pc).unwrap_or(false) {
                 //    println!("WARN: new pc == old pc {}", old_pc);
                 //}
                 match new_idx {

@@ -1,22 +1,20 @@
 [package]
-name = "generate-verifier-asm"
-version = "0.1.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+name = "scroll-zkvm-tools-generate-verifier-asm"
+version.workspace = true
+edition.workspace = true
 
 [dependencies]
+openvm-instructions.workspace = true
+openvm-native-compiler.workspace = true
+openvm-native-recursion.workspace = true
+openvm-rv32im-transpiler.workspace = true
+openvm-sdk.workspace = true
+openvm-stark-sdk.workspace = true
 
-serde = { workspace = true}
-serde_json = { workspace = true}
-serde_with = { workspace = true}
-halo2curves-axiom = { workspace = true}
-p3-field = { workspace = true}
-bitcode = { workspace = true}
-openvm-stark-sdk = { workspace = true}
-openvm-sdk = { workspace = true}
-openvm-instructions = { workspace = true}
-openvm-native-compiler = { workspace = true}
-openvm-native-recursion = { workspace = true}
-openvm-rv32im-transpiler = { workspace = true}
-snark-verifier-sdk = { workspace = true}
+bitcode.workspace = true
+halo2curves-axiom.workspace = true
+p3-field.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_with.workspace = true
+snark-verifier-sdk.workspace = true

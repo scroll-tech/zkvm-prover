@@ -1,23 +1,19 @@
 [package]
-name = "flatten-root-proof"
-version = "0.1.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+name = "scroll-zkvm-tools-flatten-root-proof"
+version.workspace = true
+edition.workspace = true
 
 [dependencies]
+scroll-zkvm-circuit-input-types.workspace = true
+scroll-zkvm-prover.workspace = true
 
-derivative = { workspace = true }
-serde = { workspace =  true }
-openvm = { workspace =  true }
-bitcode = { workspace =  true }
-halo2curves-axiom = { workspace =  true }
+openvm.workspace = true
+openvm-native-recursion.workspace = true
+openvm-sdk.workspace = true
+openvm-stark-sdk.workspace = true
 
-toml = { workspace = true }
-openvm-sdk = { workspace =  true }
-openvm-stark-sdk = { workspace = true }
-openvm-native-recursion = { workspace = true}
-
-scroll-zkvm-prover ={ workspace = true }
-
-
+derivative.workspace = true
+serde.workspace = true
+bitcode.workspace = true
+halo2curves-axiom.workspace = true
+toml.workspace = true

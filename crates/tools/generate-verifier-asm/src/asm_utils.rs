@@ -1,13 +1,15 @@
-use openvm_instructions::{instruction::Instruction, PhantomDiscriminant, SystemOpcode, VmOpcode};
+use openvm_instructions::{PhantomDiscriminant, SystemOpcode, VmOpcode, instruction::Instruction};
 use openvm_native_compiler::{FieldArithmeticOpcode, NativeBranchEqualOpcode, NativePhantom};
 use openvm_rv32im_transpiler::BranchEqualOpcode;
 use openvm_stark_sdk::p3_baby_bear::BabyBear as F;
 
-use p3_field::{FieldAlgebra, PrimeField32};
+use p3_field::FieldAlgebra;
 
 ////////////////// constants //////////////////////////////
 
+#[allow(dead_code)]
 pub const X0: usize = 0; // x0
+#[allow(dead_code)]
 pub const X10: usize = 10; // a0
 pub const X28: usize = 28; // t3
 pub const X29: usize = 29; // t4
@@ -54,6 +56,7 @@ pub fn op_halt() -> VmOpcode {
 
 /////////////////// debug //////////////////////////
 
+#[allow(dead_code)]
 pub fn print_native(mem_addr: F) -> Vec<Instruction<F>> {
     vec![Instruction::<F>::phantom(
         PhantomDiscriminant(NativePhantom::Print as u16),
@@ -62,6 +65,7 @@ pub fn print_native(mem_addr: F) -> Vec<Instruction<F>> {
         AS_NATIVE as u16,
     )]
 }
+#[allow(dead_code)]
 pub fn print_mem(mem_addr: F) -> Vec<Instruction<F>> {
     vec![Instruction::<F>::phantom(
         PhantomDiscriminant(NativePhantom::Print as u16),
@@ -70,6 +74,7 @@ pub fn print_mem(mem_addr: F) -> Vec<Instruction<F>> {
         AS_MEM as u16,
     )]
 }
+#[allow(dead_code)]
 pub fn print_register(register_idx: usize) -> Vec<Instruction<F>> {
     [0, 1, 2, 3]
         .map(|idx| {
@@ -92,7 +97,7 @@ pub fn load_register_to_native(native_addr: usize, register_idx: usize) -> Vec<I
     let add_op = |(b, as_b), (c, as_c)| Instruction::<F> {
         opcode: op_native_add(),
         a: dst,
-        b: b,
+        b,
         c: F::from_canonical_usize(c),
         d: as_native(),
         e: as_b,

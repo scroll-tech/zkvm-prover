@@ -1,5 +1,4 @@
-use openvm_instructions::program::Program;
-use openvm_instructions::{instruction::Instruction, VmOpcode};
+use openvm_instructions::{VmOpcode, instruction::Instruction, program::Program};
 use openvm_native_compiler::NativeJalOpcode;
 use openvm_stark_sdk::p3_baby_bear::BabyBear as F;
 
@@ -27,13 +26,13 @@ fn u32_to_directive(x: u32) -> String {
 
 fn handle_pc_diff(program: &mut Program<F>) -> usize {
     let mut pc_diff = 2;
-    for op in &program.defined_instructions() {
+    for _op in &program.defined_instructions() {
         pc_diff += 1 + 1 + 7; // don't skip unused operands
     }
     pc_diff += 9; // for next jal
     let jal = Instruction::<F> {
         opcode: VmOpcode::with_default_offset(NativeJalOpcode::JAL),
-        a: F::from_canonical_usize(1 << 24 - 8), // A0
+        a: F::from_canonical_usize(1 << (24 - 8)), // A0
         b: F::from_canonical_usize(4 * (pc_diff + 1)),
         c: F::from_canonical_usize(0),
         d: F::from_canonical_usize(5), // native_as
@@ -56,7 +55,7 @@ pub fn post_process_and_write(mut program: Program<F>, path: &str) {
                 asm_output.push_str(" // ");
                 asm_output.push_str(comment);
             }
-            asm_output.push_str("\n");
+            asm_output.push('\n');
         }
     }
     std::fs::write(path, asm_output).expect("fail to write");

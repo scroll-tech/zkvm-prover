@@ -6,16 +6,18 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
+scroll-zkvm-circuit-input-types.workspace = true
+
+openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "fc90b5d", features = ["std"] }
+openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "fc90b5d" }
+openvm-keccak256-guest= { git = "https://github.com/openvm-org/openvm.git", rev = "fc90b5d" }
+openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "fc90b5d", features = ["halo2curves"] }
+openvm-rv32im-guest= {  git = "https://github.com/openvm-org/openvm.git", rev = "fc90b5d" }
+
 alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
 bitcode.workspace = true
 itertools.workspace = true
-openvm = { workspace = true, features = ["std"] }
-openvm-algebra-guest.workspace = true
-openvm-keccak256-guest.workspace = true
-openvm-pairing-guest = { workspace = true, features = ["halo2curves"] }
-openvm-rv32im-guest.workspace = true
 rkyv.workspace = true
-scroll-zkvm-circuit-input-types.workspace = true
 serde.workspace = true
 tiny-keccak.workspace = true
 

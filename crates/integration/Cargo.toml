@@ -4,18 +4,20 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-sbv.workspace = true
 scroll-zkvm-prover.workspace = true
+
+sbv.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 
-chrono = "0.4"
-eyre = "0.6"
-once_cell = "1.20"
 openvm-build = { git = "https://github.com/scroll-tech/openvm", branch = "scroll-dev-0116", default-features = false }
 openvm-circuit = { git = "https://github.com/scroll-tech/openvm", branch = "scroll-dev-0116" }
 openvm-sdk = { git = "https://github.com/scroll-tech/openvm", branch = "scroll-dev-0116", default-features = false }
 openvm-transpiler = { git = "https://github.com/scroll-tech/openvm", branch = "scroll-dev-0116", default-features = false }
+
+chrono = "0.4"
+eyre = "0.6"
+once_cell = "1.20"
 serde_json = "1.0"
 
 [features]
