@@ -72,6 +72,14 @@ impl From<&ArchivedChunkInfo> for ChunkInfo {
     }
 }
 
+/// Reference header indicate the version of batch header
+/// base on which batch hash should be calculated
+#[derive(Debug, Clone, Serialize, Deserialize, Archive)]
+#[rkyv(derive(Debug))]
+pub enum ReferenceHeader {
+    V3(BatchHeaderV3),
+}
+
 /// Input for batch circuit
 #[derive(Debug, Clone, Serialize, Deserialize, Archive)]
 #[rkyv(derive(Debug))]
@@ -82,8 +90,8 @@ pub struct BatchWitness {
     /// blob bytes
     #[rkyv()]
     pub blob_bytes: Vec<u8>,
-    /// header of v3
+    /// header for reference
     #[rkyv()]
-    pub header_v3: Option<BatchHeaderV3>,
+    pub reference_header: ReferenceHeader,
   
 }

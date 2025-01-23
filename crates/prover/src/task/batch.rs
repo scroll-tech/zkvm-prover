@@ -1,4 +1,4 @@
-use circuit_input_types::batch::{ChunkInfo, BatchHeaderV3, BatchWitness};
+use circuit_input_types::batch::{ChunkInfo, BatchHeaderV3, ReferenceHeader, BatchWitness};
 use crate::utils::base64;
 use serde::{Deserialize, Serialize};
 
@@ -80,7 +80,7 @@ impl BatchProvingTask {
                 iter().map(|chunk_proofs|chunk_proofs.inner.chunk_info.clone())
                 .collect(),
             blob_bytes: self.blob_bytes,
-            header_v3: Some(self.batch_header),
+            reference_header: ReferenceHeader::V3(self.batch_header),
         };
         rkyv::to_bytes::<rkyv::rancor::Error>(&input_task).unwrap()
     }   
