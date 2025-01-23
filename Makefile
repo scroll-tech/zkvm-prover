@@ -2,8 +2,10 @@ fmt:
 	@cargo fmt --all
 
 clippy:
-	@cargo clippy --features scroll --manifest-path crates/prover/Cargo.toml
-	@cargo clippy --features scroll --manifest-path crates/integration/Cargo.toml
+	@cargo clippy --manifest-path crates/circuits/types/Cargo.toml
+	@cargo clippy --manifest-path crates/integration/Cargo.toml
+	@cargo clippy --manifest-path crates/prover/Cargo.toml
+	@cargo clippy --manifest-path crates/verifier/Cargo.toml
 	sh openvm-clippy
 
 setup-chunk:

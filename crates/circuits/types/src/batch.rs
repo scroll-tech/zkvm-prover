@@ -1,7 +1,7 @@
 use alloy_primitives::B256;
 use rkyv::{Archive, Deserialize, Serialize};
 
-use crate::chunk::ChunkInfo;
+use crate::{chunk::ChunkInfo, utils::keccak256};
 
 /// The upper bound for the number of chunks that can be aggregated in a single batch.
 pub const MAX_AGG_CHUNKS: usize = 45;
@@ -88,4 +88,112 @@ pub struct BatchWitness {
     /// header for reference
     #[rkyv()]
     pub reference_header: ReferenceHeader,
+}
+
+pub trait BatchHeader {
+    fn version(&self) -> u8;
+    fn index(&self) -> u64;
+    fn batch_hash(&self) -> B256;
+}
+
+impl BatchHeader for BatchHeaderV3 {
+    fn version(&self) -> u8 {
+        self.version
+    }
+    fn index(&self) -> u64 {
+        self.batch_index
+    }
+    fn batch_hash(&self) -> B256 {
+        // the current batch hash is build as
+        // keccak256(
+        //     version ||
+        //     batch_index ||
+        //     l1_message_popped ||
+        //     total_l1_message_popped ||
+        //     batch_data_hash ||
+        //     versioned_hash ||
+        //     parent_batch_hash ||
+        //     last_block_timestamp ||
+        //     z ||
+        //     y
+        // )
+        let batch_hash_preimage = [
+            vec![self.version].as_slice(),
+            self.batch_index.to_be_bytes().as_ref(),
+            self.l1_message_popped.to_be_bytes().as_ref(),
+            self.total_l1_message_popped.to_be_bytes().as_ref(),
+            self.data_hash.as_slice(),
+            self.blob_versioned_hash.as_slice(),
+            self.parent_batch_hash.as_slice(),
+            self.last_block_timestamp.to_be_bytes().as_ref(),
+            self.blob_data_proof[0].as_slice(),
+            self.blob_data_proof[1].as_slice(),
+        ]
+        .concat();
+        keccak256(batch_hash_preimage)
+    }
+}
+
+impl BatchHeader for ArchivedBatchHeaderV3 {
+    fn version(&self) -> u8 {
+        self.version
+    }
+    fn index(&self) -> u64 {
+        self.batch_index.into()
+    }
+    fn batch_hash(&self) -> B256 {
+        let batch_index: u64 = self.batch_index.into();
+        let l1_message_popped: u64 = self.l1_message_popped.into();
+        let total_l1_message_popped: u64 = self.total_l1_message_popped.into();
+        let data_hash: B256 = self.data_hash.into();
+        let blob_versioned_hash: B256 = self.blob_versioned_hash.into();
+        let parent_batch_hash: B256 = self.parent_batch_hash.into();
+        let last_block_timestamp: u64 = self.last_block_timestamp.into();
+        let blob_data_proof: [B256; 2] = self.blob_data_proof.map(|h| h.into());
+        let batch_hash_preimage = [
+            vec![self.version].as_slice(),
+            batch_index.to_be_bytes().as_ref(),
+            l1_message_popped.to_be_bytes().as_ref(),
+            total_l1_message_popped.to_be_bytes().as_ref(),
+            data_hash.as_slice(),
+            blob_versioned_hash.as_slice(),
+            parent_batch_hash.as_slice(),
+            last_block_timestamp.to_be_bytes().as_ref(),
+            blob_data_proof[0].as_slice(),
+            blob_data_proof[1].as_slice(),
+        ]
+        .concat();
+        keccak256(batch_hash_preimage)
+    }
+}
+
+pub trait KnownLastBatchHash {
+    fn parent_batch_hash(&self) -> B256;
+}
+
+impl KnownLastBatchHash for BatchHeaderV3 {
+    fn parent_batch_hash(&self) -> B256 {
+        self.parent_batch_hash
+    }
+}
+
+impl KnownLastBatchHash for ArchivedBatchHeaderV3 {
+    fn parent_batch_hash(&self) -> B256 {
+        self.parent_batch_hash.into()
+    }
+}
+
+/// generic for batch header types which also contain information of its parent
+pub struct AsLastBatchHeader<'a, T: KnownLastBatchHash + BatchHeader>(pub &'a T);
+
+impl<T: KnownLastBatchHash + BatchHeader> BatchHeader for AsLastBatchHeader<'_, T> {
+    fn batch_hash(&self) -> B256 {
+        self.0.parent_batch_hash()
+    }
+    fn version(&self) -> u8 {
+        self.0.version()
+    }
+    fn index(&self) -> u64 {
+        self.0.index() - 1
+    }
 }
