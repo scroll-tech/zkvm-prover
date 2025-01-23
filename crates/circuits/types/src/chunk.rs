@@ -1,6 +1,7 @@
 use alloy_primitives::B256;
 use rkyv::{Archive, Deserialize, Serialize, option::ArchivedOption};
-use tiny_keccak::{Hasher, Keccak};
+
+use crate::utils::keccak256;
 
 /// The chunk info in sbv is not compatible with prover (lacking of withdraw_root)
 /// We still keep the struct in legacy prover now
@@ -45,20 +46,16 @@ impl ChunkInfo {
     ///     chunk txdata hash
     /// )
     pub fn public_input_hash(&self, tx_bytes_hash: &B256) -> B256 {
-        // TODO: reuse sbv's implement?
-        let mut hasher = Keccak::v256();
-
-        hasher.update(&self.chain_id.to_be_bytes());
-        hasher.update(self.prev_state_root.as_ref());
-        hasher.update(self.post_state_root.as_slice());
-        #[cfg(feature = "scroll")]
-        assert!(self.withdraw_root.is_some(), "withdraw root is required");
-        hasher.update(self.withdraw_root.as_ref().unwrap_or_default().as_slice());
-        hasher.update(self.data_hash.as_slice());
-        hasher.update(tx_bytes_hash.as_slice());
-
-        let mut public_input_hash = B256::ZERO;
-        hasher.finalize(&mut public_input_hash.0);
-        public_input_hash
+        keccak256(
+            std::iter::empty()
+                .chain(&self.chain_id.to_be_bytes())
+                .chain(self.prev_state_root.as_slice())
+                .chain(self.post_state_root.as_slice())
+                .chain(self.withdraw_root.unwrap_or_default().as_slice())
+                .chain(self.data_hash.as_slice())
+                .chain(tx_bytes_hash.as_slice())
+                .cloned()
+                .collect::<Vec<u8>>(),
+        )
     }
 }

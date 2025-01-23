@@ -1,17 +1,12 @@
 use rkyv::{access, rancor::BoxedError};
-use scroll_zkvm_circuit_input_types::proof::FlattenRootProof;
+use scroll_zkvm_circuit_input_types::{batch::AsLastBatchHeader, proof::FlattenRootProof};
 
 mod batch;
-use batch::{
-    ArchivedBatchWitness, ArchivedReferenceHeader, AsLastBatchHeader, ChunkInfo, MAX_AGG_CHUNKS,
-    PIBuilder,
-};
+use batch::{ArchivedBatchWitness, ArchivedReferenceHeader, ChunkInfo, MAX_AGG_CHUNKS, PIBuilder};
 
 mod blob_consistency;
 
-mod blob_data;
-
-mod utils;
+mod payload;
 
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use {
@@ -42,7 +37,7 @@ fn compute_batch_pi(batch: &ArchivedBatchWitness) {
         }
     };
 
-    for (i, part) in pi.batch_hash.chunks_exact(4).enumerate() {
+    for (i, part) in pi.public_input_hash().chunks_exact(4).enumerate() {
         openvm::io::reveal(u32::from_be_bytes(part.try_into().unwrap()), i)
     }
 }
