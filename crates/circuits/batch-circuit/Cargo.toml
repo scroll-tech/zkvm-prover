@@ -23,7 +23,7 @@ tiny-keccak.workspace = true
 
 bls12_381 = { version = "0.8", optional = true }
 ff = { version = "0.13", optional = true }
-vm-zstd = { git = "https://github.com/scroll-tech/rust-zstd-decompressor.git", tag = "v0.1.0"}
+vm-zstd = { git = "https://github.com/scroll-tech/rust-zstd-decompressor.git", tag = "v0.1.1" }
 
 [features]
 default = ["scroll"]
