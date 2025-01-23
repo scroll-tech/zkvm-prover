@@ -1,10 +1,10 @@
 use scroll_zkvm_circuit_input_types::{
-    batch::{BatchHeaderV3, BatchWitness, ReferenceHeader},
+    batch::{BatchHeader, BatchHeaderV3, BatchWitness, ReferenceHeader},
     chunk::ChunkInfo,
 };
 use serde::{Deserialize, Serialize};
 
-use crate::utils::base64;
+use crate::{task::ProvingTask, utils::base64};
 
 // we grap all definations from zkevm-circuit to parse the json of batch task
 
@@ -64,5 +64,11 @@ impl BatchProvingTask {
             reference_header: ReferenceHeader::V3(self.batch_header),
         };
         rkyv::to_bytes::<rkyv::rancor::Error>(&input_task).unwrap()
+    }
+}
+
+impl ProvingTask for BatchProvingTask {
+    fn identifier(&self) -> String {
+        self.batch_header.batch_hash().to_string()
     }
 }
