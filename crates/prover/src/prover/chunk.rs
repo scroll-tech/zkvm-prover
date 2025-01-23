@@ -6,11 +6,12 @@ use std::{
 use openvm_circuit::{arch::SingleSegmentVmExecutor, system::program::trace::VmCommittedExe};
 use openvm_native_recursion::hints::Hintable;
 use openvm_sdk::{Sdk, StdIn, config::SdkVmConfig};
+use scroll_zkvm_circuit_input_types::chunk::ChunkInfo;
 use tracing::{debug, instrument};
 
 #[cfg(feature = "scroll")]
 use sbv::{
-    core::ChunkInfo,
+    core::ChunkInfo as SbvChunkInfo,
     primitives::{BlockWithSenders, BlockWitness},
 };
 
@@ -50,22 +51,38 @@ impl ProverVerifier for ChunkProver {
 
     #[instrument("ChunkProver::metadata", skip_all, fields(?task_id = task.identifier()))]
     fn metadata(task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error> {
-        #[cfg(feature = "scroll")]
-        let chunk_info = {
-            let chain_id = task.block_witnesses[0].chain_id;
-            let pre_state_root = task.block_witnesses[0].pre_state_root;
+        let (first, last) = (
+            task.block_witnesses
+                .first()
+                .expect("at least one block in a chunk"),
+            task.block_witnesses
+                .last()
+                .expect("at least one block in a chunk"),
+        );
+        let withdraw_root = last.withdrawals_root();
+        let sbv_chunk_info = {
+            let chain_id = first.chain_id;
+            let pre_state_root = first.pre_state_root;
             let blocks = task
                 .block_witnesses
                 .iter()
                 .map(|s| s.build_reth_block())
                 .collect::<Result<Vec<BlockWithSenders>, _>>()
                 .map_err(|e| Error::GenProof(e.to_string()))?;
-            ChunkInfo::from_blocks_iter(chain_id, pre_state_root, blocks.iter().map(|b| &b.block))
+            SbvChunkInfo::from_blocks_iter(
+                chain_id,
+                pre_state_root,
+                blocks.iter().map(|b| &b.block),
+            )
         };
-        Ok(ChunkProofMetadata {
-            #[cfg(feature = "scroll")]
-            chunk_info,
-        })
+        let chunk_info = ChunkInfo {
+            chain_id: sbv_chunk_info.chain_id(),
+            prev_state_root: sbv_chunk_info.prev_state_root(),
+            post_state_root: sbv_chunk_info.post_state_root(),
+            withdraw_root,
+            data_hash: sbv_chunk_info.data_hash(),
+        };
+        Ok(ChunkProofMetadata { chunk_info })
     }
 
     #[instrument("ChunkProver::gen_proof_inner", skip_all, fields(task_id))]
