@@ -207,17 +207,18 @@ impl PIBuilder {
         println!("constructing PI with header v3 protocol");
 
         // handling blob data
+        // TODO: upgrade for the new enveloped format
         let batch_data = if blob_bytes[0] & 1 == 1 {
-            let decoded_bytes = process(&blob_bytes[1..]).unwrap().decoded_data;
+            let enveloped_bytes = process(&blob_bytes[1..]).unwrap().decoded_data;
             println!(
-                "decoded blob bytes {} -> {}",
+                "{} bytes blob, old enveloped format: compressed payload, decoded to bytes {}",
                 blob_bytes.len(),
-                decoded_bytes.len()
+                enveloped_bytes.len()
             );
-            BatchData::from_blob_data(&decoded_bytes, N_MAX_CHUNKS)
+            BatchData::from_payload(&enveloped_bytes, N_MAX_CHUNKS)
         } else {
-            println!("direct use blob bytes {}", blob_bytes.len());
-            BatchData::from_blob_data(&blob_bytes[1..], N_MAX_CHUNKS)
+            println!("{} bytes blob, old enveloped format: uncompressed payload", blob_bytes.len());
+            BatchData::from_payload(&blob_bytes[1..], N_MAX_CHUNKS)
         };
 
         let data_hash_helper = BatchDataHash::<N_MAX_CHUNKS>::from(&batch_data);

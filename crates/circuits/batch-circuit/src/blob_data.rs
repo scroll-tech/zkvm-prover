@@ -30,17 +30,17 @@ pub(crate) fn keccak256<T: AsRef<[u8]>>(bytes: T) -> [u8; 32] {
 }
 
 impl BatchData {
-    /// The number of bytes in Blob Data to represent the "blob metadata" section: a u16 to
+    /// The number of bytes in payload Data to represent the "payload metadata" section: a u16 to
     /// represent the size of chunks and max_chunks * u32 to represent chunk sizes
     pub fn n_bytes_metadata(max_chunks: usize) -> usize {
         N_BYTES_NUM_CHUNKS + max_chunks * N_BYTES_CHUNK_SIZE
     }
 
-    /// For raw blob data (decompressed), which is raw batch bytes with metadata, this function segments
+    /// For raw payload data (read from decompressed enveloped data), which is raw batch bytes with metadata, this function segments
     /// the byte stream into chunk segments.
     /// This method is used INSIDE OF zkvm since we can not generate (compress) batch data within
     /// the vm program
-    pub fn from_blob_data(batch_bytes_with_metadata: &[u8], max_chunks: usize) -> Self {
+    pub fn from_payload(batch_bytes_with_metadata: &[u8], max_chunks: usize) -> Self {
         let n_bytes_metadata = Self::n_bytes_metadata(max_chunks);
         let metadata_bytes = &batch_bytes_with_metadata[..n_bytes_metadata];
         let batch_bytes = &batch_bytes_with_metadata[n_bytes_metadata..];
