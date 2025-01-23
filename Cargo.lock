@@ -1216,6 +1216,7 @@ dependencies = [
  "alloy-serde",
  "rkyv",
  "serde",
+ "tiny-keccak",
 ]
 
 [[package]]

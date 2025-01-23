@@ -1,4 +1,5 @@
-use circuit_input_types::batch::{ChunkInfo, BatchHeaderV3, ReferenceHeader, BatchWitness};
+use circuit_input_types::chunk::ChunkInfo;
+use circuit_input_types::batch::{BatchHeaderV3, ReferenceHeader, BatchWitness};
 use crate::utils::base64;
 use serde::{Deserialize, Serialize};
 

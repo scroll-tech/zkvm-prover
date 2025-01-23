@@ -22,6 +22,6 @@ ff = { version = "0.13", optional = true }
 
 [features]
 default = ["scroll"]
-scroll = []
+scroll = ["circuit-input-types/scroll"]
 # use common implement for curves for verification and testing
 common_curve = ["dep:bls12_381", "dep:ff"]

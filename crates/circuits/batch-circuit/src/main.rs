@@ -1,11 +1,9 @@
 mod batch;
 mod blob_consistency;
 mod blob_data;
-mod chunk;
 mod utils;
 
-use batch::{ArchivedBatchWitness, AsLastBatchHeader, MAX_AGG_CHUNKS, PIBuilder, ArchivedReferenceHeader};
-use chunk::ChunkInfo;
+use batch::{ChunkInfo, ArchivedBatchWitness, AsLastBatchHeader, MAX_AGG_CHUNKS, PIBuilder, ArchivedReferenceHeader};
 use openvm::io;
 use rkyv::{access, rancor::BoxedError};
 

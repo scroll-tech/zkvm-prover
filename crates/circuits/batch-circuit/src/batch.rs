@@ -6,8 +6,8 @@ use itertools::Itertools;
 use super::{
     blob_consistency::BlobConsistency,
     blob_data::{BatchData, BatchDataHash, keccak256},
-    chunk::{ChunkInfo, public_input_hash},
 };
+pub use circuit_input_types::chunk::ChunkInfo;
 pub use circuit_input_types::batch::{
     ArchivedReferenceHeader, ArchivedBatchHeaderV3, ArchivedBatchWitness, BatchHeaderV3, MAX_AGG_CHUNKS,
 };
@@ -189,7 +189,7 @@ impl PIBuilder {
     ) -> Vec<H256> {
         chunks_info
             .zip_eq(tx_bytes_digests)
-            .map(|(chunk, tx_bytes_digest)| public_input_hash(&chunk, tx_bytes_digest))
+            .map(|(chunk, tx_bytes_digest)| chunk.public_input_hash(tx_bytes_digest))
             .collect()
     }
 

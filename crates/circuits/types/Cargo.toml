@@ -9,6 +9,10 @@ version.workspace = true
 
 [dependencies]
 rkyv.workspace = true
+tiny-keccak.workspace = true
 serde.workspace = true
 alloy-serde.workspace = true
 alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
+
+[features]
+scroll = []
