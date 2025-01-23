@@ -1,4 +1,4 @@
-use circuit_input_types::batch::{ChunkInfo, BatchHeaderV3, BatchTask};
+use circuit_input_types::batch::{ChunkInfo, BatchHeaderV3, BatchWitness};
 use crate::utils::base64;
 use serde::{Deserialize, Serialize};
 
@@ -75,7 +75,7 @@ pub struct BatchProvingTask {
 
 impl BatchProvingTask {
     pub fn serialized_into(self) -> rkyv::util::AlignedVec {
-        let input_task = BatchTask {
+        let input_task = BatchWitness {
             chunks_info: self.chunk_proofs.
                 iter().map(|chunk_proofs|chunk_proofs.inner.chunk_info.clone())
                 .collect(),

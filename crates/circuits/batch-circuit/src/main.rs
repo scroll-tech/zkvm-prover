@@ -4,7 +4,7 @@ mod blob_data;
 mod chunk;
 mod utils;
 
-use batch::{ArchivedBatchTask, AsLastBatchHeader, MAX_AGG_CHUNKS, PIBuilder};
+use batch::{ArchivedBatchWitness, AsLastBatchHeader, MAX_AGG_CHUNKS, PIBuilder, BatchHeader};
 use chunk::ChunkInfo;
 use openvm::io;
 use rkyv::{access, rancor::BoxedError};
@@ -21,11 +21,11 @@ openvm_algebra_guest::moduli_setup::moduli_init! {
 
 openvm::entry!(main);
 
-fn comput_batch_pi(batch: &ArchivedBatchTask) {
+fn comput_batch_pi(batch: &ArchivedBatchWitness) {
     let header_v3 = batch.header_v3.as_ref().unwrap();
     let chunks_info: Vec<ChunkInfo> = batch.chunks_info.into_iter().map(|ci| ci.into()).collect();
 
-    let _pi = PIBuilder::construct_with_header_v3::<MAX_AGG_CHUNKS>(
+    let pi = PIBuilder::construct_with_header_v3::<MAX_AGG_CHUNKS>(
         AsLastBatchHeader(header_v3),
         chunks_info.iter(),
         &batch.blob_bytes,
@@ -38,6 +38,6 @@ fn comput_batch_pi(batch: &ArchivedBatchTask) {
 fn main() {
     let input_data = io::read_vec();
 
-    let batch = access::<ArchivedBatchTask, BoxedError>(&input_data).unwrap();
+    let batch = access::<ArchivedBatchWitness, BoxedError>(&input_data).unwrap();
     comput_batch_pi(&batch);
 }

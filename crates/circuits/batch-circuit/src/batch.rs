@@ -9,7 +9,7 @@ use super::{
     chunk::{ChunkInfo, public_input_hash},
 };
 pub use circuit_input_types::batch::{
-    ArchivedBatchHeaderV3, ArchivedBatchTask, BatchHeaderV3, MAX_AGG_CHUNKS,
+    ArchivedBatchHeaderV3, ArchivedBatchWitness, BatchHeaderV3, MAX_AGG_CHUNKS,
 };
 use vm_zstd::process;
 

@@ -75,7 +75,7 @@ impl From<&ArchivedChunkInfo> for ChunkInfo {
 /// Input for batch circuit
 #[derive(Debug, Clone, Serialize, Deserialize, Archive)]
 #[rkyv(derive(Debug))]
-pub struct BatchTask {
+pub struct BatchWitness {
     /// chunk infos
     #[rkyv()]
     pub chunks_info: Vec<ChunkInfo>,
