@@ -40,8 +40,37 @@ fn comput_batch_pi(batch: &ArchivedBatchWitness) {
         openvm::io::reveal(u32::from_be_bytes(part.try_into().unwrap()), i)
     }
 }
+
+// Read the witnesses from the hint stream.
+// rkyv needs special alignment for its data structures, use a pre-aligned
+// buffer with rkyv::access_unchecked is more efficient than rkyv::access
+#[cfg(target_os = "zkvm")]
+#[inline(always)]
+fn read_witnesses() -> Vec<u8> {
+    use std::alloc::{GlobalAlloc, Layout, System};
+    openvm_rv32im_guest::hint_input();
+    let mut len: u32 = 0;
+    openvm_rv32im_guest::hint_store_u32!((&mut len) as *mut u32 as u32, 0);
+    let num_words = (len + 3) / 4;
+    let size = (num_words * 4) as usize;
+    let layout = Layout::from_size_align(size, 16).unwrap();
+    let ptr_start = unsafe { System.alloc(layout) };
+    let mut ptr = ptr_start;
+    for _ in 0..num_words {
+        openvm_rv32im_guest::hint_store_u32!(ptr as u32, 0);
+        ptr = unsafe { ptr.add(4) };
+    }
+    unsafe { Vec::from_raw_parts(ptr_start, len as usize, size) }
+}
+
+// dummy implement to avoid complains
+#[cfg(not(target_os = "zkvm"))]
+fn read_witnesses() -> Vec<u8> {
+    io::read_vec()
+}
+
 fn main() {
-    let input_data = io::read_vec();
+    let input_data = read_witnesses();
 
     let batch = access::<ArchivedBatchWitness, BoxedError>(&input_data).unwrap();
     comput_batch_pi(&batch);

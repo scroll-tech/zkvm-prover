@@ -839,6 +839,7 @@ dependencies = [
  "openvm-algebra-guest 0.2.0-alpha (git+https://github.com/openvm-org/openvm.git?branch=main)",
  "openvm-keccak256-guest 0.2.0-alpha (git+https://github.com/openvm-org/openvm.git?branch=main)",
  "openvm-pairing-guest 0.2.0-alpha (git+https://github.com/openvm-org/openvm.git?branch=main)",
+ "openvm-rv32im-guest 0.2.0-alpha (git+https://github.com/openvm-org/openvm.git?branch=main)",
  "rkyv",
  "serde",
  "tiny-keccak",
