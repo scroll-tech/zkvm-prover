@@ -3,6 +3,7 @@ use std::path::Path;
 use openvm_native_recursion::halo2::EvmProof;
 use openvm_sdk::verifier::root::types::RootVmVerifierInput;
 use sbv::primitives::B256;
+use scroll_zkvm_circuit_input_types::chunk::ChunkInfo;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use crate::{Error, SC, utils::short_git_version};
@@ -23,8 +24,7 @@ pub type BundleProof = WrappedProof<BundleProofMetadata, EvmProof>;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ChunkProofMetadata {
-    #[cfg(feature = "scroll")]
-    pub chunk_info: sbv::core::ChunkInfo,
+    pub chunk_info: ChunkInfo,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -24,20 +24,14 @@ pub struct Payload<const N_MAX_CHUNKS: usize> {
 }
 
 impl<const N_MAX_CHUNKS: usize> Payload<N_MAX_CHUNKS> {
-    /// The number of bytes in payload Data to represent the "payload metadata" section: a u16 to
-    /// represent the size of chunks and max_chunks * u32 to represent chunk sizes
-    pub fn n_bytes_metadata(max_chunks: usize) -> usize {
-        N_BYTES_NUM_CHUNKS + max_chunks * N_BYTES_CHUNK_SIZE
-    }
-
     /// For raw payload data (read from decompressed enveloped data), which is raw batch bytes with metadata, this function segments
     /// the byte stream into chunk segments.
     /// This method is used INSIDE OF zkvm since we can not generate (compress) batch data within
     /// the vm program
     pub fn from_payload(batch_bytes_with_metadata: &[u8]) -> Self {
-        let n_bytes_metadata = Self::n_bytes_metadata(N_MAX_CHUNKS);
+        let n_bytes_metadata = Self::n_bytes_metadata();
         let metadata_bytes = &batch_bytes_with_metadata[..n_bytes_metadata];
-        let metadata_digest = B256::from(keccak256(metadata_bytes));
+        let metadata_digest = keccak256(metadata_bytes);
         let batch_bytes = &batch_bytes_with_metadata[n_bytes_metadata..];
 
         // Decoded batch bytes require segmentation based on chunk length
@@ -110,5 +104,11 @@ impl<const N_MAX_CHUNKS: usize> Payload<N_MAX_CHUNKS> {
     /// digest for bytes in each chunk
     pub(crate) fn get_challenge_digest(&self, versioned_hash: B256) -> B256 {
         keccak256(self.get_challenge_digest_preimage(versioned_hash))
+    }
+
+    /// The number of bytes in payload Data to represent the "payload metadata" section: a u16 to
+    /// represent the size of chunks and max_chunks * u32 to represent chunk sizes
+    const fn n_bytes_metadata() -> usize {
+        N_BYTES_NUM_CHUNKS + (N_MAX_CHUNKS * N_BYTES_CHUNK_SIZE)
     }
 }

@@ -1,10 +1,12 @@
 use scroll_zkvm_circuit_input_types::{
-    batch::{BatchHeaderV3, BatchWitness, ReferenceHeader},
+    batch::{BatchHeader, BatchHeaderV3, BatchWitness, ReferenceHeader},
     chunk::ChunkInfo,
 };
 use serde::{Deserialize, Serialize};
 
-use crate::utils::base64;
+use crate::{ChunkProof, task::ProvingTask, utils::base64};
+
+use super::chunk::ChunkProvingTask;
 
 // we grap all definations from zkevm-circuit to parse the json of batch task
 
@@ -42,7 +44,7 @@ pub struct ChunkProofV2 {
 pub struct BatchProvingTask {
     /// Chunk proofs for the contiguous list of chunks within the batch.
     pub chunk_proofs: Vec<ChunkProofV2>,
-    /// The [`BatchHeader`], as computed on-chain for this batch.
+    /// The [`BatchHeaderV3`], as computed on-chain for this batch.
     ///
     /// Ref: https://github.com/scroll-tech/scroll-contracts/blob/2ac4f3f7e090d7127db4b13b3627cb3ce2d762bc/src/libraries/codec/BatchHeaderV3Codec.sol
     pub batch_header: BatchHeaderV3,
@@ -64,5 +66,22 @@ impl BatchProvingTask {
             reference_header: ReferenceHeader::V3(self.batch_header),
         };
         rkyv::to_bytes::<rkyv::rancor::Error>(&input_task).unwrap()
+    }
+}
+
+impl BatchProvingTask {
+    /// Construct a new [`BatchProvingTask`] given the list of [`ChunkProvingTask`]s and their
+    /// respective [`ChunkProof`]s.
+    pub fn build(chunk_tasks: &[ChunkProvingTask], chunk_proofs: &[ChunkProof]) -> Self {
+        // Sanity check.
+        assert_eq!(chunk_tasks.len(), chunk_proofs.len());
+
+        unimplemented!()
+    }
+}
+
+impl ProvingTask for BatchProvingTask {
+    fn identifier(&self) -> String {
+        self.batch_header.batch_hash().to_string()
     }
 }
