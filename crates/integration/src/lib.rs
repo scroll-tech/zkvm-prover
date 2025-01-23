@@ -12,7 +12,7 @@ use openvm_sdk::{
 };
 use openvm_transpiler::elf::Elf;
 use scroll_zkvm_prover::{ProverVerifier, setup::read_app_config};
-use tracing::{Level, instrument};
+use tracing::instrument;
 use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::SubscriberInitExt};
 
 pub mod testers;
@@ -172,18 +172,29 @@ impl<T: Clone, P: Clone> ProveVerifyOutcome<T, P> {
 
 /// Setup test environment
 pub fn setup_logger() -> eyre::Result<()> {
-    let filters = tracing_subscriber::filter::Targets::new()
-        .with_target("scroll_zkvm_prover", Level::INFO)
-        .with_target("scroll_zkvm_integration", Level::DEBUG);
-
     let fmt_layer = tracing_subscriber::fmt::layer()
         .pretty()
         .with_span_events(FmtSpan::CLOSE);
 
-    tracing_subscriber::registry()
-        .with(fmt_layer)
-        .with(filters)
-        .try_init()?;
+    #[cfg(feature = "limit-logs")]
+    {
+        let filters = tracing_subscriber::filter::Targets::new()
+            .with_target("scroll_zkvm_prover", tracing::Level::INFO)
+            .with_target("scroll_zkvm_integration", tracing::Level::DEBUG);
+
+        tracing_subscriber::registry()
+            .with(fmt_layer)
+            .with(filters)
+            .try_init()?;
+    }
+
+    #[cfg(not(feature = "limit-logs"))]
+    {
+        tracing_subscriber::registry()
+            .with(tracing_subscriber::EnvFilter::from_default_env())
+            .with(fmt_layer)
+            .try_init()?;
+    }
 
     Ok(())
 }
