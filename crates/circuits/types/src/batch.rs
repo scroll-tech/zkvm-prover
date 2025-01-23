@@ -1,4 +1,5 @@
 use rkyv::{Deserialize, Serialize, Archive, option::ArchivedOption};
+use crate::chunk::ChunkInfo;
 use alloy_primitives::B256;
 
 pub const MAX_AGG_CHUNKS: usize = 45;
@@ -40,37 +41,7 @@ pub struct BatchHeaderV3 {
     pub blob_data_proof: [B256; 2],
 }
 
-/// The chunk info in sbv is not compatible with prover (lacking of withdraw_root)
-/// We still keep the struct in legacy prover now
-#[derive(Debug, Clone, Archive, Serialize, Deserialize, serde::Serialize, serde::Deserialize)]
-#[rkyv(derive(Debug))]
-pub struct ChunkInfo {
-    #[rkyv()]
-    pub chain_id: u64,
-    #[rkyv()]
-    pub prev_state_root: B256,
-    #[rkyv()]
-    pub post_state_root: B256,
-    #[rkyv()]
-    pub withdraw_root: Option<B256>,
-    #[rkyv()]
-    pub data_hash: B256,
-}
 
-impl From<&ArchivedChunkInfo> for ChunkInfo {
-    fn from(ci: &ArchivedChunkInfo) -> Self {
-        Self {
-            chain_id: ci.chain_id.into(),
-            prev_state_root: ci.prev_state_root.into(),
-            post_state_root: ci.post_state_root.into(),
-            withdraw_root: match ci.withdraw_root{
-                ArchivedOption::None => None,
-                ArchivedOption::Some(v) => Some(v.into()),
-            },
-            data_hash: ci.data_hash.into(),         
-        }
-    }
-}
 
 /// Reference header indicate the version of batch header
 /// base on which batch hash should be calculated

@@ -176,13 +176,17 @@ pub fn setup_logger() -> eyre::Result<()> {
         .with_target("scroll_zkvm_prover", Level::INFO)
         .with_target("scroll_zkvm_integration", Level::DEBUG);
 
+    let default_filter_layer = tracing_subscriber::EnvFilter::try_from_default_env()
+        .or_else(|_| tracing_subscriber::EnvFilter::try_new("info"))?;
+
     let fmt_layer = tracing_subscriber::fmt::layer()
         .pretty()
         .with_span_events(FmtSpan::CLOSE);
 
     tracing_subscriber::registry()
         .with(fmt_layer)
-        .with(filters)
+        .with(default_filter_layer)
+        //.with(filters)
         .try_init()?;
 
     Ok(())
