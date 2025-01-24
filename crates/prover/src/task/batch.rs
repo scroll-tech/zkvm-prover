@@ -1,47 +1,22 @@
+use openvm_native_recursion::hints::Hintable;
+use openvm_sdk::verifier::root::types::RootVmVerifierInput;
+use openvm_stark_sdk::{
+    config::baby_bear_poseidon2::BabyBearPoseidon2Config,
+    openvm_stark_backend::p3_field::PrimeField32,
+};
 use scroll_zkvm_circuit_input_types::{
     batch::{BatchHeader, BatchHeaderV3, BatchWitness, ReferenceHeader},
-    chunk::ChunkInfo,
+    proof::FlattenedRootProof,
 };
 use serde::{Deserialize, Serialize};
 
-use crate::{task::ProvingTask, utils::base64};
-
-// we grap all definations from zkevm-circuit to parse the json of batch task
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct ChunkProofV2Metadata {
-    pub chunk_info: ChunkInfo,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct ChunkProofV2 {
-    /// The inner data that differs between chunk proofs, batch proofs and bundle proofs.
-    /// TODO: do we still need metadata? or simply the chunk info?
-    #[serde(flatten)]
-    pub inner: ChunkProofV2Metadata,
-    /// The raw bytes of the proof in the [`Snark`].
-    ///
-    /// Serialized using base64 format in order to not bloat the JSON-encoded proof dump.
-    #[serde(with = "base64")]
-    pub proof: Vec<u8>,
-    /// The public values, aka instances of this [`Snark`].
-    #[serde(with = "base64")]
-    pub instances: Vec<u8>,
-    /// The raw bytes of the [`VerifyingKey`] of the [`Circuit`] used to generate the [`Snark`].
-    #[serde(with = "base64")]
-    pub vk: Vec<u8>,
-    /// The git ref of the codebase.
-    ///
-    /// Generally useful for debug reasons to know the exact commit using which this proof was
-    /// generated.
-    pub git_version: String,
-}
+use crate::{ChunkProof, task::ProvingTask, utils::base64};
 
 /// Defines a proving task for batch proof generation.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct BatchProvingTask {
     /// Chunk proofs for the contiguous list of chunks within the batch.
-    pub chunk_proofs: Vec<ChunkProofV2>,
+    pub chunk_proofs: Vec<ChunkProof>,
     /// The [`BatchHeaderV3`], as computed on-chain for this batch.
     ///
     /// Ref: https://github.com/scroll-tech/scroll-contracts/blob/2ac4f3f7e090d7127db4b13b3627cb3ce2d762bc/src/libraries/codec/BatchHeaderV3Codec.sol
@@ -54,21 +29,51 @@ pub struct BatchProvingTask {
 
 impl BatchProvingTask {
     pub fn serialized_into(self) -> rkyv::util::AlignedVec {
-        let input_task = BatchWitness {
-            chunks_info: self
+        let witness = BatchWitness {
+            chunk_proofs: self
                 .chunk_proofs
                 .iter()
-                .map(|chunk_proofs| chunk_proofs.inner.chunk_info.clone())
+                .map(|p| flatten_root_proof(&p.proof))
+                .collect(),
+            chunk_infos: self
+                .chunk_proofs
+                .iter()
+                .map(|p| p.metadata.chunk_info.clone())
                 .collect(),
             blob_bytes: self.blob_bytes,
             reference_header: ReferenceHeader::V3(self.batch_header),
         };
-        rkyv::to_bytes::<rkyv::rancor::Error>(&input_task).unwrap()
+        rkyv::to_bytes::<rkyv::rancor::Error>(&witness).unwrap()
     }
 }
 
 impl ProvingTask for BatchProvingTask {
     fn identifier(&self) -> String {
         self.batch_header.batch_hash().to_string()
+    }
+}
+
+fn flatten_root_proof(
+    root_proof: &RootVmVerifierInput<BabyBearPoseidon2Config>,
+) -> FlattenedRootProof {
+    let full_proof_steams = root_proof.write();
+
+    let mut flatten_input: Vec<u32> = Vec::new();
+    for x in &full_proof_steams {
+        flatten_input.push(x.len() as u32);
+        for f in x {
+            flatten_input.push(f.as_canonical_u32());
+        }
+    }
+    let mut public_values = vec![];
+    public_values.extend(
+        root_proof
+            .public_values
+            .iter()
+            .map(|x| x.as_canonical_u32()),
+    );
+    FlattenedRootProof {
+        flatten_proof: flatten_input,
+        public_values,
     }
 }

@@ -1,7 +1,7 @@
 use alloy_primitives::B256;
 use rkyv::{Archive, Deserialize, Serialize};
 
-use crate::{chunk::ChunkInfo, utils::keccak256};
+use crate::{chunk::ChunkInfo, proof::FlattenedRootProof, utils::keccak256};
 
 /// The upper bound for the number of chunks that can be aggregated in a single batch.
 pub const MAX_AGG_CHUNKS: usize = 45;
@@ -79,9 +79,12 @@ pub enum ReferenceHeader {
 #[derive(Debug, Clone, Serialize, Deserialize, Archive)]
 #[rkyv(derive(Debug))]
 pub struct BatchWitness {
+    /// Flattened root proofs from all chunks in the batch.
+    #[rkyv()]
+    pub chunk_proofs: Vec<FlattenedRootProof>,
     /// chunk infos
     #[rkyv()]
-    pub chunks_info: Vec<ChunkInfo>,
+    pub chunk_infos: Vec<ChunkInfo>,
     /// blob bytes
     #[rkyv()]
     pub blob_bytes: Vec<u8>,

@@ -1,5 +1,5 @@
 use rkyv::{access, rancor::BoxedError};
-use scroll_zkvm_circuit_input_types::{batch::AsLastBatchHeader, proof::FlattenRootProof};
+use scroll_zkvm_circuit_input_types::batch::AsLastBatchHeader;
 
 mod batch;
 use batch::{ArchivedBatchWitness, ArchivedReferenceHeader, ChunkInfo, MAX_AGG_CHUNKS, PIBuilder};
@@ -21,13 +21,13 @@ openvm_algebra_guest::moduli_setup::moduli_init! {
 openvm::entry!(main);
 
 fn compute_batch_pi(batch: &ArchivedBatchWitness) {
-    let chunks_info: Vec<ChunkInfo> = batch.chunks_info.iter().map(|ci| ci.into()).collect();
+    let chunk_infos: Vec<ChunkInfo> = batch.chunk_infos.iter().map(|ci| ci.into()).collect();
 
     let pi = match &batch.reference_header {
         ArchivedReferenceHeader::V3(header) => {
             PIBuilder::construct_with_header_v3::<MAX_AGG_CHUNKS>(
                 AsLastBatchHeader(header),
-                chunks_info.iter(),
+                chunk_infos.iter(),
                 &batch.blob_bytes,
                 header.blob_versioned_hash.into(),
                 header.l1_message_popped.into(),
@@ -107,26 +107,34 @@ fn verify_chunk_proof(flatten_proof: &[u32], public_inputs: &[u32]) {
 }
 
 fn main() {
-    let flattened_proof_bytes: Vec<u8> = openvm::io::read_vec();
-    let flattened_proof: FlattenRootProof =
-        bitcode::deserialize(&flattened_proof_bytes).expect("bitcode decode FlattenRootProof");
-
     let batch_witness_bytes = read_witnesses();
     let batch_witness = access::<ArchivedBatchWitness, BoxedError>(&batch_witness_bytes)
         .expect("rkyv decode BatchWitness");
 
-    println!(
-        "input.flatten_proof[..30]: {:?}",
-        &flattened_proof.flatten_proof[..30]
-    );
-    println!(
-        "input.public_values[..30]: {:?}",
-        &flattened_proof.public_values[..30]
-    );
+    for flattened_proof in batch_witness.chunk_proofs.iter() {
+        println!(
+            "input.flatten_proof[..30]: {:?}",
+            &flattened_proof.flatten_proof[..30]
+        );
+        println!(
+            "input.public_values[..30]: {:?}",
+            &flattened_proof.public_values[..30]
+        );
+        verify_chunk_proof(
+            flattened_proof
+                .flatten_proof
+                .iter()
+                .map(|u32_le| u32_le.to_native())
+                .collect::<Vec<u32>>()
+                .as_slice(),
+            flattened_proof
+                .public_values
+                .iter()
+                .map(|u32_le| u32_le.to_native())
+                .collect::<Vec<u32>>()
+                .as_slice(),
+        );
+    }
 
-    verify_chunk_proof(
-        &flattened_proof.flatten_proof,
-        &flattened_proof.public_values,
-    );
     compute_batch_pi(batch_witness);
 }

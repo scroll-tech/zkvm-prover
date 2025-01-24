@@ -11,11 +11,11 @@ use openvm_stark_sdk::{
     config::baby_bear_poseidon2::BabyBearPoseidon2Config,
     openvm_stark_backend::p3_field::PrimeField32,
 };
-use scroll_zkvm_circuit_input_types::proof::FlattenRootProof;
+use scroll_zkvm_circuit_input_types::proof::FlattenedRootProof;
 
 fn flatten_root_vm_verifier_input(
     root_proof: &RootVmVerifierInput<BabyBearPoseidon2Config>,
-) -> FlattenRootProof {
+) -> FlattenedRootProof {
     let full_proof_steams = root_proof.write();
 
     let mut flatten_input: Vec<u32> = Vec::new();
@@ -37,7 +37,7 @@ fn flatten_root_vm_verifier_input(
             .iter()
             .map(|x| x.as_canonical_u32()),
     );
-    FlattenRootProof {
+    FlattenedRootProof {
         flatten_proof: flatten_input,
         public_values,
     }
