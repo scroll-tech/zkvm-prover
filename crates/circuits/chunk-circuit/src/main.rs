@@ -35,7 +35,7 @@ fn main() {
     setup_all_curves();
     setup_all_complex_extensions();
 
-    let witness_bytes = read_witness();
+    let witness_bytes = read_witness();  // openvm::io::read_vec();
 
     let witness = deserialize_witness(witness_bytes);
 

@@ -1,3 +1,6 @@
+RUST_MIN_STACK ?= 16777216
+export RUST_MIN_STACK
+
 fmt:
 	@cargo fmt --all
 

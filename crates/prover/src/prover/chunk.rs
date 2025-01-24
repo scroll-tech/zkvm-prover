@@ -103,7 +103,7 @@ impl ProverVerifier for ChunkProver {
 
         debug!(name: "generate_root_proof", ?task_id);
         let proof = Sdk
-            .generate_root_proof(
+            .generate_root_verifier_input(
                 Arc::clone(&self.app_pk),
                 Arc::clone(&self.app_committed_exe),
                 agg_stark_pk.clone(),

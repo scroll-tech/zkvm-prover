@@ -3,11 +3,7 @@ use std::{fs::read_to_string, path::Path};
 use openvm_circuit::arch::instructions::exe::VmExe;
 use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
 use openvm_sdk::{
-    Sdk,
-    commit::AppExecutionCommit,
-    config::{AggConfig, AppConfig, SdkVmConfig},
-    fs::{read_app_pk_from_file, read_exe_from_file},
-    keygen::{AggProvingKey, AppProvingKey},
+    commit::AppExecutionCommit, config::{AggConfig, AppConfig, SdkVmConfig}, fs::{read_app_pk_from_file, read_exe_from_file}, keygen::{AggProvingKey, AppProvingKey, RootVerifierProvingKey}, Sdk
 };
 use openvm_stark_sdk::p3_baby_bear::BabyBear;
 
@@ -63,6 +59,6 @@ pub fn compute_commitments(
 /// Generate STARK aggregation [proving key][`openvm_sdk::keygen::AggProvingKey`].
 pub fn gen_agg_pk(params_dir: &str) -> Result<AggProvingKey, Error> {
     let halo2_params_reader = CacheHalo2ParamsReader::new(params_dir);
-    Sdk.agg_keygen(AggConfig::default(), &halo2_params_reader)
+    Sdk.agg_keygen(AggConfig::default(), &halo2_params_reader, None::<&RootVerifierProvingKey>)
         .map_err(|e| Error::Keygen(e.to_string()))
 }
