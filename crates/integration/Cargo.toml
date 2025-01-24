@@ -15,6 +15,7 @@ openvm-circuit = { workspace = true }
 openvm-sdk = { workspace = true, default-features = false }
 openvm-native-circuit = { workspace = true, default-features = false }
 openvm-native-compiler = { workspace = true, default-features = false }
+openvm-native-recursion = { workspace = true, default-features = false }
 openvm-native-transpiler = { workspace = true, default-features = false }
 openvm-transpiler = { workspace = true, default-features = false }
 

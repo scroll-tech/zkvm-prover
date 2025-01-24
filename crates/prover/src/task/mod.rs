@@ -8,4 +8,6 @@ pub mod bundle;
 /// storing/reading proof to/from disc.
 pub trait ProvingTask {
     fn identifier(&self) -> String;
+
+    fn to_witness_serialized(&self) -> Result<rkyv::util::AlignedVec, rkyv::rancor::Error>;
 }

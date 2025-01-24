@@ -5,13 +5,15 @@ use std::{
 
 use once_cell::sync::OnceCell;
 use openvm_build::GuestOptions;
+use openvm_native_recursion::halo2::EvmProof;
 use openvm_sdk::{
     Sdk,
     config::{AppConfig, SdkVmConfig},
     fs::{write_app_pk_to_file, write_exe_to_file},
+    verifier::root::types::RootVmVerifierInput,
 };
 use openvm_transpiler::elf::Elf;
-use scroll_zkvm_prover::{ProverType, WrappedProof, setup::read_app_config};
+use scroll_zkvm_prover::{ProverType, SC, WrappedProof, setup::read_app_config};
 use tracing::instrument;
 use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -214,8 +216,16 @@ type ProveVerifyRes<T> = eyre::Result<
         <<T as ProverTester>::Prover as ProverType>::ProvingTask,
         WrappedProof<
             <<T as ProverTester>::Prover as ProverType>::ProofMetadata,
-            <<T as ProverTester>::Prover as ProverType>::ProofType,
+            RootVmVerifierInput<SC>,
         >,
+    >,
+>;
+
+/// Alias for convenience.
+type ProveVerifyEvmRes<T> = eyre::Result<
+    ProveVerifyOutcome<
+        <<T as ProverTester>::Prover as ProverType>::ProvingTask,
+        WrappedProof<<<T as ProverTester>::Prover as ProverType>::ProofMetadata, EvmProof>,
     >,
 >;
 
@@ -303,12 +313,7 @@ where
             Ok(proof)
         })
         .collect::<eyre::Result<
-            Vec<
-                WrappedProof<
-                    <T::Prover as ProverType>::ProofMetadata,
-                    <T::Prover as ProverType>::ProofType,
-                >,
-            >,
+            Vec<WrappedProof<<T::Prover as ProverType>::ProofMetadata, RootVmVerifierInput<SC>>>,
         >>()?;
 
     Ok(ProveVerifyOutcome::multi(&tasks, &proofs))

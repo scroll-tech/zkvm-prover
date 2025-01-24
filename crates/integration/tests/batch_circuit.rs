@@ -3,7 +3,11 @@ use scroll_zkvm_integration::{
     prove_verify_multi, prove_verify_single, setup_logger,
     testers::{batch::BatchProverTester, chunk::MultiChunkProverTester},
 };
-use scroll_zkvm_prover::{ChunkProof, setup::read_app_exe, task::batch::BatchProvingTask};
+use scroll_zkvm_prover::{
+    ChunkProof,
+    setup::read_app_exe,
+    task::{ProvingTask, batch::BatchProvingTask},
+};
 use tracing::info;
 
 #[test]
@@ -75,7 +79,7 @@ fn batch_simple_execution() -> eyre::Result<()> {
     // ANCHOR: execution
     // 4. Format your input into StdIn
     let mut stdin = StdIn::default();
-    stdin.write_bytes(&task.serialized_into());
+    stdin.write_bytes(&task.to_witness_serialized()?);
 
     let start_t = std::time::Instant::now();
     let output = sdk.execute(exe.clone(), vm_config.clone(), stdin.clone())?;

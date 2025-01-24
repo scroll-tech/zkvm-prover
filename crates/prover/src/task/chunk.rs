@@ -34,4 +34,8 @@ impl ProvingTask for ChunkProvingTask {
 
         format!("{first}-{last}")
     }
+
+    fn to_witness_serialized(&self) -> Result<rkyv::util::AlignedVec, rkyv::rancor::Error> {
+        rkyv::to_bytes::<rkyv::rancor::Error>(&self.block_witnesses)
+    }
 }

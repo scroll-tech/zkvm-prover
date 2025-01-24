@@ -6420,6 +6420,7 @@ dependencies = [
  "openvm-circuit",
  "openvm-native-circuit",
  "openvm-native-compiler",
+ "openvm-native-recursion",
  "openvm-native-transpiler",
  "openvm-sdk",
  "openvm-transpiler",

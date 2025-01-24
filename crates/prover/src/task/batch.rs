@@ -27,8 +27,12 @@ pub struct BatchProvingTask {
     pub blob_bytes: Vec<u8>,
 }
 
-impl BatchProvingTask {
-    pub fn serialized_into(&self) -> rkyv::util::AlignedVec {
+impl ProvingTask for BatchProvingTask {
+    fn identifier(&self) -> String {
+        self.batch_header.batch_hash().to_string()
+    }
+
+    fn to_witness_serialized(&self) -> Result<rkyv::util::AlignedVec, rkyv::rancor::Error> {
         let witness = BatchWitness {
             chunk_proofs: self
                 .chunk_proofs
@@ -43,13 +47,7 @@ impl BatchProvingTask {
             blob_bytes: self.blob_bytes.clone(),
             reference_header: ReferenceHeader::V3(self.batch_header),
         };
-        rkyv::to_bytes::<rkyv::rancor::Error>(&witness).unwrap()
-    }
-}
-
-impl ProvingTask for BatchProvingTask {
-    fn identifier(&self) -> String {
-        self.batch_header.batch_hash().to_string()
+        rkyv::to_bytes::<rkyv::rancor::Error>(&witness)
     }
 }
 
