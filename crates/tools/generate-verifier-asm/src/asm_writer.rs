@@ -1,4 +1,4 @@
-use openvm_instructions::{VmOpcode, instruction::Instruction, program::Program};
+use openvm_instructions::{LocalOpcode, instruction::Instruction, program::Program};
 use openvm_native_compiler::NativeJalOpcode;
 use openvm_stark_sdk::p3_baby_bear::BabyBear as F;
 
@@ -31,7 +31,7 @@ fn handle_pc_diff(program: &mut Program<F>) -> usize {
     }
     pc_diff += 9; // for next jal
     let jal = Instruction::<F> {
-        opcode: VmOpcode::with_default_offset(NativeJalOpcode::JAL),
+        opcode: NativeJalOpcode::JAL.global_opcode(),
         a: F::from_canonical_usize(1 << (24 - 8)), // A0
         b: F::from_canonical_usize(4 * (pc_diff + 1)),
         c: F::from_canonical_usize(0),

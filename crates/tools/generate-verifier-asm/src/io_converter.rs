@@ -1,4 +1,4 @@
-use openvm_instructions::{SystemOpcode, VmOpcode, instruction::Instruction};
+use openvm_instructions::{LocalOpcode, SystemOpcode, instruction::Instruction};
 use openvm_native_compiler::{CastfOpcode, NativeLoadStoreOpcode, asm::A0};
 use openvm_rv32im_transpiler::{BaseAluOpcode, Rv32LoadStoreOpcode};
 use openvm_stark_sdk::p3_baby_bear::BabyBear as F;
@@ -17,7 +17,7 @@ pub fn convert_hintread(op: Instruction<F>) -> Vec<Instruction<F>> {
     let tmp_slot = A0 - 4;
     // VmOpcode(260) 0 0 16777150 5 5 0 0    // StoreHintWord
     vec![Instruction::<F> {
-        opcode: VmOpcode::with_default_offset(Rv32LoadStoreOpcode::LOADW),
+        opcode: Rv32LoadStoreOpcode::LOADW.global_opcode(),
         a: F::from_canonical_usize(X30 * 4),
         b: F::from_canonical_usize(X28 * 4),
         c: F::from_canonical_usize(0),
@@ -30,7 +30,7 @@ pub fn convert_hintread(op: Instruction<F>) -> Vec<Instruction<F>> {
     .chain(load_register_to_native(tmp_slot as usize, X30))
     .chain(vec![
         Instruction::<F> {
-            opcode: VmOpcode::with_default_offset(NativeLoadStoreOpcode::STOREW),
+            opcode: NativeLoadStoreOpcode::STOREW.global_opcode(),
             a: F::from_canonical_usize(tmp_slot as usize),
             b: F::from_canonical_usize(offset),
             c: F::from_canonical_usize(native_addr),
@@ -40,7 +40,7 @@ pub fn convert_hintread(op: Instruction<F>) -> Vec<Instruction<F>> {
             g: F::from_canonical_usize(0),
         },
         Instruction::<F> {
-            opcode: VmOpcode::with_default_offset(BaseAluOpcode::ADD),
+            opcode: BaseAluOpcode::ADD.global_opcode(),
             a: F::from_canonical_usize(X28 * 4),
             b: F::from_canonical_usize(X28 * 4),
             c: F::from_canonical_usize(4),
@@ -64,7 +64,7 @@ pub fn convert_publish(op: Instruction<F>) -> Vec<Instruction<F>> {
     let mut results = vec![
         // castf pi_idx to x31
         Instruction::<F> {
-            opcode: VmOpcode::with_default_offset(CastfOpcode::CASTF),
+            opcode: CastfOpcode::CASTF.global_opcode(),
             a: F::from_canonical_usize(X31 * 4),
             b: pi_idx_addr,
             c: F::from_canonical_usize(0),
@@ -75,7 +75,7 @@ pub fn convert_publish(op: Instruction<F>) -> Vec<Instruction<F>> {
         },
         // x31 *= 2
         Instruction::<F> {
-            opcode: VmOpcode::with_default_offset(BaseAluOpcode::ADD),
+            opcode: BaseAluOpcode::ADD.global_opcode(),
             a: F::from_canonical_usize(X31 * 4),
             b: F::from_canonical_usize(X31 * 4),
             c: F::from_canonical_usize(X31 * 4),
@@ -86,7 +86,7 @@ pub fn convert_publish(op: Instruction<F>) -> Vec<Instruction<F>> {
         },
         // x31 *= 2
         Instruction::<F> {
-            opcode: VmOpcode::with_default_offset(BaseAluOpcode::ADD),
+            opcode: BaseAluOpcode::ADD.global_opcode(),
             a: F::from_canonical_usize(X31 * 4),
             b: F::from_canonical_usize(X31 * 4),
             c: F::from_canonical_usize(X31 * 4),
@@ -97,7 +97,7 @@ pub fn convert_publish(op: Instruction<F>) -> Vec<Instruction<F>> {
         },
         // x31 += x29
         Instruction::<F> {
-            opcode: VmOpcode::with_default_offset(BaseAluOpcode::ADD),
+            opcode: BaseAluOpcode::ADD.global_opcode(),
             a: F::from_canonical_usize(X31 * 4),
             b: F::from_canonical_usize(X31 * 4),
             c: F::from_canonical_usize(X29 * 4),
@@ -108,7 +108,7 @@ pub fn convert_publish(op: Instruction<F>) -> Vec<Instruction<F>> {
         },
         // load [x31] to x30
         Instruction::<F> {
-            opcode: VmOpcode::with_default_offset(Rv32LoadStoreOpcode::LOADW),
+            opcode: Rv32LoadStoreOpcode::LOADW.global_opcode(),
             a: F::from_canonical_usize(X30 * 4),
             b: F::from_canonical_usize(X31 * 4),
             c: F::from_canonical_usize(0),
@@ -133,7 +133,7 @@ pub fn convert_publish(op: Instruction<F>) -> Vec<Instruction<F>> {
             g: F::from_canonical_usize(0),
         },
         Instruction::<F> {
-            opcode: VmOpcode::with_default_offset(SystemOpcode::TERMINATE),
+            opcode: SystemOpcode::TERMINATE.global_opcode(),
             a: F::from_canonical_usize(0),
             b: F::from_canonical_usize(0),
             c: F::from_canonical_usize(8),
@@ -170,7 +170,7 @@ pub fn convert_publish_old(op: Instruction<F>) -> Vec<Instruction<F>> {
     // x31: the pi index
     vec![
         Instruction::<F> {
-            opcode: VmOpcode::with_default_offset(CastfOpcode::CASTF),
+            opcode: CastfOpcode::CASTF.global_opcode(),
             a: F::from_canonical_usize(X30 * 4),
             b: pi_value_addr,
             c: F::from_canonical_usize(0),
@@ -180,7 +180,7 @@ pub fn convert_publish_old(op: Instruction<F>) -> Vec<Instruction<F>> {
             g: F::from_canonical_usize(0),
         },
         Instruction::<F> {
-            opcode: VmOpcode::with_default_offset(CastfOpcode::CASTF),
+            opcode: CastfOpcode::CASTF.global_opcode(),
             a: F::from_canonical_usize(X31 * 4),
             b: pi_idx_addr,
             c: F::from_canonical_usize(0),
@@ -193,7 +193,7 @@ pub fn convert_publish_old(op: Instruction<F>) -> Vec<Instruction<F>> {
         // here i add itself twice
         // TODO: shift left by 2 bits?
         Instruction::<F> {
-            opcode: VmOpcode::with_default_offset(BaseAluOpcode::ADD),
+            opcode: BaseAluOpcode::ADD.global_opcode(),
             a: F::from_canonical_usize(X31 * 4),
             b: F::from_canonical_usize(X31 * 4),
             c: F::from_canonical_usize(X31 * 4),
@@ -203,7 +203,7 @@ pub fn convert_publish_old(op: Instruction<F>) -> Vec<Instruction<F>> {
             g: F::from_canonical_usize(0),
         },
         Instruction::<F> {
-            opcode: VmOpcode::with_default_offset(BaseAluOpcode::ADD),
+            opcode: BaseAluOpcode::ADD.global_opcode(),
             a: F::from_canonical_usize(X31 * 4),
             b: F::from_canonical_usize(X31 * 4),
             c: F::from_canonical_usize(X31 * 4),
@@ -213,7 +213,7 @@ pub fn convert_publish_old(op: Instruction<F>) -> Vec<Instruction<F>> {
             g: F::from_canonical_usize(0),
         },
         Instruction::<F> {
-            opcode: VmOpcode::with_default_offset(BaseAluOpcode::ADD),
+            opcode: BaseAluOpcode::ADD.global_opcode(),
             a: F::from_canonical_usize(X31 * 4),
             b: F::from_canonical_usize(X31 * 4),
             c: F::from_canonical_usize(X29 * 4),
@@ -223,7 +223,7 @@ pub fn convert_publish_old(op: Instruction<F>) -> Vec<Instruction<F>> {
             g: F::from_canonical_usize(0),
         },
         Instruction::<F> {
-            opcode: VmOpcode::with_default_offset(Rv32LoadStoreOpcode::STOREW),
+            opcode: Rv32LoadStoreOpcode::STOREW.global_opcode(),
             a: F::from_canonical_usize(X30 * 4),
             b: F::from_canonical_usize(X31 * 4),
             c: F::from_canonical_usize(0),

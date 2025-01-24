@@ -14,7 +14,7 @@ use {
     openvm_keccak256_guest, // trigger extern native-keccak256
 };
 
-openvm_algebra_guest::moduli_setup::moduli_init! {
+openvm_algebra_guest::moduli_macros::moduli_init! {
     "52435875175126190479447740508185965837690552500527637822603658699938581184513"
 }
 

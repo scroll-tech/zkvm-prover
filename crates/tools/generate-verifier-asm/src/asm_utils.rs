@@ -1,4 +1,6 @@
-use openvm_instructions::{PhantomDiscriminant, SystemOpcode, VmOpcode, instruction::Instruction};
+use openvm_instructions::{
+    LocalOpcode, PhantomDiscriminant, SystemOpcode, VmOpcode, instruction::Instruction,
+};
 use openvm_native_compiler::{FieldArithmeticOpcode, NativeBranchEqualOpcode, NativePhantom};
 use openvm_rv32im_transpiler::BranchEqualOpcode;
 use openvm_stark_sdk::p3_baby_bear::BabyBear as F;
@@ -35,23 +37,23 @@ pub fn as_mem() -> F {
 }
 
 pub fn op_native_add() -> VmOpcode {
-    VmOpcode::with_default_offset(FieldArithmeticOpcode::ADD)
+    FieldArithmeticOpcode::ADD.global_opcode()
 }
 
 pub fn op_native_mul() -> VmOpcode {
-    VmOpcode::with_default_offset(FieldArithmeticOpcode::MUL)
+    FieldArithmeticOpcode::MUL.global_opcode()
 }
 
 pub fn op_native_beq() -> VmOpcode {
-    VmOpcode::with_default_offset(NativeBranchEqualOpcode(BranchEqualOpcode::BEQ))
+    NativeBranchEqualOpcode(BranchEqualOpcode::BEQ).global_opcode()
 }
 
 pub fn op_native_bne() -> VmOpcode {
-    VmOpcode::with_default_offset(NativeBranchEqualOpcode(BranchEqualOpcode::BNE))
+    NativeBranchEqualOpcode(BranchEqualOpcode::BNE).global_opcode()
 }
 
 pub fn op_halt() -> VmOpcode {
-    VmOpcode::with_default_offset(SystemOpcode::TERMINATE)
+    SystemOpcode::TERMINATE.global_opcode()
 }
 
 /////////////////// debug //////////////////////////

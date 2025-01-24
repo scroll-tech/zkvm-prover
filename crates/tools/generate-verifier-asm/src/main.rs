@@ -1,16 +1,13 @@
 use openvm_instructions::{
-    PublishOpcode, SystemOpcode,
+    LocalOpcode, PublishOpcode, SystemOpcode,
     SystemOpcode::PHANTOM,
-    VmOpcode,
     instruction::{DebugInfo, Instruction},
     program::Program,
 };
 use openvm_native_compiler::{NativeJalOpcode, NativeLoadStoreOpcode, NativePhantom};
-use openvm_sdk::fs::read_root_pk_from_file;
+use openvm_sdk::{config::AggStarkConfig, keygen::AggStarkProvingKey};
 use openvm_stark_sdk::p3_baby_bear::BabyBear as F;
 use p3_field::{FieldAlgebra, PrimeField32};
-
-pub const DEFAULT_ROOT_PK_PATH: &str = concat!(env!("HOME"), "/.openvm/root.pk");
 
 mod asm_utils;
 use asm_utils::*;
@@ -23,10 +20,9 @@ use asm_writer::*;
 // VmOpcode(260) 0 0 16777150 5 5 0 0    // StoreHintWord
 // VmOpcode(256) 16777143 0 16777150 5 5 0 0    // LoadV
 
-fn load_root_program() -> Program<F> {
+fn load_root_program(agg_stark_pk: &AggStarkProvingKey) -> Program<F> {
     // load from root_exe.bin if exist, otherwise load from pk
     let root_exe = {
-        let agg_stark_pk = read_root_pk_from_file(DEFAULT_ROOT_PK_PATH).expect("invalid pk file");
         let root_exe = &agg_stark_pk.root_verifier_pk.root_committed_exe;
         let root_exe = &root_exe.exe;
         root_exe.clone()
@@ -43,19 +39,21 @@ fn load_root_program() -> Program<F> {
 }
 
 fn op_publish() -> usize {
-    VmOpcode::with_default_offset(PublishOpcode::PUBLISH).as_usize()
+    PublishOpcode::PUBLISH.global_opcode().as_usize()
 }
 
 fn op_hintstore() -> usize {
-    VmOpcode::with_default_offset(NativeLoadStoreOpcode::HINT_STOREW).as_usize()
+    NativeLoadStoreOpcode::HINT_STOREW
+        .global_opcode()
+        .as_usize()
 }
 
 fn op_phantom() -> usize {
-    VmOpcode::with_default_offset(PHANTOM).as_usize()
+    PHANTOM.global_opcode().as_usize()
 }
 
 fn op_jal() -> usize {
-    VmOpcode::with_default_offset(NativeJalOpcode::JAL).as_usize()
+    NativeJalOpcode::JAL.global_opcode().as_usize()
 }
 
 #[derive(Debug, Default)]
@@ -90,8 +88,8 @@ impl Context {
 // Alias for convenience.
 type InstructionsWithDbgInfo = Vec<(Option<(Instruction<F>, Option<DebugInfo>)>, usize)>;
 
-fn dump_root_program(output_file: &str) {
-    let mut program = load_root_program();
+fn dump_root_program(stark_pk: &AggStarkProvingKey, output_file: &str) {
+    let mut program = load_root_program(stark_pk);
 
     let mut new_instructions_and_debug_infos: InstructionsWithDbgInfo = vec![];
     let mut context = Context::default();
@@ -110,7 +108,7 @@ fn dump_root_program(output_file: &str) {
                 if op.0.c.as_canonical_u32() as usize == NativePhantom::HintInput as usize {
                     // nop
                     let instructions = [Instruction {
-                        opcode: VmOpcode::with_default_offset(SystemOpcode::PHANTOM),
+                        opcode: SystemOpcode::PHANTOM.global_opcode(),
                         ..Default::default()
                     }];
                     new_instructions_and_debug_infos.extend(
@@ -250,5 +248,9 @@ fn fix_pc(new_instructions_and_debug_infos: &mut InstructionsWithDbgInfo) {
 }
 
 fn main() {
-    dump_root_program("root_verifier.asm");
+    println!("generating AggStarkProvingKey");
+    let (agg_stark_pk, _) = AggStarkProvingKey::dummy_proof_and_keygen(AggStarkConfig::default());
+
+    println!("generating root_verifier.asm");
+    dump_root_program(&agg_stark_pk, "root_verifier.asm");
 }
