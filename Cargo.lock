@@ -3711,6 +3711,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "openvm-native-transpiler"
+version = "0.2.0-alpha"
+source = "git+https://github.com/openvm-org/openvm.git?rev=d45b226#d45b2260a8327192a161cee2d3c273acf23868d1"
+dependencies = [
+ "openvm-instructions",
+ "openvm-transpiler",
+ "p3-field",
+]
+
+[[package]]
 name = "openvm-pairing-circuit"
 version = "0.2.0-alpha"
 source = "git+https://github.com/openvm-org/openvm.git?rev=d45b226#d45b2260a8327192a161cee2d3c273acf23868d1"
@@ -6408,6 +6418,9 @@ dependencies = [
  "once_cell",
  "openvm-build",
  "openvm-circuit",
+ "openvm-native-circuit",
+ "openvm-native-compiler",
+ "openvm-native-transpiler",
  "openvm-sdk",
  "openvm-transpiler",
  "sbv",

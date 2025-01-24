@@ -90,6 +90,6 @@ fn main() {
     // assign args[0] to input and args[1] to output
     let input = std::env::args().nth(1).expect("no input file given");
     display_commitments(input.as_str());
-    let output = std::env::args().nth(2).expect("no output file given");
-    flatten_proof(&input, &output);
+    //let output = std::env::args().nth(2).expect("no output file given");
+    //flatten_proof(&input, &output);
 }

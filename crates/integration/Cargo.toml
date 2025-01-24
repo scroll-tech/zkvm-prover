@@ -13,6 +13,9 @@ tracing-subscriber.workspace = true
 openvm-build = { workspace = true, default-features = false }
 openvm-circuit = { workspace = true }
 openvm-sdk = { workspace = true, default-features = false }
+openvm-native-circuit = { workspace = true, default-features = false }
+openvm-native-compiler = { workspace = true, default-features = false }
+openvm-native-transpiler = { workspace = true, default-features = false }
 openvm-transpiler = { workspace = true, default-features = false }
 
 chrono = "0.4"

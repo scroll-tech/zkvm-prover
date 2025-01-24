@@ -51,14 +51,14 @@ fn read_witnesses() -> Vec<u8> {
     use std::alloc::{GlobalAlloc, Layout, System};
     openvm_rv32im_guest::hint_input();
     let mut len: u32 = 0;
-    openvm_rv32im_guest::hint_store_u32!((&mut len) as *mut u32 as u32, 0);
+    openvm_rv32im_guest::hint_store_u32!((&mut len) as *mut u32 as u32);
     let num_words = (len + 3) / 4;
     let size = (num_words * 4) as usize;
     let layout = Layout::from_size_align(size, 16).unwrap();
     let ptr_start = unsafe { System.alloc(layout) };
     let mut ptr = ptr_start;
     for _ in 0..num_words {
-        openvm_rv32im_guest::hint_store_u32!(ptr as u32, 0);
+        openvm_rv32im_guest::hint_store_u32!(ptr as u32);
         ptr = unsafe { ptr.add(4) };
     }
     unsafe { Vec::from_raw_parts(ptr_start, len as usize, size) }
@@ -70,11 +70,10 @@ fn read_witnesses() -> Vec<u8> {
     openvm::io::read_vec()
 }
 
-const EXE_COMMIT: [u32; 8] = [
-    396649651, 1175086036, 1682626845, 471855974, 1659938811, 1981570609, 805067545, 1640289616,
-];
+const EXE_COMMIT: [u32; 8] = 
+    [397570296, 303176697, 1964773027, 1141065112, 1871270311, 1130635204, 1728891034, 568787834];
 const LEAF_COMMIT: [u32; 8] = [
-    505034789, 682334490, 407062982, 1227826652, 298205975, 1959777750, 1633765816, 97452666,
+    1927402829, 499234175, 923282328, 1081788839, 582968208, 549279052, 209451000, 2007289153
 ];
 
 // will terminate inside if fail

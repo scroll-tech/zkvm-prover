@@ -106,8 +106,11 @@ pub trait ProverTester {
 
         // First read the app config specified in the project's root directory.
         let path_app_config = Path::new(Self::PATH_PROJECT_ROOT).join(FD_APP_CONFIG);
-        let app_config = read_app_config(&path_app_config)?;
-
+        let mut app_config = read_app_config(&path_app_config)?;
+        // FIXME
+        if Self::ASSETS_DIR != "chunk" {
+            app_config.app_vm_config.castf = Some(openvm_native_circuit::CastFExtension);
+        }
         // Copy the app config to assets directory for convenience of export/release.
         //
         // - <openvm-assets>/<assets-dir>/openvm.toml
@@ -115,7 +118,11 @@ pub trait ProverTester {
         std::fs::copy(&path_app_config, &path_dup_app_config)?;
 
         // Transpile ELF to openvm executable.
-        let app_exe = Sdk.transpile(elf, app_config.app_vm_config.transpiler())?;
+        let mut transpiler = app_config.app_vm_config.transpiler();
+        if Self::ASSETS_DIR != "chunk" {
+            transpiler = transpiler.with_extension(openvm_native_transpiler::LongFormTranspilerExtension);
+        }
+        let app_exe = Sdk.transpile(elf, transpiler)?;
 
         // Write exe to disc.
         let path_app_exe = path_assets.join(FD_APP_EXE);
