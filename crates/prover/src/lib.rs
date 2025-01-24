@@ -5,7 +5,10 @@ mod proof;
 pub use proof::{BatchProof, BundleProof, ChunkProof, WrappedProof};
 
 mod prover;
-pub use prover::{BatchProver, BundleProver, ChunkProver, Prover, ProverVerifier, SC};
+pub use prover::{
+    BatchProver, BatchProverType, BundleProver, BundleProverType, ChunkProver, ChunkProverType,
+    Prover, ProverType, SC,
+};
 
 pub mod setup;
 
