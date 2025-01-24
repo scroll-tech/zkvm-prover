@@ -85,9 +85,11 @@ pub fn build_batch_task(
     blob_bytes.extend(compressed_payload);
 
     // generate versioned hash
-    let blob_versioned_hash = blob::get_versioned_hash(&blob_bytes);
+    let coefficients = blob::get_coefficients(&blob_bytes);
+    let blob_versioned_hash = blob::get_versioned_hash(&coefficients);
 
     // TODO: calc blob_data_proof ...
+    // let point_evaluations = blob::point_evaluation(&coefficients, )
 
     let batch_header = BatchHeaderV3 {
         version: last_header.version,
