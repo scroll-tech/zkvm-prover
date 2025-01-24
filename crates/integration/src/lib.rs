@@ -120,7 +120,8 @@ pub trait ProverTester {
         // Transpile ELF to openvm executable.
         let mut transpiler = app_config.app_vm_config.transpiler();
         if Self::ASSETS_DIR != "chunk" {
-            transpiler = transpiler.with_extension(openvm_native_transpiler::LongFormTranspilerExtension);
+            transpiler =
+                transpiler.with_extension(openvm_native_transpiler::LongFormTranspilerExtension);
         }
         let app_exe = Sdk.transpile(elf, transpiler)?;
 

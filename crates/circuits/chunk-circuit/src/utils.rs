@@ -1,8 +1,3 @@
-use std::{
-    alloc::{GlobalAlloc, Layout, System},
-    slice::from_raw_parts,
-};
-
 use rkyv::{rancor, vec::ArchivedVec};
 use sbv::{
     kv::nohash::NoHashMap,
@@ -13,11 +8,14 @@ use sbv::{
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use openvm::platform as openvm_platform;
 
-/// Read witnesses from the hint stream.
+// Read the witnesses from the hint stream.
+// rkyv needs special alignment for its data structures, use a pre-aligned
+// buffer with rkyv::access_unchecked is more efficient than rkyv::access
+#[cfg(target_os = "zkvm")]
 #[inline(always)]
-pub fn read_witness() -> &'static [u8] {
-    use openvm_rv32im_guest::hint_input;
-    hint_input();
+pub fn read_witnesses() -> Vec<u8> {
+    use std::alloc::{GlobalAlloc, Layout, System};
+    openvm_rv32im_guest::hint_input();
     let mut len: u32 = 0;
     openvm_rv32im_guest::hint_store_u32!((&mut len) as *mut u32 as u32);
     let num_words = (len + 3) / 4;
@@ -25,12 +23,17 @@ pub fn read_witness() -> &'static [u8] {
     let layout = Layout::from_size_align(size, 16).unwrap();
     let ptr_start = unsafe { System.alloc(layout) };
     let mut ptr = ptr_start;
-    openvm_rv32im_guest::hint_buffer_u32!(ptr as u32, num_words);
-    // for _ in 0..num_words {
-    //    openvm_rv32im_guest::hint_store_u32!(ptr as u32);
-    //    ptr = unsafe { ptr.add(4) };
-    //}
-    unsafe { from_raw_parts(ptr_start, size) }
+    for _ in 0..num_words {
+        openvm_rv32im_guest::hint_store_u32!(ptr as u32);
+        ptr = unsafe { ptr.add(4) };
+    }
+    unsafe { Vec::from_raw_parts(ptr_start, len as usize, size) }
+}
+
+// dummy implement to avoid complains
+#[cfg(not(target_os = "zkvm"))]
+pub fn read_witnesses() -> Vec<u8> {
+    openvm::io::read_vec()
 }
 
 /// Deserialize serialized bytes into archived witness for the chunk circuit.

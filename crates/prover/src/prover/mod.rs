@@ -13,6 +13,7 @@ use openvm_sdk::{
     keygen::{AggStarkProvingKey, AppProvingKey, Halo2ProvingKey},
 };
 use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Config;
+use serde::{Serialize, de::DeserializeOwned};
 use tracing::{debug, instrument};
 
 use crate::{
@@ -22,16 +23,13 @@ use crate::{
 };
 
 mod batch;
-pub use batch::BatchProver;
+pub use batch::{BatchProver, BatchProverType};
 
 mod bundle;
-pub use bundle::BundleProver;
+pub use bundle::{BundleProver, BundleProverType};
 
 mod chunk;
-pub use chunk::ChunkProver;
-
-mod types;
-pub use types::{BatchProverType, BundleProverType, ChunkProverType, ProverType};
+pub use chunk::{ChunkProver, ChunkProverType};
 
 /// Proving key for STARK aggregation. Primarily used to aggregate
 /// [continuation proofs][openvm_sdk::prover::vm::ContinuationVmProof].
@@ -174,4 +172,28 @@ impl<Type: ProverType> Prover<Type> {
         let path_proof = format!("{}-{}.json", Type::NAME, task.identifier());
         path_proof
     }
+}
+
+pub trait ProverType {
+    const NAME: &'static str;
+
+    const EVM: bool;
+
+    type ProvingTask: ProvingTask;
+
+    type ProofType: Serialize + DeserializeOwned;
+
+    type ProofMetadata: Serialize + DeserializeOwned + std::fmt::Debug;
+
+    fn build_proof_metadata(task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error>;
+
+    fn gen_proof(
+        app_pk: Arc<AppProvingKey<SdkVmConfig>>,
+        app_committed_exe: Arc<NonRootCommittedExe>,
+        task: &Self::ProvingTask,
+    ) -> Result<WrappedProof<Self::ProofMetadata, Self::ProofType>, Error>;
+
+    fn verify_proof(
+        proof: &WrappedProof<Self::ProofMetadata, Self::ProofType>,
+    ) -> Result<(), Error>;
 }

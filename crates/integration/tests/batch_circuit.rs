@@ -1,10 +1,9 @@
 use openvm_sdk::{Sdk, StdIn};
-use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE};
 use scroll_zkvm_integration::{
     prove_verify_multi, prove_verify_single, setup_logger,
     testers::{batch::BatchProverTester, chunk::MultiChunkProverTester},
 };
-use scroll_zkvm_prover::{setup::{read_app_config, read_app_exe}, task::batch::BatchProvingTask, utils::read_json, ChunkProof};
+use scroll_zkvm_prover::{ChunkProof, setup::read_app_exe, task::batch::BatchProvingTask};
 use tracing::info;
 
 #[test]
@@ -24,26 +23,28 @@ fn batch_simple_execution() -> eyre::Result<()> {
     let exe = read_app_exe(exe_path)?;
     // read task
     let task: BatchProvingTask = {
-        let proof_dir = "/home/ubuntu/zzhang/zkvm-prover/.output/chunk-tests-20250124_033711/chunk/proofs";
-        let pathes = ["chunk-proof--12508460-12508460.json",
-        "chunk-proof--12508461-12508461.json",
-        "chunk-proof--12508462-12508463.json"
+        let proof_dir =
+            "/home/ubuntu/zzhang/zkvm-prover/.output/chunk-tests-20250124_033711/chunk/proofs";
+        let pathes = [
+            "chunk-proof--12508460-12508460.json",
+            "chunk-proof--12508461-12508461.json",
+            "chunk-proof--12508462-12508463.json",
         ];
         let chunk_proofs = pathes.map(|p| {
             let p = format!("{proof_dir}/{p}");
             ChunkProof::from_json(p).unwrap()
-    });
+        });
         BatchProvingTask {
             chunk_proofs: chunk_proofs.to_vec(),
             batch_header: Default::default(),
             blob_bytes: Default::default(),
         }
-        //read_json("testdata/batch-task-with-blob.json")?;
+        // read_json("testdata/batch-task-with-blob.json")?;
     };
     info!("benching task for batch {}", task.batch_header.batch_index);
 
     // suppose we are under `integration` path
-    //let app_config = read_app_config("../circuits/batch-circuit/openvm.toml")?;
+    // let app_config = read_app_config("../circuits/batch-circuit/openvm.toml")?;
     let vm_config = app_config.app_vm_config;
 
     // ANCHOR_END: vm_config
@@ -61,18 +62,16 @@ fn batch_simple_execution() -> eyre::Result<()> {
     let sdk = Sdk;
     // 2a. Build the ELF with guest options and a target filter (skipped, simply read elf).
 
-    /* 
-        let elf_path = "../../target/riscv32im-risc0-zkvm-elf/release/batch-circuit";
-    let elf_bytes = std::fs::read(elf_path)?;
-    let elf = Elf::decode(&elf_bytes, MEM_SIZE as u32)?;
+    // let elf_path = "../../target/riscv32im-risc0-zkvm-elf/release/batch-circuit";
+    // let elf_bytes = std::fs::read(elf_path)?;
+    // let elf = Elf::decode(&elf_bytes, MEM_SIZE as u32)?;
     // ANCHOR_END: build
-
+    //
     // ANCHOR: transpilation
     // 3. Transpile the ELF into a VmExe
-    let mut transpiler = vm_config.transpiler()
-    .with_extension(openvm_native_transpiler::LongFormTranspilerExtension);
-    let exe = sdk.transpile(elf, transpiler)?;
-    */
+    // let mut transpiler = vm_config.transpiler()
+    // .with_extension(openvm_native_transpiler::LongFormTranspilerExtension);
+    // let exe = sdk.transpile(elf, transpiler)?;
     // ANCHOR: execution
     // 4. Format your input into StdIn
     let mut stdin = StdIn::default();

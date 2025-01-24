@@ -2,7 +2,7 @@ mod execute;
 use execute::execute;
 
 mod utils;
-use utils::{deserialize_witness, read_witness};
+use utils::{deserialize_witness, read_witnesses};
 
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use {
@@ -35,9 +35,9 @@ fn main() {
     setup_all_curves();
     setup_all_complex_extensions();
 
-    let witness_bytes = read_witness(); // openvm::io::read_vec();
+    let witness_bytes = read_witnesses(); // openvm::io::read_vec();
 
-    let witness = deserialize_witness(witness_bytes);
+    let witness = deserialize_witness(&witness_bytes);
 
     let public_input_hash = execute(witness.as_slice());
 

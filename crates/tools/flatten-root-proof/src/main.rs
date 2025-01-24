@@ -13,6 +13,7 @@ use openvm_stark_sdk::{
 };
 use scroll_zkvm_circuit_input_types::proof::FlattenedRootProof;
 
+#[allow(dead_code)]
 fn flatten_root_vm_verifier_input(
     root_proof: &RootVmVerifierInput<BabyBearPoseidon2Config>,
 ) -> FlattenedRootProof {
@@ -48,6 +49,7 @@ fn flatten_root_vm_verifier_input(
 // exe commit: 0x007c75be55d5e8d24557d2fc2b4a1c094fd3c027a99296dd75014c7e90e7cb9f
 // raw leaf commit: [505034789, 682334490, 407062982, 1227826652, 298205975, 1959777750, 1633765816, 97452666]
 // leaf commit: 0x000764f733c43fc78b9aa7ee26610bb86d754157eeea02e09b458c9b45fea600
+#[allow(dead_code)]
 fn display_commitments(guest_dir: &str) {
     let exe = read_exe_from_file(format!("{guest_dir}/app.vmexe")).unwrap();
     let app_pk: AppProvingKey<SdkVmConfig> =
@@ -76,6 +78,7 @@ fn display_commitments(guest_dir: &str) {
     // commits
 }
 
+#[allow(dead_code)]
 fn flatten_proof(input: &str, output: &str) {
     let proof = scroll_zkvm_prover::ChunkProof::from_json(input).unwrap();
     let root_proof = proof.proof;
@@ -90,6 +93,6 @@ fn main() {
     // assign args[0] to input and args[1] to output
     let input = std::env::args().nth(1).expect("no input file given");
     display_commitments(input.as_str());
-    //let output = std::env::args().nth(2).expect("no output file given");
-    //flatten_proof(&input, &output);
+    // let output = std::env::args().nth(2).expect("no output file given");
+    // flatten_proof(&input, &output);
 }
