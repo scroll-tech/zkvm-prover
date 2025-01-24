@@ -21,7 +21,7 @@ openvm_algebra_guest::moduli_macros::moduli_init! {
 
 openvm::entry!(main);
 
-fn compute_batch_pi(batch: &ArchivedBatchWitness) -> B256 {
+fn execute(batch: &ArchivedBatchWitness) -> B256 {
     let chunk_infos: Vec<ChunkInfo> = batch.chunk_infos.iter().map(|ci| ci.into()).collect();
 
     let pi = match &batch.reference_header {
@@ -135,9 +135,9 @@ fn main() {
         );
     }
 
-    let pi_hash = compute_batch_pi(batch_witness);
+    let pi_hash = execute(batch_witness);
 
     for (i, part) in pi_hash.chunks_exact(4).enumerate() {
-        openvm::io::reveal(u32::from_be_bytes(part.try_into().unwrap()), i)
+        openvm::io::reveal(u32::from_le_bytes(part.try_into().unwrap()), i)
     }
 }
