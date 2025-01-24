@@ -137,7 +137,7 @@ fn main() {
 
     let pi_hash = compute_batch_pi(batch_witness);
 
-    for (i, &byte) in pi_hash.iter().enumerate() {
-        openvm::io::reveal(u32::from(byte), i)
+    for (i, part) in pi_hash.chunks_exact(4).enumerate() {
+        openvm::io::reveal(u32::from_be_bytes(part.try_into().unwrap()), i)
     }
 }

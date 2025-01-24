@@ -39,9 +39,9 @@ fn main() {
 
     let witness = deserialize_witness(&witness_bytes);
 
-    let public_input_hash = execute(witness.as_slice());
+    let pi_hash = execute(witness.as_slice());
 
-    for (i, &byte) in public_input_hash.iter().enumerate() {
-        openvm::io::reveal(u32::from(byte), i)
+    for (i, part) in pi_hash.chunks_exact(4).enumerate() {
+        openvm::io::reveal(u32::from_be_bytes(part.try_into().unwrap()), i)
     }
 }
