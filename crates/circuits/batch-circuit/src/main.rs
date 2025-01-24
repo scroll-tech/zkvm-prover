@@ -1,3 +1,4 @@
+use alloy_primitives::B256;
 use rkyv::{access, rancor::BoxedError};
 use scroll_zkvm_circuit_input_types::batch::AsLastBatchHeader;
 
@@ -20,7 +21,7 @@ openvm_algebra_guest::moduli_macros::moduli_init! {
 
 openvm::entry!(main);
 
-fn compute_batch_pi(batch: &ArchivedBatchWitness) {
+fn compute_batch_pi(batch: &ArchivedBatchWitness) -> B256 {
     let chunk_infos: Vec<ChunkInfo> = batch.chunk_infos.iter().map(|ci| ci.into()).collect();
 
     let pi = match &batch.reference_header {
@@ -37,9 +38,7 @@ fn compute_batch_pi(batch: &ArchivedBatchWitness) {
         }
     };
 
-    for (i, part) in pi.public_input_hash().chunks_exact(4).enumerate() {
-        openvm::io::reveal(u32::from_be_bytes(part.try_into().unwrap()), i)
-    }
+    pi.public_input_hash()
 }
 
 // Read the witnesses from the hint stream.
@@ -136,5 +135,9 @@ fn main() {
         );
     }
 
-    compute_batch_pi(batch_witness);
+    let pi_hash = compute_batch_pi(batch_witness);
+
+    for (i, &byte) in pi_hash.iter().enumerate() {
+        openvm::io::reveal(u32::from(byte), i)
+    }
 }
