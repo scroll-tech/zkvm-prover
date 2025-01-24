@@ -11,7 +11,7 @@ use openvm_sdk::{
     fs::{write_app_pk_to_file, write_exe_to_file},
 };
 use openvm_transpiler::elf::Elf;
-use scroll_zkvm_prover::{ProverVerifier, setup::read_app_config};
+use scroll_zkvm_prover::{ProverType, WrappedProof, setup::read_app_config};
 use tracing::instrument;
 use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -46,7 +46,7 @@ static DIR_ASSETS: OnceCell<PathBuf> = OnceCell::new();
 /// Circuit that implements functionality required to run e2e tests.
 pub trait ProverTester {
     /// Prover type that is being tested.
-    type Prover: ProverVerifier;
+    type Prover: ProverType;
 
     /// Path to the corresponding circuit's project directory.
     const PATH_PROJECT_ROOT: &str;
@@ -139,11 +139,10 @@ pub trait ProverTester {
     }
 
     /// Generate proving task for test purposes.
-    fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverVerifier>::ProvingTask>;
+    fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask>;
 
     /// Generate multiple proving tasks for test purposes.
-    fn gen_multi_proving_tasks() -> eyre::Result<Vec<<Self::Prover as ProverVerifier>::ProvingTask>>
-    {
+    fn gen_multi_proving_tasks() -> eyre::Result<Vec<<Self::Prover as ProverType>::ProvingTask>> {
         unimplemented!()
     }
 }
@@ -204,20 +203,24 @@ pub fn setup_logger() -> eyre::Result<()> {
 /// Alias for convenience.
 type ProveVerifyRes<T> = eyre::Result<
     ProveVerifyOutcome<
-        <<T as ProverTester>::Prover as ProverVerifier>::ProvingTask,
-        <<T as ProverTester>::Prover as ProverVerifier>::Proof,
+        <<T as ProverTester>::Prover as ProverType>::ProvingTask,
+        WrappedProof<
+            <<T as ProverTester>::Prover as ProverType>::ProofMetadata,
+            <<T as ProverTester>::Prover as ProverType>::ProofType,
+        >,
     >,
 >;
 
 /// End-to-end test for a single proving task.
 #[instrument(name = "prove_verify_single", skip_all)]
 pub fn prove_verify_single<T>(
-    task: Option<<T::Prover as ProverVerifier>::ProvingTask>,
+    task: Option<<T::Prover as ProverType>::ProvingTask>,
 ) -> ProveVerifyRes<T>
 where
     T: ProverTester,
-    <T::Prover as ProverVerifier>::ProvingTask: Clone,
-    <T::Prover as ProverVerifier>::Proof: Clone,
+    <T::Prover as ProverType>::ProvingTask: Clone,
+    <T::Prover as ProverType>::ProofMetadata: Clone,
+    <T::Prover as ProverType>::ProofType: Clone,
 {
     // Setup test-run directories.
     T::setup()?;
@@ -235,7 +238,8 @@ where
     let path_assets = DIR_ASSETS.get().ok_or(eyre::eyre!("missing assets dir"))?;
     let cache_dir = path_assets.join(DIR_PROOFS);
     std::fs::create_dir_all(&cache_dir)?;
-    let prover = <T as ProverTester>::Prover::setup(&path_exe, &path_pk, Some(&cache_dir))?;
+    let prover =
+        scroll_zkvm_prover::Prover::<T::Prover>::setup(&path_exe, &path_pk, Some(&cache_dir))?;
 
     // Generate proving task for the circuit.
     let task = task.unwrap_or(T::gen_proving_task()?);
@@ -252,12 +256,13 @@ where
 /// End-to-end test for multiple proving tasks of the same prover.
 #[instrument(name = "prove_verify_multi", skip_all)]
 pub fn prove_verify_multi<T>(
-    tasks: Option<&[<T::Prover as ProverVerifier>::ProvingTask]>,
+    tasks: Option<&[<T::Prover as ProverType>::ProvingTask]>,
 ) -> ProveVerifyRes<T>
 where
     T: ProverTester,
-    <T::Prover as ProverVerifier>::ProvingTask: Clone,
-    <T::Prover as ProverVerifier>::Proof: Clone,
+    <T::Prover as ProverType>::ProvingTask: Clone,
+    <T::Prover as ProverType>::ProofMetadata: Clone,
+    <T::Prover as ProverType>::ProofType: Clone,
 {
     // Setup test-run directories.
     T::setup()?;
@@ -275,7 +280,8 @@ where
     let path_assets = DIR_ASSETS.get().ok_or(eyre::eyre!("missing assets dir"))?;
     let cache_dir = path_assets.join(DIR_PROOFS);
     std::fs::create_dir_all(&cache_dir)?;
-    let prover = <T as ProverTester>::Prover::setup(&path_exe, &path_pk, Some(&cache_dir))?;
+    let prover =
+        scroll_zkvm_prover::Prover::<T::Prover>::setup(&path_exe, &path_pk, Some(&cache_dir))?;
 
     // Generate proving task for the circuit.
     let tasks = tasks.map_or_else(|| T::gen_multi_proving_tasks(), |tasks| Ok(tasks.to_vec()))?;
@@ -288,7 +294,14 @@ where
             prover.verify_proof(&proof)?;
             Ok(proof)
         })
-        .collect::<eyre::Result<Vec<<T::Prover as ProverVerifier>::Proof>>>()?;
+        .collect::<eyre::Result<
+            Vec<
+                WrappedProof<
+                    <T::Prover as ProverType>::ProofMetadata,
+                    <T::Prover as ProverType>::ProofType,
+                >,
+            >,
+        >>()?;
 
     Ok(ProveVerifyOutcome::multi(&tasks, &proofs))
 }

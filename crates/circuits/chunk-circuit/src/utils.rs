@@ -13,11 +13,10 @@ use sbv::{
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use openvm::platform as openvm_platform;
 
-
 /// Read witnesses from the hint stream.
 #[inline(always)]
 pub fn read_witness() -> &'static [u8] {
-    use openvm_rv32im_guest::{hint_input};
+    use openvm_rv32im_guest::hint_input;
     hint_input();
     let mut len: u32 = 0;
     openvm_rv32im_guest::hint_store_u32!((&mut len) as *mut u32 as u32);
@@ -27,13 +26,12 @@ pub fn read_witness() -> &'static [u8] {
     let ptr_start = unsafe { System.alloc(layout) };
     let mut ptr = ptr_start;
     openvm_rv32im_guest::hint_buffer_u32!(ptr as u32, num_words);
-    //for _ in 0..num_words {
+    // for _ in 0..num_words {
     //    openvm_rv32im_guest::hint_store_u32!(ptr as u32);
     //    ptr = unsafe { ptr.add(4) };
     //}
     unsafe { from_raw_parts(ptr_start, size) }
 }
-    
 
 /// Deserialize serialized bytes into archived witness for the chunk circuit.
 #[inline(always)]

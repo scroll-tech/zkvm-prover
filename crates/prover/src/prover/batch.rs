@@ -1,6 +1,6 @@
-use openvm_sdk::config::SdkVmConfig;
-
 use crate::Prover;
 
+use super::types::BatchProverType;
+
 /// Prover for [`BatchCircuit`].
-pub type BatchProver = Prover<SdkVmConfig>;
+pub type BatchProver = Prover<BatchProverType>;
