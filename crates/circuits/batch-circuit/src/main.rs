@@ -138,6 +138,8 @@ fn main() {
     let pi_hash = execute(batch_witness);
 
     for (i, part) in pi_hash.chunks_exact(4).enumerate() {
-        openvm::io::reveal(u32::from_le_bytes(part.try_into().unwrap()), i)
+        let reveal = u32::from_le_bytes(part.try_into().unwrap());
+        openvm::io::print(format!("reveal[{:?}] = {:?}", i, reveal));
+        openvm::io::reveal(reveal, i)
     }
 }
