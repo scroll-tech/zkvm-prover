@@ -6396,6 +6396,7 @@ dependencies = [
  "openvm-rv32im-guest",
  "rkyv",
  "sbv",
+ "scroll-zkvm-circuit-input-types",
 ]
 
 [[package]]

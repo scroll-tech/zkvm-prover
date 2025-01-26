@@ -3,15 +3,15 @@ use std::mem::ManuallyDrop;
 use sbv::{
     core::{ChunkInfo, EvmDatabase, EvmExecutor},
     primitives::{
-        B256, BlockWithSenders, BlockWitness,
+        BlockWithSenders, BlockWitness,
         chainspec::{Chain, get_chain_spec},
         ext::{BlockWitnessChunkExt, TxBytesHashExt},
     },
 };
 
-use crate::utils::make_providers;
+use crate::{ChunkPublicInputs, utils::make_providers};
 
-pub fn execute<W: BlockWitness>(witnesses: &[W]) -> B256 {
+pub fn execute<W: BlockWitness>(witnesses: &[W]) -> ChunkPublicInputs {
     assert!(
         !witnesses.is_empty(),
         "At least one witness must be provided in chunk mode"
@@ -32,14 +32,14 @@ pub fn execute<W: BlockWitness>(witnesses: &[W]) -> B256 {
         .expect("failed to build reth block")
         .leak() as &'static [BlockWithSenders];
 
-    let chunk_info = ChunkInfo::from_blocks_iter(
+    let sbv_chunk_info = ChunkInfo::from_blocks_iter(
         witnesses[0].chain_id(),
         witnesses[0].pre_state_root(),
         blocks.iter().map(|b| &b.block),
     );
 
-    let chain_spec =
-        get_chain_spec(Chain::from_id(chunk_info.chain_id())).expect("failed to get chain spec");
+    let chain_spec = get_chain_spec(Chain::from_id(sbv_chunk_info.chain_id()))
+        .expect("failed to get chain spec");
 
     let (code_db, nodes_provider, block_hashes) = make_providers(witnesses);
     let nodes_provider = ManuallyDrop::new(nodes_provider);
@@ -47,7 +47,7 @@ pub fn execute<W: BlockWitness>(witnesses: &[W]) -> B256 {
     let mut db = ManuallyDrop::new(
         EvmDatabase::new_from_root(
             code_db,
-            chunk_info.prev_state_root(),
+            sbv_chunk_info.prev_state_root(),
             &nodes_provider,
             block_hashes,
         )
@@ -65,17 +65,24 @@ pub fn execute<W: BlockWitness>(witnesses: &[W]) -> B256 {
 
     let post_state_root = db.commit_changes();
     assert_eq!(
-        chunk_info.post_state_root(),
+        sbv_chunk_info.post_state_root(),
         post_state_root,
         "state root mismatch"
     );
 
     let withdraw_root = db.withdraw_root().expect("failed to get withdraw root");
     let mut rlp_buffer = ManuallyDrop::new(Vec::with_capacity(2048));
-    let tx_bytes_hash = blocks
+    let tx_data_digest = blocks
         .iter()
         .flat_map(|b| b.body.transactions.iter())
         .tx_bytes_hash_in(rlp_buffer.as_mut());
 
-    chunk_info.public_input_hash(&withdraw_root, &tx_bytes_hash)
+    ChunkPublicInputs {
+        chain_id: sbv_chunk_info.chain_id(),
+        prev_state_root: sbv_chunk_info.prev_state_root(),
+        post_state_root: sbv_chunk_info.post_state_root(),
+        withdraw_root,
+        data_hash: sbv_chunk_info.data_hash(),
+        tx_data_digest,
+    }
 }
