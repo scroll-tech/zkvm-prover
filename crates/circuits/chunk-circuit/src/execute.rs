@@ -1,17 +1,18 @@
 use std::mem::ManuallyDrop;
 
 use sbv::{
-    core::{ChunkInfo, EvmDatabase, EvmExecutor},
+    core::{ChunkInfo as SbvChunkInfo, EvmDatabase, EvmExecutor},
     primitives::{
         BlockWithSenders, BlockWitness,
         chainspec::{Chain, get_chain_spec},
         ext::{BlockWitnessChunkExt, TxBytesHashExt},
     },
 };
+use scroll_zkvm_circuit_input_types::chunk::ChunkInfo;
 
-use crate::{circuit::ChunkCircuitPublicInputs, utils::make_providers};
+use crate::utils::make_providers;
 
-pub fn execute<W: BlockWitness>(witnesses: &[W]) -> ChunkCircuitPublicInputs {
+pub fn execute<W: BlockWitness>(witnesses: &[W]) -> ChunkInfo {
     assert!(
         !witnesses.is_empty(),
         "At least one witness must be provided in chunk mode"
@@ -32,7 +33,7 @@ pub fn execute<W: BlockWitness>(witnesses: &[W]) -> ChunkCircuitPublicInputs {
         .expect("failed to build reth block")
         .leak() as &'static [BlockWithSenders];
 
-    let sbv_chunk_info = ChunkInfo::from_blocks_iter(
+    let sbv_chunk_info = SbvChunkInfo::from_blocks_iter(
         witnesses[0].chain_id(),
         witnesses[0].pre_state_root(),
         blocks.iter().map(|b| &b.block),
@@ -77,7 +78,7 @@ pub fn execute<W: BlockWitness>(witnesses: &[W]) -> ChunkCircuitPublicInputs {
         .flat_map(|b| b.body.transactions.iter())
         .tx_bytes_hash_in(rlp_buffer.as_mut());
 
-    ChunkCircuitPublicInputs {
+    ChunkInfo {
         chain_id: sbv_chunk_info.chain_id(),
         prev_state_root: sbv_chunk_info.prev_state_root(),
         post_state_root: sbv_chunk_info.post_state_root(),

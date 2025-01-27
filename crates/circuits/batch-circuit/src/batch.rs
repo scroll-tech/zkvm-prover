@@ -1,8 +1,8 @@
 use core::iter::Iterator;
 
 use alloy_primitives::B256;
-use itertools::Itertools;
 
+use scroll_zkvm_circuit_input_types::PublicInputs;
 pub use scroll_zkvm_circuit_input_types::{
     batch::{
         ArchivedBatchWitness, ArchivedReferenceHeader, BatchHeader, BatchHeaderV3, MAX_AGG_CHUNKS,
@@ -44,7 +44,7 @@ impl<'a> ChunksSeq<'a> {
     pub fn post_state_root(&self) -> B256 {
         self.1.post_state_root
     }
-    pub fn withdraw_root(&self) -> Option<B256> {
+    pub fn withdraw_root(&self) -> B256 {
         self.1.withdraw_root
     }
     pub fn chain_id(&self) -> u64 {
@@ -132,13 +132,15 @@ impl PIBuilder {
         let chunks_seq = ChunksSeq::new(chunks_info.clone());
 
         Self {
-            chunks_pi: Self::build_chunks_pi(chunks_info, &payload.chunk_data_digests),
+            chunks_pi: chunks_info
+                .map(|chunk| chunk.pi_hash())
+                .collect::<Vec<B256>>(),
             parent_state_root: chunks_seq.prev_state_root(),
             parent_batch_hash,
             current_state_root: chunks_seq.post_state_root(),
             batch_hash,
             chain_id: chunks_seq.chain_id(),
-            current_withdraw_root: chunks_seq.withdraw_root().unwrap_or_default(),
+            current_withdraw_root: chunks_seq.withdraw_root(),
         }
     }
 
@@ -154,15 +156,5 @@ impl PIBuilder {
                 .cloned()
                 .collect::<Vec<u8>>(),
         )
-    }
-
-    fn build_chunks_pi<'a>(
-        chunks_info: impl Iterator<Item = &'a ChunkInfo>,
-        tx_bytes_digests: &[B256],
-    ) -> Vec<B256> {
-        chunks_info
-            .zip_eq(tx_bytes_digests)
-            .map(|(chunk, tx_bytes_digest)| chunk.public_input_hash(tx_bytes_digest))
-            .collect()
     }
 }

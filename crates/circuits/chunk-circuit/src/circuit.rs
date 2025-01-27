@@ -1,6 +1,6 @@
 use rkyv::vec::ArchivedVec;
-use sbv::primitives::{B256, types::ArchivedBlockWitness};
-use scroll_zkvm_circuit_input_types::{Circuit, PublicInputs};
+use sbv::primitives::types::ArchivedBlockWitness;
+use scroll_zkvm_circuit_input_types::{Circuit, chunk::ChunkInfo};
 
 use crate::{execute::execute, utils::read_witnesses};
 
@@ -35,7 +35,7 @@ impl Circuit for ChunkCircuit {
 
     type Witness = ArchivedVec<ArchivedBlockWitness>;
 
-    type PublicInputs = ChunkCircuitPublicInputs;
+    type PublicInputs = ChunkInfo;
 
     type PrevPublicInputs = ();
 
@@ -51,7 +51,7 @@ impl Circuit for ChunkCircuit {
 
     fn deserialize_witness(witness_bytes: &[u8]) -> &Self::Witness {
         rkyv::access::<ArchivedVec<ArchivedBlockWitness>, rkyv::rancor::BoxedError>(witness_bytes)
-            .unwrap()
+            .expect("ChunkCircuit: rkyc deserialisation of witness bytes failed")
     }
 
     fn prev_public_inputs(_witness: &Self::Witness) -> Vec<Self::PrevPublicInputs> {
@@ -60,49 +60,5 @@ impl Circuit for ChunkCircuit {
 
     fn validate(witness: &Self::Witness) -> Self::PublicInputs {
         execute(witness)
-    }
-}
-
-pub struct ChunkCircuitPublicInputs {
-    pub chain_id: u64,
-    pub prev_state_root: B256,
-    pub post_state_root: B256,
-    pub withdraw_root: B256,
-    pub data_hash: B256,
-    pub tx_data_digest: B256,
-}
-
-impl PublicInputs for ChunkCircuitPublicInputs {
-    /// Public input hash for a given chunk is defined as
-    ///
-    /// keccak(
-    ///     chain id ||
-    ///     prev state root ||
-    ///     post state root ||
-    ///     withdraw root ||
-    ///     chunk data hash ||
-    ///     chunk txdata hash
-    /// )
-    fn pi_hash(&self) -> B256 {
-        scroll_zkvm_circuit_input_types::utils::keccak256(
-            std::iter::empty()
-                .chain(&self.chain_id.to_be_bytes())
-                .chain(self.prev_state_root.as_slice())
-                .chain(self.post_state_root.as_slice())
-                .chain(self.withdraw_root.as_slice())
-                .chain(self.data_hash.as_slice())
-                .chain(self.tx_data_digest.as_slice())
-                .cloned()
-                .collect::<Vec<u8>>(),
-        )
-    }
-
-    /// Validate public inputs between 2 contiguous chunks.
-    ///
-    /// - chain id MUST match
-    /// - state roots MUST be chained
-    fn validate(&self, prev_pi: &Self) {
-        assert_eq!(self.chain_id, prev_pi.chain_id);
-        assert_eq!(self.prev_state_root, prev_pi.post_state_root);
     }
 }
