@@ -222,6 +222,7 @@ type ProveVerifyRes<T> = eyre::Result<
 >;
 
 /// Alias for convenience.
+#[allow(dead_code)]
 type ProveVerifyEvmRes<T> = eyre::Result<
     ProveVerifyOutcome<
         <<T as ProverTester>::Prover as ProverType>::ProvingTask,

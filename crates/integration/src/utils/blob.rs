@@ -1,8 +1,7 @@
-
-use sbv::primitives::{B256 as H256, U256};
-use sha2::{Digest, Sha256};
 use bls12_381::Scalar;
 use ff::PrimeField;
+use sbv::primitives::{B256 as H256, U256};
+use sha2::{Digest, Sha256};
 
 // Number of bytes in a u256.
 const N_BYTES_U256: usize = 32;
@@ -29,7 +28,6 @@ pub fn get_coefficients(blob_bytes: &[u8]) -> [U256; BLOB_WIDTH] {
 
 /// Get the versioned hash as per EIP-4844.
 pub fn get_versioned_hash(coefficients: &[U256; BLOB_WIDTH]) -> H256 {
-
     let blob = c_kzg::Blob::from_bytes(
         &coefficients
             .iter()
