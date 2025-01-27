@@ -1,4 +1,5 @@
 use alloy_primitives::B256;
+use proof::RootProofWithPublicValues;
 
 pub mod batch;
 
@@ -31,10 +32,6 @@ impl PublicInputs for () {
 
 /// Circuit defines the higher-level behaviour to be observed by a [`openvm`] guest program.
 pub trait Circuit {
-    /// Whether or not this circuit aggregates [STARK proofs][root_proof] from the previous layer's
-    /// circuit.
-    const IS_AGG: bool;
-
     /// The witness provided to the circuit.
     type Witness;
 
@@ -54,11 +51,6 @@ pub trait Circuit {
     /// Deserialize raw bytes into the circuit's witness type.
     fn deserialize_witness(witness_bytes: &[u8]) -> &Self::Witness;
 
-    /// Derive the public-input values of the previous layer's circuit from the current circuit's
-    /// witness. Since the current possibly aggregates several of those proofs, we return a [`Vec`]
-    /// of the previous circuit's public-input values.
-    fn prev_public_inputs(witness: &Self::Witness) -> Vec<Self::PrevPublicInputs>;
-
     /// Validate the witness to produce the circuit's public inputs.
     fn validate(witness: &Self::Witness) -> Self::PublicInputs;
 
@@ -70,4 +62,38 @@ pub trait Circuit {
             openvm::io::reveal(value, i)
         }
     }
+}
+
+/// Circuit that additional aggregates proofs from other [`Circuits`][Circuit].
+pub trait AggCircuit: Circuit {
+    type Witness: ProofCarryingWitness;
+
+    /// Derive the public-input values of the previous layer's circuit from the current circuit's
+    /// witness. Since the current possibly aggregates several of those proofs, we return a [`Vec`]
+    /// of the previous circuit's public-input values.
+    fn prev_public_inputs(witness: &<Self as AggCircuit>::Witness) -> Vec<Self::PrevPublicInputs>;
+
+    /// Verify the previous layer's circuit's proofs that are aggregated in the current circuit.
+    fn verify_proofs(witness: &<Self as AggCircuit>::Witness);
+
+    /// Derive the previous circuit's public input hashes from the root proofs being aggregated.
+    fn deserialize_prev_pi_hashes(proofs: &[RootProofWithPublicValues]) -> Vec<B256>;
+
+    /// Validate that the previous public inputs in fact hash to the `pi_hash`es deserialized from the root proofs.
+    fn validate_prev_pi(prev_pis: &[Self::PrevPublicInputs], prev_pi_hashes: &[B256]) {
+        for (prev_pi, &prev_pi_hash) in prev_pis.iter().zip(prev_pi_hashes.iter()) {
+            assert_eq!(
+                prev_pi.pi_hash(),
+                prev_pi_hash,
+                "pi hash mismatch between proofs and witness computed"
+            );
+        }
+    }
+}
+
+/// Witness for an [`AggregationCircuit`][AggCircuit] that also carries proofs that are being
+/// aggregated.
+pub trait ProofCarryingWitness {
+    /// Get the root proofs from the witness.
+    fn get_proofs(&self) -> Vec<RootProofWithPublicValues>;
 }

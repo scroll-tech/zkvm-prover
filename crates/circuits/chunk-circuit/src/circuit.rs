@@ -31,8 +31,6 @@ openvm_algebra_complex_macros::complex_init! {
 pub struct ChunkCircuit;
 
 impl Circuit for ChunkCircuit {
-    const IS_AGG: bool = false;
-
     type Witness = ArchivedVec<ArchivedBlockWitness>;
 
     type PublicInputs = ChunkInfo;
@@ -52,10 +50,6 @@ impl Circuit for ChunkCircuit {
     fn deserialize_witness(witness_bytes: &[u8]) -> &Self::Witness {
         rkyv::access::<ArchivedVec<ArchivedBlockWitness>, rkyv::rancor::BoxedError>(witness_bytes)
             .expect("ChunkCircuit: rkyc deserialisation of witness bytes failed")
-    }
-
-    fn prev_public_inputs(_witness: &Self::Witness) -> Vec<Self::PrevPublicInputs> {
-        unreachable!("ChunkCircuit does not aggregate proofs");
     }
 
     fn validate(witness: &Self::Witness) -> Self::PublicInputs {
