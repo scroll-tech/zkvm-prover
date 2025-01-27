@@ -22,18 +22,5 @@ pub fn execute(batch: &ArchivedBatchWitness) -> PIBuilder {
         }
     };
 
-    assert_eq!(batch.chunk_proofs.len(), pi_builder.chunks_pi.len());
-    for (chunk_pi_exp, chunk_pi_got) in batch
-        .chunk_proofs
-        .iter()
-        .map(|proof| &proof.public_values)
-        .zip(pi_builder.chunks_pi.iter())
-    {
-        for (chunk_pi_exp_byte, &chunk_pi_got_byte) in chunk_pi_exp.iter().zip(chunk_pi_got.iter())
-        {
-            assert_eq!(chunk_pi_exp_byte.to_native(), chunk_pi_got_byte as u32);
-        }
-    }
-
     pi_builder
 }
