@@ -1,9 +1,9 @@
 use scroll_zkvm_circuit_input_types::{
-    batch::{ArchivedBatchWitness, ArchivedReferenceHeader, AsLastBatchHeader},
+    batch::{ArchivedBatchWitness, ArchivedReferenceHeader, AsLastBatchHeader, MAX_AGG_CHUNKS},
     chunk::ChunkInfo,
 };
 
-use crate::batch::{MAX_AGG_CHUNKS, PIBuilder};
+use crate::batch::PIBuilder;
 
 pub fn execute(batch: &ArchivedBatchWitness) -> PIBuilder {
     let chunk_infos: Vec<ChunkInfo> = batch.chunk_infos.iter().map(|ci| ci.into()).collect();

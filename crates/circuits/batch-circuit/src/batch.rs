@@ -1,10 +1,9 @@
 use core::iter::Iterator;
 
 use alloy_primitives::B256;
-
-use scroll_zkvm_circuit_input_types::PublicInputs;
-pub use scroll_zkvm_circuit_input_types::{
-    batch::{BatchHeader, BatchHeaderV3, MAX_AGG_CHUNKS},
+use scroll_zkvm_circuit_input_types::{
+    PublicInputs,
+    batch::{BatchHeader, BatchHeaderV3},
     chunk::ChunkInfo,
     utils::keccak256,
 };
@@ -23,14 +22,14 @@ pub struct PIBuilder {
     pub parent_state_root: B256,
     /// the batch header digest of the parent batch.
     pub parent_batch_hash: B256,
-    /// the state root of the current batch
-    pub current_state_root: B256,
+    /// The state root of the current batch
+    pub state_root: B256,
     /// The batch header digest of the current batch.
     pub batch_hash: B256,
     /// Chain ID of the network.
     pub chain_id: u64,
-    /// the withdraw root of the current batch
-    pub current_withdraw_root: B256,
+    /// The withdraw root of the current batch
+    pub withdraw_root: B256,
 }
 
 impl PublicInputs for PIBuilder {
@@ -39,10 +38,10 @@ impl PublicInputs for PIBuilder {
             std::iter::empty()
                 .chain(self.parent_state_root.as_slice())
                 .chain(self.parent_batch_hash.as_slice())
-                .chain(self.current_state_root.as_slice())
+                .chain(self.state_root.as_slice())
                 .chain(self.batch_hash.as_slice())
                 .chain(self.chain_id.to_be_bytes().as_slice())
-                .chain(self.current_withdraw_root.as_slice())
+                .chain(self.withdraw_root.as_slice())
                 .cloned()
                 .collect::<Vec<u8>>(),
         )
@@ -155,10 +154,10 @@ impl PIBuilder {
                 .collect::<Vec<B256>>(),
             parent_state_root: chunks_seq.prev_state_root(),
             parent_batch_hash,
-            current_state_root: chunks_seq.post_state_root(),
+            state_root: chunks_seq.post_state_root(),
             batch_hash,
             chain_id: chunks_seq.chain_id(),
-            current_withdraw_root: chunks_seq.withdraw_root(),
+            withdraw_root: chunks_seq.withdraw_root(),
         }
     }
 }
