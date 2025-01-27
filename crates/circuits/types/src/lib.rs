@@ -65,16 +65,19 @@ pub trait Circuit {
 }
 
 /// Circuit that additional aggregates proofs from other [`Circuits`][Circuit].
-pub trait AggCircuit: Circuit {
-    type Witness: ProofCarryingWitness;
-
+pub trait AggCircuit: Circuit
+where
+    Self::Witness: ProofCarryingWitness,
+{
     /// Derive the public-input values of the previous layer's circuit from the current circuit's
     /// witness. Since the current possibly aggregates several of those proofs, we return a [`Vec`]
     /// of the previous circuit's public-input values.
-    fn prev_public_inputs(witness: &<Self as AggCircuit>::Witness) -> Vec<Self::PrevPublicInputs>;
+    fn prev_public_inputs(witness: &Self::Witness) -> Vec<Self::PrevPublicInputs>;
 
     /// Verify the previous layer's circuit's proofs that are aggregated in the current circuit.
-    fn verify_proofs(witness: &<Self as AggCircuit>::Witness);
+    ///
+    /// Also returns the root proofs being aggregated.
+    fn verify_proofs(witness: &Self::Witness) -> Vec<RootProofWithPublicValues>;
 
     /// Derive the previous circuit's public input hashes from the root proofs being aggregated.
     fn deserialize_prev_pi_hashes(proofs: &[RootProofWithPublicValues]) -> Vec<B256>;

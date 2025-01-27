@@ -4,9 +4,7 @@ use alloy_primitives::B256;
 
 use scroll_zkvm_circuit_input_types::PublicInputs;
 pub use scroll_zkvm_circuit_input_types::{
-    batch::{
-        ArchivedBatchWitness, ArchivedReferenceHeader, BatchHeader, BatchHeaderV3, MAX_AGG_CHUNKS,
-    },
+    batch::{BatchHeader, BatchHeaderV3, MAX_AGG_CHUNKS},
     chunk::ChunkInfo,
     utils::keccak256,
 };
@@ -33,6 +31,26 @@ pub struct PIBuilder {
     pub chain_id: u64,
     /// the withdraw root of the current batch
     pub current_withdraw_root: B256,
+}
+
+impl PublicInputs for PIBuilder {
+    fn pi_hash(&self) -> B256 {
+        keccak256(
+            std::iter::empty()
+                .chain(self.parent_state_root.as_slice())
+                .chain(self.parent_batch_hash.as_slice())
+                .chain(self.current_state_root.as_slice())
+                .chain(self.batch_hash.as_slice())
+                .chain(self.chain_id.to_be_bytes().as_slice())
+                .chain(self.current_withdraw_root.as_slice())
+                .cloned()
+                .collect::<Vec<u8>>(),
+        )
+    }
+
+    fn validate(&self, _prev_pi: &Self) {
+        unimplemented!("should be required for bundle circuit");
+    }
 }
 
 struct ChunksSeq<'a>(&'a ChunkInfo, &'a ChunkInfo);
@@ -142,19 +160,5 @@ impl PIBuilder {
             chain_id: chunks_seq.chain_id(),
             current_withdraw_root: chunks_seq.withdraw_root(),
         }
-    }
-
-    pub fn public_input_hash(&self) -> B256 {
-        keccak256(
-            std::iter::empty()
-                .chain(self.parent_state_root.as_slice())
-                .chain(self.parent_batch_hash.as_slice())
-                .chain(self.current_state_root.as_slice())
-                .chain(self.batch_hash.as_slice())
-                .chain(self.chain_id.to_be_bytes().as_slice())
-                .chain(self.current_withdraw_root.as_slice())
-                .cloned()
-                .collect::<Vec<u8>>(),
-        )
     }
 }

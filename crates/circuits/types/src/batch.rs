@@ -1,7 +1,9 @@
 use alloy_primitives::B256;
 use rkyv::{Archive, Deserialize, Serialize};
 
-use crate::{chunk::ChunkInfo, proof::RootProofWithPublicValues, utils::keccak256};
+use crate::{
+    ProofCarryingWitness, chunk::ChunkInfo, proof::RootProofWithPublicValues, utils::keccak256,
+};
 
 /// The upper bound for the number of chunks that can be aggregated in a single batch.
 pub const MAX_AGG_CHUNKS: usize = 45;
@@ -91,6 +93,26 @@ pub struct BatchWitness {
     /// header for reference
     #[rkyv()]
     pub reference_header: ReferenceHeader,
+}
+
+impl ProofCarryingWitness for ArchivedBatchWitness {
+    fn get_proofs(&self) -> Vec<RootProofWithPublicValues> {
+        self.chunk_proofs
+            .iter()
+            .map(|archived| RootProofWithPublicValues {
+                flattened_proof: archived
+                    .flattened_proof
+                    .iter()
+                    .map(|u32_le| u32_le.to_native())
+                    .collect(),
+                public_values: archived
+                    .public_values
+                    .iter()
+                    .map(|u32_le| u32_le.to_native())
+                    .collect(),
+            })
+            .collect()
+    }
 }
 
 pub trait BatchHeader {
