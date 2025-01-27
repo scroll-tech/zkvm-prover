@@ -6415,6 +6415,7 @@ dependencies = [
  "alloy-primitives",
  "alloy-serde",
  "openvm",
+ "openvm-rv32im-guest",
  "rkyv",
  "serde",
  "tiny-keccak",

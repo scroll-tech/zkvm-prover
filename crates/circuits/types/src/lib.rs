@@ -11,6 +11,8 @@ pub mod proof;
 
 pub mod utils;
 
+/// The number of bytes (`u8`) chunked together before revealing as openvm public-inputs. Since the
+/// revealed value supported by openvm is `u32`, we chunk `[u8; 4]` together in little-endian order.
 const CHUNK_SIZE: usize = 4;
 
 /// Defines behaviour to be implemented by types representing the public-input values of a circuit.
@@ -71,18 +73,29 @@ pub trait AggCircuit: Circuit
 where
     Self::Witness: ProofCarryingWitness,
 {
+    /// Verify the previous layer's circuit's proofs that are aggregated in the current circuit.
+    ///
+    /// Also returns the root proofs being aggregated.
+    fn verify_proofs(witness: &Self::Witness) -> Vec<RootProofWithPublicValues> {
+        let prev_proofs = witness.get_proofs();
+
+        for proof in prev_proofs.iter() {
+            proof::verify_proof(
+                proof.flattened_proof.as_slice(),
+                proof.public_values.as_slice(),
+            );
+        }
+
+        prev_proofs
+    }
+
     /// Derive the public-input values of the previous layer's circuit from the current circuit's
     /// witness. Since the current possibly aggregates several of those proofs, we return a [`Vec`]
     /// of the previous circuit's public-input values.
     fn prev_public_inputs(witness: &Self::Witness) -> Vec<Self::PrevPublicInputs>;
 
-    /// Verify the previous layer's circuit's proofs that are aggregated in the current circuit.
-    ///
-    /// Also returns the root proofs being aggregated.
-    fn verify_proofs(witness: &Self::Witness) -> Vec<RootProofWithPublicValues>;
-
     /// Derive the previous circuit's public input hashes from the root proofs being aggregated.
-    fn deserialize_prev_pi_hashes(proofs: &[RootProofWithPublicValues]) -> Vec<B256>;
+    fn derive_prev_pi_hashes(proofs: &[RootProofWithPublicValues]) -> Vec<B256>;
 
     /// Validate that the previous public inputs in fact hash to the `pi_hash`es deserialized from the root proofs.
     fn validate_prev_pi(prev_pis: &[Self::PrevPublicInputs], prev_pi_hashes: &[B256]) {

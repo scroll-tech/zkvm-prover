@@ -11,8 +11,6 @@ mod execute;
 
 mod payload;
 
-mod utils;
-
 openvm::entry!(main);
 
 fn main() {
@@ -32,7 +30,7 @@ fn main() {
     let prev_pis = C::prev_public_inputs(witness);
 
     // Derive the digests of the public-input values of the previous circuit layer.
-    let prev_pi_hashes = C::deserialize_prev_pi_hashes(&prev_proofs);
+    let prev_pi_hashes = C::derive_prev_pi_hashes(&prev_proofs);
 
     // Validate that the pi hashes derived from the root proofs are in fact the digests of the
     // public-input values of the previous circuit layer.

@@ -1,8 +1,6 @@
 use rkyv::vec::ArchivedVec;
 use sbv::primitives::types::ArchivedBlockWitness;
-use scroll_zkvm_circuit_input_types::{Circuit, chunk::ChunkInfo};
-
-use crate::{execute::execute, utils::read_witnesses};
+use scroll_zkvm_circuit_input_types::{Circuit, chunk::ChunkInfo, utils::read_witnesses};
 
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use {
@@ -53,6 +51,6 @@ impl Circuit for ChunkCircuit {
     }
 
     fn validate(witness: &Self::Witness) -> Self::PublicInputs {
-        execute(witness)
+        crate::execute::execute(witness)
     }
 }

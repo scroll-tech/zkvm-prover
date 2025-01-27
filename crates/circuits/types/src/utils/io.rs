@@ -24,7 +24,7 @@ pub fn read_witnesses() -> Vec<u8> {
     unsafe { Vec::from_raw_parts(ptr_start, len as usize, size) }
 }
 
-// dummy implement to avoid complains
+/// Dummy implement to avoid build errors.
 #[cfg(not(target_os = "zkvm"))]
 pub fn read_witnesses() -> Vec<u8> {
     openvm::io::read_vec()

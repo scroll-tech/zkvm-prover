@@ -3,19 +3,26 @@ use rkyv::{Archive, Deserialize, Serialize};
 
 use crate::{PublicInputs, utils::keccak256};
 
+/// Represents header-like information for the chunk.
 #[derive(Debug, Clone, Archive, Serialize, Deserialize, serde::Serialize, serde::Deserialize)]
 #[rkyv(derive(Debug))]
 pub struct ChunkInfo {
+    /// The EIP-155 chain ID for all txs in the chunk.
     #[rkyv()]
     pub chain_id: u64,
+    /// The state root before applying the chunk.
     #[rkyv()]
     pub prev_state_root: B256,
+    /// The state root after applying the chunk.
     #[rkyv()]
     pub post_state_root: B256,
+    /// The withdrawals root after applying the chunk.
     #[rkyv()]
     pub withdraw_root: B256,
+    /// Digest of L1 message txs force included in the chunk.
     #[rkyv()]
     pub data_hash: B256,
+    /// Digest of L2 tx data flattened over all L2 txs in the chunk.
     #[rkyv()]
     pub tx_data_digest: B256,
 }
