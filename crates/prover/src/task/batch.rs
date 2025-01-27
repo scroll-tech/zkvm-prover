@@ -6,7 +6,7 @@ use openvm_stark_sdk::{
 };
 use scroll_zkvm_circuit_input_types::{
     batch::{BatchHeader, BatchHeaderV3, BatchWitness, ReferenceHeader},
-    proof::FlattenedRootProof,
+    proof::RootProofWithPublicValues,
 };
 use serde::{Deserialize, Serialize};
 
@@ -53,16 +53,17 @@ impl ProvingTask for BatchProvingTask {
 
 fn flatten_root_proof(
     root_proof: &RootVmVerifierInput<BabyBearPoseidon2Config>,
-) -> FlattenedRootProof {
-    let full_proof_steams = root_proof.write();
+) -> RootProofWithPublicValues {
+    let full_proof_streams = root_proof.write();
 
-    let mut flatten_input: Vec<u32> = Vec::new();
-    for x in &full_proof_steams {
-        flatten_input.push(x.len() as u32);
+    let mut flattened_proof: Vec<u32> = Vec::new();
+    for x in &full_proof_streams {
+        flattened_proof.push(x.len() as u32);
         for f in x {
-            flatten_input.push(f.as_canonical_u32());
+            flattened_proof.push(f.as_canonical_u32());
         }
     }
+
     let mut public_values = vec![];
     public_values.extend(
         root_proof
@@ -70,8 +71,9 @@ fn flatten_root_proof(
             .iter()
             .map(|x| x.as_canonical_u32()),
     );
-    FlattenedRootProof {
-        flatten_proof: flatten_input,
+
+    RootProofWithPublicValues {
+        flattened_proof,
         public_values,
     }
 }

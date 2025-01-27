@@ -126,7 +126,7 @@ fn main() {
     for flattened_proof in batch_witness.chunk_proofs.iter() {
         verify_chunk_proof(
             flattened_proof
-                .flatten_proof
+                .flattened_proof
                 .iter()
                 .map(|u32_le| u32_le.to_native())
                 .collect::<Vec<u32>>()
