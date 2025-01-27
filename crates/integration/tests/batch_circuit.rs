@@ -2,11 +2,13 @@ use openvm_sdk::{Sdk, StdIn};
 use scroll_zkvm_integration::{
     prove_verify_multi, prove_verify_single, setup_logger,
     testers::{batch::BatchProverTester, chunk::MultiChunkProverTester},
+    utils::build_batch_task,
 };
 use scroll_zkvm_prover::{
     ChunkProof,
     setup::read_app_exe,
-    task::{ProvingTask, batch::BatchProvingTask},
+    task::{ProvingTask, batch::BatchProvingTask, chunk::ChunkProvingTask},
+    utils::read_json,
 };
 use tracing::info;
 
@@ -27,6 +29,31 @@ fn batch_simple_execution() -> eyre::Result<()> {
     let exe = read_app_exe(exe_path)?;
     // read task
     let task: BatchProvingTask = {
+        let block_dir = "testdata/";
+
+        let blk_names = [
+            "12508460.json",
+            "12508461.json",
+            "12508462.json",
+            "12508463.json",
+        ];
+
+        let blk_witness =
+            |n| read_json::<_, sbv::primitives::types::BlockWitness>(format!("{block_dir}/{}", n));
+
+        // manual match to chunk tasks
+        let chk_task = [
+            ChunkProvingTask {
+                block_witnesses: vec![blk_witness(blk_names[0])?],
+            },
+            ChunkProvingTask {
+                block_witnesses: vec![blk_witness(blk_names[1])?],
+            },
+            ChunkProvingTask {
+                block_witnesses: vec![blk_witness(blk_names[2])?, blk_witness(blk_names[3])?],
+            },
+        ];
+
         let proof_dir =
             "/home/ubuntu/zzhang/zkvm-prover/.output/chunk-tests-20250124_033711/chunk/proofs";
         let pathes = [
@@ -38,11 +65,12 @@ fn batch_simple_execution() -> eyre::Result<()> {
             let p = format!("{proof_dir}/{p}");
             ChunkProof::from_json(p).unwrap()
         });
-        BatchProvingTask {
-            chunk_proofs: chunk_proofs.to_vec(),
-            batch_header: Default::default(),
-            blob_bytes: Default::default(),
-        }
+        build_batch_task(
+            &chk_task,
+            &chunk_proofs,
+            scroll_zkvm_circuit_input_types::batch::MAX_AGG_CHUNKS,
+            Default::default(),
+        )
         // read_json("testdata/batch-task-with-blob.json")?;
     };
     info!("benching task for batch {}", task.batch_header.batch_index);

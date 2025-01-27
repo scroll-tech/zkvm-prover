@@ -19,7 +19,7 @@ use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::Subsc
 
 pub mod testers;
 
-mod utils;
+pub mod utils;
 
 /// Feature to enable while building the guest program.
 const FEATURE_SCROLL: &str = "scroll";
@@ -222,6 +222,7 @@ type ProveVerifyRes<T> = eyre::Result<
 >;
 
 /// Alias for convenience.
+#[allow(dead_code)]
 type ProveVerifyEvmRes<T> = eyre::Result<
     ProveVerifyOutcome<
         <<T as ProverTester>::Prover as ProverType>::ProvingTask,

@@ -6415,8 +6415,12 @@ dependencies = [
 name = "scroll-zkvm-integration"
 version = "0.1.0"
 dependencies = [
+ "alloy-primitives",
+ "bls12_381 0.8.0",
+ "c-kzg",
  "chrono",
  "eyre",
+ "ff 0.13.0",
  "once_cell",
  "openvm-build",
  "openvm-circuit",
@@ -6427,8 +6431,11 @@ dependencies = [
  "openvm-sdk",
  "openvm-transpiler",
  "sbv",
+ "scroll-zkvm-circuit-input-types",
  "scroll-zkvm-prover",
  "serde_json",
+ "sha2",
+ "tiny-keccak",
  "tracing",
  "tracing-subscriber",
  "vm-zstd",
