@@ -6405,6 +6405,7 @@ version = "0.1.0"
 dependencies = [
  "alloy-primitives",
  "alloy-serde",
+ "openvm",
  "rkyv",
  "serde",
  "tiny-keccak",

@@ -1,16 +1,16 @@
-use rkyv::{rancor, vec::ArchivedVec};
 use sbv::{
     kv::nohash::NoHashMap,
-    primitives::{B256, BlockWitness, Bytes, ext::BlockWitnessExt, types::ArchivedBlockWitness},
+    primitives::{B256, BlockWitness, Bytes, ext::BlockWitnessExt},
     trie::{BlockWitnessTrieExt, TrieNode},
 };
 
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use openvm::platform as openvm_platform;
 
-// Read the witnesses from the hint stream.
-// rkyv needs special alignment for its data structures, use a pre-aligned
-// buffer with rkyv::access_unchecked is more efficient than rkyv::access
+/// Read the witnesses from the hint stream.
+///
+/// rkyv needs special alignment for its data structures, use a pre-aligned buffer with rkyv::access_unchecked
+/// is more efficient than rkyv::access.
 #[cfg(target_os = "zkvm")]
 #[inline(always)]
 pub fn read_witnesses() -> Vec<u8> {
@@ -34,12 +34,6 @@ pub fn read_witnesses() -> Vec<u8> {
 #[cfg(not(target_os = "zkvm"))]
 pub fn read_witnesses() -> Vec<u8> {
     openvm::io::read_vec()
-}
-
-/// Deserialize serialized bytes into archived witness for the chunk circuit.
-#[inline(always)]
-pub fn deserialize_witness(serialized: &[u8]) -> &ArchivedVec<ArchivedBlockWitness> {
-    rkyv::access::<ArchivedVec<ArchivedBlockWitness>, rancor::BoxedError>(serialized).unwrap()
 }
 
 type CodeDb = NoHashMap<B256, Bytes>;

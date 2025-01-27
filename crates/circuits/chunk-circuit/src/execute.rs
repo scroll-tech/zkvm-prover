@@ -9,9 +9,9 @@ use sbv::{
     },
 };
 
-use crate::{ChunkPublicInputs, utils::make_providers};
+use crate::{circuit::ChunkCircuitPublicInputs, utils::make_providers};
 
-pub fn execute<W: BlockWitness>(witnesses: &[W]) -> ChunkPublicInputs {
+pub fn execute<W: BlockWitness>(witnesses: &[W]) -> ChunkCircuitPublicInputs {
     assert!(
         !witnesses.is_empty(),
         "At least one witness must be provided in chunk mode"
@@ -77,7 +77,7 @@ pub fn execute<W: BlockWitness>(witnesses: &[W]) -> ChunkPublicInputs {
         .flat_map(|b| b.body.transactions.iter())
         .tx_bytes_hash_in(rlp_buffer.as_mut());
 
-    ChunkPublicInputs {
+    ChunkCircuitPublicInputs {
         chain_id: sbv_chunk_info.chain_id(),
         prev_state_root: sbv_chunk_info.prev_state_root(),
         post_state_root: sbv_chunk_info.post_state_root(),

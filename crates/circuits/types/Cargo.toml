@@ -14,5 +14,7 @@ rkyv.workspace = true
 serde.workspace = true
 tiny-keccak.workspace = true
 
+openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "d45b226", features = ["std"] }
+
 [features]
 scroll = []
