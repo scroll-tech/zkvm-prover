@@ -1,5 +1,6 @@
 use alloy_primitives::B256;
-use proof::RootProofWithPublicValues;
+
+use crate::proof::RootProofWithPublicValues;
 
 pub mod batch;
 
