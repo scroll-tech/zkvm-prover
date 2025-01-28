@@ -37,12 +37,10 @@ impl ProverTester for BatchProverTester {
         let chunk_proofs = proof_names.map(|n| {
             let p = format!("{PATH_CHUNK_PROOFS}/{n}");
             let mut proof = ChunkProof::from_json(p).unwrap();
-            proof.metadata.chunk_info.withdraw_root = Some(
-                sbv::primitives::B256::from_str(
-                    "0x7ed4c7d56e2ed40f65d25eecbb0110f3b3f4db68e87700287c7e0cedcb68272c",
-                )
-                .unwrap(),
-            );
+            proof.metadata.chunk_info.withdraw_root = sbv::primitives::B256::from_str(
+                "0x7ed4c7d56e2ed40f65d25eecbb0110f3b3f4db68e87700287c7e0cedcb68272c",
+            )
+            .unwrap();
             proof
         });
         Ok(build_batch_task(
@@ -83,12 +81,10 @@ impl ProverTester for MultiBatchProverTester {
         let chunk_proofs = proof_names.map(|n| {
             let p = format!("{PATH_CHUNK_PROOFS}/{n}");
             let mut proof = ChunkProof::from_json(p).unwrap();
-            proof.metadata.chunk_info.withdraw_root = Some(
-                sbv::primitives::B256::from_str(
-                    "0x7ed4c7d56e2ed40f65d25eecbb0110f3b3f4db68e87700287c7e0cedcb68272c",
-                )
-                .unwrap(),
-            );
+            proof.metadata.chunk_info.withdraw_root = sbv::primitives::B256::from_str(
+                "0x7ed4c7d56e2ed40f65d25eecbb0110f3b3f4db68e87700287c7e0cedcb68272c",
+            )
+            .unwrap();
             proof
         });
         Ok(build_batch_task(

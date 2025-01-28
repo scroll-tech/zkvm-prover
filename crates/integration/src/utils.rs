@@ -129,16 +129,7 @@ pub fn build_batch_task(
 
     // sanity check
     for (digest, proof) in chunk_digests.iter().zip(chunk_proofs.iter()) {
-        let chunk_pi = proof.metadata.chunk_info.public_input_hash(digest);
-        assert_eq!(proof.proof.public_values.len(), 32);
-        let _ = proof
-            .proof
-            .public_values
-            .iter()
-            .zip(&chunk_pi.0)
-            .inspect(|(pi_v, v)| {
-                assert_eq!(format!("{:x}", v), format!("{:x?}", pi_v));
-            });
+        assert_eq!(digest, &proof.metadata.chunk_info.tx_data_digest);
     }
 
     let valid_chunk_size = chunk_proofs.len() as u16;
@@ -238,10 +229,9 @@ fn test_build_batch_task() -> Result<(), scroll_zkvm_prover::Error> {
     let mut chk_proof = chunk_proof_name
         .map(|n| read_json_deep::<_, ChunkProof>(format!("testdata/chunk/{}", n)).unwrap());
 
-    chk_proof[0].metadata.chunk_info.withdraw_root = Some(
+    chk_proof[0].metadata.chunk_info.withdraw_root =
         B256::from_str("0x7ed4c7d56e2ed40f65d25eecbb0110f3b3f4db68e87700287c7e0cedcb68272c")
-            .unwrap(),
-    );
+            .unwrap();
     // manual match to chunk tasks
     let chk_task = [ChunkProvingTask {
         block_witnesses: Vec::from(blk_name.map(blk_witness)),
