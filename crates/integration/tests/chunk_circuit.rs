@@ -22,14 +22,14 @@ fn setup() -> eyre::Result<()> {
 fn test_execute() -> eyre::Result<()> {
     setup_logger()?;
 
-    ChunkProverTester::setup()?;
+    MultiChunkProverTester::setup()?;
 
-    let elf = ChunkProverTester::build()?;
+    let elf = MultiChunkProverTester::build()?;
 
-    let (app_config, exe_path) = ChunkProverTester::transpile(elf)?;
+    let (app_config, exe_path) = MultiChunkProverTester::transpile(elf)?;
 
-    for task in ChunkProverTester::gen_multi_proving_tasks()? {
-        ChunkProverTester::execute(app_config.clone(), &task, exe_path.clone())?;
+    for task in MultiChunkProverTester::gen_multi_proving_tasks()? {
+        MultiChunkProverTester::execute(app_config.clone(), &task, exe_path.clone())?;
     }
 
     Ok(())
