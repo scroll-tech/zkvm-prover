@@ -82,17 +82,17 @@ impl PIBuilder {
         // TODO: upgrade for the new enveloped format
         let payload = if blob_bytes[0] & 1 == 1 {
             let enveloped_bytes = process(&blob_bytes[1..]).unwrap().decoded_data;
-            println!(
-                "{} bytes blob, old enveloped format: compressed payload, decoded to bytes {}",
-                blob_bytes.len(),
-                enveloped_bytes.len()
-            );
+            // println!(
+            //     "{} bytes blob, old enveloped format: compressed payload, decoded to bytes {}",
+            //     blob_bytes.len(),
+            //     enveloped_bytes.len()
+            // );
             Payload::<N_MAX_CHUNKS>::from_payload(&enveloped_bytes)
         } else {
-            println!(
-                "{} bytes blob, old enveloped format: uncompressed payload",
-                blob_bytes.len()
-            );
+            // println!(
+            //     "{} bytes blob, old enveloped format: uncompressed payload",
+            //     blob_bytes.len()
+            // );
             Payload::<N_MAX_CHUNKS>::from_payload(&blob_bytes[1..])
         };
 
@@ -111,8 +111,6 @@ impl PIBuilder {
         let challenge_digest = payload.get_challenge_digest(blob_versioned_hash);
         let blob_data_proof = blob_consistency.blob_data_proof(challenge_digest);
 
-        println!("calculated blob proof {:?}", blob_data_proof);
-
         let parent_batch_hash = last_header.batch_hash();
         let batch_header = BatchHeaderV3 {
             version: last_header.version(),
@@ -127,7 +125,7 @@ impl PIBuilder {
         };
 
         let batch_hash = batch_header.batch_hash();
-        println!("re construct batch header for batch hash {:?}", batch_hash);
+        println!("header guest {:?}", batch_header);
 
         let chunks_seq = ChunksSeq::new(chunks_info.clone());
 

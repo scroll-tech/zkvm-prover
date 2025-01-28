@@ -1,6 +1,8 @@
+use core::assert_eq;
+
 use alloy_primitives::B256;
 use rkyv::{access, rancor::BoxedError};
-use scroll_zkvm_circuit_input_types::batch::AsLastBatchHeader;
+use scroll_zkvm_circuit_input_types::batch::{BatchHeader, AsLastBatchHeader};
 
 mod batch;
 use batch::{ArchivedBatchWitness, ArchivedReferenceHeader, ChunkInfo, MAX_AGG_CHUNKS, PIBuilder};
@@ -22,11 +24,29 @@ openvm_algebra_guest::moduli_macros::moduli_init! {
 openvm::entry!(main);
 
 fn execute(batch: &ArchivedBatchWitness) -> B256 {
+
+    for flattened_proof in batch.chunk_proofs.iter() {
+        verify_chunk_proof(
+            flattened_proof
+                .flatten_proof
+                .iter()
+                .map(|u32_le| u32_le.to_native())
+                .collect::<Vec<u32>>()
+                .as_slice(),
+            flattened_proof
+                .public_values
+                .iter()
+                .map(|u32_le| u32_le.to_native())
+                .collect::<Vec<u32>>()
+                .as_slice(),
+        );
+    }
+
     let chunk_infos: Vec<ChunkInfo> = batch.chunk_infos.iter().map(|ci| ci.into()).collect();
 
     let pi_builder = match &batch.reference_header {
         ArchivedReferenceHeader::V3(header) => {
-            PIBuilder::construct_with_header_v3::<MAX_AGG_CHUNKS>(
+            let pi_builder = PIBuilder::construct_with_header_v3::<MAX_AGG_CHUNKS>(
                 AsLastBatchHeader(header),
                 chunk_infos.iter(),
                 &batch.blob_bytes,
@@ -34,10 +54,11 @@ fn execute(batch: &ArchivedBatchWitness) -> B256 {
                 header.l1_message_popped.into(),
                 header.total_l1_message_popped.into(),
                 header.last_block_timestamp.into(),
-            )
+            );
+            assert_eq!(pi_builder.batch_hash, header.batch_hash());
+            pi_builder
         }
     };
-
     assert_eq!(batch.chunk_proofs.len(), pi_builder.chunks_pi.len());
     for (chunk_pi_exp, chunk_pi_got) in batch
         .chunk_proofs
@@ -122,23 +143,6 @@ fn main() {
     let batch_witness_bytes = read_witnesses();
     let batch_witness = access::<ArchivedBatchWitness, BoxedError>(&batch_witness_bytes)
         .expect("rkyv decode BatchWitness");
-
-    for flattened_proof in batch_witness.chunk_proofs.iter() {
-        verify_chunk_proof(
-            flattened_proof
-                .flatten_proof
-                .iter()
-                .map(|u32_le| u32_le.to_native())
-                .collect::<Vec<u32>>()
-                .as_slice(),
-            flattened_proof
-                .public_values
-                .iter()
-                .map(|u32_le| u32_le.to_native())
-                .collect::<Vec<u32>>()
-                .as_slice(),
-        );
-    }
 
     let pi_hash = execute(batch_witness);
 

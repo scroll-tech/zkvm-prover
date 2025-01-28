@@ -1,6 +1,9 @@
 use scroll_zkvm_integration::{
     prove_verify_multi, prove_verify_single, setup_logger,
-    testers::{batch::BatchProverTester, chunk::MultiChunkProverTester},
+    testers::{
+        batch::{BatchProverTester, MultiBatchProverTester},
+        chunk::MultiChunkProverTester,
+    },
     utils::build_batch_task,
 };
 use scroll_zkvm_prover::{
@@ -13,6 +16,8 @@ use scroll_zkvm_prover::{
 fn batch_simple_execution() -> eyre::Result<()> {
     use BatchProverTester as T;
     use scroll_zkvm_integration::ProverTester;
+    use std::str::FromStr;
+
     setup_logger()?;
 
     // Setup test-run directories.
@@ -50,15 +55,29 @@ fn batch_simple_execution() -> eyre::Result<()> {
             },
         ];
 
+        // let chk_task = [ChunkProvingTask {
+        //     block_witnesses: Vec::from(blk_names.map(blk_witness).map(Result::unwrap)),
+        // }];
+
         let proof_dir = "testdata/chunk";
         let pathes = [
-            "chunk-proof--12508460-12508460.json",
-            "chunk-proof--12508461-12508461.json",
-            "chunk-proof--12508462-12508463.json",
+            "chunk-12508460-12508460.json",
+            "chunk-12508461-12508461.json",
+            "chunk-12508462-12508463.json",
         ];
+        // let pathes = [
+        //     "chunk-12508460-12508463.json",
+        // ];
         let chunk_proofs = pathes.map(|p| {
             let p = format!("{proof_dir}/{p}");
-            ChunkProof::from_json(p).unwrap()
+            let mut proof = ChunkProof::from_json(p).unwrap();
+            proof.metadata.chunk_info.withdraw_root = Some(
+                sbv::primitives::B256::from_str(
+                    "0x7ed4c7d56e2ed40f65d25eecbb0110f3b3f4db68e87700287c7e0cedcb68272c",
+                )
+                .unwrap(),
+            );
+            proof
         });
         build_batch_task(
             &chk_task,
@@ -75,10 +94,19 @@ fn batch_simple_execution() -> eyre::Result<()> {
 }
 
 #[test]
-fn setup_prove_verify() -> eyre::Result<()> {
+fn setup_prove_verify_single_chunk() -> eyre::Result<()> {
     setup_logger()?;
 
     let _outcome = prove_verify_single::<BatchProverTester>(None)?;
+
+    Ok(())
+}
+
+#[test]
+fn setup_prove_verify() -> eyre::Result<()> {
+    setup_logger()?;
+
+    let _outcome = prove_verify_single::<MultiBatchProverTester>(None)?;
 
     Ok(())
 }

@@ -141,18 +141,31 @@ pub fn build_batch_task(
             });
     }
 
+    let valid_chunk_size = chunk_proofs.len() as u16;
     let mut payload = meta_chunk_sizes
         .into_iter()
         .chain(std::iter::repeat(0))
         .take(max_chunks)
-        .fold(Vec::new(), |mut bytes, len| {
-            bytes.extend_from_slice(&(len as u16).to_be_bytes());
-            bytes
-        });
+        .fold(
+            Vec::from(valid_chunk_size.to_be_bytes()),
+            |mut bytes, len| {
+                bytes.extend_from_slice(&(len as u32).to_be_bytes());
+                bytes
+            },
+        );
 
-    let mut payload_for_challenge = payload.clone();
+    let mut payload_for_challenge = Vec::from(keccak256(&payload).0);
 
-    let data_hash = keccak256(&chunk_tx_bytes);
+    let data_hash = keccak256(
+        chunk_proofs
+            .iter()
+            .map(|proof| &proof.metadata.chunk_info.data_hash)
+            .fold(Vec::new(), |mut bytes, h| {
+                bytes.extend_from_slice(&h.0);
+                bytes
+            }),
+    );
+
     // payload can setup
     payload.extend(chunk_tx_bytes);
 
@@ -178,6 +191,7 @@ pub fn build_batch_task(
                 ret
             }),
     );
+    payload_for_challenge.extend_from_slice(blob_versioned_hash.as_slice());
     let point_evaluations = blob::point_evaluation(
         &coefficients,
         U256::from_be_bytes(keccak256(payload_for_challenge).0),
@@ -196,6 +210,7 @@ pub fn build_batch_task(
         blob_versioned_hash,
         blob_data_proof: point_evaluations.map(|u| B256::new(u.to_be_bytes())),
     };
+    println!("header host {:?}", batch_header);
 
     BatchProvingTask {
         chunk_proofs: Vec::from(chunk_proofs),
