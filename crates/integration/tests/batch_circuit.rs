@@ -1,75 +1,33 @@
 use scroll_zkvm_integration::{
-    prove_verify_multi, prove_verify_single, setup_logger,
-    testers::{batch::BatchProverTester, chunk::MultiChunkProverTester},
-    utils::build_batch_task,
-};
-use scroll_zkvm_prover::{
-    ChunkProof,
-    task::{batch::BatchProvingTask, chunk::ChunkProvingTask},
-    utils::read_json,
+    ProverTester, prove_verify_multi, prove_verify_single, setup_logger,
+    testers::{
+        batch::{BatchProverTester, MultiBatchProverTester},
+        chunk::MultiChunkProverTester,
+    },
 };
 
 #[test]
-fn batch_simple_execution() -> eyre::Result<()> {
-    use BatchProverTester as T;
-    use scroll_zkvm_integration::ProverTester;
+fn test_execute() -> eyre::Result<()> {
     setup_logger()?;
 
-    // Setup test-run directories.
-    T::setup()?;
+    MultiBatchProverTester::setup()?;
 
-    // Build the ELF binary from the circuit program.
-    let elf = T::build()?;
+    let elf = MultiBatchProverTester::build()?;
 
-    // Transpile the ELF into a VmExe.
-    let (app_config, exe_path) = T::transpile(elf)?;
-    // read task
-    let task: BatchProvingTask = {
-        let block_dir = "testdata/";
+    let (app_config, exe_path) = MultiBatchProverTester::transpile(elf)?;
 
-        let blk_names = [
-            "12508460.json",
-            "12508461.json",
-            "12508462.json",
-            "12508463.json",
-        ];
+    let task = MultiBatchProverTester::gen_proving_task()?;
 
-        let blk_witness =
-            |n| read_json::<_, sbv::primitives::types::BlockWitness>(format!("{block_dir}/{}", n));
+    MultiBatchProverTester::execute(app_config.clone(), &task, exe_path.clone())?;
 
-        // manual match to chunk tasks
-        let chk_task = [
-            ChunkProvingTask {
-                block_witnesses: vec![blk_witness(blk_names[0])?],
-            },
-            ChunkProvingTask {
-                block_witnesses: vec![blk_witness(blk_names[1])?],
-            },
-            ChunkProvingTask {
-                block_witnesses: vec![blk_witness(blk_names[2])?, blk_witness(blk_names[3])?],
-            },
-        ];
+    Ok(())
+}
 
-        let proof_dir = "testdata/chunk";
-        let pathes = [
-            "chunk-proof--12508460-12508460.json",
-            "chunk-proof--12508461-12508461.json",
-            "chunk-proof--12508462-12508463.json",
-        ];
-        let chunk_proofs = pathes.map(|p| {
-            let p = format!("{proof_dir}/{p}");
-            ChunkProof::from_json(p).unwrap()
-        });
-        build_batch_task(
-            &chk_task,
-            &chunk_proofs,
-            scroll_zkvm_circuit_input_types::batch::MAX_AGG_CHUNKS,
-            Default::default(),
-        )
-        // read_json("testdata/batch-task-with-blob.json")?;
-    };
+#[test]
+fn setup_prove_verify_single_chunk() -> eyre::Result<()> {
+    setup_logger()?;
 
-    T::execute(app_config, &task, exe_path)?;
+    let _outcome = prove_verify_single::<BatchProverTester>(None)?;
 
     Ok(())
 }
@@ -78,7 +36,7 @@ fn batch_simple_execution() -> eyre::Result<()> {
 fn setup_prove_verify() -> eyre::Result<()> {
     setup_logger()?;
 
-    let _outcome = prove_verify_single::<BatchProverTester>(None)?;
+    let _outcome = prove_verify_single::<MultiBatchProverTester>(None)?;
 
     Ok(())
 }

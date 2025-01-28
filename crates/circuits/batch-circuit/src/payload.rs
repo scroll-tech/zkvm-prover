@@ -96,7 +96,6 @@ impl<const N_MAX_CHUNKS: usize> Payload<N_MAX_CHUNKS> {
             preimage.extend_from_slice(chunk_digest.as_slice());
         }
         preimage.extend_from_slice(versioned_hash.as_slice());
-
         preimage
     }
 
