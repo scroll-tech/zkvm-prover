@@ -28,7 +28,11 @@ fn test_execute() -> eyre::Result<()> {
 
     let (app_config, exe_path) = ChunkProverTester::transpile(elf)?;
 
-    ChunkProverTester::execute_with_proving_task(app_config, exe_path)
+    for task in ChunkProverTester::gen_multi_proving_tasks()? {
+        ChunkProverTester::execute(app_config.clone(), &task, exe_path.clone())?;
+    }
+
+    Ok(())
 }
 
 #[test]

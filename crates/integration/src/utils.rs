@@ -1,5 +1,7 @@
 mod blob;
 
+use core::assert_eq;
+
 use sbv::primitives::{
     B256, TransactionSigned, U256,
     eips::Encodable2718,
@@ -127,9 +129,16 @@ pub fn build_batch_task(
 
     // sanity check
     for (digest, proof) in chunk_digests.iter().zip(chunk_proofs.iter()) {
-        println!("{:x?}", proof.metadata.chunk_info);
         let chunk_pi = proof.metadata.chunk_info.public_input_hash(digest);
-        println!("{:x?}, {:x?}", chunk_pi, proof.proof.public_values);
+        assert_eq!(proof.proof.public_values.len(), 32);
+        let _ = proof
+            .proof
+            .public_values
+            .iter()
+            .zip(&chunk_pi.0)
+            .inspect(|(pi_v, v)| {
+                assert_eq!(format!("{:x}", v), format!("{:x?}", pi_v));
+            });
     }
 
     let mut payload = meta_chunk_sizes
@@ -215,7 +224,7 @@ fn test_build_batch_task() -> Result<(), scroll_zkvm_prover::Error> {
         .map(|n| read_json_deep::<_, ChunkProof>(format!("testdata/chunk/{}", n)).unwrap());
 
     chk_proof[0].metadata.chunk_info.withdraw_root = Some(
-        B256::from_str("0x07ed4c7d56e2ed40f65d25eecbb0110f3b3f4db68e87700287c7e0cedcb68272")
+        B256::from_str("0x7ed4c7d56e2ed40f65d25eecbb0110f3b3f4db68e87700287c7e0cedcb68272c")
             .unwrap(),
     );
     // manual match to chunk tasks
