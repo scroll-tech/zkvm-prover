@@ -71,11 +71,22 @@ pub fn execute<W: BlockWitness>(witnesses: &[W]) -> B256 {
     );
 
     let withdraw_root = db.withdraw_root().expect("failed to get withdraw root");
+
     let mut rlp_buffer = ManuallyDrop::new(Vec::with_capacity(2048));
     let tx_bytes_hash = blocks
         .iter()
         .flat_map(|b| b.body.transactions.iter())
+        .inspect(|t| {
+            use sbv::primitives::eips::Encodable2718;
+            let mut test_buf = Vec::new();
+            t.encode_2718(&mut test_buf);
+            openvm::io::println(format!("enoode tx {} bytes", test_buf.len()));
+            test_buf.clear();
+        })
         .tx_bytes_hash_in(rlp_buffer.as_mut());
+
+    openvm::io::println(format!("withdraw root = {:?}", withdraw_root));
+    openvm::io::println(format!("tx_bytes_hash = {:?}", tx_bytes_hash));
 
     chunk_info.public_input_hash(&withdraw_root, &tx_bytes_hash)
 }

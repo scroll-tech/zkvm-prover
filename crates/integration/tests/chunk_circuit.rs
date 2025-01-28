@@ -19,6 +19,19 @@ fn setup() -> eyre::Result<()> {
 }
 
 #[test]
+fn test_execute() -> eyre::Result<()> {
+    setup_logger()?;
+
+    ChunkProverTester::setup()?;
+
+    let elf = ChunkProverTester::build()?;
+
+    let (app_config, exe_path) = ChunkProverTester::transpile(elf)?;
+
+    ChunkProverTester::execute_with_proving_task(app_config, exe_path)
+}
+
+#[test]
 fn setup_prove_verify() -> eyre::Result<()> {
     setup_logger()?;
 
