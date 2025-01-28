@@ -1,5 +1,3 @@
-mod blob;
-
 use core::assert_eq;
 
 use sbv::primitives::{
@@ -8,6 +6,7 @@ use sbv::primitives::{
     types::{BlockWitness, Transaction},
 };
 use scroll_zkvm_circuit_input_types::{
+    PublicInputs,
     batch::{BatchHeader, BatchHeaderV3},
     utils::keccak256,
 };
@@ -16,6 +15,8 @@ use scroll_zkvm_prover::{
     task::{batch::BatchProvingTask, chunk::ChunkProvingTask},
 };
 use vm_zstd::zstd_encode;
+
+mod blob;
 
 fn is_l1_tx(tx: &Transaction) -> bool {
     // 0x7e is l1 tx
@@ -128,8 +129,8 @@ pub fn build_batch_task(
     );
 
     // sanity check
-    for (digest, proof) in chunk_digests.iter().zip(chunk_proofs.iter()) {
-        let chunk_pi = proof.metadata.chunk_info.public_input_hash(digest);
+    for proof in chunk_proofs.iter() {
+        let chunk_pi = proof.metadata.chunk_info.pi_hash();
         assert_eq!(proof.proof.public_values.len(), 32);
         let _ = proof
             .proof

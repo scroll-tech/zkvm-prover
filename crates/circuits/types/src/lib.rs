@@ -97,8 +97,17 @@ where
     /// Derive the previous circuit's public input hashes from the root proofs being aggregated.
     fn derive_prev_pi_hashes(proofs: &[RootProofWithPublicValues]) -> Vec<B256>;
 
-    /// Validate that the previous public inputs in fact hash to the `pi_hash`es deserialized from the root proofs.
+    /// Validate the previous circuit layer's public-input values.
+    ///
+    /// - That the public-inputs of contiguous chunks/batches are valid
+    /// - That the public-input values in fact hash to the pi_hash values from the root proofs.
     fn validate_prev_pi(prev_pis: &[Self::PrevPublicInputs], prev_pi_hashes: &[B256]) {
+        // Validation for the contiguous public-input values.
+        for w in prev_pis.windows(2) {
+            w[1].validate(&w[0]);
+        }
+
+        // Validation for public-input values hash being the pi_hash from root proof.
         for (prev_pi, &prev_pi_hash) in prev_pis.iter().zip(prev_pi_hashes.iter()) {
             assert_eq!(
                 prev_pi.pi_hash(),
