@@ -1,5 +1,7 @@
 mod blob;
 
+use core::assert_eq;
+
 use sbv::primitives::{
     B256, TransactionSigned, U256,
     eips::Encodable2718,
@@ -126,12 +128,18 @@ pub fn build_batch_task(
     );
 
     // sanity check
-    // for (digest, proof) in chunk_digests.iter().zip(chunk_proofs.iter()){
-
-    //     let chunk_pi = proof.metadata.chunk_info.public_input_hash(digest);
-    //     println!("{:x?}, {:x?}", chunk_pi, proof.proof.public_values);
-
-    // }
+    for (digest, proof) in chunk_digests.iter().zip(chunk_proofs.iter()) {
+        let chunk_pi = proof.metadata.chunk_info.public_input_hash(digest);
+        assert_eq!(proof.proof.public_values.len(), 32);
+        let _ = proof
+            .proof
+            .public_values
+            .iter()
+            .zip(&chunk_pi.0)
+            .inspect(|(pi_v, v)| {
+                assert_eq!(format!("{:x}", v), format!("{:x?}", pi_v));
+            });
+    }
 
     let mut payload = meta_chunk_sizes
         .into_iter()
@@ -199,6 +207,7 @@ pub fn build_batch_task(
 #[test]
 fn test_build_batch_task() -> Result<(), scroll_zkvm_prover::Error> {
     use scroll_zkvm_prover::utils::{read_json, read_json_deep};
+    use std::str::FromStr;
 
     let blk_name = [
         "12508460.json",
@@ -207,29 +216,21 @@ fn test_build_batch_task() -> Result<(), scroll_zkvm_prover::Error> {
         "12508463.json",
     ];
 
-    let chunk_proof_name = [
-        "chunk-proof--12508460-12508460.json",
-        "chunk-proof--12508461-12508461.json",
-        "chunk-proof--12508462-12508463.json",
-    ];
+    let chunk_proof_name = ["chunk-12508460-12508463.json"];
 
-    let blk_witness = |n| read_json::<_, BlockWitness>(format!("testdata/{}", n));
+    let blk_witness = |n| read_json::<_, BlockWitness>(format!("testdata/{}", n)).unwrap();
 
-    let chk_proof = chunk_proof_name
+    let mut chk_proof = chunk_proof_name
         .map(|n| read_json_deep::<_, ChunkProof>(format!("testdata/chunk/{}", n)).unwrap());
 
+    chk_proof[0].metadata.chunk_info.withdraw_root = Some(
+        B256::from_str("0x7ed4c7d56e2ed40f65d25eecbb0110f3b3f4db68e87700287c7e0cedcb68272c")
+            .unwrap(),
+    );
     // manual match to chunk tasks
-    let chk_task = [
-        ChunkProvingTask {
-            block_witnesses: vec![blk_witness(blk_name[0])?],
-        },
-        ChunkProvingTask {
-            block_witnesses: vec![blk_witness(blk_name[1])?],
-        },
-        ChunkProvingTask {
-            block_witnesses: vec![blk_witness(blk_name[2])?, blk_witness(blk_name[3])?],
-        },
-    ];
+    let chk_task = [ChunkProvingTask {
+        block_witnesses: Vec::from(blk_name.map(blk_witness)),
+    }];
 
     build_batch_task(&chk_task, &chk_proof, 45, Default::default());
 

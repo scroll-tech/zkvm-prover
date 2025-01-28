@@ -7,13 +7,17 @@ use once_cell::sync::OnceCell;
 use openvm_build::GuestOptions;
 use openvm_native_recursion::halo2::EvmProof;
 use openvm_sdk::{
-    Sdk,
+    Sdk, StdIn,
     config::{AppConfig, SdkVmConfig},
     fs::{write_app_pk_to_file, write_exe_to_file},
     verifier::root::types::RootVmVerifierInput,
 };
 use openvm_transpiler::elf::Elf;
-use scroll_zkvm_prover::{ProverType, SC, WrappedProof, setup::read_app_config};
+use scroll_zkvm_prover::{
+    ProverType, SC, WrappedProof,
+    setup::{read_app_config, read_app_exe},
+    task::ProvingTask,
+};
 use tracing::instrument;
 use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -154,6 +158,30 @@ pub trait ProverTester {
     /// Generate multiple proving tasks for test purposes.
     fn gen_multi_proving_tasks() -> eyre::Result<Vec<<Self::Prover as ProverType>::ProvingTask>> {
         unimplemented!()
+    }
+
+    /// Light weight testing to simply execute the vm program for test
+    #[instrument("ProverTester::execute", skip_all, fields(task_id))]
+    fn execute(
+        app_config: AppConfig<SdkVmConfig>,
+        task: &<Self::Prover as ProverType>::ProvingTask,
+        exe_path: impl AsRef<Path>,
+    ) -> eyre::Result<()> {
+        let serialized = task.to_witness_serialized()?;
+
+        let mut stdin = StdIn::default();
+        stdin.write_bytes(&serialized);
+
+        Sdk.execute(read_app_exe(exe_path)?, app_config.app_vm_config, stdin)?;
+
+        Ok(())
+    }
+
+    fn execute_with_proving_task(
+        app_config: AppConfig<SdkVmConfig>,
+        exe_path: impl AsRef<Path>,
+    ) -> eyre::Result<()> {
+        Self::execute(app_config, &Self::gen_proving_task()?, exe_path)
     }
 }
 

@@ -72,11 +72,15 @@ pub fn execute<W: BlockWitness>(witnesses: &[W]) -> ChunkInfo {
     );
 
     let withdraw_root = db.withdraw_root().expect("failed to get withdraw root");
+
     let mut rlp_buffer = ManuallyDrop::new(Vec::with_capacity(2048));
     let tx_data_digest = blocks
         .iter()
         .flat_map(|b| b.body.transactions.iter())
         .tx_bytes_hash_in(rlp_buffer.as_mut());
+
+    openvm::io::println(format!("withdraw_root = {:?}", withdraw_root));
+    openvm::io::println(format!("tx_bytes_hash = {:?}", tx_data_digest));
 
     ChunkInfo {
         chain_id: sbv_chunk_info.chain_id(),
