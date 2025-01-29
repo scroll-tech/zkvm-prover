@@ -57,10 +57,12 @@ impl ProverType for ChunkProverType {
         );
 
         // The withdraw root of the chunk is in fact the last block's withdrawals root.
-        let withdraw_root = last.withdrawals_root().ok_or(Error::GenProof(format!(
-            "chunk with task_id={:?} has no withdraw root",
-            task.identifier()
-        )))?;
+        // TODO: we need to execute the whole block for get redraw root
+        // let withdraw_root = last.withdrawals_root().ok_or(Error::GenProof(format!(
+        //     "chunk with task_id={:?} has no withdraw root",
+        //     task.identifier()
+        // )))?;
+        let withdraw_root = last.withdrawals_root().unwrap_or_default();
 
         // Compute the tx data digest, i.e. the Keccak-256 digest of L2 transaction bytes flattened
         // over all txs in the chunk.
