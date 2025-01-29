@@ -1,7 +1,10 @@
 use alloy_primitives::B256;
 use scroll_zkvm_circuit_input_types::{
-    AggCircuit, Circuit, batch::ArchivedBatchWitness, chunk::ChunkInfo,
-    proof::RootProofWithPublicValues, utils::read_witnesses,
+    AggCircuit, Circuit,
+    batch::{ArchivedBatchWitness, BatchInfo},
+    chunk::ChunkInfo,
+    proof::RootProofWithPublicValues,
+    utils::read_witnesses,
 };
 
 #[allow(unused_imports, clippy::single_component_path_imports)]
@@ -16,7 +19,7 @@ pub struct BatchCircuit;
 impl Circuit for BatchCircuit {
     type Witness = ArchivedBatchWitness;
 
-    type PublicInputs = crate::batch::PIBuilder;
+    type PublicInputs = BatchInfo;
 
     type PrevPublicInputs = ChunkInfo;
 

@@ -1,8 +1,8 @@
 use scroll_zkvm_circuit_input_types::{AggCircuit, Circuit};
 
-mod batch;
-
 mod blob_consistency;
+
+mod builder;
 
 mod circuit;
 use circuit::BatchCircuit as C;

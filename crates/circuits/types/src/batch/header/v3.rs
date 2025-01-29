@@ -41,6 +41,7 @@ pub struct BatchHeaderV3 {
     #[rkyv()]
     pub blob_versioned_hash: B256,
     /// The blob data proof: z (32), y (32)
+    #[rkyv()]
     pub blob_data_proof: [B256; 2],
 }
 
@@ -51,6 +52,10 @@ impl BatchHeader for BatchHeaderV3 {
 
     fn index(&self) -> u64 {
         self.batch_index
+    }
+
+    fn parent_batch_hash(&self) -> B256 {
+        self.parent_batch_hash
     }
 
     /// Batch hash as per DA-codec v3:
@@ -95,6 +100,10 @@ impl BatchHeader for ArchivedBatchHeaderV3 {
         self.batch_index.into()
     }
 
+    fn parent_batch_hash(&self) -> B256 {
+        self.parent_batch_hash.into()
+    }
+
     fn batch_hash(&self) -> B256 {
         let batch_index: u64 = self.batch_index.into();
         let l1_message_popped: u64 = self.l1_message_popped.into();
@@ -119,5 +128,24 @@ impl BatchHeader for ArchivedBatchHeaderV3 {
                 .cloned()
                 .collect::<Vec<u8>>(),
         )
+    }
+}
+
+impl From<&ArchivedBatchHeaderV3> for BatchHeaderV3 {
+    fn from(archived: &ArchivedBatchHeaderV3) -> Self {
+        Self {
+            version: archived.version,
+            batch_index: archived.batch_index.into(),
+            l1_message_popped: archived.l1_message_popped.into(),
+            total_l1_message_popped: archived.total_l1_message_popped.into(),
+            parent_batch_hash: archived.parent_batch_hash.into(),
+            last_block_timestamp: archived.last_block_timestamp.into(),
+            data_hash: archived.data_hash.into(),
+            blob_versioned_hash: archived.blob_versioned_hash.into(),
+            blob_data_proof: [
+                archived.blob_data_proof[0].into(),
+                archived.blob_data_proof[1].into(),
+            ],
+        }
     }
 }

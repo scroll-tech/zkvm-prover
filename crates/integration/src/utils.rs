@@ -1,5 +1,3 @@
-mod blob;
-
 use core::assert_eq;
 
 use sbv::primitives::{
@@ -8,6 +6,7 @@ use sbv::primitives::{
     types::{BlockWitness, Transaction},
 };
 use scroll_zkvm_circuit_input_types::{
+    PublicInputs,
     batch::{BatchHeader, BatchHeaderV3},
     utils::keccak256,
 };
@@ -16,6 +15,8 @@ use scroll_zkvm_prover::{
     task::{batch::BatchProvingTask, chunk::ChunkProvingTask},
 };
 use vm_zstd::zstd_encode;
+
+mod blob;
 
 fn is_l1_tx(tx: &Transaction) -> bool {
     // 0x7e is l1 tx
