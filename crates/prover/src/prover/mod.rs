@@ -15,7 +15,6 @@ use openvm_sdk::{
     config::{AggConfig, AggStarkConfig, SdkVmConfig},
     keygen::{AggStarkProvingKey, AppProvingKey, RootVerifierProvingKey},
     prover::ContinuationProver,
-    verifier::root::types::RootVmVerifierInput,
 };
 use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Config;
 use serde::{Serialize, de::DeserializeOwned};
@@ -23,6 +22,7 @@ use tracing::{debug, instrument};
 
 use crate::{
     Error, WrappedProof,
+    proof::RootProof,
     setup::{read_app_exe, read_app_pk},
     task::ProvingTask,
 };
@@ -128,7 +128,7 @@ impl<Type: ProverType> Prover<Type> {
     pub fn gen_proof(
         &self,
         task: &Type::ProvingTask,
-    ) -> Result<WrappedProof<Type::ProofMetadata, RootVmVerifierInput<SC>>, Error> {
+    ) -> Result<WrappedProof<Type::ProofMetadata, RootProof>, Error> {
         let task_id = task.identifier();
 
         // Try reading proof from cache if available, and early return in that case.
@@ -144,17 +144,19 @@ impl<Type: ProverType> Prover<Type> {
 
         // Generate a new proof.
         assert!(!Type::EVM, "Prover::gen_proof not for EVM-prover");
+        let metadata = Self::metadata_with_prechecks(task)?;
         let proof = self.gen_proof_stark(task)?;
+        let wrapped_proof = WrappedProof::new(metadata, proof);
 
         // Write proof to disc if caching was enabled.
         if let Some(dir) = &self.cache_dir {
             let path_proof = dir.join(Self::fd_proof(task));
             debug!(name: "try_write_proof", ?task_id, ?path_proof);
 
-            crate::utils::write_json(&path_proof, &proof)?;
+            crate::utils::write_json(&path_proof, &wrapped_proof)?;
         }
 
-        Ok(proof)
+        Ok(wrapped_proof)
     }
 
     /// Early-return if a proof is found in disc, otherwise generate and return the proof after
@@ -179,32 +181,34 @@ impl<Type: ProverType> Prover<Type> {
 
         // Generate a new proof.
         assert!(Type::EVM, "Prover::gen_proof_evm only for EVM-prover");
+        let metadata = Self::metadata_with_prechecks(task)?;
         let proof = self.gen_proof_snark(task)?;
+        let wrapped_proof = WrappedProof::new(metadata, proof);
 
         // Write proof to disc if caching was enabled.
         if let Some(dir) = &self.cache_dir {
             let path_proof = dir.join(Self::fd_proof(task));
             debug!(name: "try_write_proof", ?task_id, ?path_proof);
 
-            crate::utils::write_json(&path_proof, &proof)?;
+            crate::utils::write_json(&path_proof, &wrapped_proof)?;
         }
 
-        Ok(proof)
+        Ok(wrapped_proof)
     }
 
-    /// Construct proof metadata from proving task.
-    #[instrument("Prover::metadata", skip_all, fields(?task_id = task.identifier()))]
-    pub fn metadata(task: &Type::ProvingTask) -> Result<Type::ProofMetadata, Error> {
-        Type::build_proof_metadata(task)
+    /// Validate some pre-checks on the proving task and construct proof metadata.
+    #[instrument("Prover::metadata_with_prechecks", skip_all, fields(?task_id = task.identifier()))]
+    pub fn metadata_with_prechecks(task: &Type::ProvingTask) -> Result<Type::ProofMetadata, Error> {
+        Type::metadata_with_prechecks(task)
     }
 
     /// Verify a [root proof][root_proof].
     ///
-    /// [root_proof][openvm_sdk::verifier::root::types::RootVmVerifierInput]
+    /// [root_proof][RootProof]
     #[instrument("Prover::verify_proof", skip_all, fields(?metadata = proof.metadata))]
     pub fn verify_proof(
         &self,
-        proof: &WrappedProof<Type::ProofMetadata, RootVmVerifierInput<SC>>,
+        proof: &WrappedProof<Type::ProofMetadata, RootProof>,
     ) -> Result<(), Error> {
         let agg_stark_pk = AGG_STARK_PROVING_KEY
             .get()
@@ -266,10 +270,7 @@ impl<Type: ProverType> Prover<Type> {
     /// Generate a [root proof][root_proof].
     ///
     /// [root_proof][openvm_sdk::verifier::root::types::RootVmVerifierInput]
-    fn gen_proof_stark(
-        &self,
-        task: &Type::ProvingTask,
-    ) -> Result<WrappedProof<Type::ProofMetadata, RootVmVerifierInput<SC>>, Error> {
+    fn gen_proof_stark(&self, task: &Type::ProvingTask) -> Result<RootProof, Error> {
         let agg_stark_pk = AGG_STARK_PROVING_KEY
             .get()
             .ok_or(Error::GenProof(String::from(
@@ -286,30 +287,19 @@ impl<Type: ProverType> Prover<Type> {
         let task_id = task.identifier();
 
         tracing::debug!(name: "generate_root_verifier_input", ?task_id);
-        let proof = Sdk
-            .generate_root_verifier_input(
-                Arc::clone(&self.app_pk),
-                Arc::clone(&self.app_committed_exe),
-                agg_stark_pk.clone(),
-                stdin,
-            )
-            .map_err(|e| Error::GenProof(e.to_string()))?;
-
-        tracing::debug!(name: "construct_metadata", ?task_id);
-        let metadata = Type::build_proof_metadata(task)?;
-
-        let wrapped_proof = WrappedProof::new(metadata, proof);
-
-        Ok(wrapped_proof)
+        Sdk.generate_root_verifier_input(
+            Arc::clone(&self.app_pk),
+            Arc::clone(&self.app_committed_exe),
+            agg_stark_pk.clone(),
+            stdin,
+        )
+        .map_err(|e| Error::GenProof(e.to_string()))
     }
 
     /// Generate an [evm proof][evm_proof].
     ///
     /// [evm_proof][openvm_native_recursion::halo2::EvmProof]
-    fn gen_proof_snark(
-        &self,
-        task: &Type::ProvingTask,
-    ) -> Result<WrappedProof<Type::ProofMetadata, EvmProof>, Error> {
+    fn gen_proof_snark(&self, task: &Type::ProvingTask) -> Result<EvmProof, Error> {
         let serialized = task
             .to_witness_serialized()
             .map_err(|e| Error::GenProof(e.to_string()))?;
@@ -317,17 +307,12 @@ impl<Type: ProverType> Prover<Type> {
         let mut stdin = StdIn::default();
         stdin.write_bytes(&serialized);
 
-        let evm_proof = self
+        Ok(self
             .evm_prover
             .as_ref()
             .expect("Prover::gen_proof_snark expects EVM-prover setup")
             .continuation_prover
-            .generate_proof_for_evm(stdin);
-
-        let metadata = Self::metadata(task)?;
-        let wrapped_proof = WrappedProof::new(metadata, evm_proof);
-
-        Ok(wrapped_proof)
+            .generate_proof_for_evm(stdin))
     }
 }
 
@@ -353,5 +338,5 @@ pub trait ProverType {
     type ProofMetadata: Serialize + DeserializeOwned + std::fmt::Debug;
 
     /// Provided the proving task, computes the proof metadata.
-    fn build_proof_metadata(task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error>;
+    fn metadata_with_prechecks(task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error>;
 }

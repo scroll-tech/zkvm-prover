@@ -20,7 +20,7 @@ impl ProverType for BundleProverType {
 
     type ProofMetadata = BundleProofMetadata;
 
-    fn build_proof_metadata(_task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error> {
+    fn metadata_with_prechecks(_task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error> {
         unimplemented!()
     }
 }

@@ -6417,6 +6417,7 @@ dependencies = [
  "openvm",
  "openvm-rv32im-guest",
  "rkyv",
+ "sbv",
  "serde",
  "tiny-keccak",
 ]

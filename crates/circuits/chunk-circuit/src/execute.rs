@@ -8,9 +8,7 @@ use sbv::{
         ext::{BlockWitnessChunkExt, TxBytesHashExt},
     },
 };
-use scroll_zkvm_circuit_input_types::chunk::ChunkInfo;
-
-use crate::utils::make_providers;
+use scroll_zkvm_circuit_input_types::chunk::{ChunkInfo, make_providers};
 
 pub fn execute<W: BlockWitness>(witnesses: &[W]) -> ChunkInfo {
     assert!(
