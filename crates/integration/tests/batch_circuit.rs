@@ -32,7 +32,7 @@ fn setup_prove_verify_single() -> eyre::Result<()> {
 }
 
 #[test]
-fn setup_prove_verify() -> eyre::Result<()> {
+fn setup_prove_verify_multi() -> eyre::Result<()> {
     MultiBatchProverTester::setup()?;
 
     let _outcome = prove_verify_single::<MultiBatchProverTester>(None)?;
