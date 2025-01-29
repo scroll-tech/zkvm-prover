@@ -45,7 +45,7 @@ impl ProverTester for MultiChunkProverTester {
     const DIR_ASSETS: &str = "chunk";
 
     fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask> {
-        unimplemented!()
+        unreachable!("Use gen_multi_proving_tasks");
     }
 
     /// [block-12508460]

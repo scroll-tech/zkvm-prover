@@ -170,7 +170,7 @@ pub trait ProverTester {
 
     /// Generate multiple proving tasks for test purposes.
     fn gen_multi_proving_tasks() -> eyre::Result<Vec<<Self::Prover as ProverType>::ProvingTask>> {
-        unimplemented!()
+        unimplemented!("must be implemented by MultiTester");
     }
 
     /// Light weight testing to simply execute the vm program for test
