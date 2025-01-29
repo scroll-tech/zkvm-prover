@@ -30,11 +30,11 @@ impl BatchInfoBuilderV3 {
         };
 
         // Validate the tx data is match with fields in chunk info
-        let _ = chunks_info.iter().zip(&payload.chunk_data_digests).inspect(
-            |(chk_info, &tx_bytes_digest)| {
-                assert_eq!(chk_info.tx_data_digest, tx_bytes_digest);
-            },
-        );
+        for (chunk_info, &tx_data_digest) in
+            chunks_info.iter().zip(payload.chunk_data_digests.iter())
+        {
+            assert_eq!(chunk_info.tx_data_digest, tx_data_digest);
+        }
 
         // Validate the l1-msg identifier data_hash for the batch.
         let batch_data_hash_preimage = chunks_info
