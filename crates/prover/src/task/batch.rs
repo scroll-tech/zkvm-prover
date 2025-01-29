@@ -5,7 +5,7 @@ use openvm_stark_sdk::{
     openvm_stark_backend::p3_field::PrimeField32,
 };
 use scroll_zkvm_circuit_input_types::{
-    batch::{BatchHeader, BatchHeaderV3, BatchWitness, ReferenceHeader},
+    batch::{BatchHeader, BatchHeaderV3, BatchInfo, BatchWitness, ReferenceHeader},
     proof::RootProofWithPublicValues,
 };
 use serde::{Deserialize, Serialize};
@@ -48,6 +48,49 @@ impl ProvingTask for BatchProvingTask {
             reference_header: ReferenceHeader::V3(self.batch_header),
         };
         rkyv::to_bytes::<rkyv::rancor::Error>(&witness)
+    }
+}
+
+impl From<&BatchProvingTask> for BatchInfo {
+    fn from(task: &BatchProvingTask) -> Self {
+        let (parent_state_root, state_root, chain_id, withdraw_root) = (
+            task.chunk_proofs
+                .first()
+                .expect("at least one chunk in batch")
+                .metadata
+                .chunk_info
+                .prev_state_root,
+            task.chunk_proofs
+                .last()
+                .expect("at least one chunk in batch")
+                .metadata
+                .chunk_info
+                .post_state_root,
+            task.chunk_proofs
+                .last()
+                .expect("at least one chunk in batch")
+                .metadata
+                .chunk_info
+                .chain_id,
+            task.chunk_proofs
+                .last()
+                .expect("at least one chunk in batch")
+                .metadata
+                .chunk_info
+                .withdraw_root,
+        );
+
+        let parent_batch_hash = task.batch_header.parent_batch_hash;
+        let batch_hash = task.batch_header.batch_hash();
+
+        Self {
+            parent_state_root,
+            parent_batch_hash,
+            state_root,
+            batch_hash,
+            chain_id,
+            withdraw_root,
+        }
     }
 }
 
