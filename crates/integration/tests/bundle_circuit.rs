@@ -3,7 +3,7 @@ use scroll_zkvm_integration::{
     testers::{
         batch::MultiBatchProverTester, bundle::BundleProverTester, chunk::MultiChunkProverTester,
     },
-    utils::build_batch_task,
+    utils::{LastHeader, build_batch_task},
 };
 use scroll_zkvm_prover::task::bundle::BundleProvingTask;
 
@@ -49,7 +49,7 @@ fn e2e() -> eyre::Result<()> {
         &chunk_tasks[1..],
         &chunk_proofs[1..],
         scroll_zkvm_circuit_input_types::batch::MAX_AGG_CHUNKS,
-        Default::default(),
+        LastHeader::from(&batch_task_1.batch_header),
     );
 
     let outcome =
