@@ -3,15 +3,13 @@ use std::{fs::File, path::Path};
 use sbv::primitives::types::BlockWitness;
 use scroll_zkvm_prover::{ChunkProverType, ProverType, task::chunk::ChunkProvingTask};
 
-use crate::ProverTester;
-
-const PATH_BLOCK_WITNESS: &str = "./testdata";
+use crate::{ProverTester, testers::PATH_TESTDATA};
 
 /// Utility function to read and deserialize block witness given the block number.
 ///
 /// Expects a file <block_n>.json to be present in the <PATH_BLOCK_WITNESS> directory.
 fn read_block_witness(block_n: usize) -> eyre::Result<BlockWitness> {
-    let path_witness = Path::new(PATH_BLOCK_WITNESS).join(format!("{}.json", block_n));
+    let path_witness = Path::new(PATH_TESTDATA).join(format!("{}.json", block_n));
     let witness = File::open(&path_witness)?;
     Ok(serde_json::from_reader::<_, BlockWitness>(witness)?)
 }
