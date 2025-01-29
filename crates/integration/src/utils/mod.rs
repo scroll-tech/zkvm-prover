@@ -199,7 +199,6 @@ pub fn build_batch_task(
         blob_versioned_hash,
         blob_data_proof: point_evaluations.map(|u| B256::new(u.to_be_bytes())),
     };
-    // println!("header host {:?}", batch_header);
 
     BatchProvingTask {
         chunk_proofs: Vec::from(chunk_proofs),
