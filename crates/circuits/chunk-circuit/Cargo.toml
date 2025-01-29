@@ -6,6 +6,8 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
+scroll-zkvm-circuit-input-types.workspace = true
+
 rkyv.workspace = true
 sbv.workspace = true
 

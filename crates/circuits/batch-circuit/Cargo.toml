@@ -9,10 +9,10 @@ version.workspace = true
 scroll-zkvm-circuit-input-types.workspace = true
 
 openvm = { workspace = true, features = ["std"] }
-openvm-algebra-guest = { workspace = true }
-openvm-keccak256-guest= { workspace = true }
+openvm-algebra-guest.workspace = true
+openvm-keccak256-guest.workspace = true
 openvm-pairing-guest = { workspace = true, features = ["halo2curves"] }
-openvm-rv32im-guest= {  workspace = true }
+openvm-rv32im-guest.workspace = true
 
 alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
 bitcode.workspace = true
@@ -20,10 +20,10 @@ itertools.workspace = true
 rkyv.workspace = true
 serde.workspace = true
 tiny-keccak.workspace = true
+vm-zstd.workspace = true
 
 bls12_381 = { version = "0.8", optional = true }
 ff = { version = "0.13", optional = true }
-vm-zstd.workspace = true
 
 [features]
 default = ["scroll"]

@@ -1,12 +1,10 @@
 use scroll_zkvm_integration::{
-    ProverTester, prove_verify_multi, prove_verify_single, setup_logger,
+    ProverTester, prove_verify_multi, prove_verify_single,
     testers::chunk::{ChunkProverTester, MultiChunkProverTester},
 };
 
 #[test]
 fn setup() -> eyre::Result<()> {
-    setup_logger()?;
-
     ChunkProverTester::setup()?;
 
     let elf = ChunkProverTester::build()?;
@@ -20,8 +18,6 @@ fn setup() -> eyre::Result<()> {
 
 #[test]
 fn test_execute() -> eyre::Result<()> {
-    setup_logger()?;
-
     MultiChunkProverTester::setup()?;
 
     let elf = MultiChunkProverTester::build()?;
@@ -37,7 +33,7 @@ fn test_execute() -> eyre::Result<()> {
 
 #[test]
 fn setup_prove_verify() -> eyre::Result<()> {
-    setup_logger()?;
+    ChunkProverTester::setup()?;
 
     let _outcome = prove_verify_single::<ChunkProverTester>(None)?;
 
@@ -46,7 +42,7 @@ fn setup_prove_verify() -> eyre::Result<()> {
 
 #[test]
 fn multi_chunk() -> eyre::Result<()> {
-    setup_logger()?;
+    MultiChunkProverTester::setup()?;
 
     let _outcome = prove_verify_multi::<MultiChunkProverTester>(None)?;
 
