@@ -1,8 +1,21 @@
 [package]
-name = "bundle-circuit"
+name = "scroll-zkvm-bundle-circuit"
 edition.workspace = true
 readme.workspace = true
 repository.workspace = true
 version.workspace = true
 
 [dependencies]
+scroll-zkvm-circuit-input-types.workspace = true
+
+openvm = { workspace = true, features = ["std"] }
+openvm-algebra-guest.workspace = true
+openvm-keccak256-guest.workspace = true
+openvm-rv32im-guest.workspace = true
+
+alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
+rkyv.workspace = true
+
+[features]
+default = ["scroll"]
+scroll = ["scroll-zkvm-circuit-input-types/scroll"]

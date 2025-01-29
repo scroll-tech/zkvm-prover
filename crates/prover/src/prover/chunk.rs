@@ -1,123 +1,133 @@
-use std::{
-    path::{Path, PathBuf},
-    sync::Arc,
+use sbv::{
+    core::{EvmDatabase, EvmExecutor},
+    primitives::{
+        chainspec::{Chain, get_chain_spec},
+        ext::TxBytesHashExt,
+    },
 };
-
-use openvm_circuit::{arch::SingleSegmentVmExecutor, system::program::trace::VmCommittedExe};
-use openvm_native_recursion::hints::Hintable;
-use openvm_sdk::{Sdk, StdIn, config::SdkVmConfig};
-use tracing::{debug, instrument};
+use scroll_zkvm_circuit_input_types::chunk::{ChunkInfo, make_providers};
 
 #[cfg(feature = "scroll")]
 use sbv::{
-    core::ChunkInfo,
+    core::ChunkInfo as SbvChunkInfo,
     primitives::{BlockWithSenders, BlockWitness},
 };
 
 use crate::{
-    ChunkProof, Error, Prover, ProverVerifier, WrappedProof,
-    proof::ChunkProofMetadata,
+    Error,
+    proof::{ChunkProofMetadata, RootProof},
     task::{ProvingTask, chunk::ChunkProvingTask},
 };
 
-use super::AGG_STARK_PROVING_KEY;
+use crate::{Prover, ProverType};
 
 /// Prover for [`ChunkCircuit`].
-pub type ChunkProver = Prover<SdkVmConfig>;
+pub type ChunkProver = Prover<ChunkProverType>;
 
-impl ProverVerifier for ChunkProver {
-    type ProvingTask = ChunkProvingTask;
+pub struct ChunkProverType;
 
-    type Proof = ChunkProof;
-
-    type ProofMetadata = ChunkProofMetadata;
-
-    const PREFIX: &str = "chunk-proof-";
+impl ProverType for ChunkProverType {
+    const NAME: &'static str = "chunk";
 
     const EVM: bool = false;
 
-    #[instrument("ChunkProver::setup", skip_all, fields(path_exe, path_pk, cache_dir))]
-    fn setup<P: AsRef<Path>>(path_exe: P, path_pk: P, cache_dir: Option<P>) -> Result<Self, Error> {
-        let (app_committed_exe, app_pk) = Self::init(path_exe, path_pk)?;
+    type ProvingTask = ChunkProvingTask;
 
-        Ok(Self {
-            app_committed_exe,
-            app_pk,
-            outermost_data: None,
-            cache_dir: cache_dir.map(|path| PathBuf::from(path.as_ref())),
-        })
-    }
+    type ProofType = RootProof;
 
-    #[instrument("ChunkProver::metadata", skip_all, fields(?task_id = task.identifier()))]
-    fn metadata(task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error> {
-        #[cfg(feature = "scroll")]
-        let chunk_info = {
-            let chain_id = task.block_witnesses[0].chain_id;
-            let pre_state_root = task.block_witnesses[0].pre_state_root;
-            let blocks = task
-                .block_witnesses
-                .iter()
-                .map(|s| s.build_reth_block())
-                .collect::<Result<Vec<BlockWithSenders>, _>>()
-                .map_err(|e| Error::GenProof(e.to_string()))?;
-            ChunkInfo::from_blocks_iter(chain_id, pre_state_root, blocks.iter().map(|b| &b.block))
+    type ProofMetadata = ChunkProofMetadata;
+
+    fn metadata_with_prechecks(task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error> {
+        let err_prefix = format!(
+            "metadata_with_prechecks for task_id={:?}",
+            task.identifier()
+        );
+
+        if task.block_witnesses.is_empty() {
+            return Err(Error::GenProof(format!(
+                "{err_prefix}: chunk should contain at least one block",
+            )));
+        }
+
+        let first_block = task
+            .block_witnesses
+            .first()
+            .expect("at least one block in a chunk");
+
+        // Get the blocks to build the basic chunk-info.
+        let chain_id = first_block.chain_id;
+        let blocks = task
+            .block_witnesses
+            .iter()
+            .map(|s| s.build_reth_block())
+            .collect::<Result<Vec<BlockWithSenders>, _>>()
+            .map_err(|e| Error::GenProof(e.to_string()))?;
+        let sbv_chunk_info = SbvChunkInfo::from_blocks_iter(
+            chain_id,
+            first_block.pre_state_root(),
+            blocks.iter().map(|b| &b.block),
+        );
+
+        let chain_spec = get_chain_spec(Chain::from_id(sbv_chunk_info.chain_id())).ok_or(
+            Error::GenProof(format!("{err_prefix}: failed to get chain spec")),
+        )?;
+
+        let (code_db, nodes_provider, block_hashes) = make_providers(&task.block_witnesses);
+
+        let mut db = EvmDatabase::new_from_root(
+            code_db,
+            sbv_chunk_info.prev_state_root(),
+            &nodes_provider,
+            block_hashes,
+        )
+        .map_err(|e| {
+            Error::GenProof(format!("{err_prefix}: failed to create EvmDatabase: {}", e,))
+        })?;
+
+        for block in blocks.iter() {
+            let output = EvmExecutor::new(chain_spec.clone(), &db, block)
+                .execute()
+                .map_err(|e| {
+                    Error::GenProof(format!("{err_prefix}: failed to execute block: {}", e,))
+                })?;
+
+            db.update(&nodes_provider, output.state.state.iter())
+                .map_err(|e| {
+                    Error::GenProof(format!("{err_prefix}: failed to update db: {}", e,))
+                })?;
+        }
+
+        let post_state_root = db.commit_changes();
+        if post_state_root != sbv_chunk_info.post_state_root() {
+            return Err(Error::GenProof(format!(
+                "{err_prefix}: state root mismatch: expected={}, found={}",
+                sbv_chunk_info.post_state_root(),
+                post_state_root
+            )));
+        }
+
+        let withdraw_root = db.withdraw_root().map_err(|e| {
+            Error::GenProof(format!(
+                "{err_prefix}: failed to get withdrawals root: {}",
+                e,
+            ))
+        })?;
+
+        let mut rlp_buffer = Vec::with_capacity(2048);
+        let tx_data_digest = blocks
+            .iter()
+            .flat_map(|b| b.body.transactions.iter())
+            .tx_bytes_hash_in(rlp_buffer.as_mut());
+
+        let chunk_info = ChunkInfo {
+            chain_id: sbv_chunk_info.chain_id(),
+            prev_state_root: sbv_chunk_info.prev_state_root(),
+            post_state_root: sbv_chunk_info.post_state_root(),
+            withdraw_root,
+            data_hash: sbv_chunk_info.data_hash(),
+            tx_data_digest,
         };
-        Ok(ChunkProofMetadata {
-            #[cfg(feature = "scroll")]
-            chunk_info,
-        })
-    }
 
-    #[instrument("ChunkProver::gen_proof_inner", skip_all, fields(task_id))]
-    fn gen_proof_inner(&self, task: &Self::ProvingTask) -> Result<Self::Proof, Error> {
-        let agg_stark_pk = AGG_STARK_PROVING_KEY
-            .get()
-            .ok_or(Error::GenProof(String::from(
-                "agg stark pk not initialized! Prover::setup",
-            )))?;
-
-        let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&task.block_witnesses)
-            .map_err(|e| Error::GenProof(e.to_string()))?;
-
-        let mut stdin = StdIn::default();
-        stdin.write_bytes(&serialized);
-
-        let task_id = task.identifier();
-
-        debug!(name: "generate_root_proof", ?task_id);
-        let proof = Sdk
-            .generate_root_proof(
-                Arc::clone(&self.app_pk),
-                Arc::clone(&self.app_committed_exe),
-                agg_stark_pk.clone(),
-                stdin,
-            )
-            .map_err(|e| Error::GenProof(e.to_string()))?;
-
-        debug!(name: "construct_metadata", ?task_id);
-        let metadata = Self::metadata(task)?;
-
-        let wrapped_proof = WrappedProof::new(metadata, proof);
-
-        Ok(wrapped_proof)
-    }
-
-    #[instrument("ChunkProver::verify_proof", skip_all, fields(?metadata = proof.metadata))]
-    fn verify_proof(&self, proof: &Self::Proof) -> Result<(), Error> {
-        let agg_stark_pk = AGG_STARK_PROVING_KEY
-            .get()
-            .ok_or(Error::VerifyProof(String::from(
-                "agg stark pk not initialized! Prover::setup",
-            )))?;
-
-        let root_verifier_pk = &agg_stark_pk.root_verifier_pk;
-        let vm = SingleSegmentVmExecutor::new(root_verifier_pk.vm_pk.vm_config.clone());
-        let exe: &VmCommittedExe<_> = &root_verifier_pk.root_committed_exe;
-
-        let _ = vm
-            .execute_and_compute_heights(exe.exe.clone(), proof.proof.write())
-            .map_err(|e| Error::VerifyProof(e.to_string()))?;
-
-        Ok(())
+        Ok(ChunkProofMetadata { chunk_info })
     }
 }

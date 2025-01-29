@@ -13,5 +13,5 @@ clippycmd="cargo +nightly-2024-10-30 clippy \
   -- -D warnings"
 
 cd crates/circuits/chunk-circuit; eval "$clippycmd"; cd ./../../..
-cd crates/circuits/chunk-circuit; eval "$clippycmd"; cd ./../../..
-cd crates/circuits/chunk-circuit; eval "$clippycmd"; cd ./../../..
+cd crates/circuits/batch-circuit; eval "$clippycmd"; cd ./../../..
+cd crates/circuits/bundle-circuit; eval "$clippycmd"; cd ./../../..

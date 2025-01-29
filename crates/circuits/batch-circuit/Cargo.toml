@@ -1,8 +1,33 @@
 [package]
-name = "batch-circuit"
+name = "scroll-zkvm-batch-circuit"
 edition.workspace = true
 readme.workspace = true
 repository.workspace = true
 version.workspace = true
 
 [dependencies]
+scroll-zkvm-circuit-input-types.workspace = true
+
+openvm = { workspace = true, features = ["std"] }
+openvm-algebra-guest.workspace = true
+openvm-keccak256-guest.workspace = true
+openvm-pairing-guest = { workspace = true, features = ["halo2curves"] }
+openvm-rv32im-guest.workspace = true
+
+alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
+bitcode.workspace = true
+itertools.workspace = true
+rkyv.workspace = true
+serde.workspace = true
+tiny-keccak.workspace = true
+vm-zstd.workspace = true
+
+bls12_381 = { version = "0.8", optional = true }
+ff = { version = "0.13", optional = true }
+
+[features]
+default = ["scroll"]
+scroll = ["scroll-zkvm-circuit-input-types/scroll"]
+
+# use common implement for curves for verification and testing
+common_curve = ["dep:bls12_381", "dep:ff"]

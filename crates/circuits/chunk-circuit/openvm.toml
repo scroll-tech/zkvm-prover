@@ -1,20 +1,3 @@
-[app_vm_config.system.config]
-max_constraint_degree = 5
-continuation_enabled = true
-num_public_values = 32
-max_segment_len = 8388508
-collect_metrics = false
-profiling = false
-
-[app_vm_config.system.config.memory_config]
-as_height = 29
-as_offset = 1
-pointer_max_bits = 29
-clk_max_bits = 29
-decomp = 17
-max_access_adapter_n = 64
-access_capacity = 16777216
-
 [app_vm_config.rv32i]
 
 [app_vm_config.io]
@@ -49,10 +32,3 @@ modulus = "218882428718392752222464057452572750886963111572978236626890378946452
 scalar = "21888242871839275222246405745257275088548364400416034343698204186575808495617"
 a = "0"
 b = "3"
-
-[compiler_options]
-word_size = 8
-compile_prints = true
-enable_cycle_tracker = false
-field_arithmetic_enabled = true
-field_extension_enabled = true
