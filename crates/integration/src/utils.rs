@@ -6,7 +6,6 @@ use sbv::primitives::{
     types::{BlockWitness, Transaction},
 };
 use scroll_zkvm_circuit_input_types::{
-    PublicInputs,
     batch::{BatchHeader, BatchHeaderV3},
     utils::keccak256,
 };
