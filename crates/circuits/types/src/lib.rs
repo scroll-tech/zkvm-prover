@@ -26,15 +26,6 @@ pub trait PublicInputs {
     fn validate(&self, prev_pi: &Self);
 }
 
-impl PublicInputs for () {
-    fn pi_hash(&self) -> B256 {
-        unreachable!("PublicInputs::pi_hash for ()");
-    }
-    fn validate(&self, _prev_pi: &Self) {
-        unreachable!("PublicInputs::validate for ()");
-    }
-}
-
 /// Circuit defines the higher-level behaviour to be observed by a [`openvm`] guest program.
 pub trait Circuit {
     /// The witness provided to the circuit.
