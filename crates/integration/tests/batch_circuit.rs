@@ -44,20 +44,10 @@ fn setup_prove_verify() -> eyre::Result<()> {
 
 #[test]
 fn e2e() -> eyre::Result<()> {
-    use std::str::FromStr;
-    
     setup_logger()?;
 
     let outcome = prove_verify_multi::<MultiChunkProverTester>(None)?;
-    let (chunk_tasks, mut chunk_proofs) = (outcome.tasks, outcome.proofs);
-
-    // TODO: now we have to add an hardcoded withdraw root here
-    for proof in &mut chunk_proofs {
-        proof.metadata.chunk_info.withdraw_root = sbv::primitives::B256::from_str(
-            "0x7ed4c7d56e2ed40f65d25eecbb0110f3b3f4db68e87700287c7e0cedcb68272c",
-        )
-        .unwrap();        
-    }
+    let (chunk_tasks, chunk_proofs) = (outcome.tasks, outcome.proofs);
 
     let batch_task = build_batch_task(
         &chunk_tasks,
