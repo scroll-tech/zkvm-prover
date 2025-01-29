@@ -10,7 +10,7 @@ use sbv::{
 use crate::{
     Error,
     proof::{ChunkProofMetadata, RootProof},
-    task::{ProvingTask, chunk::ChunkProvingTask},
+    task::chunk::ChunkProvingTask,
 };
 
 use crate::{Prover, ProverType};

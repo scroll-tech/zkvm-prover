@@ -91,7 +91,6 @@ impl PIBuilder {
         total_l1_message_popped: u64,
         last_block_timestamp: u64,
     ) -> Self {
-
         // handling blob data
         // TODO: upgrade for the new enveloped format
         let payload = if blob_bytes[0] & 1 == 1 {
@@ -111,11 +110,12 @@ impl PIBuilder {
         };
 
         // verify the tx data is match with fields in chunk info
-        let _ = chunks_info.clone()
-        .zip(payload.chunk_data_digests.as_slice())
-        .inspect(|(chk_info, &tx_bytes_digest)|{
-            assert_eq!(chk_info.tx_data_digest, tx_bytes_digest);
-        });
+        let _ = chunks_info
+            .clone()
+            .zip(payload.chunk_data_digests.as_slice())
+            .inspect(|(chk_info, &tx_bytes_digest)| {
+                assert_eq!(chk_info.tx_data_digest, tx_bytes_digest);
+            });
 
         // TODO: optimize with hasher
         let batch_data_hash_preimage = chunks_info
@@ -145,7 +145,6 @@ impl PIBuilder {
             blob_versioned_hash,
             blob_data_proof,
         };
-
 
         let batch_hash = batch_header.batch_hash();
         let chunks_seq = ChunksSeq::new(chunks_info.clone());
