@@ -39,7 +39,7 @@ fn test_execute() -> eyre::Result<()> {
 fn setup_prove_verify_single() -> eyre::Result<()> {
     BatchProverTester::setup()?;
 
-    let _outcome = prove_verify_single::<BatchProverTester>(None)?;
+    prove_verify_single::<BatchProverTester>(None)?;
 
     Ok(())
 }
@@ -48,7 +48,7 @@ fn setup_prove_verify_single() -> eyre::Result<()> {
 fn setup_prove_verify_multi() -> eyre::Result<()> {
     MultiBatchProverTester::setup()?;
 
-    let _outcome = prove_verify_single::<MultiBatchProverTester>(None)?;
+    prove_verify_single::<MultiBatchProverTester>(None)?;
 
     Ok(())
 }
