@@ -42,7 +42,7 @@ impl Circuit for BundleCircuit {
 impl AggCircuit for BundleCircuit {
     type AggregatedPublicInputs = BatchInfo;
 
-    fn prev_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs> {
+    fn aggregated_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs> {
         witness
             .batch_infos
             .iter()
@@ -50,7 +50,7 @@ impl AggCircuit for BundleCircuit {
             .collect()
     }
 
-    fn derive_prev_pi_hashes(proofs: &[RootProofWithPublicValues]) -> Vec<B256> {
+    fn aggregated_pi_hashes(proofs: &[RootProofWithPublicValues]) -> Vec<B256> {
         proofs
             .iter()
             .map(|proof| {

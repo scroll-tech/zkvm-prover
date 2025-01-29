@@ -7,7 +7,7 @@ use scroll_zkvm_prover::{
 use crate::{ProverTester, utils::build_batch_task};
 
 // const PATH_BATCH_WITNESS: &str = "./testdata/batch-task.json";
-const PATH_CHUNK_PROOFS: &str = "./testdata/chunk";
+const PATH_CHUNK_PROOFS: &str = "./testdata/proofs";
 const BLK_PATHS: [&str; 4] = [
     "./testdata/12508460.json",
     "./testdata/12508461.json",

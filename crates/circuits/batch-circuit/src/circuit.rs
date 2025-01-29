@@ -42,7 +42,7 @@ impl Circuit for BatchCircuit {
 impl AggCircuit for BatchCircuit {
     type AggregatedPublicInputs = ChunkInfo;
 
-    fn prev_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs> {
+    fn aggregated_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs> {
         witness
             .chunk_infos
             .iter()
@@ -50,7 +50,7 @@ impl AggCircuit for BatchCircuit {
             .collect()
     }
 
-    fn derive_prev_pi_hashes(proofs: &[RootProofWithPublicValues]) -> Vec<alloy_primitives::B256> {
+    fn aggregated_pi_hashes(proofs: &[RootProofWithPublicValues]) -> Vec<alloy_primitives::B256> {
         proofs
             .iter()
             .map(|proof| {

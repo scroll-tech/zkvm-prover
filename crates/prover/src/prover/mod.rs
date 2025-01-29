@@ -82,20 +82,20 @@ impl<Type: ProverType> Prover<Type> {
     ) -> Result<Self, Error> {
         let (app_committed_exe, app_pk) = Self::init(path_exe, path_pk)?;
 
-        // TODO(rohit): allow to pass custom halo2-params path.
-        let halo2_params_reader = CacheHalo2ParamsReader::new(DEFAULT_PARAMS_DIR);
-        let agg_pk = Sdk
-            .agg_keygen(
-                AggConfig::default(),
-                &halo2_params_reader,
-                None::<&RootVerifierProvingKey>,
-            )
-            .map_err(|e| Error::Setup {
-                path: PathBuf::from(DEFAULT_PARAMS_DIR),
-                src: e.to_string(),
-            })?;
-
         let evm_prover = Type::EVM.then_some({
+            // TODO(rohit): allow to pass custom halo2-params path.
+            let halo2_params_reader = CacheHalo2ParamsReader::new(DEFAULT_PARAMS_DIR);
+            let agg_pk = Sdk
+                .agg_keygen(
+                    AggConfig::default(),
+                    &halo2_params_reader,
+                    None::<&RootVerifierProvingKey>,
+                )
+                .map_err(|e| Error::Setup {
+                    path: PathBuf::from(DEFAULT_PARAMS_DIR),
+                    src: e.to_string(),
+                })?;
+
             let verifier_contract = Sdk
                 .generate_snark_verifier_contract(&halo2_params_reader, &agg_pk)
                 .expect("openvm_sdk::generate_snark_verifier_contract should succeed");
