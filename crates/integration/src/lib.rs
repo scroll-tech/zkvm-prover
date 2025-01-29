@@ -47,7 +47,12 @@ const FD_APP_PK: &str = "app.pk";
 const ENV_OUTPUT_DIR: &str = "OUTPUT_DIR";
 
 /// Every test run will write assets to a new directory.
-static DIR_ASSETS: OnceCell<PathBuf> = OnceCell::new();
+///
+/// Possibly one of the following:
+/// - <DIR_OUTPUT>/chunk-tests-{timestamp}
+/// - <DIR_OUTPUT>/batch-tests-{timestamp}
+/// - <DIR_OUTPUT>/bundle-tests-{timestamp}
+static DIR_TESTRUN: OnceCell<PathBuf> = OnceCell::new();
 
 /// Circuit that implements functionality required to run e2e tests.
 pub trait ProverTester {
@@ -58,40 +63,35 @@ pub trait ProverTester {
     const PATH_PROJECT_ROOT: &str;
 
     /// Prefix to use while naming app-specific data like app exe, app pk, etc.
-    const ASSETS_DIR: &str;
+    const DIR_ASSETS: &str;
 
     /// Setup directory structure for the test suite.
     fn setup() -> eyre::Result<()> {
+        // Setup tracing subscriber.
+        setup_logger()?;
+
         // If user has set an output directory, use it.
-        let dir_output = if let Ok(env_dir) = std::env::var(ENV_OUTPUT_DIR) {
+        let dir_testrun = if let Ok(env_dir) = std::env::var(ENV_OUTPUT_DIR) {
             let dir = Path::new(&env_dir);
             if std::fs::exists(dir).is_err() {
                 tracing::error!("OUTPUT_DIR={dir:?} not found");
                 process::exit(1);
             }
-            let dir = dir.join(Self::ASSETS_DIR);
-            std::fs::create_dir_all(&dir)?;
-            dir
+            dir.into()
         } else {
-            // Create the <OUTPUT>/<{ASSETS_DIR}-test-{now}>/{ASSETS_DIR} dir to dump
-            // assets from this test run.
-            let test_run = format!(
+            // Create the <OUTPUT>/{DIR_ASSETS}-test-{timestamp} for test-run.
+            let testrun = format!(
                 "{}-tests-{}",
-                Self::ASSETS_DIR,
+                Self::DIR_ASSETS,
                 chrono::Utc::now().format("%Y%m%d_%H%M%S"),
             );
-            let dir = Path::new(DIR_OUTPUT).join(test_run).join(Self::ASSETS_DIR);
-            std::fs::create_dir_all(&dir)?;
-            dir
+            Path::new(DIR_OUTPUT).join(testrun)
         };
 
-        // Set the assets dir path for later use.
-        // TODO: in e2e there would be multiple sets to assets dir
-        DIR_ASSETS
-            .set(dir_output)
-            //.map_err(|dir| eyre::eyre!("could not set assets dir: {dir:?}"))?;
-            .map_err(|dir| println!("could not set assets dir: {dir:?}"))
-            .ok();
+        // Set the path for the current test-run.
+        DIR_TESTRUN
+            .set(dir_testrun)
+            .map_err(|dir| eyre::eyre!("could not set test-run dir: {dir:?}"))?;
 
         Ok(())
     }
@@ -111,15 +111,22 @@ pub trait ProverTester {
         fields(path_app_config, path_app_exe)
     )]
     fn transpile(elf: Elf) -> eyre::Result<(AppConfig<SdkVmConfig>, PathBuf)> {
-        let path_assets = DIR_ASSETS.get().ok_or(eyre::eyre!("missing assets dir"))?;
+        // Create the assets dir if not already present.
+        let path_assets = DIR_TESTRUN
+            .get()
+            .ok_or(eyre::eyre!("missing assets dir"))?
+            .join(Self::DIR_ASSETS);
+        std::fs::create_dir_all(&path_assets)?;
 
         // First read the app config specified in the project's root directory.
         let path_app_config = Path::new(Self::PATH_PROJECT_ROOT).join(FD_APP_CONFIG);
         let mut app_config = read_app_config(&path_app_config)?;
-        // FIXME
-        if Self::ASSETS_DIR != "chunk" {
+
+        // FIXME: additional app config for batch and bundle guest program.
+        if Self::DIR_ASSETS != "chunk" {
             app_config.app_vm_config.castf = Some(openvm_native_circuit::CastFExtension);
         }
+
         // Copy the app config to assets directory for convenience of export/release.
         //
         // - <openvm-assets>/<assets-dir>/openvm.toml
@@ -128,7 +135,7 @@ pub trait ProverTester {
 
         // Transpile ELF to openvm executable.
         let mut transpiler = app_config.app_vm_config.transpiler();
-        if Self::ASSETS_DIR != "chunk" {
+        if Self::DIR_ASSETS != "chunk" {
             transpiler =
                 transpiler.with_extension(openvm_native_transpiler::LongFormTranspilerExtension);
         }
@@ -144,7 +151,10 @@ pub trait ProverTester {
     /// Generate proving key and return path on disc.
     #[instrument("ProverTester::keygen", skip_all, fields(path_app_pk))]
     fn keygen(app_config: AppConfig<SdkVmConfig>) -> eyre::Result<PathBuf> {
-        let path_assets = DIR_ASSETS.get().ok_or(eyre::eyre!("missing assets dir"))?;
+        let path_assets = DIR_TESTRUN
+            .get()
+            .ok_or(eyre::eyre!("missing assets dir"))?
+            .join(Self::DIR_ASSETS);
 
         let app_pk = Sdk.app_keygen(app_config)?;
 
@@ -272,9 +282,6 @@ where
     <T::Prover as ProverType>::ProofMetadata: Clone,
     <T::Prover as ProverType>::ProofType: Clone,
 {
-    // Setup test-run directories.
-    T::setup()?;
-
     // Build the ELF binary from the circuit program.
     let elf = T::build()?;
 
@@ -285,8 +292,11 @@ where
     let path_pk = T::keygen(app_config)?;
 
     // Setup prover.
-    let path_assets = DIR_ASSETS.get().ok_or(eyre::eyre!("missing assets dir"))?;
-    let cache_dir = path_assets.join(DIR_PROOFS);
+    let cache_dir = DIR_TESTRUN
+        .get()
+        .ok_or(eyre::eyre!("missing assets dir"))?
+        .join(T::DIR_ASSETS)
+        .join(DIR_PROOFS);
     std::fs::create_dir_all(&cache_dir)?;
     let prover =
         scroll_zkvm_prover::Prover::<T::Prover>::setup(&path_exe, &path_pk, Some(&cache_dir))?;
@@ -314,9 +324,6 @@ where
     <T::Prover as ProverType>::ProofMetadata: Clone,
     <T::Prover as ProverType>::ProofType: Clone,
 {
-    // Setup test-run directories.
-    T::setup()?;
-
     // Build the ELF binary from the circuit program.
     let elf = T::build()?;
 
@@ -327,8 +334,11 @@ where
     let path_pk = T::keygen(app_config)?;
 
     // Setup prover.
-    let path_assets = DIR_ASSETS.get().ok_or(eyre::eyre!("missing assets dir"))?;
-    let cache_dir = path_assets.join(DIR_PROOFS);
+    let cache_dir = DIR_TESTRUN
+        .get()
+        .ok_or(eyre::eyre!("missing assets dir"))?
+        .join(T::DIR_ASSETS)
+        .join(DIR_PROOFS);
     std::fs::create_dir_all(&cache_dir)?;
     let prover =
         scroll_zkvm_prover::Prover::<T::Prover>::setup(&path_exe, &path_pk, Some(&cache_dir))?;

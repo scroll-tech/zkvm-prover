@@ -1,5 +1,3 @@
-use core::assert_eq;
-
 use sbv::primitives::{
     B256, TransactionSigned, U256,
     eips::Encodable2718,
@@ -211,33 +209,39 @@ pub fn build_batch_task(
 }
 
 #[test]
-fn test_build_batch_task() -> Result<(), scroll_zkvm_prover::Error> {
+fn test_build_batch_task() -> eyre::Result<()> {
     use scroll_zkvm_prover::utils::{read_json, read_json_deep};
-    use std::str::FromStr;
 
-    let blk_name = [
-        "12508460.json",
-        "12508461.json",
-        "12508462.json",
-        "12508463.json",
+    // ./testdata/
+    let path_testdata = std::path::Path::new("testdata");
+
+    // read block witnesses.
+    let paths_block_witnesses = [
+        path_testdata.join("12508460.json"),
+        path_testdata.join("12508461.json"),
+        path_testdata.join("12508462.json"),
+        path_testdata.join("12508463.json"),
     ];
+    let read_block_witness = |path| Ok(read_json::<_, BlockWitness>(path)?);
+    let chunk_task = ChunkProvingTask {
+        block_witnesses: paths_block_witnesses
+            .iter()
+            .map(read_block_witness)
+            .collect::<eyre::Result<Vec<BlockWitness>>>()?,
+    };
 
-    let chunk_proof_name = ["chunk-12508460-12508463.json"];
+    // read chunk proof.
+    let path_chunk_proof = path_testdata
+        .join("proofs")
+        .join("chunk-12508460-12508463.json");
+    let chunk_proof = read_json_deep::<_, ChunkProof>(&path_chunk_proof)?;
 
-    let blk_witness = |n| read_json::<_, BlockWitness>(format!("testdata/{}", n)).unwrap();
-
-    let mut chk_proof = chunk_proof_name
-        .map(|n| read_json_deep::<_, ChunkProof>(format!("testdata/chunk/{}", n)).unwrap());
-
-    chk_proof[0].metadata.chunk_info.withdraw_root =
-        B256::from_str("0x7ed4c7d56e2ed40f65d25eecbb0110f3b3f4db68e87700287c7e0cedcb68272c")
-            .unwrap();
-    // manual match to chunk tasks
-    let chk_task = [ChunkProvingTask {
-        block_witnesses: Vec::from(blk_name.map(blk_witness)),
-    }];
-
-    build_batch_task(&chk_task, &chk_proof, 45, Default::default());
+    build_batch_task(
+        &[chunk_task],
+        &[chunk_proof],
+        scroll_zkvm_circuit_input_types::batch::MAX_AGG_CHUNKS,
+        Default::default(),
+    );
 
     Ok(())
 }

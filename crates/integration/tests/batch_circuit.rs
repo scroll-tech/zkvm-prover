@@ -1,5 +1,5 @@
 use scroll_zkvm_integration::{
-    ProverTester, prove_verify_multi, prove_verify_single, setup_logger,
+    ProverTester, prove_verify_multi, prove_verify_single,
     testers::{
         batch::{BatchProverTester, MultiBatchProverTester},
         chunk::MultiChunkProverTester,
@@ -9,8 +9,6 @@ use scroll_zkvm_integration::{
 
 #[test]
 fn test_execute() -> eyre::Result<()> {
-    setup_logger()?;
-
     MultiBatchProverTester::setup()?;
 
     let elf = MultiBatchProverTester::build()?;
@@ -25,8 +23,8 @@ fn test_execute() -> eyre::Result<()> {
 }
 
 #[test]
-fn setup_prove_verify_single_chunk() -> eyre::Result<()> {
-    setup_logger()?;
+fn setup_prove_verify_single() -> eyre::Result<()> {
+    BatchProverTester::setup()?;
 
     let _outcome = prove_verify_single::<BatchProverTester>(None)?;
 
@@ -35,7 +33,7 @@ fn setup_prove_verify_single_chunk() -> eyre::Result<()> {
 
 #[test]
 fn setup_prove_verify() -> eyre::Result<()> {
-    setup_logger()?;
+    MultiBatchProverTester::setup()?;
 
     let _outcome = prove_verify_single::<MultiBatchProverTester>(None)?;
 
@@ -44,7 +42,7 @@ fn setup_prove_verify() -> eyre::Result<()> {
 
 #[test]
 fn e2e() -> eyre::Result<()> {
-    setup_logger()?;
+    BatchProverTester::setup()?;
 
     let outcome = prove_verify_multi::<MultiChunkProverTester>(None)?;
     let (chunk_tasks, chunk_proofs) = (outcome.tasks, outcome.proofs);

@@ -1,13 +1,14 @@
 use scroll_zkvm_integration::{
-    prove_verify_multi, prove_verify_single, setup_logger,
+    ProverTester, prove_verify_multi, prove_verify_single,
     testers::{
         batch::MultiBatchProverTester, bundle::BundleProverTester, chunk::MultiChunkProverTester,
     },
+    utils::build_batch_task,
 };
 
 #[test]
 fn setup_prove_verify() -> eyre::Result<()> {
-    setup_logger()?;
+    BundleProverTester::setup()?;
 
     let _outcome = prove_verify_single::<BundleProverTester>(None)?;
 
@@ -16,14 +17,29 @@ fn setup_prove_verify() -> eyre::Result<()> {
 
 #[test]
 fn e2e() -> eyre::Result<()> {
-    setup_logger()?;
+    BundleProverTester::setup()?;
 
     let outcome = prove_verify_multi::<MultiChunkProverTester>(None)?;
-    let (_chunk_tasks, _chunk_proofs) = (outcome.tasks, outcome.proofs);
+    let (chunk_tasks, chunk_proofs) = (outcome.tasks, outcome.proofs);
+    assert_eq!(chunk_tasks.len(), chunk_proofs.len());
+    assert_eq!(chunk_tasks.len(), 3);
 
-    // TODO: construct batch tasks using chunk tasks and chunk proofs.
-    let batch_tasks = None;
-    let outcome = prove_verify_multi::<MultiBatchProverTester>(batch_tasks)?;
+    // Construct batch tasks using chunk tasks and chunk proofs.
+    let batch_task_1 = build_batch_task(
+        &chunk_tasks[0..1],
+        &chunk_proofs[0..1],
+        scroll_zkvm_circuit_input_types::batch::MAX_AGG_CHUNKS,
+        Default::default(),
+    );
+    let batch_task_2 = build_batch_task(
+        &chunk_tasks[1..],
+        &chunk_proofs[1..],
+        scroll_zkvm_circuit_input_types::batch::MAX_AGG_CHUNKS,
+        Default::default(),
+    );
+
+    let outcome =
+        prove_verify_multi::<MultiBatchProverTester>(Some(&[batch_task_1, batch_task_2]))?;
     let (_batch_tasks, _batch_proofs) = (outcome.tasks, outcome.proofs);
 
     // TODO: construct bundle task using batch tasks and batch proofs.

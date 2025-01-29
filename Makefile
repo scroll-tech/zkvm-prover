@@ -16,20 +16,23 @@ clippy:
 setup-chunk:
 	@cargo test --release -p scroll-zkvm-integration --features scroll --test chunk_circuit setup -- --exact --nocapture
 
-test-chunk:
+test-single-chunk:
 	@cargo test --release -p scroll-zkvm-integration --features scroll --test chunk_circuit setup_prove_verify -- --exact --nocapture
 
 test-multi-chunk:
 	@cargo test --release -p scroll-zkvm-integration --features scroll --test chunk_circuit multi_chunk -- --exact --nocapture
 
-test-batch:
-	@cargo test --release -p scroll-zkvm-integration --features scroll --test batch_circuit setup_prove_verify -- --exact --nocapture
+test-single-batch:
+	@cargo test --release -p scroll-zkvm-integration --features scroll --test batch_circuit setup_prove_verify_single -- --exact --nocapture
 
-test-batch-e2e:
+test-multi-batch:
+	@cargo test --release -p scroll-zkvm-integration --features scroll --test batch_circuit setup_prove_verify_multi -- --exact --nocapture
+
+test-e2e-batch:
 	@cargo test --release -p scroll-zkvm-integration --features scroll --test batch_circuit e2e -- --exact --nocapture
 
 test-bundle:
 	@cargo test --release -p scroll-zkvm-integration --features scroll --test bundle_circuit setup_prove_verify -- --exact --nocapture
 
-test-bundle-e2e:
+test-e2e-bundle:
 	@cargo test --release -p scroll-zkvm-integration --features scroll --test bundle_circuit e2e -- --exact --nocapture

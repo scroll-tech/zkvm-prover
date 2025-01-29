@@ -1,10 +1,10 @@
-use crate::utils::build_batch_task;
+use std::str::FromStr;
+
 use scroll_zkvm_prover::{
     BatchProverType, ChunkProof, ProverType, task::chunk::ChunkProvingTask, utils::read_json,
 };
-use std::str::FromStr;
 
-use crate::ProverTester;
+use crate::{ProverTester, utils::build_batch_task};
 
 // const PATH_BATCH_WITNESS: &str = "./testdata/batch-task.json";
 const PATH_CHUNK_PROOFS: &str = "./testdata/chunk";
@@ -27,7 +27,7 @@ impl ProverTester for BatchProverTester {
 
     const PATH_PROJECT_ROOT: &str = "./../circuits/batch-circuit";
 
-    const ASSETS_DIR: &str = "batch";
+    const DIR_ASSETS: &str = "batch";
 
     fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask> {
         let chk_task = [ChunkProvingTask {
@@ -59,7 +59,7 @@ impl ProverTester for MultiBatchProverTester {
 
     const PATH_PROJECT_ROOT: &str = "./../circuits/batch-circuit";
 
-    const ASSETS_DIR: &str = "batch";
+    const DIR_ASSETS: &str = "batch";
 
     fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask> {
         let chk_task = [
