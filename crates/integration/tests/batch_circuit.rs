@@ -4,6 +4,7 @@ use scroll_zkvm_integration::{
         batch::{BatchProverTester, MultiBatchProverTester},
         chunk::MultiChunkProverTester,
     },
+    utils::build_batch_task,
 };
 
 #[test]
@@ -43,14 +44,28 @@ fn setup_prove_verify() -> eyre::Result<()> {
 
 #[test]
 fn e2e() -> eyre::Result<()> {
+    use std::str::FromStr;
+    
     setup_logger()?;
 
     let outcome = prove_verify_multi::<MultiChunkProverTester>(None)?;
-    let (_chunk_tasks, _chunk_proofs) = (outcome.tasks, outcome.proofs);
+    let (chunk_tasks, mut chunk_proofs) = (outcome.tasks, outcome.proofs);
 
-    // TODO: construct batch task from chunk tasks and chunk proofs.
-    let batch_task = None;
-    let _outcome = prove_verify_single::<BatchProverTester>(batch_task)?;
+    // TODO: now we have to add an hardcoded withdraw root here
+    for proof in &mut chunk_proofs {
+        proof.metadata.chunk_info.withdraw_root = sbv::primitives::B256::from_str(
+            "0x7ed4c7d56e2ed40f65d25eecbb0110f3b3f4db68e87700287c7e0cedcb68272c",
+        )
+        .unwrap();        
+    }
+
+    let batch_task = build_batch_task(
+        &chunk_tasks,
+        &chunk_proofs,
+        scroll_zkvm_circuit_input_types::batch::MAX_AGG_CHUNKS,
+        Default::default(),
+    );
+    let _outcome = prove_verify_single::<BatchProverTester>(Some(batch_task))?;
 
     Ok(())
 }

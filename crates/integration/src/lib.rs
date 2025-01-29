@@ -86,9 +86,12 @@ pub trait ProverTester {
         };
 
         // Set the assets dir path for later use.
+        // TODO: in e2e there would be multiple sets to assets dir
         DIR_ASSETS
             .set(dir_output)
-            .map_err(|dir| eyre::eyre!("could not set assets dir: {dir:?}"))?;
+            //.map_err(|dir| eyre::eyre!("could not set assets dir: {dir:?}"))?;
+            .map_err(|dir| println!("could not set assets dir: {dir:?}"))
+            .ok();
 
         Ok(())
     }
