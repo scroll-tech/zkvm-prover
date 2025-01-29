@@ -1,16 +1,13 @@
-use openvm_native_recursion::hints::Hintable;
-use openvm_sdk::verifier::root::types::RootVmVerifierInput;
-use openvm_stark_sdk::{
-    config::baby_bear_poseidon2::BabyBearPoseidon2Config,
-    openvm_stark_backend::p3_field::PrimeField32,
-};
-use scroll_zkvm_circuit_input_types::{
-    batch::{BatchHeader, BatchHeaderV3, BatchInfo, BatchWitness, ReferenceHeader},
-    proof::RootProofWithPublicValues,
+use scroll_zkvm_circuit_input_types::batch::{
+    BatchHeader, BatchHeaderV3, BatchInfo, BatchWitness, ReferenceHeader,
 };
 use serde::{Deserialize, Serialize};
 
-use crate::{ChunkProof, task::ProvingTask, utils::base64};
+use crate::{
+    ChunkProof,
+    task::{ProvingTask, flatten_root_proof},
+    utils::base64,
+};
 
 /// Defines a proving task for batch proof generation.
 #[derive(Clone, Deserialize, Serialize)]
@@ -91,32 +88,5 @@ impl From<&BatchProvingTask> for BatchInfo {
             chain_id,
             withdraw_root,
         }
-    }
-}
-
-fn flatten_root_proof(
-    root_proof: &RootVmVerifierInput<BabyBearPoseidon2Config>,
-) -> RootProofWithPublicValues {
-    let full_proof_streams = root_proof.write();
-
-    let mut flattened_proof: Vec<u32> = Vec::new();
-    for x in &full_proof_streams {
-        flattened_proof.push(x.len() as u32);
-        for f in x {
-            flattened_proof.push(f.as_canonical_u32());
-        }
-    }
-
-    let mut public_values = vec![];
-    public_values.extend(
-        root_proof
-            .public_values
-            .iter()
-            .map(|x| x.as_canonical_u32()),
-    );
-
-    RootProofWithPublicValues {
-        flattened_proof,
-        public_values,
     }
 }
