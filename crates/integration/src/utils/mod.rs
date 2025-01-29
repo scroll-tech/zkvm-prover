@@ -39,7 +39,7 @@ fn num_l1_txs(trace: &BlockWitness) -> u64 {
 
 fn blks_tx_bytes<'a>(blks: impl Iterator<Item = &'a BlockWitness>) -> Vec<u8> {
     blks.flat_map(|blk| &blk.transaction)
-        .filter(|tx| !is_l1_tx(tx)) // TODO: should we filter out l1 tx?
+        .filter(|tx| !is_l1_tx(tx))
         .fold(Vec::new(), |mut tx_bytes, tx| {
             TransactionSigned::try_from(tx)
                 .unwrap()
