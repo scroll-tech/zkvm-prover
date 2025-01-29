@@ -16,8 +16,6 @@ use crate::{blob_consistency::BlobConsistency, payload::Payload};
 /// - the last (#N_SNARKS-k) chunks are from empty traces
 #[allow(dead_code)]
 pub struct PIBuilder {
-    /// The public input hashes of chunks aggregated in the current batch.
-    pub chunks_pi: Vec<B256>,
     /// the state root of the parent batch
     pub parent_state_root: B256,
     /// the batch header digest of the parent batch.
@@ -93,7 +91,6 @@ impl PIBuilder {
         total_l1_message_popped: u64,
         last_block_timestamp: u64,
     ) -> Self {
-        println!("constructing PI with header v3 protocol");
 
         // handling blob data
         // TODO: upgrade for the new enveloped format
@@ -113,16 +110,24 @@ impl PIBuilder {
             Payload::<N_MAX_CHUNKS>::from_payload(&blob_bytes[1..])
         };
 
+        // verify the tx data is match with fields in chunk info
+        let _ = chunks_info.clone()
+        .zip(payload.chunk_data_digests.as_slice())
+        .inspect(|(chk_info, &tx_bytes_digest)|{
+            assert_eq!(chk_info.tx_data_digest, tx_bytes_digest);
+        });
+
+        // TODO: optimize with hasher
         let batch_data_hash_preimage = chunks_info
             .clone()
             .flat_map(|chunk_info| chunk_info.data_hash.0)
             .collect::<Vec<_>>();
         let batch_data_hash = keccak256(batch_data_hash_preimage);
 
-        println!(
-            "calculated batch_data_hash {:?}",
-            B256::from(batch_data_hash)
-        );
+        // println!(
+        //     "calculated batch_data_hash {:?}",
+        //     B256::from(batch_data_hash)
+        // );
 
         let blob_consistency = BlobConsistency::new(blob_bytes);
         let challenge_digest = payload.get_challenge_digest(blob_versioned_hash);
@@ -141,15 +146,11 @@ impl PIBuilder {
             blob_data_proof,
         };
 
-        let batch_hash = batch_header.batch_hash();
-        println!("header guest {:?}", batch_header);
 
+        let batch_hash = batch_header.batch_hash();
         let chunks_seq = ChunksSeq::new(chunks_info.clone());
 
         Self {
-            chunks_pi: chunks_info
-                .map(|chunk| chunk.pi_hash())
-                .collect::<Vec<B256>>(),
             parent_state_root: chunks_seq.prev_state_root(),
             parent_batch_hash,
             state_root: chunks_seq.post_state_root(),
