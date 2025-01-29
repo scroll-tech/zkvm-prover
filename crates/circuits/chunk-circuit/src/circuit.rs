@@ -33,8 +33,6 @@ impl Circuit for ChunkCircuit {
 
     type PublicInputs = ChunkInfo;
 
-    type PrevPublicInputs = ();
-
     fn setup() {
         setup_all_moduli();
         setup_all_curves();

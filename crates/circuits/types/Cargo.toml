@@ -11,6 +11,7 @@ version.workspace = true
 alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
 alloy-serde.workspace = true
 rkyv.workspace = true
+sbv.workspace = true
 serde.workspace = true
 tiny-keccak.workspace = true
 
@@ -18,4 +19,5 @@ openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "d45b226", fe
 openvm-rv32im-guest= {  git = "https://github.com/openvm-org/openvm.git", rev = "d45b226" }
 
 [features]
-scroll = []
+default = ["scroll"]
+scroll = ["sbv/scroll"]

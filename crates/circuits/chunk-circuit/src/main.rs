@@ -5,8 +5,6 @@ use circuit::ChunkCircuit as C;
 
 mod execute;
 
-mod utils;
-
 openvm::entry!(main);
 
 fn main() {

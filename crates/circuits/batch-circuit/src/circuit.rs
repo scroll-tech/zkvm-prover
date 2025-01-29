@@ -1,7 +1,10 @@
 use alloy_primitives::B256;
 use scroll_zkvm_circuit_input_types::{
-    AggCircuit, Circuit, batch::ArchivedBatchWitness, chunk::ChunkInfo,
-    proof::RootProofWithPublicValues, utils::read_witnesses,
+    AggCircuit, Circuit,
+    batch::{ArchivedBatchWitness, BatchInfo},
+    chunk::ChunkInfo,
+    proof::RootProofWithPublicValues,
+    utils::read_witnesses,
 };
 
 #[allow(unused_imports, clippy::single_component_path_imports)]
@@ -16,9 +19,7 @@ pub struct BatchCircuit;
 impl Circuit for BatchCircuit {
     type Witness = ArchivedBatchWitness;
 
-    type PublicInputs = crate::batch::PIBuilder;
-
-    type PrevPublicInputs = ChunkInfo;
+    type PublicInputs = BatchInfo;
 
     fn setup() {
         setup_all_moduli();
@@ -39,7 +40,9 @@ impl Circuit for BatchCircuit {
 }
 
 impl AggCircuit for BatchCircuit {
-    fn prev_public_inputs(witness: &Self::Witness) -> Vec<Self::PrevPublicInputs> {
+    type AggregatedPublicInputs = ChunkInfo;
+
+    fn aggregated_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs> {
         witness
             .chunk_infos
             .iter()
@@ -47,7 +50,7 @@ impl AggCircuit for BatchCircuit {
             .collect()
     }
 
-    fn derive_prev_pi_hashes(proofs: &[RootProofWithPublicValues]) -> Vec<alloy_primitives::B256> {
+    fn aggregated_pi_hashes(proofs: &[RootProofWithPublicValues]) -> Vec<alloy_primitives::B256> {
         proofs
             .iter()
             .map(|proof| {

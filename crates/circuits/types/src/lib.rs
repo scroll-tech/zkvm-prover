@@ -1,5 +1,6 @@
 use alloy_primitives::B256;
-use proof::RootProofWithPublicValues;
+
+use crate::proof::RootProofWithPublicValues;
 
 pub mod batch;
 
@@ -25,15 +26,6 @@ pub trait PublicInputs {
     fn validate(&self, prev_pi: &Self);
 }
 
-impl PublicInputs for () {
-    fn pi_hash(&self) -> B256 {
-        unreachable!("PublicInputs::pi_hash for ()");
-    }
-    fn validate(&self, _prev_pi: &Self) {
-        unreachable!("PublicInputs::validate for ()");
-    }
-}
-
 /// Circuit defines the higher-level behaviour to be observed by a [`openvm`] guest program.
 pub trait Circuit {
     /// The witness provided to the circuit.
@@ -41,10 +33,6 @@ pub trait Circuit {
 
     /// The public-input values for the circuit.
     type PublicInputs: PublicInputs;
-
-    /// The public-input values from the previous layer's circuit, that must be validated in the
-    /// current circuit.
-    type PrevPublicInputs: PublicInputs;
 
     /// Setup openvm extensions as a preliminary step.
     fn setup();
@@ -73,36 +61,46 @@ pub trait AggCircuit: Circuit
 where
     Self::Witness: ProofCarryingWitness,
 {
-    /// Verify the previous layer's circuit's proofs that are aggregated in the current circuit.
+    /// The public-input values of the proofs being aggregated.
+    type AggregatedPublicInputs: PublicInputs;
+
+    /// Verify the proofs being aggregated.
     ///
     /// Also returns the root proofs being aggregated.
     fn verify_proofs(witness: &Self::Witness) -> Vec<RootProofWithPublicValues> {
-        let prev_proofs = witness.get_proofs();
+        let proofs = witness.get_proofs();
 
-        for proof in prev_proofs.iter() {
+        for proof in proofs.iter() {
             proof::verify_proof(
                 proof.flattened_proof.as_slice(),
                 proof.public_values.as_slice(),
             );
         }
 
-        prev_proofs
+        proofs
     }
 
-    /// Derive the public-input values of the previous layer's circuit from the current circuit's
-    /// witness. Since the current possibly aggregates several of those proofs, we return a [`Vec`]
-    /// of the previous circuit's public-input values.
-    fn prev_public_inputs(witness: &Self::Witness) -> Vec<Self::PrevPublicInputs>;
+    /// Derive the public-input values of the proofs being aggregated from the witness.
+    fn aggregated_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs>;
 
-    /// Derive the previous circuit's public input hashes from the root proofs being aggregated.
-    fn derive_prev_pi_hashes(proofs: &[RootProofWithPublicValues]) -> Vec<B256>;
+    /// Derive the public-input hashes of the aggregated proofs from the proofs itself.
+    fn aggregated_pi_hashes(proofs: &[RootProofWithPublicValues]) -> Vec<B256>;
 
-    /// Validate that the previous public inputs in fact hash to the `pi_hash`es deserialized from the root proofs.
-    fn validate_prev_pi(prev_pis: &[Self::PrevPublicInputs], prev_pi_hashes: &[B256]) {
-        for (prev_pi, &prev_pi_hash) in prev_pis.iter().zip(prev_pi_hashes.iter()) {
+    /// Validate that the public-input values of the aggregated proofs are well-formed.
+    ///
+    /// - That the public-inputs of contiguous chunks/batches are valid
+    /// - That the public-input values in fact hash to the pi_hash values from the root proofs.
+    fn validate_aggregated_pi(agg_pis: &[Self::AggregatedPublicInputs], agg_pi_hashes: &[B256]) {
+        // Validation for the contiguous public-input values.
+        for w in agg_pis.windows(2) {
+            w[1].validate(&w[0]);
+        }
+
+        // Validation for public-input values hash being the pi_hash from root proof.
+        for (agg_pi, &agg_pi_hash) in agg_pis.iter().zip(agg_pi_hashes.iter()) {
             assert_eq!(
-                prev_pi.pi_hash(),
-                prev_pi_hash,
+                agg_pi.pi_hash(),
+                agg_pi_hash,
                 "pi hash mismatch between proofs and witness computed"
             );
         }

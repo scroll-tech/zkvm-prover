@@ -1,7 +1,3 @@
-mod blob;
-
-use core::assert_eq;
-
 use sbv::primitives::{
     B256, TransactionSigned, U256,
     eips::Encodable2718,
@@ -16,6 +12,8 @@ use scroll_zkvm_prover::{
     task::{batch::BatchProvingTask, chunk::ChunkProvingTask},
 };
 use vm_zstd::zstd_encode;
+
+mod blob;
 
 fn is_l1_tx(tx: &Transaction) -> bool {
     // 0x7e is l1 tx
@@ -41,7 +39,7 @@ fn num_l1_txs(trace: &BlockWitness) -> u64 {
 
 fn blks_tx_bytes<'a>(blks: impl Iterator<Item = &'a BlockWitness>) -> Vec<u8> {
     blks.flat_map(|blk| &blk.transaction)
-        .filter(|tx| !is_l1_tx(tx)) // TODO: should we filter out l1 tx?
+        .filter(|tx| !is_l1_tx(tx))
         .fold(Vec::new(), |mut tx_bytes, tx| {
             TransactionSigned::try_from(tx)
                 .unwrap()
@@ -129,30 +127,34 @@ pub fn build_batch_task(
 
     // sanity check
     for (digest, proof) in chunk_digests.iter().zip(chunk_proofs.iter()) {
-        let chunk_pi = proof.metadata.chunk_info.public_input_hash(digest);
-        assert_eq!(proof.proof.public_values.len(), 32);
-        let _ = proof
-            .proof
-            .public_values
-            .iter()
-            .zip(&chunk_pi.0)
-            .inspect(|(pi_v, v)| {
-                assert_eq!(format!("{:x}", v), format!("{:x?}", pi_v));
-            });
+        assert_eq!(digest, &proof.metadata.chunk_info.tx_data_digest);
     }
 
+    let valid_chunk_size = chunk_proofs.len() as u16;
     let mut payload = meta_chunk_sizes
         .into_iter()
         .chain(std::iter::repeat(0))
         .take(max_chunks)
-        .fold(Vec::new(), |mut bytes, len| {
-            bytes.extend_from_slice(&(len as u16).to_be_bytes());
-            bytes
-        });
+        .fold(
+            Vec::from(valid_chunk_size.to_be_bytes()),
+            |mut bytes, len| {
+                bytes.extend_from_slice(&(len as u32).to_be_bytes());
+                bytes
+            },
+        );
 
-    let mut payload_for_challenge = payload.clone();
+    let mut payload_for_challenge = Vec::from(keccak256(&payload).0);
 
-    let data_hash = keccak256(&chunk_tx_bytes);
+    let data_hash = keccak256(
+        chunk_proofs
+            .iter()
+            .map(|proof| &proof.metadata.chunk_info.data_hash)
+            .fold(Vec::new(), |mut bytes, h| {
+                bytes.extend_from_slice(&h.0);
+                bytes
+            }),
+    );
+
     // payload can setup
     payload.extend(chunk_tx_bytes);
 
@@ -178,6 +180,7 @@ pub fn build_batch_task(
                 ret
             }),
     );
+    payload_for_challenge.extend_from_slice(blob_versioned_hash.as_slice());
     let point_evaluations = blob::point_evaluation(
         &coefficients,
         U256::from_be_bytes(keccak256(payload_for_challenge).0),
@@ -196,6 +199,7 @@ pub fn build_batch_task(
         blob_versioned_hash,
         blob_data_proof: point_evaluations.map(|u| B256::new(u.to_be_bytes())),
     };
+    // println!("header host {:?}", batch_header);
 
     BatchProvingTask {
         chunk_proofs: Vec::from(chunk_proofs),
@@ -205,34 +209,39 @@ pub fn build_batch_task(
 }
 
 #[test]
-fn test_build_batch_task() -> Result<(), scroll_zkvm_prover::Error> {
+fn test_build_batch_task() -> eyre::Result<()> {
     use scroll_zkvm_prover::utils::{read_json, read_json_deep};
-    use std::str::FromStr;
 
-    let blk_name = [
-        "12508460.json",
-        "12508461.json",
-        "12508462.json",
-        "12508463.json",
+    // ./testdata/
+    let path_testdata = std::path::Path::new("testdata");
+
+    // read block witnesses.
+    let paths_block_witnesses = [
+        path_testdata.join("12508460.json"),
+        path_testdata.join("12508461.json"),
+        path_testdata.join("12508462.json"),
+        path_testdata.join("12508463.json"),
     ];
+    let read_block_witness = |path| Ok(read_json::<_, BlockWitness>(path)?);
+    let chunk_task = ChunkProvingTask {
+        block_witnesses: paths_block_witnesses
+            .iter()
+            .map(read_block_witness)
+            .collect::<eyre::Result<Vec<BlockWitness>>>()?,
+    };
 
-    let chunk_proof_name = ["chunk-12508460-12508463.json"];
+    // read chunk proof.
+    let path_chunk_proof = path_testdata
+        .join("proofs")
+        .join("chunk-12508460-12508463.json");
+    let chunk_proof = read_json_deep::<_, ChunkProof>(&path_chunk_proof)?;
 
-    let blk_witness = |n| read_json::<_, BlockWitness>(format!("testdata/{}", n)).unwrap();
-
-    let mut chk_proof = chunk_proof_name
-        .map(|n| read_json_deep::<_, ChunkProof>(format!("testdata/chunk/{}", n)).unwrap());
-
-    chk_proof[0].metadata.chunk_info.withdraw_root = Some(
-        B256::from_str("0x7ed4c7d56e2ed40f65d25eecbb0110f3b3f4db68e87700287c7e0cedcb68272c")
-            .unwrap(),
+    build_batch_task(
+        &[chunk_task],
+        &[chunk_proof],
+        scroll_zkvm_circuit_input_types::batch::MAX_AGG_CHUNKS,
+        Default::default(),
     );
-    // manual match to chunk tasks
-    let chk_task = [ChunkProvingTask {
-        block_witnesses: Vec::from(blk_name.map(blk_witness)),
-    }];
-
-    build_batch_task(&chk_task, &chk_proof, 45, Default::default());
 
     Ok(())
 }
