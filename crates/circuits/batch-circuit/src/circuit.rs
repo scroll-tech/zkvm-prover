@@ -21,8 +21,6 @@ impl Circuit for BatchCircuit {
 
     type PublicInputs = BatchInfo;
 
-    type PrevPublicInputs = ChunkInfo;
-
     fn setup() {
         setup_all_moduli();
     }
@@ -42,7 +40,9 @@ impl Circuit for BatchCircuit {
 }
 
 impl AggCircuit for BatchCircuit {
-    fn prev_public_inputs(witness: &Self::Witness) -> Vec<Self::PrevPublicInputs> {
+    type AggregatedPublicInputs = ChunkInfo;
+
+    fn prev_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs> {
         witness
             .chunk_infos
             .iter()

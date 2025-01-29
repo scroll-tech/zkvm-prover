@@ -21,8 +21,6 @@ impl Circuit for BundleCircuit {
 
     type PublicInputs = BundleInfo;
 
-    type PrevPublicInputs = BatchInfo;
-
     fn setup() {
         setup_all_moduli();
     }
@@ -42,7 +40,9 @@ impl Circuit for BundleCircuit {
 }
 
 impl AggCircuit for BundleCircuit {
-    fn prev_public_inputs(witness: &Self::Witness) -> Vec<Self::PrevPublicInputs> {
+    type AggregatedPublicInputs = BatchInfo;
+
+    fn prev_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs> {
         witness
             .batch_infos
             .iter()

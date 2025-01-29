@@ -43,10 +43,6 @@ pub trait Circuit {
     /// The public-input values for the circuit.
     type PublicInputs: PublicInputs;
 
-    /// The public-input values from the previous layer's circuit, that must be validated in the
-    /// current circuit.
-    type PrevPublicInputs: PublicInputs;
-
     /// Setup openvm extensions as a preliminary step.
     fn setup();
 
@@ -74,6 +70,9 @@ pub trait AggCircuit: Circuit
 where
     Self::Witness: ProofCarryingWitness,
 {
+    /// The public-input values of the proofs being aggregated.
+    type AggregatedPublicInputs: PublicInputs;
+
     /// Verify the previous layer's circuit's proofs that are aggregated in the current circuit.
     ///
     /// Also returns the root proofs being aggregated.
@@ -93,7 +92,7 @@ where
     /// Derive the public-input values of the previous layer's circuit from the current circuit's
     /// witness. Since the current possibly aggregates several of those proofs, we return a [`Vec`]
     /// of the previous circuit's public-input values.
-    fn prev_public_inputs(witness: &Self::Witness) -> Vec<Self::PrevPublicInputs>;
+    fn prev_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs>;
 
     /// Derive the previous circuit's public input hashes from the root proofs being aggregated.
     fn derive_prev_pi_hashes(proofs: &[RootProofWithPublicValues]) -> Vec<B256>;
@@ -102,7 +101,7 @@ where
     ///
     /// - That the public-inputs of contiguous chunks/batches are valid
     /// - That the public-input values in fact hash to the pi_hash values from the root proofs.
-    fn validate_prev_pi(prev_pis: &[Self::PrevPublicInputs], prev_pi_hashes: &[B256]) {
+    fn validate_prev_pi(prev_pis: &[Self::AggregatedPublicInputs], prev_pi_hashes: &[B256]) {
         // Validation for the contiguous public-input values.
         for w in prev_pis.windows(2) {
             w[1].validate(&w[0]);
