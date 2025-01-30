@@ -36,7 +36,7 @@ impl ProverTester for MultiBatchProverTester {
     fn gen_multi_proving_tasks() -> eyre::Result<Vec<<Self::Prover as ProverType>::ProvingTask>> {
         Ok(vec![
             read_json_deep(Path::new(PATH_TESTDATA).join("batch-task-multi-1.json"))?,
-            read_json_deep(Path::new(PATH_TESTDATA).join("batch-task-multi-1.json"))?,
+            read_json_deep(Path::new(PATH_TESTDATA).join("batch-task-multi-2.json"))?,
         ])
     }
 }
