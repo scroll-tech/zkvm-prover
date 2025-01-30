@@ -6446,6 +6446,7 @@ dependencies = [
  "scroll-zkvm-prover",
  "serde_json",
  "sha2",
+ "snark-verifier-sdk",
  "tiny-keccak",
  "tracing",
  "tracing-subscriber",

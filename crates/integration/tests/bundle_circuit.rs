@@ -117,5 +117,17 @@ fn e2e() -> eyre::Result<()> {
 fn verify_evm_proof() -> eyre::Result<()> {
     let evm_proof = read_json_deep::<_, BundleProof>(Path::new(PATH_TESTDATA).join("proofs").join("bundle-0x60f88f3e46c74362cd93c07724c9ef8e56e391317df6504b905c3c16e81de2e4-0x30d2f51e20e9a4ecd460466af9c81d13daad4fb8d1ca1e42dab30603374f7e5f.json"))?;
 
+    let evm_verifier = scroll_zkvm_prover::utils::read(
+        Path::new(PATH_TESTDATA)
+            .join("verifier")
+            .join("verifier.bin"),
+    )?;
+
+    snark_verifier_sdk::evm::evm_verify(
+        evm_verifier,
+        evm_proof.proof.instances,
+        evm_proof.proof.proof,
+    );
+
     Ok(())
 }
