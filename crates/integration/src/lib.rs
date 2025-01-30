@@ -381,11 +381,11 @@ where
     let path_pk = T::keygen(app_config)?;
 
     // Setup prover.
-    let cache_dir = DIR_TESTRUN
+    let path_assets = DIR_TESTRUN
         .get()
-        .ok_or(eyre::eyre!("missing assets dir"))?
-        .join(T::DIR_ASSETS)
-        .join(DIR_PROOFS);
+        .ok_or(eyre::eyre!("missing testrun dir"))?
+        .join(T::DIR_ASSETS);
+    let cache_dir = path_assets.join(DIR_PROOFS);
     std::fs::create_dir_all(&cache_dir)?;
     let prover =
         scroll_zkvm_prover::Prover::<T::Prover>::setup(&path_exe, &path_pk, Some(&cache_dir))?;
@@ -398,6 +398,23 @@ where
 
     // Verify proof.
     prover.verify_proof_evm(&proof)?;
+
+    // The structure of the halo2-proof's instances is:
+    // - 12 instances for accumulator
+    // - 2 instances for digests (MUST be checked on-chain)
+    // - 32 instances for pi_hash (bundle_pi_hash)
+    //
+    // We write the 2 digests to disc.
+    let digest_1 = proof.proof.instances[0][12];
+    let digest_2 = proof.proof.instances[0][13];
+    scroll_zkvm_prover::utils::write_json(
+        path_assets.join("digest_1"),
+        &serde_json::Value::String(format!("{digest_1:?}")),
+    )?;
+    scroll_zkvm_prover::utils::write_json(
+        path_assets.join("digest_2"),
+        &serde_json::Value::String(format!("{digest_2:?}")),
+    )?;
 
     Ok(ProveVerifyOutcome::single(task, proof))
 }

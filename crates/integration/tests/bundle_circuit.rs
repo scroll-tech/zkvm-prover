@@ -64,11 +64,11 @@ fn e2e() -> eyre::Result<()> {
     assert_eq!(outcome.proofs.len(), 1, "single bundle proof");
 
     let expected_pi_hash = &outcome.proofs[0].metadata.bundle_pi_hash;
-    let observed_pi_hash = &outcome.proofs[0].proof.instances[0];
+    let observed_instances = &outcome.proofs[0].proof.instances[0];
 
     for (i, (&expected, &observed)) in expected_pi_hash
         .iter()
-        .zip(observed_pi_hash.iter().skip(14).take(32))
+        .zip(observed_instances.iter().skip(14).take(32))
         .enumerate()
     {
         assert_eq!(
