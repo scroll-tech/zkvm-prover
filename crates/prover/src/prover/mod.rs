@@ -86,54 +86,56 @@ impl<Type: ProverType> Prover<Type> {
     ) -> Result<Self, Error> {
         let (app_committed_exe, app_pk) = Self::init(&path_exe, &path_pk)?;
 
-        let evm_prover = Type::EVM.then_some({
-            // TODO(rohit): allow to pass custom halo2-params path.
-            let halo2_params_reader = CacheHalo2ParamsReader::new(DEFAULT_PARAMS_DIR);
-            let agg_pk = Sdk
-                .agg_keygen(
-                    AggConfig::default(),
+        let evm_prover = Type::EVM
+            .then(|| {
+                // TODO(rohit): allow to pass custom halo2-params path.
+                let halo2_params_reader = CacheHalo2ParamsReader::new(DEFAULT_PARAMS_DIR);
+                let agg_pk = Sdk
+                    .agg_keygen(
+                        AggConfig::default(),
+                        &halo2_params_reader,
+                        None::<&RootVerifierProvingKey>,
+                    )
+                    .map_err(|e| Error::Setup {
+                        path: PathBuf::from(DEFAULT_PARAMS_DIR),
+                        src: e.to_string(),
+                    })?;
+
+                let halo2_params = halo2_params_reader
+                    .read_params(agg_pk.halo2_pk.wrapper.pinning.metadata.config_params.k);
+                let path_verifier_sol = path_pk
+                    .as_ref()
+                    .parent()
+                    .map(|dir| dir.join("verifier.sol"));
+                let path_verifier_bin = path_pk
+                    .as_ref()
+                    .parent()
+                    .map(|dir| dir.join("verifier.bin"));
+                let verifier_contract = EvmVerifier(scroll_zkvm_verifier::evm::gen_evm_verifier::<
+                    scroll_zkvm_verifier::evm::halo2_aggregation::AggregationCircuit,
+                >(
+                    &halo2_params,
+                    agg_pk.halo2_pk.wrapper.pinning.pk.get_vk(),
+                    agg_pk.halo2_pk.wrapper.pinning.metadata.num_pvs.clone(),
+                    path_verifier_sol.as_deref(),
+                ));
+                if let Some(path) = path_verifier_bin {
+                    crate::utils::write(path, &verifier_contract.0)?;
+                }
+
+                let continuation_prover = ContinuationProver::new(
                     &halo2_params_reader,
-                    None::<&RootVerifierProvingKey>,
-                )
-                .map_err(|e| Error::Setup {
-                    path: PathBuf::from(DEFAULT_PARAMS_DIR),
-                    src: e.to_string(),
-                })?;
+                    Arc::clone(&app_pk),
+                    Arc::clone(&app_committed_exe),
+                    agg_pk,
+                );
 
-            let halo2_params = halo2_params_reader
-                .read_params(agg_pk.halo2_pk.wrapper.pinning.metadata.config_params.k);
-            let path_verifier_sol = path_pk
-                .as_ref()
-                .parent()
-                .map(|dir| dir.join("verifier.sol"));
-            let path_verifier_bin = path_pk
-                .as_ref()
-                .parent()
-                .map(|dir| dir.join("verifier.bin"));
-            let verifier_contract = EvmVerifier(scroll_zkvm_verifier::evm::gen_evm_verifier::<
-                scroll_zkvm_verifier::evm::halo2_aggregation::AggregationCircuit,
-            >(
-                &halo2_params,
-                agg_pk.halo2_pk.wrapper.pinning.pk.get_vk(),
-                agg_pk.halo2_pk.wrapper.pinning.metadata.num_pvs.clone(),
-                path_verifier_sol.as_deref(),
-            ));
-            if let Some(path) = path_verifier_bin {
-                crate::utils::write(path, &verifier_contract.0)?;
-            }
-
-            let continuation_prover = ContinuationProver::new(
-                &halo2_params_reader,
-                Arc::clone(&app_pk),
-                Arc::clone(&app_committed_exe),
-                agg_pk,
-            );
-
-            EvmProverVerifier {
-                continuation_prover,
-                verifier_contract,
-            }
-        });
+                Ok::<EvmProverVerifier, Error>(EvmProverVerifier {
+                    continuation_prover,
+                    verifier_contract,
+                })
+            })
+            .transpose()?;
 
         Ok(Self {
             app_committed_exe,
