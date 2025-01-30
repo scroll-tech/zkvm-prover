@@ -6432,6 +6432,7 @@ dependencies = [
  "chrono",
  "eyre",
  "ff 0.13.0",
+ "halo2curves-axiom",
  "once_cell",
  "openvm-build",
  "openvm-circuit",

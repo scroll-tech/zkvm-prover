@@ -1,4 +1,3 @@
-use scroll_zkvm_circuit_input_types::{PublicInputs, bundle::BundleInfo};
 use scroll_zkvm_integration::{
     ProverTester, prove_verify_multi, prove_verify_single_evm,
     testers::{
@@ -6,7 +5,7 @@ use scroll_zkvm_integration::{
     },
     utils::{LastHeader, build_batch_task},
 };
-use scroll_zkvm_prover::{BatchProof, task::bundle::BundleProvingTask};
+use scroll_zkvm_prover::task::bundle::BundleProvingTask;
 
 #[test]
 fn setup() -> eyre::Result<()> {
@@ -28,39 +27,6 @@ fn setup_prove_verify() -> eyre::Result<()> {
     prove_verify_single_evm::<BundleProverTester>(None)?;
 
     Ok(())
-}
-
-fn expected_bundle_info(proofs: &[BatchProof]) -> BundleInfo {
-    let (first_batch, last_batch) = (
-        &proofs
-            .first()
-            .expect("at least one batch in bundle")
-            .metadata
-            .batch_info,
-        &proofs
-            .last()
-            .expect("at least one batch in bundle")
-            .metadata
-            .batch_info,
-    );
-
-    let chain_id = first_batch.chain_id;
-    let num_batches = u32::try_from(proofs.len()).expect("num_batches: u32");
-    let prev_state_root = first_batch.parent_batch_hash;
-    let prev_batch_hash = first_batch.parent_batch_hash;
-    let post_state_root = last_batch.state_root;
-    let batch_hash = last_batch.batch_hash;
-    let withdraw_root = last_batch.withdraw_root;
-
-    BundleInfo {
-        chain_id,
-        num_batches,
-        prev_state_root,
-        prev_batch_hash,
-        post_state_root,
-        batch_hash,
-        withdraw_root,
-    }
 }
 
 #[test]
@@ -89,21 +55,28 @@ fn e2e() -> eyre::Result<()> {
     let outcome =
         prove_verify_multi::<MultiBatchProverTester>(Some(&[batch_task_1, batch_task_2]))?;
 
-    // Expected bundle info and public-input hash.
-    let bundle_info = expected_bundle_info(&outcome.proofs);
-    let bundle_pi = bundle_info.pi_hash();
-
     // Construct bundle task using batch tasks and batch proofs.
     let bundle_task = BundleProvingTask {
         batch_proofs: outcome.proofs,
     };
     let outcome = prove_verify_single_evm::<BundleProverTester>(Some(bundle_task))?;
 
-    tracing::info!("bundle pi (expected) = {:?}", bundle_pi);
-    tracing::info!(
-        "bundle pi (observed) = {:?}",
-        outcome.proofs[0].proof.instances
-    );
+    assert_eq!(outcome.proofs.len(), 1, "single bundle proof");
+
+    let expected_pi_hash = &outcome.proofs[0].metadata.bundle_pi_hash;
+    let observed_pi_hash = &outcome.proofs[0].proof.instances[0];
+
+    for (i, (&expected, &observed)) in expected_pi_hash
+        .iter()
+        .zip(observed_pi_hash.iter().skip(14).take(32))
+        .enumerate()
+    {
+        assert_eq!(
+            halo2curves_axiom::bn256::Fr::from(u64::from(expected)),
+            observed,
+            "pi inconsistent at index {i}: expected={expected}, observed={observed:?}"
+        );
+    }
 
     Ok(())
 }

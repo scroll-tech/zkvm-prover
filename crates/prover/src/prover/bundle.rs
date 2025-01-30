@@ -1,4 +1,5 @@
 use openvm_native_recursion::halo2::EvmProof;
+use scroll_zkvm_circuit_input_types::{PublicInputs, bundle::BundleInfo};
 
 use crate::{
     Error, Prover, ProverType,
@@ -43,6 +44,43 @@ impl ProverType for BundleProverType {
             }
         }
 
-        Ok(BundleProofMetadata)
+        let (first_batch, last_batch) = (
+            &task
+                .batch_proofs
+                .first()
+                .expect("at least one batch in bundle")
+                .metadata
+                .batch_info,
+            &task
+                .batch_proofs
+                .last()
+                .expect("at least one batch in bundle")
+                .metadata
+                .batch_info,
+        );
+
+        let chain_id = first_batch.chain_id;
+        let num_batches = u32::try_from(task.batch_proofs.len()).expect("num_batches: u32");
+        let prev_state_root = first_batch.parent_batch_hash;
+        let prev_batch_hash = first_batch.parent_batch_hash;
+        let post_state_root = last_batch.state_root;
+        let batch_hash = last_batch.batch_hash;
+        let withdraw_root = last_batch.withdraw_root;
+
+        let bundle_info = BundleInfo {
+            chain_id,
+            num_batches,
+            prev_state_root,
+            prev_batch_hash,
+            post_state_root,
+            batch_hash,
+            withdraw_root,
+        };
+        let bundle_pi_hash = bundle_info.pi_hash();
+
+        Ok(BundleProofMetadata {
+            bundle_info,
+            bundle_pi_hash,
+        })
     }
 }
