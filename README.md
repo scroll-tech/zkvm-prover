@@ -1,12 +1,8 @@
 # Scroll zkVM
 
----
-
 **zkVM-based Circuits (Guest Programs) with a complete Scroll Prover implementation**
 
 ## Repository
-
----
 
 This repository contains the following member crates:
 
@@ -20,8 +16,6 @@ This repository contains the following member crates:
 
 ## Overview
 
----
-
 The Scroll zkVM Circuits are [openvm](https://book.openvm.dev/) based Guest Programs.
 
 The [prover](./crates/prover) crate offers a minimalistic API for setting up, generating and verifying proofs for Scroll's zk-rollup.
@@ -29,8 +23,6 @@ The [prover](./crates/prover) crate offers a minimalistic API for setting up, ge
 For a deeper dive into our implementation, please refer the [interfaces](./docs/interfaces.md) doc.
 
 ## Testing
-
----
 
 For more commands please refer the [Makefile](./Makefile).
 
@@ -55,8 +47,6 @@ $ RUST_MIN_STACK=16777216 make test-e2e-bundle
 *Note*: Configure `RUST_LOG=debug` for debug logs or `RUST_LOG=none,scroll_zkvm_prover=debug` for logs specifically from the `scroll-zkvm-prover` crate.
 
 ## Usage of Prover API
-
----
 
 ### Dependency
 
