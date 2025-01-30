@@ -123,11 +123,17 @@ fn verify_evm_proof() -> eyre::Result<()> {
             .join("verifier.bin"),
     )?;
 
-    snark_verifier_sdk::evm::evm_verify(
-        evm_verifier,
-        evm_proof.proof.instances,
-        evm_proof.proof.proof,
+    let calldata = snark_verifier_sdk::evm::encode_calldata(
+        &evm_proof.proof.instances,
+        &evm_proof.proof.proof,
     );
+    // snark_verifier_sdk::evm::evm_verify(
+    //     evm_verifier,
+    //     evm_proof.proof.instances,
+    //     evm_proof.proof.proof,
+    // );
+    let gas_cost = scroll_zkvm_integration::utils::deploy_and_call(evm_verifier, calldata).unwrap();
+    dbg!(gas_cost);
 
     Ok(())
 }

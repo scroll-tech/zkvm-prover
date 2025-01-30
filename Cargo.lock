@@ -6441,6 +6441,7 @@ dependencies = [
  "openvm-native-transpiler",
  "openvm-sdk",
  "openvm-transpiler",
+ "revm",
  "sbv",
  "scroll-zkvm-circuit-input-types",
  "scroll-zkvm-prover",
