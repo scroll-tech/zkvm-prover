@@ -7,7 +7,11 @@ use std::{
 use once_cell::sync::OnceCell;
 use openvm_circuit::{arch::SingleSegmentVmExecutor, system::program::trace::VmCommittedExe};
 use openvm_native_recursion::{
-    halo2::{EvmProof, utils::CacheHalo2ParamsReader, wrapper::EvmVerifier},
+    halo2::{
+        EvmProof,
+        utils::{CacheHalo2ParamsReader, Halo2ParamsReader},
+        wrapper::EvmVerifier,
+    },
     hints::Hintable,
 };
 use openvm_sdk::{
@@ -80,7 +84,7 @@ impl<Type: ProverType> Prover<Type> {
         path_pk: P,
         cache_dir: Option<P>,
     ) -> Result<Self, Error> {
-        let (app_committed_exe, app_pk) = Self::init(path_exe, path_pk)?;
+        let (app_committed_exe, app_pk) = Self::init(&path_exe, &path_pk)?;
 
         let evm_prover = Type::EVM.then_some({
             // TODO(rohit): allow to pass custom halo2-params path.
@@ -96,9 +100,28 @@ impl<Type: ProverType> Prover<Type> {
                     src: e.to_string(),
                 })?;
 
-            let verifier_contract = Sdk
-                .generate_snark_verifier_contract(&halo2_params_reader, &agg_pk)
-                .expect("openvm_sdk::generate_snark_verifier_contract should succeed");
+            let halo2_params = halo2_params_reader
+                .read_params(agg_pk.halo2_pk.wrapper.pinning.metadata.config_params.k);
+            let path_verifier_sol = path_pk
+                .as_ref()
+                .parent()
+                .map(|dir| dir.join("verifier.sol"));
+            let path_verifier_bin = path_pk
+                .as_ref()
+                .parent()
+                .map(|dir| dir.join("verifier.bin"));
+            let verifier_contract =
+                EvmVerifier(snark_verifier_sdk::evm::gen_evm_verifier_shplonk::<
+                    snark_verifier_sdk::halo2::aggregation::AggregationCircuit,
+                >(
+                    &halo2_params,
+                    agg_pk.halo2_pk.wrapper.pinning.pk.get_vk(),
+                    agg_pk.halo2_pk.wrapper.pinning.metadata.num_pvs.clone(),
+                    path_verifier_sol.as_deref(),
+                ));
+            if let Some(path) = path_verifier_bin {
+                crate::utils::write(path, &verifier_contract.0)?;
+            }
 
             let continuation_prover = ContinuationProver::new(
                 &halo2_params_reader,
