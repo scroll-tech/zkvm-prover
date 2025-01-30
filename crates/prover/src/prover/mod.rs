@@ -7,7 +7,11 @@ use std::{
 use once_cell::sync::OnceCell;
 use openvm_circuit::{arch::SingleSegmentVmExecutor, system::program::trace::VmCommittedExe};
 use openvm_native_recursion::{
-    halo2::{EvmProof, utils::CacheHalo2ParamsReader, wrapper::EvmVerifier},
+    halo2::{
+        EvmProof,
+        utils::{CacheHalo2ParamsReader, Halo2ParamsReader},
+        wrapper::EvmVerifier,
+    },
     hints::Hintable,
 };
 use openvm_sdk::{
@@ -80,38 +84,58 @@ impl<Type: ProverType> Prover<Type> {
         path_pk: P,
         cache_dir: Option<P>,
     ) -> Result<Self, Error> {
-        let (app_committed_exe, app_pk) = Self::init(path_exe, path_pk)?;
+        let (app_committed_exe, app_pk) = Self::init(&path_exe, &path_pk)?;
 
-        let evm_prover = Type::EVM.then_some({
-            // TODO(rohit): allow to pass custom halo2-params path.
-            let halo2_params_reader = CacheHalo2ParamsReader::new(DEFAULT_PARAMS_DIR);
-            let agg_pk = Sdk
-                .agg_keygen(
-                    AggConfig::default(),
+        let evm_prover = Type::EVM
+            .then(|| {
+                // TODO(rohit): allow to pass custom halo2-params path.
+                let halo2_params_reader = CacheHalo2ParamsReader::new(DEFAULT_PARAMS_DIR);
+                let agg_pk = Sdk
+                    .agg_keygen(
+                        AggConfig::default(),
+                        &halo2_params_reader,
+                        None::<&RootVerifierProvingKey>,
+                    )
+                    .map_err(|e| Error::Setup {
+                        path: PathBuf::from(DEFAULT_PARAMS_DIR),
+                        src: e.to_string(),
+                    })?;
+
+                let halo2_params = halo2_params_reader
+                    .read_params(agg_pk.halo2_pk.wrapper.pinning.metadata.config_params.k);
+                let path_verifier_sol = path_pk
+                    .as_ref()
+                    .parent()
+                    .map(|dir| dir.join("verifier.sol"));
+                let path_verifier_bin = path_pk
+                    .as_ref()
+                    .parent()
+                    .map(|dir| dir.join("verifier.bin"));
+                let verifier_contract = EvmVerifier(scroll_zkvm_verifier::evm::gen_evm_verifier::<
+                    scroll_zkvm_verifier::evm::halo2_aggregation::AggregationCircuit,
+                >(
+                    &halo2_params,
+                    agg_pk.halo2_pk.wrapper.pinning.pk.get_vk(),
+                    agg_pk.halo2_pk.wrapper.pinning.metadata.num_pvs.clone(),
+                    path_verifier_sol.as_deref(),
+                ));
+                if let Some(path) = path_verifier_bin {
+                    crate::utils::write(path, &verifier_contract.0)?;
+                }
+
+                let continuation_prover = ContinuationProver::new(
                     &halo2_params_reader,
-                    None::<&RootVerifierProvingKey>,
-                )
-                .map_err(|e| Error::Setup {
-                    path: PathBuf::from(DEFAULT_PARAMS_DIR),
-                    src: e.to_string(),
-                })?;
+                    Arc::clone(&app_pk),
+                    Arc::clone(&app_committed_exe),
+                    agg_pk,
+                );
 
-            let verifier_contract = Sdk
-                .generate_snark_verifier_contract(&halo2_params_reader, &agg_pk)
-                .expect("openvm_sdk::generate_snark_verifier_contract should succeed");
-
-            let continuation_prover = ContinuationProver::new(
-                &halo2_params_reader,
-                Arc::clone(&app_pk),
-                Arc::clone(&app_committed_exe),
-                agg_pk,
-            );
-
-            EvmProverVerifier {
-                continuation_prover,
-                verifier_contract,
-            }
-        });
+                Ok::<EvmProverVerifier, Error>(EvmProverVerifier {
+                    continuation_prover,
+                    verifier_contract,
+                })
+            })
+            .transpose()?;
 
         Ok(Self {
             app_committed_exe,
@@ -235,14 +259,15 @@ impl<Type: ProverType> Prover<Type> {
         &self,
         proof: &WrappedProof<Type::ProofMetadata, EvmProof>,
     ) -> Result<(), Error> {
-        Sdk.verify_evm_proof(
+        let gas_cost = scroll_zkvm_verifier::evm::verify_evm_proof(
             &self.evm_prover.as_ref().expect("").verifier_contract,
             &proof.proof,
         )
-        .then_some(())
-        .ok_or(Error::VerifyProof(
-            "EVM-proof verification failed".to_string(),
-        ))
+        .map_err(|e| Error::VerifyProof(format!("EVM-proof verification failed: {e}")))?;
+
+        tracing::info!(name: "verify_evm_proof", ?gas_cost);
+
+        Ok(())
     }
 
     /// File descriptor for the proof saved to disc.

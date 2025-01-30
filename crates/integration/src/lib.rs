@@ -170,7 +170,7 @@ pub trait ProverTester {
 
     /// Generate multiple proving tasks for test purposes.
     fn gen_multi_proving_tasks() -> eyre::Result<Vec<<Self::Prover as ProverType>::ProvingTask>> {
-        unimplemented!()
+        unimplemented!("must be implemented by MultiTester");
     }
 
     /// Light weight testing to simply execute the vm program for test
@@ -223,7 +223,7 @@ impl<T: Clone, P: Clone> ProveVerifyOutcome<T, P> {
 }
 
 /// Setup test environment
-pub fn setup_logger() -> eyre::Result<()> {
+fn setup_logger() -> eyre::Result<()> {
     let fmt_layer = tracing_subscriber::fmt::layer()
         .pretty()
         .with_span_events(FmtSpan::CLOSE);
@@ -263,7 +263,6 @@ type ProveVerifyRes<T> = eyre::Result<
 >;
 
 /// Alias for convenience.
-#[allow(dead_code)]
 type ProveVerifyEvmRes<T> = eyre::Result<
     ProveVerifyOutcome<
         <<T as ProverTester>::Prover as ProverType>::ProvingTask,
@@ -359,4 +358,46 @@ where
         >>()?;
 
     Ok(ProveVerifyOutcome::multi(&tasks, &proofs))
+}
+
+/// End-to-end test for a single proving task to generate an EVM-verifiable SNARK proof.
+#[instrument(name = "prove_verify_single_evm", skip_all)]
+pub fn prove_verify_single_evm<T>(
+    task: Option<<T::Prover as ProverType>::ProvingTask>,
+) -> ProveVerifyEvmRes<T>
+where
+    T: ProverTester,
+    <T::Prover as ProverType>::ProvingTask: Clone,
+    <T::Prover as ProverType>::ProofMetadata: Clone,
+    <T::Prover as ProverType>::ProofType: Clone,
+{
+    // Build the ELF binary from the circuit program.
+    let elf = T::build()?;
+
+    // Transpile the ELF into a VmExe.
+    let (app_config, path_exe) = T::transpile(elf)?;
+
+    // Generate application proving key and get path on disc.
+    let path_pk = T::keygen(app_config)?;
+
+    // Setup prover.
+    let cache_dir = DIR_TESTRUN
+        .get()
+        .ok_or(eyre::eyre!("missing assets dir"))?
+        .join(T::DIR_ASSETS)
+        .join(DIR_PROOFS);
+    std::fs::create_dir_all(&cache_dir)?;
+    let prover =
+        scroll_zkvm_prover::Prover::<T::Prover>::setup(&path_exe, &path_pk, Some(&cache_dir))?;
+
+    // Generate proving task for the circuit.
+    let task = task.unwrap_or(T::gen_proving_task()?);
+
+    // Construct root proof for the circuit.
+    let proof = prover.gen_proof_evm(&task)?;
+
+    // Verify proof.
+    prover.verify_proof_evm(&proof)?;
+
+    Ok(ProveVerifyOutcome::single(task, proof))
 }

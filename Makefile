@@ -16,11 +16,26 @@ clippy:
 setup-chunk:
 	@cargo test --release -p scroll-zkvm-integration --features scroll --test chunk_circuit setup -- --exact --nocapture
 
+setup-batch:
+	@cargo test --release -p scroll-zkvm-integration --features scroll --test batch_circuit setup -- --exact --nocapture
+
+setup-bundle:
+	@cargo test --release -p scroll-zkvm-integration --features scroll --test bundle_circuit setup -- --exact --nocapture
+
+test-execute-chunk:
+	@cargo test --release -p scroll-zkvm-integration --features scroll --test chunk_circuit test_execute -- --exact --nocapture
+
+test-execute-batch:
+	@cargo test --release -p scroll-zkvm-integration --features scroll --test batch_circuit test_execute -- --exact --nocapture
+
+test-execute-bundle:
+	@cargo test --release -p scroll-zkvm-integration --features scroll --test bundle_circuit test_execute -- --exact --nocapture
+
 test-single-chunk:
-	@cargo test --release -p scroll-zkvm-integration --features scroll --test chunk_circuit setup_prove_verify -- --exact --nocapture
+	@cargo test --release -p scroll-zkvm-integration --features scroll --test chunk_circuit setup_prove_verify_single -- --exact --nocapture
 
 test-multi-chunk:
-	@cargo test --release -p scroll-zkvm-integration --features scroll --test chunk_circuit multi_chunk -- --exact --nocapture
+	@cargo test --release -p scroll-zkvm-integration --features scroll --test chunk_circuit setup_prove_verify_multi -- --exact --nocapture
 
 test-single-batch:
 	@cargo test --release -p scroll-zkvm-integration --features scroll --test batch_circuit setup_prove_verify_single -- --exact --nocapture

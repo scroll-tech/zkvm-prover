@@ -56,6 +56,12 @@ pub fn write_json<P: AsRef<Path>, T: Serialize>(path: P, value: &T) -> Result<()
     Ok(serde_json::to_writer(&mut writer, value)?)
 }
 
+/// Wrapper functionality to write bytes to a file.
+pub fn write<P: AsRef<Path>>(path: P, data: &[u8]) -> Result<(), Error> {
+    let path = path.as_ref();
+    Ok(std::fs::write(path, data)?)
+}
+
 pub mod base64 {
     use base64::prelude::*;
     use serde::{Deserialize, Deserializer, Serialize, Serializer};

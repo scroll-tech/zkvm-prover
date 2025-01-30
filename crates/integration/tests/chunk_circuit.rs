@@ -32,19 +32,19 @@ fn test_execute() -> eyre::Result<()> {
 }
 
 #[test]
-fn setup_prove_verify() -> eyre::Result<()> {
+fn setup_prove_verify_single() -> eyre::Result<()> {
     ChunkProverTester::setup()?;
 
-    let _outcome = prove_verify_single::<ChunkProverTester>(None)?;
+    prove_verify_single::<ChunkProverTester>(None)?;
 
     Ok(())
 }
 
 #[test]
-fn multi_chunk() -> eyre::Result<()> {
+fn setup_prove_verify_multi() -> eyre::Result<()> {
     MultiChunkProverTester::setup()?;
 
-    let _outcome = prove_verify_multi::<MultiChunkProverTester>(None)?;
+    prove_verify_multi::<MultiChunkProverTester>(None)?;
 
     Ok(())
 }

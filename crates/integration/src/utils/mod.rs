@@ -77,7 +77,7 @@ impl Default for LastHeader {
 impl From<&BatchHeaderV3> for LastHeader {
     fn from(h: &BatchHeaderV3) -> Self {
         Self {
-            batch_index: h.batch_index + 1,
+            batch_index: h.batch_index,
             version: h.version,
             batch_hash: h.batch_hash(),
             l1_message_index: h.total_l1_message_popped,
