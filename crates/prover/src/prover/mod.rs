@@ -110,8 +110,8 @@ impl<Type: ProverType> Prover<Type> {
                 .as_ref()
                 .parent()
                 .map(|dir| dir.join("verifier.bin"));
-            let verifier_contract = EvmVerifier(scroll_zkvm_verifier::gen_evm_verifier::<
-                scroll_zkvm_verifier::halo2_aggregation::AggregationCircuit,
+            let verifier_contract = EvmVerifier(scroll_zkvm_verifier::evm::gen_evm_verifier::<
+                scroll_zkvm_verifier::evm::halo2_aggregation::AggregationCircuit,
             >(
                 &halo2_params,
                 agg_pk.halo2_pk.wrapper.pinning.pk.get_vk(),
@@ -257,14 +257,15 @@ impl<Type: ProverType> Prover<Type> {
         &self,
         proof: &WrappedProof<Type::ProofMetadata, EvmProof>,
     ) -> Result<(), Error> {
-        scroll_zkvm_verifier::verify_evm_proof(
+        let gas_cost = scroll_zkvm_verifier::evm::verify_evm_proof(
             &self.evm_prover.as_ref().expect("").verifier_contract,
             &proof.proof,
         )
-        .then_some(())
-        .ok_or(Error::VerifyProof(
-            "EVM-proof verification failed".to_string(),
-        ))
+        .map_err(|e| Error::VerifyProof(format!("EVM-proof verification failed: {e}")))?;
+
+        tracing::info!(name: "verify_evm_proof", ?gas_cost);
+
+        Ok(())
     }
 
     /// File descriptor for the proof saved to disc.

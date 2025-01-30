@@ -8,20 +8,15 @@ pub use snark_verifier_sdk::{
     evm::gen_evm_verifier_shplonk as gen_evm_verifier, halo2::aggregation as halo2_aggregation,
 };
 
-/// A helper function for testing to verify the proof of this circuit with evm verifier.
-/// extract from openvm's halo2 wrapper
-pub fn evm_verify(evm_verifier: &EvmVerifier, evm_proof: &EvmProof) {
+/// Deploys the [`EvmVerifier`] contract and simulates an on-chain verification of the
+/// [`EvmProof`].
+///
+/// This approach essentially simulates 2 txs:
+/// - Deploy [`EvmVerifier`].
+/// - Verify [`EvmProof`] encoded as calldata.
+pub fn verify_evm_proof(evm_verifier: &EvmVerifier, evm_proof: &EvmProof) -> Result<u64, String> {
     let calldata = snark_verifier_sdk::evm::encode_calldata(&evm_proof.instances, &evm_proof.proof);
-    let gas_cost = deploy_and_call(evm_verifier.0.clone(), calldata).unwrap();
-    dbg!(gas_cost);
-}
-
-/// copy the file in openvm_sdk
-pub fn verify_evm_proof(evm_verifier: &EvmVerifier, evm_proof: &EvmProof) -> bool {
-    std::panic::catch_unwind(|| {
-        evm_verify(evm_verifier, evm_proof);
-    })
-    .is_ok()
+    deploy_and_call(evm_verifier.0.clone(), calldata)
 }
 
 fn deploy_and_call(deployment_code: Vec<u8>, calldata: Vec<u8>) -> Result<u64, String> {
@@ -88,23 +83,16 @@ fn test_verify_evm_proof() -> eyre::Result<()> {
 
     let evm_proof = read_json_deep::<_, BundleProof>(Path::new(PATH_TESTDATA).join("proofs").join("bundle-0x60f88f3e46c74362cd93c07724c9ef8e56e391317df6504b905c3c16e81de2e4-0x30d2f51e20e9a4ecd460466af9c81d13daad4fb8d1ca1e42dab30603374f7e5f.json"))?;
 
-    let evm_verifier = scroll_zkvm_prover::utils::read(
+    let evm_verifier = EvmVerifier(scroll_zkvm_prover::utils::read(
         Path::new(PATH_TESTDATA)
             .join("verifier")
             .join("verifier.bin"),
-    )?;
+    )?);
 
-    let calldata = snark_verifier_sdk::evm::encode_calldata(
-        &evm_proof.proof.instances,
-        &evm_proof.proof.proof,
-    );
-    // snark_verifier_sdk::evm::evm_verify(
-    //     evm_verifier,
-    //     evm_proof.proof.instances,
-    //     evm_proof.proof.proof,
-    // );
-    let gas_cost = deploy_and_call(evm_verifier, calldata).unwrap();
-    dbg!(gas_cost);
+    let gas_cost = verify_evm_proof(&evm_verifier, &evm_proof.proof)
+        .map_err(|e| eyre::eyre!("evm-proof verification failed: {e}"))?;
+
+    println!("evm-verify gas cost = {gas_cost}");
 
     Ok(())
 }
