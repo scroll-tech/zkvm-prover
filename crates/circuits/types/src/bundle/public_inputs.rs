@@ -3,6 +3,7 @@ use alloy_primitives::B256;
 use crate::{PublicInputs, utils::keccak256};
 
 /// Represents fields required to compute the public-inputs digest of a bundle.
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct BundleInfo {
     /// The EIP-155 chain ID of all txs in the bundle.
     pub chain_id: u64,

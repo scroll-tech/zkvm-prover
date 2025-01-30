@@ -3,7 +3,7 @@ use std::path::Path;
 use openvm_native_recursion::halo2::EvmProof;
 use openvm_sdk::verifier::root::types::RootVmVerifierInput;
 use sbv::primitives::B256;
-use scroll_zkvm_circuit_input_types::{batch::BatchInfo, chunk::ChunkInfo};
+use scroll_zkvm_circuit_input_types::{batch::BatchInfo, bundle::BundleInfo, chunk::ChunkInfo};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use crate::{Error, SC, utils::short_git_version};
@@ -34,7 +34,10 @@ pub struct BatchProofMetadata {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct BundleProofMetadata;
+pub struct BundleProofMetadata {
+    pub bundle_info: BundleInfo,
+    pub bundle_pi_hash: B256,
+}
 
 impl<Metadata, Proof> WrappedProof<Metadata, Proof>
 where
