@@ -407,14 +407,8 @@ where
     // We write the 2 digests to disc.
     let digest_1 = proof.proof.instances[0][12];
     let digest_2 = proof.proof.instances[0][13];
-    scroll_zkvm_prover::utils::write_json(
-        path_assets.join("digest_1"),
-        &serde_json::Value::String(format!("{digest_1:?}")),
-    )?;
-    scroll_zkvm_prover::utils::write_json(
-        path_assets.join("digest_2"),
-        &serde_json::Value::String(format!("{digest_2:?}")),
-    )?;
+    scroll_zkvm_prover::utils::write(path_assets.join("digest_1"), &digest_1.to_bytes())?;
+    scroll_zkvm_prover::utils::write(path_assets.join("digest_2"), &digest_2.to_bytes())?;
 
     Ok(ProveVerifyOutcome::single(task, proof))
 }
