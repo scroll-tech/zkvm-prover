@@ -66,6 +66,7 @@ snark-verifier-sdk = { git = "https://github.com/axiom-crypto/snark-verifier", b
 toml = "0.8.14"
 
 scroll-zkvm-prover = { path = "crates/prover" }
+scroll-zkvm-verifier = { path = "crates/verifier" }
 scroll-zkvm-circuit-input-types = { path = "crates/circuits/types" }
 
 [patch.crates-io]

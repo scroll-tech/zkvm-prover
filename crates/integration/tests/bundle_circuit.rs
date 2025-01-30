@@ -1,17 +1,12 @@
-use std::path::Path;
-
 use scroll_zkvm_circuit_input_types::{PublicInputs, bundle::BundleInfo};
 use scroll_zkvm_integration::{
     ProverTester, prove_verify_multi, prove_verify_single_evm,
     testers::{
-        PATH_TESTDATA, batch::MultiBatchProverTester, bundle::BundleProverTester,
-        chunk::MultiChunkProverTester,
+        batch::MultiBatchProverTester, bundle::BundleProverTester, chunk::MultiChunkProverTester,
     },
     utils::{LastHeader, build_batch_task},
 };
-use scroll_zkvm_prover::{
-    BatchProof, BundleProof, task::bundle::BundleProvingTask, utils::read_json_deep,
-};
+use scroll_zkvm_prover::{BatchProof, task::bundle::BundleProvingTask};
 
 #[test]
 fn setup() -> eyre::Result<()> {
@@ -109,31 +104,6 @@ fn e2e() -> eyre::Result<()> {
         "bundle pi (observed) = {:?}",
         outcome.proofs[0].proof.instances
     );
-
-    Ok(())
-}
-
-#[test]
-fn verify_evm_proof() -> eyre::Result<()> {
-    let evm_proof = read_json_deep::<_, BundleProof>(Path::new(PATH_TESTDATA).join("proofs").join("bundle-0x60f88f3e46c74362cd93c07724c9ef8e56e391317df6504b905c3c16e81de2e4-0x30d2f51e20e9a4ecd460466af9c81d13daad4fb8d1ca1e42dab30603374f7e5f.json"))?;
-
-    let evm_verifier = scroll_zkvm_prover::utils::read(
-        Path::new(PATH_TESTDATA)
-            .join("verifier")
-            .join("verifier.bin"),
-    )?;
-
-    let calldata = snark_verifier_sdk::evm::encode_calldata(
-        &evm_proof.proof.instances,
-        &evm_proof.proof.proof,
-    );
-    // snark_verifier_sdk::evm::evm_verify(
-    //     evm_verifier,
-    //     evm_proof.proof.instances,
-    //     evm_proof.proof.proof,
-    // );
-    let gas_cost = scroll_zkvm_integration::utils::deploy_and_call(evm_verifier, calldata).unwrap();
-    dbg!(gas_cost);
 
     Ok(())
 }

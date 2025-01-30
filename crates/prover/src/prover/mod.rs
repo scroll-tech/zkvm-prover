@@ -110,15 +110,14 @@ impl<Type: ProverType> Prover<Type> {
                 .as_ref()
                 .parent()
                 .map(|dir| dir.join("verifier.bin"));
-            let verifier_contract =
-                EvmVerifier(snark_verifier_sdk::evm::gen_evm_verifier_shplonk::<
-                    snark_verifier_sdk::halo2::aggregation::AggregationCircuit,
-                >(
-                    &halo2_params,
-                    agg_pk.halo2_pk.wrapper.pinning.pk.get_vk(),
-                    agg_pk.halo2_pk.wrapper.pinning.metadata.num_pvs.clone(),
-                    path_verifier_sol.as_deref(),
-                ));
+            let verifier_contract = EvmVerifier(scroll_zkvm_verifier::gen_evm_verifier::<
+                scroll_zkvm_verifier::halo2_aggregation::AggregationCircuit,
+            >(
+                &halo2_params,
+                agg_pk.halo2_pk.wrapper.pinning.pk.get_vk(),
+                agg_pk.halo2_pk.wrapper.pinning.metadata.num_pvs.clone(),
+                path_verifier_sol.as_deref(),
+            ));
             if let Some(path) = path_verifier_bin {
                 crate::utils::write(path, &verifier_contract.0)?;
             }
@@ -258,7 +257,7 @@ impl<Type: ProverType> Prover<Type> {
         &self,
         proof: &WrappedProof<Type::ProofMetadata, EvmProof>,
     ) -> Result<(), Error> {
-        Sdk.verify_evm_proof(
+        scroll_zkvm_verifier::verify_evm_proof(
             &self.evm_prover.as_ref().expect("").verifier_contract,
             &proof.proof,
         )

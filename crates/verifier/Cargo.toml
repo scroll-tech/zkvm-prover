@@ -6,3 +6,11 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
+scroll-zkvm-circuit-input-types.workspace = true
+openvm-native-recursion = { workspace = true, default-features = false }
+snark-verifier-sdk = {workspace = true, default-features = false, features = ["loader_evm"]}
+revm = "18.0"
+
+[dev-dependencies]
+eyre = "0.6"
+scroll-zkvm-prover.workspace = true

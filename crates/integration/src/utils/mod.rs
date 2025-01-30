@@ -14,8 +14,6 @@ use scroll_zkvm_prover::{
 use vm_zstd::zstd_encode;
 
 mod blob;
-mod evm;
-pub use evm::deploy_and_call;
 
 fn is_l1_tx(tx: &Transaction) -> bool {
     // 0x7e is l1 tx
