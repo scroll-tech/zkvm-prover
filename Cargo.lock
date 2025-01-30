@@ -6441,13 +6441,11 @@ dependencies = [
  "openvm-native-transpiler",
  "openvm-sdk",
  "openvm-transpiler",
- "revm",
  "sbv",
  "scroll-zkvm-circuit-input-types",
  "scroll-zkvm-prover",
  "serde_json",
  "sha2",
- "snark-verifier-sdk",
  "tiny-keccak",
  "tracing",
  "tracing-subscriber",
@@ -6467,13 +6465,14 @@ dependencies = [
  "openvm-native-recursion",
  "openvm-sdk",
  "openvm-stark-sdk",
+ "revm",
  "rkyv",
  "sbv",
  "scroll-zkvm-circuit-input-types",
+ "scroll-zkvm-verifier",
  "serde",
  "serde_json",
  "serde_stacker",
- "snark-verifier-sdk",
  "thiserror 2.0.11",
  "toml",
  "tracing",
@@ -6518,6 +6517,14 @@ dependencies = [
 [[package]]
 name = "scroll-zkvm-verifier"
 version = "0.1.0"
+dependencies = [
+ "eyre",
+ "openvm-native-recursion",
+ "revm",
+ "scroll-zkvm-circuit-input-types",
+ "scroll-zkvm-prover",
+ "snark-verifier-sdk",
+]
 
 [[package]]
 name = "sec1"
