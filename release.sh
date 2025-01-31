@@ -8,7 +8,7 @@ fi
 
 # directory to read assets from
 if [[ -z "${SCROLL_ZKVM_TESTRUN_DIR}" ]]; then
-  echo "SCROLL_ZKVM_OUTPUT_DIR not set"
+  echo "SCROLL_ZKVM_TESTRUN_DIR not set"
   exit 1
 else
   DIR_INPUT="${SCROLL_ZKVM_TESTRUN_DIR}"
