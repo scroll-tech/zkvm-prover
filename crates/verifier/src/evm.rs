@@ -5,8 +5,31 @@ use revm::{
 };
 
 pub use snark_verifier_sdk::{
-    evm::gen_evm_verifier_shplonk as gen_evm_verifier, halo2::aggregation as halo2_aggregation,
+    evm::gen_evm_verifier_shplonk as gen_evm_verifier,
+    halo2::aggregation as halo2_aggregation,
+    snark_verifier::halo2_base::halo2_proofs::{
+        SerdeFormat,
+        halo2curves::bn256::{Fr, G1Affine},
+        plonk::{Circuit, VerifyingKey},
+    },
 };
+
+/// Serialize vk, code extracted from legacy prover
+pub fn serialize_vk(vk: &VerifyingKey<G1Affine>) -> Vec<u8> {
+    let mut result = Vec::<u8>::new();
+    vk.write(&mut result, SerdeFormat::Processed).unwrap();
+    result
+}
+
+/// Deserialize vk, code extracted from legacy prover
+pub fn deserialize_vk<C: Circuit<Fr, Params = ()>>(raw_vk: &[u8]) -> VerifyingKey<G1Affine> {
+    VerifyingKey::<G1Affine>::read::<_, C>(
+        &mut std::io::Cursor::new(raw_vk),
+        SerdeFormat::Processed,
+        (),
+    )
+    .unwrap_or_else(|_| panic!("failed to deserialize vk with len {}", raw_vk.len()))
+}
 
 /// Deploys the [`EvmVerifier`] contract and simulates an on-chain verification of the
 /// [`EvmProof`].
