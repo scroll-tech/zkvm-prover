@@ -16,6 +16,7 @@ use sbv::{
 use crate::{
     Error,
     proof::{ChunkProofMetadata, RootProof},
+    setup::read_app_config,
     task::{ProvingTask, chunk::ChunkProvingTask},
 };
 
@@ -36,6 +37,12 @@ impl ProverType for ChunkProverType {
     type ProofType = RootProof;
 
     type ProofMetadata = ChunkProofMetadata;
+
+    fn read_app_config<P: AsRef<std::path::Path>>(
+        path_app_config: P,
+    ) -> Result<openvm_sdk::config::AppConfig<openvm_sdk::config::SdkVmConfig>, Error> {
+        read_app_config(path_app_config)
+    }
 
     fn metadata_with_prechecks(task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error> {
         let err_prefix = format!(

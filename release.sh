@@ -39,4 +39,4 @@ xxd -l 32 -p $DIR_INPUT/bundle/digest_1 | tr -d '\n' | awk '{gsub("%", ""); prin
 xxd -l 32 -p $DIR_INPUT/bundle/digest_2 | tr -d '\n' | awk '{gsub("%", ""); print}' > $DIR_OUTPUT/bundle/digest_2.hex
 
 # upload to s3
-aws --profile default s3 cp $DIR_OUTPUT s3://scroll-zkvm/$DIR_OUTPUT --recursive
+aws --profile default s3 cp $DIR_OUTPUT s3://circuit-release/scroll-zkvm/$DIR_OUTPUT --recursive
