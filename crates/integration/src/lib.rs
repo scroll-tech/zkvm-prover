@@ -9,7 +9,7 @@ use openvm_native_recursion::halo2::EvmProof;
 use openvm_sdk::{
     Sdk, StdIn,
     config::{AppConfig, SdkVmConfig},
-    fs::{write_app_pk_to_file, write_exe_to_file},
+    fs::write_exe_to_file,
     verifier::root::types::RootVmVerifierInput,
 };
 use openvm_transpiler::elf::Elf;
@@ -39,9 +39,6 @@ const FD_APP_CONFIG: &str = "openvm.toml";
 
 /// File descriptor for app exe.
 const FD_APP_EXE: &str = "app.vmexe";
-
-/// File descriptor for proving key.
-const FD_APP_PK: &str = "app.pk";
 
 /// Environment variable used to set the test-run's output directory for assets.
 const ENV_OUTPUT_DIR: &str = "OUTPUT_DIR";
@@ -110,7 +107,7 @@ pub trait ProverTester {
         skip_all,
         fields(path_app_config, path_app_exe)
     )]
-    fn transpile(elf: Elf) -> eyre::Result<(AppConfig<SdkVmConfig>, PathBuf)> {
+    fn transpile(elf: Elf) -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
         // Create the assets dir if not already present.
         let path_assets = DIR_TESTRUN
             .get()
@@ -145,24 +142,7 @@ pub trait ProverTester {
         let path_app_exe = path_assets.join(FD_APP_EXE);
         write_exe_to_file(app_exe, &path_app_exe)?;
 
-        Ok((app_config, path_app_exe))
-    }
-
-    /// Generate proving key and return path on disc.
-    #[instrument("ProverTester::keygen", skip_all, fields(path_app_pk))]
-    fn keygen(app_config: AppConfig<SdkVmConfig>) -> eyre::Result<PathBuf> {
-        let path_assets = DIR_TESTRUN
-            .get()
-            .ok_or(eyre::eyre!("missing assets dir"))?
-            .join(Self::DIR_ASSETS);
-
-        let app_pk = Sdk.app_keygen(app_config)?;
-
-        // Write proving key to disc.
-        let path_app_pk = path_assets.join(FD_APP_PK);
-        write_app_pk_to_file(app_pk, &path_app_pk)?;
-
-        Ok(path_app_pk)
+        Ok((path_app_config, app_config, path_app_exe))
     }
 
     /// Generate proving task for test purposes.
@@ -285,10 +265,7 @@ where
     let elf = T::build()?;
 
     // Transpile the ELF into a VmExe.
-    let (app_config, path_exe) = T::transpile(elf)?;
-
-    // Generate application proving key and get path on disc.
-    let path_pk = T::keygen(app_config)?;
+    let (path_app_config, _, path_exe) = T::transpile(elf)?;
 
     // Setup prover.
     let cache_dir = DIR_TESTRUN
@@ -297,8 +274,11 @@ where
         .join(T::DIR_ASSETS)
         .join(DIR_PROOFS);
     std::fs::create_dir_all(&cache_dir)?;
-    let prover =
-        scroll_zkvm_prover::Prover::<T::Prover>::setup(&path_exe, &path_pk, Some(&cache_dir))?;
+    let prover = scroll_zkvm_prover::Prover::<T::Prover>::setup(
+        &path_exe,
+        &path_app_config,
+        Some(&cache_dir),
+    )?;
 
     // Generate proving task for the circuit.
     let task = task.unwrap_or(T::gen_proving_task()?);
@@ -327,10 +307,7 @@ where
     let elf = T::build()?;
 
     // Transpile the ELF into a VmExe.
-    let (app_config, path_exe) = T::transpile(elf)?;
-
-    // Generate application proving key and get path on disc.
-    let path_pk = T::keygen(app_config)?;
+    let (path_app_config, _, path_exe) = T::transpile(elf)?;
 
     // Setup prover.
     let cache_dir = DIR_TESTRUN
@@ -339,8 +316,11 @@ where
         .join(T::DIR_ASSETS)
         .join(DIR_PROOFS);
     std::fs::create_dir_all(&cache_dir)?;
-    let prover =
-        scroll_zkvm_prover::Prover::<T::Prover>::setup(&path_exe, &path_pk, Some(&cache_dir))?;
+    let prover = scroll_zkvm_prover::Prover::<T::Prover>::setup(
+        &path_exe,
+        &path_app_config,
+        Some(&cache_dir),
+    )?;
 
     // Generate proving task for the circuit.
     let tasks = tasks.map_or_else(|| T::gen_multi_proving_tasks(), |tasks| Ok(tasks.to_vec()))?;
@@ -375,10 +355,7 @@ where
     let elf = T::build()?;
 
     // Transpile the ELF into a VmExe.
-    let (app_config, path_exe) = T::transpile(elf)?;
-
-    // Generate application proving key and get path on disc.
-    let path_pk = T::keygen(app_config)?;
+    let (path_app_config, _, path_exe) = T::transpile(elf)?;
 
     // Setup prover.
     let path_assets = DIR_TESTRUN
@@ -387,8 +364,11 @@ where
         .join(T::DIR_ASSETS);
     let cache_dir = path_assets.join(DIR_PROOFS);
     std::fs::create_dir_all(&cache_dir)?;
-    let prover =
-        scroll_zkvm_prover::Prover::<T::Prover>::setup(&path_exe, &path_pk, Some(&cache_dir))?;
+    let prover = scroll_zkvm_prover::Prover::<T::Prover>::setup(
+        &path_exe,
+        &path_app_config,
+        Some(&cache_dir),
+    )?;
 
     // Generate proving task for the circuit.
     let task = task.unwrap_or(T::gen_proving_task()?);
