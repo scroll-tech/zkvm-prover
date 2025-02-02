@@ -13,7 +13,7 @@ use openvm_native_recursion::{
     halo2::{
         EvmProof,
         utils::{CacheHalo2ParamsReader, Halo2ParamsReader},
-        wrapper::EvmVerifier,
+        wrapper::{EvmVerifier, Halo2WrapperProvingKey},
     },
     hints::Hintable,
 };
@@ -54,6 +54,8 @@ pub struct EvmProverVerifier {
     pub continuation_prover: ContinuationProver<SdkVmConfig>,
     /// The contract bytecode for the EVM verifier contract.
     pub verifier_contract: EvmVerifier,
+    /// The halo2 pk for evm verifier
+    pub halo2_pk: Halo2WrapperProvingKey,
 }
 
 /// Generic prover.
@@ -120,6 +122,7 @@ impl<Type: ProverType> Prover<Type> {
                     .as_ref()
                     .parent()
                     .map(|dir| dir.join("verifier.bin"));
+                let halo2_pk = agg_pk.halo2_pk.wrapper.clone();
                 let verifier_contract = EvmVerifier(scroll_zkvm_verifier::evm::gen_evm_verifier::<
                     scroll_zkvm_verifier::evm::halo2_aggregation::AggregationCircuit,
                 >(
@@ -142,6 +145,7 @@ impl<Type: ProverType> Prover<Type> {
                 Ok::<EvmProverVerifier, Error>(EvmProverVerifier {
                     continuation_prover,
                     verifier_contract,
+                    halo2_pk,
                 })
             })
             .transpose()?;
@@ -153,6 +157,27 @@ impl<Type: ProverType> Prover<Type> {
             cache_dir: cache_dir.map(|path| PathBuf::from(path.as_ref())),
             _type: PhantomData,
         })
+    }
+
+    /// Pick up app commit as "vk" in proof, to distinguish from which circuit the proof comes
+    pub fn get_app_vk(&self) -> Vec<u8> {
+        use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
+        self.app_committed_exe
+            .get_program_commit()
+            .into_iter()
+            .flat_map(|v| v.as_canonical_u32().to_be_bytes())
+            .collect()
+    }
+
+    /// Pick up the actual vk (serialized) for evm proof, would be empty if prover
+    /// do not contain evm prover
+    pub fn get_evm_vk(&self) -> Vec<u8> {
+        self.evm_prover
+            .as_ref()
+            .map(|evm_prover| {
+                scroll_zkvm_verifier::evm::serialize_vk(evm_prover.halo2_pk.pinning.pk.get_vk())
+            })
+            .unwrap_or_default()
     }
 
     /// Early-return if a proof is found in disc, otherwise generate and return the proof after
@@ -179,7 +204,7 @@ impl<Type: ProverType> Prover<Type> {
         assert!(!Type::EVM, "Prover::gen_proof not for EVM-prover");
         let metadata = Self::metadata_with_prechecks(task)?;
         let proof = self.gen_proof_stark(task)?;
-        let wrapped_proof = WrappedProof::new(metadata, proof);
+        let wrapped_proof = WrappedProof::new(metadata, proof, Some(self.get_app_vk().as_slice()));
 
         // Write proof to disc if caching was enabled.
         if let Some(dir) = &self.cache_dir {
@@ -216,7 +241,7 @@ impl<Type: ProverType> Prover<Type> {
         assert!(Type::EVM, "Prover::gen_proof_evm only for EVM-prover");
         let metadata = Self::metadata_with_prechecks(task)?;
         let proof = self.gen_proof_snark(task)?;
-        let wrapped_proof = WrappedProof::new(metadata, proof);
+        let wrapped_proof = WrappedProof::new(metadata, proof, Some(self.get_evm_vk().as_slice()));
 
         // Write proof to disc if caching was enabled.
         if let Some(dir) = &self.cache_dir {
