@@ -4,6 +4,7 @@ use scroll_zkvm_circuit_input_types::{PublicInputs, bundle::BundleInfo};
 use crate::{
     Error, Prover, ProverType,
     proof::BundleProofMetadata,
+    setup::read_app_config,
     task::{ProvingTask, bundle::BundleProvingTask},
 };
 
@@ -22,6 +23,14 @@ impl ProverType for BundleProverType {
     type ProofType = EvmProof;
 
     type ProofMetadata = BundleProofMetadata;
+
+    fn read_app_config<P: AsRef<std::path::Path>>(
+        path_app_config: P,
+    ) -> Result<openvm_sdk::config::AppConfig<openvm_sdk::config::SdkVmConfig>, Error> {
+        let mut app_config = read_app_config(path_app_config)?;
+        app_config.app_vm_config.castf = Some(openvm_native_circuit::CastFExtension);
+        Ok(app_config)
+    }
 
     fn metadata_with_prechecks(task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error> {
         let err_prefix = format!("metadata_with_prechecks for task_id={}", task.identifier());
