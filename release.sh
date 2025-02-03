@@ -21,17 +21,14 @@ mkdir -p $DIR_OUTPUT/bundle
 
 # copy chunk-program related assets
 cp $DIR_INPUT/chunk/app.vmexe $DIR_OUTPUT/chunk/app.vmexe
-cp $DIR_INPUT/chunk/app.pk $DIR_OUTPUT/chunk/app.pk
 cp $DIR_INPUT/chunk/openvm.toml $DIR_OUTPUT/chunk/openvm.toml
 
 # copy batch-program related assets
 cp $DIR_INPUT/batch/app.vmexe $DIR_OUTPUT/batch/app.vmexe
-cp $DIR_INPUT/batch/app.pk $DIR_OUTPUT/batch/app.pk
 cp $DIR_INPUT/batch/openvm.toml $DIR_OUTPUT/batch/openvm.toml
 
 # copy bundle-program related assets
 cp $DIR_INPUT/bundle/app.vmexe $DIR_OUTPUT/bundle/app.vmexe
-cp $DIR_INPUT/bundle/app.pk $DIR_OUTPUT/bundle/app.pk
 cp $DIR_INPUT/bundle/openvm.toml $DIR_OUTPUT/bundle/openvm.toml
 cp $DIR_INPUT/bundle/verifier.bin $DIR_OUTPUT/bundle/verifier.bin
 cp $DIR_INPUT/bundle/verifier.sol $DIR_OUTPUT/bundle/verifier.sol
