@@ -54,7 +54,7 @@ Add the following dependency in your `Cargo.toml`:
 
 ```toml
 [dependencies]
-scroll-zkvm-prover = { git = "https://github.com/scroll-tech/zkvm-prover", tag = "v0.1.0-rc.1" }
+scroll-zkvm-prover = { git = "https://github.com/scroll-tech/zkvm-prover", branch = "master" }
 ```
 
 ### Chunk Prover
