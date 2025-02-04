@@ -53,7 +53,63 @@ pub fn convert_hintread(op: Instruction<F>) -> Vec<Instruction<F>> {
     .collect::<Vec<_>>()
 }
 
-pub fn convert_publish(op: Instruction<F>) -> Vec<Instruction<F>> {
+
+// This function assumes the pi is published in sequencial order
+// `convert_publish_v1` was a more general version, but now `castf` cannot write to register,
+// so I have to use the `idx` here.
+#[allow(dead_code)]
+pub fn convert_publish(op: Instruction<F>, idx: usize) -> Vec<Instruction<F>> {
+    // register usage:
+    //   x29: ptr of pi
+    //   x30: local tmp, for current pi value
+    // step1: load [x29 + 4 * idx] to x30 (it is the expected value)
+    // step2: load_register_to_native(x30, A0-1)
+    // step3: if [A0-1] != [pi_value_addr], fail
+    let pi_value_addr = op.b;
+    let tmp_slot = A0 - 4;
+    let mut results = vec![
+        // load [x29 + 4 * idx] to x30
+        Instruction::<F> {
+            opcode: Rv32LoadStoreOpcode::LOADW.global_opcode(),
+            a: F::from_canonical_usize(X30 * 4),
+            b: F::from_canonical_usize(X29 * 4),
+            c: F::from_canonical_usize(4 * idx),
+            d: as_register(),
+            e: as_mem(),
+            f: F::from_canonical_usize(0),
+            g: F::from_canonical_usize(0),
+        },
+    ];
+    results.extend(load_register_to_native(tmp_slot as usize, X30));
+    // if [A0-1] == [pi_value_addr], pc += 8
+    // else, panic
+    results.extend(vec![
+        Instruction::<F> {
+            opcode: op_native_beq(),
+            a: F::from_canonical_usize(tmp_slot as usize),
+            b: pi_value_addr,
+            c: F::from_canonical_usize(8),
+            d: as_native(),
+            e: as_native(),
+            f: F::from_canonical_usize(0),
+            g: F::from_canonical_usize(0),
+        },
+        Instruction::<F> {
+            opcode: SystemOpcode::TERMINATE.global_opcode(),
+            a: F::from_canonical_usize(0),
+            b: F::from_canonical_usize(0),
+            c: F::from_canonical_usize(8),
+            d: F::from_canonical_usize(0),
+            e: F::from_canonical_usize(0),
+            f: F::from_canonical_usize(0),
+            g: F::from_canonical_usize(0),
+        },
+    ]);
+    results
+}
+
+#[allow(dead_code)]
+pub fn convert_publish_v1(op: Instruction<F>, _idx: usize) -> Vec<Instruction<F>> {
     // register usage:
     //   x29: ptr of pi
     //   x31: local tmp, for current pi ptr
@@ -68,7 +124,8 @@ pub fn convert_publish(op: Instruction<F>) -> Vec<Instruction<F>> {
     let mut results = vec![
         // castf pi_idx to x31
         Instruction::<F> {
-            opcode: CastfOpcode::CASTF.global_opcode(),
+            // it is ok if we assume len(pi) < 256
+            opcode: Rv32LoadStoreOpcode::LOADB.global_opcode(),
             a: F::from_canonical_usize(X31 * 4),
             b: pi_idx_addr,
             c: F::from_canonical_usize(0),
@@ -157,7 +214,7 @@ pub fn convert_publish(op: Instruction<F>) -> Vec<Instruction<F>> {
 }
 
 #[allow(dead_code)]
-pub fn convert_publish_old(op: Instruction<F>) -> Vec<Instruction<F>> {
+pub fn convert_publish_v0(op: Instruction<F>) -> Vec<Instruction<F>> {
     // this is the depreciated method.
     // I tried to copy the native field to main memory.
     // but found `castf` (due to range check limitation) is not working

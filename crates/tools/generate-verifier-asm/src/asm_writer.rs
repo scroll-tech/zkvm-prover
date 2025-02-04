@@ -1,8 +1,10 @@
 use openvm_instructions::{LocalOpcode, instruction::Instruction, program::Program};
-use openvm_native_compiler::NativeJalOpcode;
+use openvm_native_compiler::{asm::A0, NativeJalOpcode};
 use openvm_stark_sdk::p3_baby_bear::BabyBear as F;
 
 use p3_field::{FieldAlgebra, PrimeField32};
+
+use crate::asm_utils::*;
 
 const OPCODE: u32 = 0x0b;
 const FUNCT3: u32 = 0b111;
@@ -32,10 +34,10 @@ fn handle_pc_diff(program: &mut Program<F>) -> usize {
     pc_diff += 9; // for next jal
     let jal = Instruction::<F> {
         opcode: NativeJalOpcode::JAL.global_opcode(),
-        a: F::from_canonical_usize(1 << (24 - 8)), // A0
+        a: F::from_canonical_usize(A0 as usize), // A0
         b: F::from_canonical_usize(4 * (pc_diff + 1)),
         c: F::from_canonical_usize(0),
-        d: F::from_canonical_usize(5), // native_as
+        d: as_native(),
         e: F::from_canonical_usize(0),
         f: F::from_canonical_usize(0),
         g: F::from_canonical_usize(0),

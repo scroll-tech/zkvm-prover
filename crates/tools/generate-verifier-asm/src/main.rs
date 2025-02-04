@@ -61,6 +61,7 @@ struct Context {
     hint_bits_mode: bool,
     hint_bits_counter: usize,
     hint_bits_counter_limit: usize,
+    publish_counter: usize,
 }
 
 impl Context {
@@ -96,7 +97,8 @@ fn dump_root_program(stark_pk: &AggStarkProvingKey, output_file: &str) {
     for (idx, op_elem) in program.instructions_and_debug_infos.iter().enumerate() {
         if let Some(op) = op_elem.as_ref() {
             if op.0.opcode.as_usize() == op_publish() {
-                let instructions = convert_publish(op.0.clone());
+                let instructions = convert_publish(op.0.clone(), context.publish_counter);
+                context.publish_counter += 1;
                 new_instructions_and_debug_infos.extend(
                     instructions
                         .iter()

@@ -335,7 +335,7 @@ impl<Type: ProverType> Prover<Type> {
         let mut stdin = StdIn::default();
         stdin.write_bytes(&serialized);
 
-        if false
+        if true
         {
             println!(
                 "executing before proving, pc start: {}",
@@ -371,13 +371,10 @@ impl<Type: ProverType> Prover<Type> {
                 .map(|(air_id, x)| (airs[air_id].clone(), x))
                 .unzip();
 
-            let test_proof_input = ProofInputForTest {
-                airs: used_airs,
-                per_air,
-            };
-            let engine = BabyBearPoseidon2Engine::new(self.app_pk.app_vm_pk.fri_params);
-            test_proof_input.run_test(&engine).unwrap();
+                let engine = BabyBearPoseidon2Engine::new(self.app_pk.app_vm_pk.fri_params);
+                engine.run_test(used_airs, per_air).unwrap();
             }
+            println!("debug check done");
             
         }
 
