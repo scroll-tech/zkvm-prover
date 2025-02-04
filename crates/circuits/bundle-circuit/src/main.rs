@@ -5,6 +5,16 @@ use circuit::BundleCircuit as C;
 
 openvm::entry!(main);
 
+/// The commitment to the batch program exe.
+const BATCH_EXE_COMMIT: [u32; 8] = [
+    86105397, 1915529684, 178668450, 1718691022, 1746222948, 1530989200, 1153315143, 1992566088,
+];
+
+/// The commitment to the batch program leaf.
+const BATCH_LEAF_COMMIT: [u32; 8] = [
+    701140902, 366847636, 1087740927, 1189864384, 238260632, 233222120, 1487188715, 55637380,
+];
+
 fn main() {
     // Setup openvm extensions for the circuit.
     C::setup();
@@ -16,7 +26,7 @@ fn main() {
     let witness = C::deserialize_witness(&witness_bytes);
 
     // Verify the root proofs being aggregated in this circuit.
-    let agg_proofs = C::verify_proofs(witness);
+    let agg_proofs = C::verify_proofs(witness, [BATCH_EXE_COMMIT, BATCH_LEAF_COMMIT]); // FIXME
 
     // Get the public-input values of the aggregated proofs from witness.
     let agg_pis = C::aggregated_public_inputs(witness);

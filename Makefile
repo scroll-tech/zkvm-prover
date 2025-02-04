@@ -1,5 +1,9 @@
 RUST_MIN_STACK ?= 16777216
 export RUST_MIN_STACK
+RUST_BACKTRACE ?= 1
+export RUST_BACKTRACE
+RUST_LOG ?= "info,p3_dft=none,p3_fri=none"
+export RUST_LOG
 
 fmt:
 	@cargo fmt --all

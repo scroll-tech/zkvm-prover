@@ -3380,6 +3380,7 @@ dependencies = [
  "openvm-instructions",
  "openvm-poseidon2-air",
  "openvm-stark-backend",
+ "openvm-stark-sdk",
  "p3-baby-bear",
  "p3-symmetric",
  "rand",

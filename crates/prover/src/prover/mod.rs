@@ -5,7 +5,10 @@ use std::{
 };
 
 use once_cell::sync::OnceCell;
-use openvm_circuit::{arch::SingleSegmentVmExecutor, system::program::trace::VmCommittedExe};
+use openvm_circuit::{
+    arch::{SingleSegmentVmExecutor, VmExecutor},
+    system::program::trace::VmCommittedExe,
+};
 use openvm_native_recursion::{
     halo2::{
         EvmProof,
@@ -16,11 +19,15 @@ use openvm_native_recursion::{
 };
 use openvm_sdk::{
     NonRootCommittedExe, Sdk, StdIn,
+    commit::AppExecutionCommit,
     config::{AggConfig, AggStarkConfig, AppConfig, SdkVmConfig},
     keygen::{AggStarkProvingKey, AppProvingKey, RootVerifierProvingKey},
     prover::ContinuationProver,
 };
-use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Config;
+use openvm_stark_sdk::{
+    config::baby_bear_poseidon2::{BabyBearPoseidon2Config, BabyBearPoseidon2Engine},
+    utils::ProofInputForTest,
+};
 use serde::{Serialize, de::DeserializeOwned};
 use tracing::{debug, instrument};
 
@@ -284,6 +291,27 @@ impl<Type: ProverType> Prover<Type> {
             .commit_app_exe(app_pk.app_fri_params(), app_exe)
             .map_err(|e| Error::Commit(e.to_string()))?;
 
+        // print the 2 exe commitments
+        {
+            use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
+            let commits = AppExecutionCommit::compute(
+                &app_pk.app_vm_pk.vm_config,
+                &app_committed_exe,
+                &app_pk.leaf_committed_exe,
+            );
+            println!(
+                "raw exe commit: {:?}",
+                commits.exe_commit.map(|x| x.as_canonical_u32())
+            );
+            println!("exe commit: {:?}", commits.exe_commit_to_bn254());
+            println!(
+                "raw leaf commit: {:?}",
+                commits
+                    .leaf_vm_verifier_commit
+                    .map(|x| x.as_canonical_u32())
+            );
+            println!("leaf commit: {:?}", commits.app_config_commit_to_bn254());
+        }
         let _agg_stark_pk = AGG_STARK_PROVING_KEY
             .get_or_init(|| AggStarkProvingKey::keygen(AggStarkConfig::default()));
 
@@ -306,6 +334,52 @@ impl<Type: ProverType> Prover<Type> {
 
         let mut stdin = StdIn::default();
         stdin.write_bytes(&serialized);
+
+        if false
+        {
+            println!(
+                "executing before proving, pc start: {}",
+                self.app_committed_exe.exe.pc_start
+            );
+            let pi = Sdk
+                .execute(
+                    self.app_committed_exe.exe.clone(),
+                    self.app_pk.app_vm_pk.vm_config.clone(),
+                    stdin.clone(),
+                )
+                .map_err(|e| Error::GenProof(e.to_string()))?;
+            println!("pi: {pi:?}");
+            // debug
+            use openvm_circuit::arch::VmConfig;
+            use openvm_stark_sdk::engine::StarkFriEngine;
+            let mut config = self.app_pk.app_vm_pk.vm_config.clone();
+            config.system.config = config.system.config.with_max_segment_len(1 << 25);
+            let airs = config.create_chip_complex().unwrap().airs();
+            let executor = VmExecutor::new(config);
+
+            let result = executor
+                .execute_and_generate(self.app_committed_exe.exe.clone(), stdin.clone())
+                .unwrap();
+            println!(
+                "segment len: {}",
+                result.per_segment.len(),
+            );
+            for result in result.per_segment {
+                let (used_airs, per_air) = result
+                .per_air
+                .into_iter()
+                .map(|(air_id, x)| (airs[air_id].clone(), x))
+                .unzip();
+
+            let test_proof_input = ProofInputForTest {
+                airs: used_airs,
+                per_air,
+            };
+            let engine = BabyBearPoseidon2Engine::new(self.app_pk.app_vm_pk.fri_params);
+            test_proof_input.run_test(&engine).unwrap();
+            }
+            
+        }
 
         let task_id = task.identifier();
 

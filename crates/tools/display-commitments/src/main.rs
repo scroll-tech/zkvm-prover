@@ -1,9 +1,10 @@
 use openvm_sdk::{
-    commit::AppExecutionCommit, config::{AppConfig, SdkVmConfig}, fs::{read_exe_from_file}, Sdk
+    Sdk,
+    commit::AppExecutionCommit,
+    config::{AppConfig, SdkVmConfig},
+    fs::read_exe_from_file,
 };
-use openvm_stark_sdk::{
-    openvm_stark_backend::p3_field::PrimeField32,
-};
+use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
 
 // output will be like
 // raw exe commit: [396649651, 1175086036, 1682626845, 471855974, 1659938811, 1981570609, 805067545, 1640289616]
@@ -11,20 +12,15 @@ use openvm_stark_sdk::{
 // raw leaf commit: [505034789, 682334490, 407062982, 1227826652, 298205975, 1959777750, 1633765816, 97452666]
 // leaf commit: 0x000764f733c43fc78b9aa7ee26610bb86d754157eeea02e09b458c9b45fea600
 fn display_commitments(guest_dir: &str) {
-    println!("000");
     let exe = read_exe_from_file(format!("{guest_dir}/app.vmexe")).unwrap();
 
-    println!("001");
     let toml = std::fs::read_to_string(format!("{guest_dir}/openvm.toml")).unwrap();
     let app_config: AppConfig<SdkVmConfig> = toml::from_str(&toml).unwrap();
-    println!("002");
     let app_pk = Sdk.app_keygen(app_config).unwrap();
-    println!("0025");
     let committed_exe = Sdk
         .commit_app_exe(app_pk.app_fri_params(), exe.clone())
         .unwrap();
 
-        println!("003");
     let commits = AppExecutionCommit::compute(
         &app_pk.app_vm_pk.vm_config,
         &committed_exe,

@@ -1,9 +1,9 @@
 use openvm_instructions::{
     LocalOpcode, PhantomDiscriminant, SystemOpcode, VmOpcode, instruction::Instruction,
 };
-use openvm_native_compiler::{FieldArithmeticOpcode, 
-    conversion::AS,
-    NativeBranchEqualOpcode, NativePhantom};
+use openvm_native_compiler::{
+    FieldArithmeticOpcode, NativeBranchEqualOpcode, NativePhantom, conversion::AS,
+};
 use openvm_rv32im_transpiler::BranchEqualOpcode;
 use openvm_stark_sdk::p3_baby_bear::BabyBear as F;
 

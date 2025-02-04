@@ -50,7 +50,7 @@ pub trait Circuit {
     fn reveal_pi(pi: &Self::PublicInputs) {
         for (i, part) in pi.pi_hash().chunks_exact(CHUNK_SIZE).enumerate() {
             let value = u32::from_le_bytes(part.try_into().unwrap());
-            openvm::io::print(format!("pi[{i}] = {value:?}"));
+            openvm::io::println(format!("pi[{i}] = {value:?}"));
             openvm::io::reveal(value, i)
         }
     }
@@ -67,11 +67,15 @@ where
     /// Verify the proofs being aggregated.
     ///
     /// Also returns the root proofs being aggregated.
-    fn verify_proofs(witness: &Self::Witness) -> Vec<RootProofWithPublicValues> {
+    fn verify_proofs(
+        witness: &Self::Witness,
+        program_commitments: [[u32; 8]; 2],
+    ) -> Vec<RootProofWithPublicValues> {
         let proofs = witness.get_proofs();
 
         for proof in proofs.iter() {
             proof::verify_proof(
+                program_commitments,
                 proof.flattened_proof.as_slice(),
                 proof.public_values.as_slice(),
             );

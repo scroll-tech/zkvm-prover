@@ -16,31 +16,25 @@ pub struct RootProofWithPublicValues {
     pub public_values: Vec<u32>,
 }
 
-/// The commitment to the root verifier's exe.
-const EXE_COMMIT: [u32; 8] = [
-    1233178528, 835863246, 185337613, 1062380745, 1006025895, 1800931371, 848508197, 1288278302
-];
-
-/// The commitment to the root verifier's leaf.
-const LEAF_COMMIT: [u32; 8] = [
-    1306725861, 917524666, 1051090997, 1927035141, 671332224, 1674673970, 495361509, 1117197118
-];
-
 /// Number of public-input values, i.e. [u32; N].
 ///
 /// Note that the actual value for each u32 is a byte.
 const NUM_PUBLIC_VALUES: usize = 32;
 
 /// Verify a root proof.
-pub fn verify_proof(flattened_proof: &[u32], public_inputs: &[u32]) {
+pub fn verify_proof(
+    program_commitments: [[u32; 8]; 2],
+    flattened_proof: &[u32],
+    public_inputs: &[u32],
+) {
     // Sanity check for the number of public-input values.
     assert_eq!(public_inputs.len(), NUM_PUBLIC_VALUES);
 
     // Extend the public-input values by prepending the commitments to the root verifier's exe and
     // leaf.
     let mut extended_public_inputs = vec![];
-    extended_public_inputs.extend(EXE_COMMIT);
-    extended_public_inputs.extend(LEAF_COMMIT);
+    extended_public_inputs.extend(program_commitments[0]);
+    extended_public_inputs.extend(program_commitments[1]);
     extended_public_inputs.extend_from_slice(public_inputs);
 
     println!("verify proof with pi: {:?}", extended_public_inputs);

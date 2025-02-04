@@ -54,6 +54,10 @@ pub fn convert_hintread(op: Instruction<F>) -> Vec<Instruction<F>> {
 }
 
 pub fn convert_publish(op: Instruction<F>) -> Vec<Instruction<F>> {
+    // register usage:
+    //   x29: ptr of pi
+    //   x31: local tmp, for current pi ptr
+    //   x30: local tmp, for current pi value
     // step1: x31 = x29 + 4 * pi.index
     // step2: load [x31] to x30 (it is the expected value)
     // step3: load_register_to_native(x30, A0-1)
@@ -119,7 +123,7 @@ pub fn convert_publish(op: Instruction<F>) -> Vec<Instruction<F>> {
         },
     ];
     results.extend(load_register_to_native(tmp_slot as usize, X30));
-    // if [A0-1] += [pi_value_addr], pc += 8
+    // if [A0-1] == [pi_value_addr], pc += 8
     // else, panic
     results.extend(vec![
         Instruction::<F> {
@@ -127,8 +131,8 @@ pub fn convert_publish(op: Instruction<F>) -> Vec<Instruction<F>> {
             a: F::from_canonical_usize(tmp_slot as usize),
             b: pi_value_addr,
             c: F::from_canonical_usize(8),
-            d: as_register(),
-            e: as_mem(),
+            d: as_native(),
+            e: as_native(),
             f: F::from_canonical_usize(0),
             g: F::from_canonical_usize(0),
         },
