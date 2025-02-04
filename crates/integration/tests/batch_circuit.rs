@@ -1,12 +1,14 @@
+use sbv::primitives::types::BlockWitness;
+//use sbv::primitives::BlockWitness;
 use scroll_zkvm_integration::{
-    ProverTester, prove_verify_multi, prove_verify_single,
-    testers::{
+    prove_verify_multi, prove_verify_single, testers::{
         batch::{BatchProverTester, MultiBatchProverTester},
-        chunk::MultiChunkProverTester,
-    },
-    utils::build_batch_task,
+        chunk::{ChunkProverTester, MultiChunkProverTester},
+    }, utils::build_batch_task, ProverTester
 };
-
+use scroll_zkvm_prover::{utils::read_json_deep, ChunkProof};
+use scroll_zkvm_prover::utils::read_json;
+use scroll_zkvm_prover::task::chunk::ChunkProvingTask;  
 #[test]
 fn test_execute() -> eyre::Result<()> {
     MultiBatchProverTester::setup()?;
@@ -15,7 +17,28 @@ fn test_execute() -> eyre::Result<()> {
 
     let (_, app_config, exe_path) = MultiBatchProverTester::transpile(elf)?;
 
-    for task in MultiBatchProverTester::gen_multi_proving_tasks()? {
+    //let tasks = MultiBatchProverTester::gen_multi_proving_tasks()?;
+    let tasks = {
+        println!("cwd: {:?}", std::env::current_dir());
+        // glob last result of "".output/chunk-tests-*/chunk/proofs/chunk-*.json"
+        let proof_path = glob::glob("../../.output/chunk-tests-*/chunk/proofs/chunk-*.json")?
+            .next()
+            .unwrap()?;
+        println!("proof_path: {:?}", proof_path);
+        let chunk_proof = read_json_deep::<_, ChunkProof>(&proof_path)?;
+        
+
+    let chunk_task = ChunkProverTester::gen_proving_task()?;
+
+        let task = build_batch_task(
+            &[chunk_task],
+            &[chunk_proof],
+            scroll_zkvm_circuit_input_types::batch::MAX_AGG_CHUNKS,
+            Default::default(),
+        );
+        vec![task]
+    };
+    for task in tasks {
         MultiBatchProverTester::execute(app_config.clone(), &task, exe_path.clone())?;
     }
 

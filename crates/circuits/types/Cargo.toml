@@ -13,10 +13,10 @@ alloy-serde.workspace = true
 rkyv.workspace = true
 sbv.workspace = true
 serde.workspace = true
-tiny-keccak.workspace = true
+tiny-keccak = {workspace = true, features = ["openvm"]}
 
-openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "d45b226", features = ["std"] }
-openvm-rv32im-guest= {  git = "https://github.com/openvm-org/openvm.git", rev = "d45b226" }
+openvm = { workspace = true, features = ["std"] }
+openvm-rv32im-guest= {  workspace = true }
 
 [features]
 default = ["scroll"]

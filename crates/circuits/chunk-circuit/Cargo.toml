@@ -9,16 +9,16 @@ version.workspace = true
 scroll-zkvm-circuit-input-types.workspace = true
 
 rkyv.workspace = true
-sbv.workspace = true
+sbv = { workspace = true, features = ["openvm"] }
 
-openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "d45b226", features = ["std"] }
-openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "d45b226" } 
-openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "d45b226" }
-openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "d45b226" }
-openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "d45b226", features = ["k256"] }
-openvm-keccak256-guest= { git = "https://github.com/openvm-org/openvm.git", rev = "d45b226" }
-openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "d45b226", features = ["bn254"] }
-openvm-rv32im-guest= {  git = "https://github.com/openvm-org/openvm.git", rev = "d45b226" }
+openvm = { workspace = true, features = ["std"] }
+openvm-algebra-complex-macros = { workspace = true } 
+openvm-algebra-guest = { workspace = true }
+openvm-bigint-guest = { workspace = true }
+openvm-ecc-guest = { workspace = true, features = ["k256"] }
+openvm-keccak256-guest= { workspace = true }
+openvm-pairing-guest = { workspace = true, features = ["bn254"] }
+openvm-rv32im-guest= {  workspace = true }
 
 [features]
 default = ["scroll"]

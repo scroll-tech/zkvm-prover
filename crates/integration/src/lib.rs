@@ -165,7 +165,8 @@ pub trait ProverTester {
         let mut stdin = StdIn::default();
         stdin.write_bytes(&serialized);
 
-        Sdk.execute(read_app_exe(exe_path)?, app_config.app_vm_config, stdin)?;
+        let pi = Sdk.execute(read_app_exe(exe_path)?, app_config.app_vm_config, stdin)?;
+        println!("pi: {pi:?}");
 
         Ok(())
     }

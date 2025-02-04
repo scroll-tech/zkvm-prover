@@ -1,7 +1,9 @@
 use openvm_instructions::{
     LocalOpcode, PhantomDiscriminant, SystemOpcode, VmOpcode, instruction::Instruction,
 };
-use openvm_native_compiler::{FieldArithmeticOpcode, NativeBranchEqualOpcode, NativePhantom};
+use openvm_native_compiler::{FieldArithmeticOpcode, 
+    conversion::AS,
+    NativeBranchEqualOpcode, NativePhantom};
 use openvm_rv32im_transpiler::BranchEqualOpcode;
 use openvm_stark_sdk::p3_baby_bear::BabyBear as F;
 
@@ -18,10 +20,10 @@ pub const X29: usize = 29; // t4
 pub const X30: usize = 30; // t5
 pub const X31: usize = 31; // t6
 
-pub const AS_IMM: usize = 0;
-pub const AS_REGISTER: usize = 1;
-pub const AS_MEM: usize = 2;
-pub const AS_NATIVE: usize = 5;
+pub const AS_IMM: usize = AS::Immediate as usize;
+pub const AS_REGISTER: usize = 1; //AS::REGISTER;
+pub const AS_MEM: usize = 2; //AS::MEM;
+pub const AS_NATIVE: usize = AS::Native as usize;
 
 pub fn as_imm() -> F {
     F::from_canonical_usize(AS_IMM)
@@ -94,7 +96,7 @@ pub fn print_register(register_idx: usize) -> Vec<Instruction<F>> {
 
 pub fn load_register_to_native(native_addr: usize, register_idx: usize) -> Vec<Instruction<F>> {
     let dst = F::from_canonical_usize(native_addr);
-    let zero = F::from_canonical_usize(0);
+    let zero = F::ZERO;
 
     let add_op = |(b, as_b), (c, as_c)| Instruction::<F> {
         opcode: op_native_add(),
