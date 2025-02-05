@@ -19,7 +19,7 @@ pub struct RootProofWithPublicValues {
 }
 
 /// Represent the commitment needed to verify a root proof
-#[derive(Clone, Debug, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(Clone, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 #[rkyv(derive(Debug))]
 pub struct ProgramCommit {
     /// The commitment to the root verifier's exe.
@@ -30,6 +30,10 @@ pub struct ProgramCommit {
 
 impl ProgramCommit {
     pub fn deserialize(commit_bytes: &[u8]) -> Self {
+        // TODO: temporary skip deserialize if no vk is provided
+        if commit_bytes.is_empty() {
+            return Default::default();
+        }
         let archived_data =
             rkyv::access::<ArchivedProgramCommit, rkyv::rancor::BoxedError>(commit_bytes).unwrap();
         Self {

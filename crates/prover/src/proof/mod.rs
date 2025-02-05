@@ -20,7 +20,7 @@ pub struct WrappedProof<Metadata, Proof> {
     /// hash of vm's program while for  EvmProof it is the
     /// raw bytes of the [`VerifyingKey`] of the [`Circuit`]
     /// used to generate the [`Snark`].
-    #[serde(with = "base64")]
+    #[serde(with = "base64", default)]
     pub vk: Vec<u8>,
     pub git_version: String,
 }
