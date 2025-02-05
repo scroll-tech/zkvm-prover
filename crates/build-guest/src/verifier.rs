@@ -249,10 +249,10 @@ fn fix_pc(new_instructions_and_debug_infos: &mut InstructionsWithDbgInfo) {
     }
 }
 
-fn main() {
+pub fn dump_verifier(path: &str) {
     println!("generating AggStarkProvingKey");
     let (agg_stark_pk, _) = AggStarkProvingKey::dummy_proof_and_keygen(AggStarkConfig::default());
 
     println!("generating root_verifier.asm");
-    dump_root_program(&agg_stark_pk, "root_verifier.asm");
+    dump_root_program(&agg_stark_pk, path);
 }

@@ -17,6 +17,9 @@ clippy:
 	@cargo clippy --manifest-path crates/verifier/Cargo.toml
 	sh openvm-clippy
 
+build-guest:
+	@cargo run --release -p scroll-zkvm-build-guest
+
 test-execute-chunk:
 	@cargo test --release -p scroll-zkvm-integration --features scroll --test chunk_circuit test_execute -- --exact --nocapture
 

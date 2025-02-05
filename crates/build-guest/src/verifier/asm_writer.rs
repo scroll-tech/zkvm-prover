@@ -4,7 +4,7 @@ use openvm_stark_sdk::p3_baby_bear::BabyBear as F;
 
 use p3_field::{FieldAlgebra, PrimeField32};
 
-use crate::asm_utils::*;
+use super::asm_utils::*;
 
 const OPCODE: u32 = 0x0b;
 const FUNCT3: u32 = 0b111;

@@ -97,22 +97,35 @@ pub trait ProverTester {
     #[instrument("ProverTester::build", fields(project_root = Self::PATH_PROJECT_ROOT))]
     fn build() -> eyre::Result<Elf> {
         let guest_opts = GuestOptions::default().with_features([FEATURE_SCROLL]);
+        println!("building using path {}", Self::PATH_PROJECT_ROOT);
         let elf = Sdk.build(guest_opts, Self::PATH_PROJECT_ROOT, &Default::default())?;
         Ok(elf)
     }
 
+    fn load() -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
+        let path_assets: PathBuf = format!("{}/{}", Self::PATH_PROJECT_ROOT, "openvm").into();
+        let path_app_config = path_assets.join(FD_APP_CONFIG);
+        let app_config = read_app_config(&path_app_config)?;
+        let path_app_exe = path_assets.join(FD_APP_EXE);
+        Ok((path_app_config, app_config, path_app_exe))
+    }
     /// Transpile the ELF into a VmExe.
     #[instrument(
         "ProverTester::transpile",
         skip_all,
         fields(path_app_config, path_app_exe)
     )]
-    fn transpile(elf: Elf) -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
+    fn transpile(elf: Elf, path_assets: Option<PathBuf>) -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
         // Create the assets dir if not already present.
-        let path_assets = DIR_TESTRUN
-            .get()
-            .ok_or(eyre::eyre!("missing assets dir"))?
-            .join(Self::DIR_ASSETS);
+        let path_assets = match path_assets {
+            Some(path_assets) => path_assets,
+            None => {
+                DIR_TESTRUN
+                .get()
+                .ok_or(eyre::eyre!("missing assets dir"))?
+                .join(Self::DIR_ASSETS)
+            }
+        };
         std::fs::create_dir_all(&path_assets)?;
 
         // First read the app config specified in the project's root directory.
@@ -262,11 +275,7 @@ where
     <T::Prover as ProverType>::ProofMetadata: Clone,
     <T::Prover as ProverType>::ProofType: Clone,
 {
-    // Build the ELF binary from the circuit program.
-    let elf = T::build()?;
-
-    // Transpile the ELF into a VmExe.
-    let (path_app_config, _, path_exe) = T::transpile(elf)?;
+    let (path_app_config, _, path_exe) = T::load()?;
 
     // Setup prover.
     let cache_dir = DIR_TESTRUN
@@ -304,11 +313,7 @@ where
     <T::Prover as ProverType>::ProofMetadata: Clone,
     <T::Prover as ProverType>::ProofType: Clone,
 {
-    // Build the ELF binary from the circuit program.
-    let elf = T::build()?;
-
-    // Transpile the ELF into a VmExe.
-    let (path_app_config, _, path_exe) = T::transpile(elf)?;
+    let (path_app_config, _, path_exe) = T::load()?;
 
     // Setup prover.
     let cache_dir = DIR_TESTRUN
@@ -352,11 +357,7 @@ where
     <T::Prover as ProverType>::ProofMetadata: Clone,
     <T::Prover as ProverType>::ProofType: Clone,
 {
-    // Build the ELF binary from the circuit program.
-    let elf = T::build()?;
-
-    // Transpile the ELF into a VmExe.
-    let (path_app_config, _, path_exe) = T::transpile(elf)?;
+    let (path_app_config, _, path_exe) = T::load()?;
 
     // Setup prover.
     let path_assets = DIR_TESTRUN

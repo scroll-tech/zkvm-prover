@@ -51,7 +51,7 @@ fn exec_kernel(input: &[u32], output: &[u32]) {
     #[cfg(all(target_os = "zkvm", target_arch = "riscv32"))]
     unsafe {
         std::arch::asm!(
-            include_str!("../../../tools/generate-verifier-asm/root_verifier.asm"),
+            include_str!("../../../build-guest/root_verifier.asm"),
             inout("x28") _input_ptr,
             inout("x29") _output_ptr,
             inout("x30") _buf1,

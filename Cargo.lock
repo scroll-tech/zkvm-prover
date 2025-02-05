@@ -1159,6 +1159,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "cargo_metadata"
+version = "0.19.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8769706aad5d996120af43197bf46ef6ad0fda35216b4505f926a365a232d924"
+dependencies = [
+ "camino",
+ "cargo-platform",
+ "semver 1.0.25",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.11",
+]
+
+[[package]]
 name = "cc"
 version = "1.2.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1263,7 +1277,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "117725a109d387c937a1533ce01b450cbde6b88abceea8473c4d7a85853cda3c"
 dependencies = [
  "lazy_static",
- "windows-sys 0.48.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -2696,7 +2710,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc2f4eb4bc735547cfed7c0a4922cbd04a4655978c09b54f1f7b228750664c34"
 dependencies = [
  "cfg-if",
- "windows-targets 0.48.5",
+ "windows-targets 0.52.6",
 ]
 
 [[package]]
@@ -3347,7 +3361,7 @@ name = "openvm-build"
 version = "1.0.0-rc.0"
 source = "git+https://github.com/openvm-org/openvm.git?tag=v1.0.0-rc.0#d5b6cdef28a6297abbab210a5156e37b5a7dab23"
 dependencies = [
- "cargo_metadata",
+ "cargo_metadata 0.18.1",
  "dirs",
  "eyre",
  "hex",
@@ -6397,6 +6411,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "scroll-zkvm-build-guest"
+version = "0.1.0-rc.1"
+dependencies = [
+ "bitcode",
+ "cargo_metadata 0.19.1",
+ "halo2curves-axiom",
+ "openvm-instructions",
+ "openvm-native-compiler",
+ "openvm-native-recursion",
+ "openvm-rv32im-transpiler",
+ "openvm-sdk",
+ "openvm-stark-sdk",
+ "p3-field",
+ "scroll-zkvm-integration",
+ "scroll-zkvm-prover",
+ "serde",
+ "serde_json",
+ "serde_with",
+ "snark-verifier-sdk",
+]
+
+[[package]]
 name = "scroll-zkvm-bundle-circuit"
 version = "0.1.0-rc.1"
 dependencies = [
@@ -6514,25 +6550,6 @@ dependencies = [
  "scroll-zkvm-prover",
  "serde",
  "toml",
-]
-
-[[package]]
-name = "scroll-zkvm-tools-generate-verifier-asm"
-version = "0.1.0-rc.1"
-dependencies = [
- "bitcode",
- "halo2curves-axiom",
- "openvm-instructions",
- "openvm-native-compiler",
- "openvm-native-recursion",
- "openvm-rv32im-transpiler",
- "openvm-sdk",
- "openvm-stark-sdk",
- "p3-field",
- "serde",
- "serde_json",
- "serde_with",
- "snark-verifier-sdk",
 ]
 
 [[package]]
@@ -7729,7 +7746,7 @@ version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf221c93e13a30d793f7645a0e7762c55d169dbb0a49671918a2319d289b10bb"
 dependencies = [
- "windows-sys 0.48.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]

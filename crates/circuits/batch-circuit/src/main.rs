@@ -13,6 +13,11 @@ mod payload;
 
 openvm::entry!(main);
 
+mod child_commitments;
+use child_commitments::EXE_COMMIT as CHUNK_EXE_COMMIT;
+use child_commitments::LEAF_COMMIT as CHUNK_LEAF_COMMIT;
+
+/* 
 /// The commitment to the chunk program exe.
 const CHUNK_EXE_COMMIT: [u32; 8] = [
     1233178528, 835863246, 185337613, 1062380745, 1006025895, 1800931371, 848508197, 1288278302,
@@ -22,6 +27,7 @@ const CHUNK_EXE_COMMIT: [u32; 8] = [
 const CHUNK_LEAF_COMMIT: [u32; 8] = [
     1306725861, 917524666, 1051090997, 1927035141, 671332224, 1674673970, 495361509, 1117197118,
 ];
+*/
 
 fn main() {
     // Setup openvm extensions for the circuit.

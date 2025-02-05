@@ -4,7 +4,7 @@ use openvm_rv32im_transpiler::{BaseAluOpcode, Rv32LoadStoreOpcode};
 use openvm_stark_sdk::p3_baby_bear::BabyBear as F;
 use p3_field::{FieldAlgebra, PrimeField32};
 
-use crate::asm_utils::*;
+use super::asm_utils::*;
 
 //////////////// convert `hint_read`` and `publish` ///////////////////
 
