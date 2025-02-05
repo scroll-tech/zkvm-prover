@@ -7,7 +7,7 @@ openvm::entry!(main);
 
 /// The commitment to the batch program exe.
 const BATCH_EXE_COMMIT: [u32; 8] = [
-    86105397, 1915529684, 178668450, 1718691022, 1746222948, 1530989200, 1153315143, 1992566088,
+    385336439, 1505313270, 27681628, 120937705, 373468875, 938368382, 1052134188, 81732049,
 ];
 
 /// The commitment to the batch program leaf.

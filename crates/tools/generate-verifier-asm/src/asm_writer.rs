@@ -1,5 +1,5 @@
 use openvm_instructions::{LocalOpcode, instruction::Instruction, program::Program};
-use openvm_native_compiler::{asm::A0, NativeJalOpcode};
+use openvm_native_compiler::{NativeJalOpcode, asm::A0};
 use openvm_stark_sdk::p3_baby_bear::BabyBear as F;
 
 use p3_field::{FieldAlgebra, PrimeField32};

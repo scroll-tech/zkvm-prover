@@ -53,7 +53,6 @@ pub fn convert_hintread(op: Instruction<F>) -> Vec<Instruction<F>> {
     .collect::<Vec<_>>()
 }
 
-
 // This function assumes the pi is published in sequencial order
 // `convert_publish_v1` was a more general version, but now `castf` cannot write to register,
 // so I have to use the `idx` here.

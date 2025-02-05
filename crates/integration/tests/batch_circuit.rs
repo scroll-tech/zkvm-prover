@@ -1,5 +1,3 @@
-use sbv::primitives::types::BlockWitness;
-// use sbv::primitives::BlockWitness;
 use scroll_zkvm_integration::{
     ProverTester, prove_verify_multi, prove_verify_single,
     testers::{
@@ -8,15 +6,9 @@ use scroll_zkvm_integration::{
     },
     utils::build_batch_task,
 };
-use scroll_zkvm_prover::{
-    ChunkProof,
-    task::{batch::BatchProvingTask, chunk::ChunkProvingTask},
-    utils::{read_json, read_json_deep},
-};
+use scroll_zkvm_prover::{ChunkProof, task::batch::BatchProvingTask, utils::read_json_deep};
 
 fn load_recent_chunk_proofs() -> eyre::Result<BatchProvingTask> {
-    println!("cwd: {:?}", std::env::current_dir());
-    // glob last result of "".output/chunk-tests-*/chunk/proofs/chunk-*.json"
     let proof_path = glob::glob("../../.output/chunk-tests-*/chunk/proofs/chunk-*.json")?
         .next()
         .unwrap()?;

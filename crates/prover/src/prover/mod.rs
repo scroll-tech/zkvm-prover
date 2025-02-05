@@ -24,9 +24,8 @@ use openvm_sdk::{
     keygen::{AggStarkProvingKey, AppProvingKey, RootVerifierProvingKey},
     prover::ContinuationProver,
 };
-use openvm_stark_sdk::{
-    config::baby_bear_poseidon2::{BabyBearPoseidon2Config, BabyBearPoseidon2Engine},
-    utils::ProofInputForTest,
+use openvm_stark_sdk::config::baby_bear_poseidon2::{
+    BabyBearPoseidon2Config, BabyBearPoseidon2Engine,
 };
 use serde::{Serialize, de::DeserializeOwned};
 use tracing::{debug, instrument};
@@ -335,8 +334,8 @@ impl<Type: ProverType> Prover<Type> {
         let mut stdin = StdIn::default();
         stdin.write_bytes(&serialized);
 
-        if true
-        {
+        let mock_prove = false;
+        if mock_prove {
             println!(
                 "executing before proving, pc start: {}",
                 self.app_committed_exe.exe.pc_start
@@ -360,22 +359,18 @@ impl<Type: ProverType> Prover<Type> {
             let result = executor
                 .execute_and_generate(self.app_committed_exe.exe.clone(), stdin.clone())
                 .unwrap();
-            println!(
-                "segment len: {}",
-                result.per_segment.len(),
-            );
+            println!("segment len: {}", result.per_segment.len(),);
             for result in result.per_segment {
                 let (used_airs, per_air) = result
-                .per_air
-                .into_iter()
-                .map(|(air_id, x)| (airs[air_id].clone(), x))
-                .unzip();
+                    .per_air
+                    .into_iter()
+                    .map(|(air_id, x)| (airs[air_id].clone(), x))
+                    .unzip();
 
                 let engine = BabyBearPoseidon2Engine::new(self.app_pk.app_vm_pk.fri_params);
                 engine.run_test(used_airs, per_air).unwrap();
             }
             println!("debug check done");
-            
         }
 
         let task_id = task.identifier();
