@@ -24,7 +24,7 @@ pub fn main() {
     let workspace_dir = metadata.workspace_root;
     println!("workspace dir: {}", workspace_dir);
 
-    // dump_verifier(&format!("{workspace_dir}/crates/build-guest/root_verifier.asm"));
+    dump_verifier(&format!("{workspace_dir}/crates/build-guest/root_verifier.asm"));
 
     let chunk_elf = ChunkProverTester::build().unwrap();
     let output_path = format!("{workspace_dir}/crates/circuits/chunk-circuit/openvm");
