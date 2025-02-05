@@ -6536,23 +6536,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "scroll-zkvm-tools-display-commitments"
-version = "0.1.0-rc.1"
-dependencies = [
- "bitcode",
- "derivative",
- "halo2curves-axiom",
- "openvm",
- "openvm-native-recursion",
- "openvm-sdk",
- "openvm-stark-sdk",
- "scroll-zkvm-circuit-input-types",
- "scroll-zkvm-prover",
- "serde",
- "toml",
-]
-
-[[package]]
 name = "scroll-zkvm-verifier"
 version = "0.1.0-rc.1"
 dependencies = [

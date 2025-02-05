@@ -8,7 +8,6 @@ members = [
   "crates/verifier",
   "crates/integration",
   "crates/build-guest",
-  "crates/tools/display-commitments",
 ]
 resolver = "2"
 
