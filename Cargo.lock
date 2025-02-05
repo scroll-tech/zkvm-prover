@@ -844,7 +844,7 @@ dependencies = [
  "bitflags 2.8.0",
  "cexpr",
  "clang-sys",
- "itertools 0.13.0",
+ "itertools 0.11.0",
  "proc-macro2",
  "quote",
  "regex",
@@ -1277,7 +1277,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "117725a109d387c937a1533ce01b450cbde6b88abceea8473c4d7a85853cda3c"
 dependencies = [
  "lazy_static",
- "windows-sys 0.59.0",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
@@ -2710,7 +2710,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc2f4eb4bc735547cfed7c0a4922cbd04a4655978c09b54f1f7b228750664c34"
 dependencies = [
  "cfg-if",
- "windows-targets 0.52.6",
+ "windows-targets 0.48.5",
 ]
 
 [[package]]
@@ -6004,7 +6004,7 @@ dependencies = [
 [[package]]
 name = "revm"
 version = "18.0.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor%2Fv50#fac3706fafc5271d98e2697fc17e971a3e13fd76"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor%2Fv50#cdc4812a258cb20821f21fb93674bd9dc7c6ac7d"
 dependencies = [
  "auto_impl",
  "cfg-if",
@@ -6018,7 +6018,7 @@ dependencies = [
 [[package]]
 name = "revm-interpreter"
 version = "14.0.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor%2Fv50#fac3706fafc5271d98e2697fc17e971a3e13fd76"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor%2Fv50#cdc4812a258cb20821f21fb93674bd9dc7c6ac7d"
 dependencies = [
  "cfg-if",
  "revm-primitives",
@@ -6028,7 +6028,7 @@ dependencies = [
 [[package]]
 name = "revm-precompile"
 version = "15.0.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor%2Fv50#fac3706fafc5271d98e2697fc17e971a3e13fd76"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor%2Fv50#cdc4812a258cb20821f21fb93674bd9dc7c6ac7d"
 dependencies = [
  "aurora-engine-modexp",
  "blst",
@@ -6051,7 +6051,7 @@ dependencies = [
 [[package]]
 name = "revm-primitives"
 version = "14.0.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor%2Fv50#fac3706fafc5271d98e2697fc17e971a3e13fd76"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor%2Fv50#cdc4812a258cb20821f21fb93674bd9dc7c6ac7d"
 dependencies = [
  "alloy-eip2930",
  "alloy-eip7702",
@@ -7227,7 +7227,7 @@ dependencies = [
 [[package]]
 name = "tiny-keccak"
 version = "2.0.2"
-source = "git+https://github.com/scroll-tech/tiny-keccak?branch=scroll-patch-v2.0.2#5c1e7b11d87e6d6f40804f2012f6f3cc81098066"
+source = "git+https://github.com/scroll-tech/tiny-keccak?branch=scroll-patch-v2.0.2#8a40c4ebc7314b9c158e50504b73525628f15fd3"
 dependencies = [
  "cfg-if",
  "crunchy",
@@ -7746,7 +7746,7 @@ version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf221c93e13a30d793f7645a0e7762c55d169dbb0a49671918a2319d289b10bb"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
