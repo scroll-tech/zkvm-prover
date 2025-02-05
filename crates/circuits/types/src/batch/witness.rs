@@ -35,6 +35,9 @@ impl ProofCarryingWitness for ArchivedBatchWitness {
                     .iter()
                     .map(|u32_le| u32_le.to_native())
                     .collect(),
+                program_commit: archived
+                    .program_commit
+                    .map(|ct| ct.map(|u32_le| u32_le.to_native())),
             })
             .collect()
     }

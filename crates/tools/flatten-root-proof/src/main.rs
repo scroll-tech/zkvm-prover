@@ -16,6 +16,7 @@ use scroll_zkvm_circuit_input_types::proof::RootProofWithPublicValues;
 #[allow(dead_code)]
 fn flatten_root_vm_verifier_input(
     root_proof: &RootVmVerifierInput<BabyBearPoseidon2Config>,
+    program_commit: [[u32; 8]; 2],
 ) -> RootProofWithPublicValues {
     let full_proof_streams = root_proof.write();
 
@@ -38,6 +39,7 @@ fn flatten_root_vm_verifier_input(
     RootProofWithPublicValues {
         flattened_proof,
         public_values,
+        program_commit,
     }
 }
 
@@ -47,7 +49,7 @@ fn flatten_root_vm_verifier_input(
 // raw leaf commit: [505034789, 682334490, 407062982, 1227826652, 298205975, 1959777750, 1633765816, 97452666]
 // leaf commit: 0x000764f733c43fc78b9aa7ee26610bb86d754157eeea02e09b458c9b45fea600
 #[allow(dead_code)]
-fn display_commitments(guest_dir: &str) {
+fn calc_commitments_from_exe(guest_dir: &str) -> [[u32; 8]; 2] {
     let exe = read_exe_from_file(format!("{guest_dir}/app.vmexe")).unwrap();
     let app_pk: AppProvingKey<SdkVmConfig> =
         read_app_pk_from_file(format!("{guest_dir}/app.pk")).unwrap();
@@ -60,27 +62,27 @@ fn display_commitments(guest_dir: &str) {
         &committed_exe,
         &app_pk.leaf_committed_exe,
     );
-    println!(
-        "raw exe commit: {:?}",
-        commits.exe_commit.map(|x| x.as_canonical_u32())
-    );
-    println!("exe commit: {:?}", commits.exe_commit_to_bn254());
-    println!(
-        "raw leaf commit: {:?}",
+
+    let prog_commit = [
+        commits.exe_commit.map(|x| x.as_canonical_u32()),
         commits
             .leaf_vm_verifier_commit
-            .map(|x| x.as_canonical_u32())
-    );
+            .map(|x| x.as_canonical_u32()),
+    ];
+    // display
+    println!("raw exe commit: {:?}", prog_commit[0],);
+    println!("exe commit: {:?}", commits.exe_commit_to_bn254());
+    println!("raw leaf commit: {:?}", prog_commit[1],);
     println!("leaf commit: {:?}", commits.app_config_commit_to_bn254());
-    // commits
+    prog_commit
 }
 
 #[allow(dead_code)]
-fn flatten_proof(input: &str, output: &str) {
+fn flatten_proof(input: &str, output: &str, program_commit: [[u32; 8]; 2]) {
     let proof = scroll_zkvm_prover::ChunkProof::from_json(input).unwrap();
     let root_proof = proof.proof;
 
-    let flatten_root_proof = flatten_root_vm_verifier_input(&root_proof);
+    let flatten_root_proof = flatten_root_vm_verifier_input(&root_proof, program_commit);
     let flatten_proof_bytes = bitcode::serialize(&flatten_root_proof).unwrap();
 
     std::fs::write(output, flatten_proof_bytes.clone()).expect("fail to write");
@@ -89,7 +91,8 @@ fn flatten_proof(input: &str, output: &str) {
 fn main() {
     // assign args[0] to input and args[1] to output
     let input = std::env::args().nth(1).expect("no input file given");
-    display_commitments(input.as_str());
+    let _prog_commit = calc_commitments_from_exe(input.as_str());
+
     // let output = std::env::args().nth(2).expect("no output file given");
-    // flatten_proof(&input, &output);
+    // flatten_proof(&input, &output, prog_commit);
 }

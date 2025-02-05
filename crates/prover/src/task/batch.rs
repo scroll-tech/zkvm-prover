@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     ChunkProof,
-    task::{ProvingTask, flatten_root_proof},
+    task::{ProvingTask, flatten_wrapped_proof},
     utils::base64,
 };
 
@@ -34,7 +34,7 @@ impl ProvingTask for BatchProvingTask {
             chunk_proofs: self
                 .chunk_proofs
                 .iter()
-                .map(|p| flatten_root_proof(&p.proof))
+                .map(flatten_wrapped_proof)
                 .collect(),
             chunk_infos: self
                 .chunk_proofs

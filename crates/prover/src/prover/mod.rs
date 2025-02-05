@@ -147,12 +147,24 @@ impl<Type: ProverType> Prover<Type> {
 
     /// Pick up app commit as "vk" in proof, to distinguish from which circuit the proof comes
     pub fn get_app_vk(&self) -> Vec<u8> {
+        use openvm_sdk::commit::AppExecutionCommit;
         use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
-        self.app_committed_exe
-            .get_program_commit()
-            .into_iter()
-            .flat_map(|v| v.as_canonical_u32().to_be_bytes())
-            .collect()
+        use scroll_zkvm_circuit_input_types::proof::ProgramCommit;
+
+        let app_pk = &self.app_pk;
+
+        let commits = AppExecutionCommit::compute(
+            &app_pk.app_vm_pk.vm_config,
+            &self.app_committed_exe,
+            &app_pk.leaf_committed_exe,
+        );
+
+        let exe = commits.exe_commit.map(|v| v.as_canonical_u32());
+        let leaf = commits
+            .leaf_vm_verifier_commit
+            .map(|v| v.as_canonical_u32());
+        let prog_commit = ProgramCommit { exe, leaf };
+        prog_commit.serialize()
     }
 
     /// Pick up the actual vk (serialized) for evm proof, would be empty if prover
