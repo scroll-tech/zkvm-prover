@@ -15,6 +15,7 @@ sbv.workspace = true
 tracing.workspace = true
 
 openvm-circuit = { workspace = true }
+openvm-native-circuit = { workspace = true, default-features = false }
 openvm-native-recursion = { workspace = true }
 openvm-sdk = { workspace = true, default-features = false }
 openvm-stark-sdk = { workspace = true, default-features = false }

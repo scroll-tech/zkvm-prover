@@ -66,15 +66,15 @@ use std::path::Path;
 
 use scroll_zkvm_prover::{ChunkProver, task::ChunkProvingTask};
 
-// Paths to the application exe and proving key.
+// Paths to the application exe and application config.
 let path_exe = Path::new("./path/to/app.vmexe");
-let path_pk = Path::new("./path/to/app.pk");
+let path_app_config = Path::new("./path/to/openvm.toml");
 
 // Optional directory to cache generated proofs on disk.
 let cache_dir = Path::new("./path/to/cache/proofs");
 
 // Setup prover.
-let prover = ChunkProver::setup(&path_exe, &path_pk, Some(&cache_dir))?;
+let prover = ChunkProver::setup(&path_exe, &path_app_config, Some(&cache_dir))?;
 
 // Proving task of a chunk with 3 blocks.
 let block_witnesses = vec![
@@ -100,15 +100,15 @@ use std::path::Path;
 
 use scroll_zkvm_prover::{BatchProver, task::BatchProvingTask};
 
-// Paths to the application exe and proving key.
+// Paths to the application exe and application config.
 let path_exe = Path::new("./path/to/app.vmexe");
-let path_pk = Path::new("./path/to/app.pk");
+let path_app_config = Path::new("./path/to/openvm.toml");
 
 // Optional directory to cache generated proofs on disk.
 let cache_dir = Path::new("./path/to/cache/proofs");
 
 // Setup prover.
-let prover = BatchProver::setup(&path_exe, &path_pk, Some(&cache_dir))?;
+let prover = BatchProver::setup(&path_exe, &path_app_config, Some(&cache_dir))?;
 
 // Task that proves batching of a number of chunks.
 let task = BatchProvingTask {
@@ -133,9 +133,9 @@ use std::path::Path;
 
 use scroll_zkvm_prover::{BundleProver, task::BundleProvingTask};
 
-// Paths to the application exe and proving key.
+// Paths to the application exe and application config.
 let path_exe = Path::new("./path/to/app.vmexe");
-let path_pk = Path::new("./path/to/app.pk");
+let path_app_config = Path::new("./path/to/openvm.toml");
 
 // Optional directory to cache generated proofs on disk.
 let cache_dir = Path::new("./path/to/cache/proofs");
@@ -143,7 +143,7 @@ let cache_dir = Path::new("./path/to/cache/proofs");
 // Setup prover.
 //
 // The Bundle Prover's setup also looks into $HOME/.openvm for halo2-based setup parameters.
-let prover = BundleProver::setup(&path_exe, &path_pk, Some(&cache_dir))?;
+let prover = BundleProver::setup(&path_exe, &path_app_config, Some(&cache_dir))?;
 
 // Task that proves batching of a number of chunks.
 let task = BundleProvingTask {

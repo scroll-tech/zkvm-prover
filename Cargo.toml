@@ -18,7 +18,7 @@ edition = "2021"
 homepage = "https://github.com/scroll-tech/zkvm-prover"
 readme = "README.md"
 repository = "https://github.com/scroll-tech/zkvm-prover"
-version = "0.1.0"
+version = "0.1.0-rc.1"
 
 [workspace.dependencies]
 openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "d45b226" }

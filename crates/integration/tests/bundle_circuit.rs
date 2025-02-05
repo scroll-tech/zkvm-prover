@@ -8,19 +8,6 @@ use scroll_zkvm_integration::{
 use scroll_zkvm_prover::task::bundle::BundleProvingTask;
 
 #[test]
-fn setup() -> eyre::Result<()> {
-    BundleProverTester::setup()?;
-
-    let elf = BundleProverTester::build()?;
-
-    let (app_config, _) = BundleProverTester::transpile(elf)?;
-
-    BundleProverTester::keygen(app_config)?;
-
-    Ok(())
-}
-
-#[test]
 fn setup_prove_verify() -> eyre::Result<()> {
     BundleProverTester::setup()?;
 

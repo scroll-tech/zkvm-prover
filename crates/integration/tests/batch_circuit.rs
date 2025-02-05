@@ -8,25 +8,12 @@ use scroll_zkvm_integration::{
 };
 
 #[test]
-fn setup() -> eyre::Result<()> {
-    BatchProverTester::setup()?;
-
-    let elf = BatchProverTester::build()?;
-
-    let (app_config, _) = BatchProverTester::transpile(elf)?;
-
-    BatchProverTester::keygen(app_config)?;
-
-    Ok(())
-}
-
-#[test]
 fn test_execute() -> eyre::Result<()> {
     MultiBatchProverTester::setup()?;
 
     let elf = MultiBatchProverTester::build()?;
 
-    let (app_config, exe_path) = MultiBatchProverTester::transpile(elf)?;
+    let (_, app_config, exe_path) = MultiBatchProverTester::transpile(elf)?;
 
     for task in MultiBatchProverTester::gen_multi_proving_tasks()? {
         MultiBatchProverTester::execute(app_config.clone(), &task, exe_path.clone())?;

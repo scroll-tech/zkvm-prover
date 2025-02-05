@@ -13,15 +13,6 @@ clippy:
 	@cargo clippy --manifest-path crates/verifier/Cargo.toml
 	sh openvm-clippy
 
-setup-chunk:
-	@cargo test --release -p scroll-zkvm-integration --features scroll --test chunk_circuit setup -- --exact --nocapture
-
-setup-batch:
-	@cargo test --release -p scroll-zkvm-integration --features scroll --test batch_circuit setup -- --exact --nocapture
-
-setup-bundle:
-	@cargo test --release -p scroll-zkvm-integration --features scroll --test bundle_circuit setup -- --exact --nocapture
-
 test-execute-chunk:
 	@cargo test --release -p scroll-zkvm-integration --features scroll --test chunk_circuit test_execute -- --exact --nocapture
 
