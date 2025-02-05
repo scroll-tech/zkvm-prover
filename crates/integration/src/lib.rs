@@ -115,16 +115,17 @@ pub trait ProverTester {
         skip_all,
         fields(path_app_config, path_app_exe)
     )]
-    fn transpile(elf: Elf, path_assets: Option<PathBuf>) -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
+    fn transpile(
+        elf: Elf,
+        path_assets: Option<PathBuf>,
+    ) -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
         // Create the assets dir if not already present.
         let path_assets = match path_assets {
             Some(path_assets) => path_assets,
-            None => {
-                DIR_TESTRUN
+            None => DIR_TESTRUN
                 .get()
                 .ok_or(eyre::eyre!("missing assets dir"))?
-                .join(Self::DIR_ASSETS)
-            }
+                .join(Self::DIR_ASSETS),
         };
         std::fs::create_dir_all(&path_assets)?;
 

@@ -73,7 +73,14 @@ pub struct Prover<Type> {
 
 /// Alias for convenience.
 pub type ProgramCommitments = [[u32; 8]; 2];
-type InitRes = Result<(Arc<VmCommittedExe<SC>>, Arc<AppProvingKey<SdkVmConfig>>, ProgramCommitments), Error>;
+type InitRes = Result<
+    (
+        Arc<VmCommittedExe<SC>>,
+        Arc<AppProvingKey<SdkVmConfig>>,
+        ProgramCommitments,
+    ),
+    Error,
+>;
 
 /// Alias for convenience.
 pub type SC = BabyBearPoseidon2Config;
@@ -292,33 +299,29 @@ impl<Type: ProverType> Prover<Type> {
             .map_err(|e| Error::Commit(e.to_string()))?;
 
         // print the 2 exe commitments
-        
-            use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
-            let commits = AppExecutionCommit::compute(
-                &app_pk.app_vm_pk.vm_config,
-                &app_committed_exe,
-                &app_pk.leaf_committed_exe,
-            );
-            let exe_commit = commits.exe_commit.map(|x| x.as_canonical_u32());
-            println!(
-                "raw exe commit: {:?}",
-                exe_commit
-            );
-            println!("exe commit: {:?}", commits.exe_commit_to_bn254());
-            let leaf_commit = commits
+
+        use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
+        let commits = AppExecutionCommit::compute(
+            &app_pk.app_vm_pk.vm_config,
+            &app_committed_exe,
+            &app_pk.leaf_committed_exe,
+        );
+        let exe_commit = commits.exe_commit.map(|x| x.as_canonical_u32());
+        println!("raw exe commit: {:?}", exe_commit);
+        println!("exe commit: {:?}", commits.exe_commit_to_bn254());
+        let leaf_commit = commits
             .leaf_vm_verifier_commit
             .map(|x| x.as_canonical_u32());
-            println!(
-                "raw leaf commit: {:?}",
-                leaf_commit
-            );
-            println!("leaf commit: {:?}", commits.app_config_commit_to_bn254());
-        
+        println!("raw leaf commit: {:?}", leaf_commit);
+        println!("leaf commit: {:?}", commits.app_config_commit_to_bn254());
 
         let _agg_stark_pk = AGG_STARK_PROVING_KEY
             .get_or_init(|| AggStarkProvingKey::keygen(AggStarkConfig::default()));
 
-        Ok((app_committed_exe, Arc::new(app_pk), [exe_commit,leaf_commit]))
+        Ok((app_committed_exe, Arc::new(app_pk), [
+            exe_commit,
+            leaf_commit,
+        ]))
     }
 
     /// Generate a [root proof][root_proof].

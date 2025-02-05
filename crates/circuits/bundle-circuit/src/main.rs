@@ -5,21 +5,17 @@ use circuit::BundleCircuit as C;
 
 openvm::entry!(main);
 
-
 mod child_commitments;
-use child_commitments::EXE_COMMIT as BATCH_EXE_COMMIT;
-use child_commitments::LEAF_COMMIT as BATCH_LEAF_COMMIT;
-/* 
-/// The commitment to the batch program exe.
-const BATCH_EXE_COMMIT: [u32; 8] = [
-    385336439, 1505313270, 27681628, 120937705, 373468875, 938368382, 1052134188, 81732049,
-];
-
-/// The commitment to the batch program leaf.
-const BATCH_LEAF_COMMIT: [u32; 8] = [
-    701140902, 366847636, 1087740927, 1189864384, 238260632, 233222120, 1487188715, 55637380,
-];
-*/
+use child_commitments::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT};
+// The commitment to the batch program exe.
+// const BATCH_EXE_COMMIT: [u32; 8] = [
+// 385336439, 1505313270, 27681628, 120937705, 373468875, 938368382, 1052134188, 81732049,
+// ];
+//
+// The commitment to the batch program leaf.
+// const BATCH_LEAF_COMMIT: [u32; 8] = [
+// 701140902, 366847636, 1087740927, 1189864384, 238260632, 233222120, 1487188715, 55637380,
+// ];
 
 fn main() {
     // Setup openvm extensions for the circuit.
