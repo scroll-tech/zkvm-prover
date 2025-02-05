@@ -2,7 +2,7 @@ use scroll_zkvm_circuit_input_types::bundle::BundleWitness;
 
 use crate::{
     BatchProof,
-    task::{ProvingTask, flatten_root_proof},
+    task::{ProvingTask, flatten_wrapped_proof},
 };
 
 /// Message indicating a sanity check failure.
@@ -38,7 +38,7 @@ impl ProvingTask for BundleProvingTask {
             batch_proofs: self
                 .batch_proofs
                 .iter()
-                .map(|wrapped_proof| flatten_root_proof(&wrapped_proof.proof))
+                .map(flatten_wrapped_proof)
                 .collect(),
             batch_infos: self
                 .batch_proofs

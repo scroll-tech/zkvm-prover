@@ -14,6 +14,35 @@ pub struct RootProofWithPublicValues {
     pub flattened_proof: Vec<u32>,
     /// Flattened public values.
     pub public_values: Vec<u32>,
+    /// Represent the commitment needed to verify a root proof
+    pub program_commit: [[u32; 8]; 2],
+}
+
+/// Represent the commitment needed to verify a root proof
+#[derive(Clone, Debug, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[rkyv(derive(Debug))]
+pub struct ProgramCommit {
+    /// The commitment to the root verifier's exe.
+    pub exe: [u32; 8],
+    /// The commitment to the root verifier's leaf.
+    pub leaf: [u32; 8],
+}
+
+impl ProgramCommit {
+    pub fn deserialize(commit_bytes: &[u8]) -> Self {
+        let archived_data =
+            rkyv::access::<ArchivedProgramCommit, rkyv::rancor::BoxedError>(commit_bytes).unwrap();
+        Self {
+            exe: archived_data.exe.map(|u32_le| u32_le.to_native()),
+            leaf: archived_data.leaf.map(|u32_le| u32_le.to_native()),
+        }
+    }
+
+    pub fn serialize(&self) -> Vec<u8> {
+        rkyv::to_bytes::<rkyv::rancor::BoxedError>(self)
+            .map(|v| v.to_vec())
+            .unwrap()
+    }
 }
 
 /// Number of public-input values, i.e. [u32; N].

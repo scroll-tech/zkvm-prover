@@ -5,8 +5,10 @@ use crate::{ProofCarryingWitness, batch::BatchInfo, proof::RootProofWithPublicVa
 #[rkyv(derive(Debug))]
 pub struct BundleWitness {
     /// Batch proofs being aggregated in the bundle.
+    #[rkyv()]
     pub batch_proofs: Vec<RootProofWithPublicValues>,
     /// Public-input values for the corresponding batch proofs.
+    #[rkyv()]
     pub batch_infos: Vec<BatchInfo>,
 }
 
@@ -25,6 +27,9 @@ impl ProofCarryingWitness for ArchivedBundleWitness {
                     .iter()
                     .map(|u32_le| u32_le.to_native())
                     .collect(),
+                program_commit: archived
+                    .program_commit
+                    .map(|ct| ct.map(|u32_le| u32_le.to_native())),
             })
             .collect()
     }
