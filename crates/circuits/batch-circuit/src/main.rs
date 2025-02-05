@@ -13,6 +13,7 @@ mod payload;
 
 openvm::entry!(main);
 
+#[rustfmt::skip]
 mod child_commitments;
 use child_commitments::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT};
 

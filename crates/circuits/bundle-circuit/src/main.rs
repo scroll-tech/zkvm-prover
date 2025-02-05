@@ -5,6 +5,7 @@ use circuit::BundleCircuit as C;
 
 openvm::entry!(main);
 
+#[rustfmt::skip]
 mod child_commitments;
 use child_commitments::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT};
 // The commitment to the batch program exe.
