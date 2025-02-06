@@ -15,7 +15,6 @@ openvm::entry!(main);
 
 #[rustfmt::skip]
 mod child_commitments;
-use child_commitments::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT};
 
 // The commitment to the chunk program exe.
 // const CHUNK_EXE_COMMIT: [u32; 8] = [
@@ -38,7 +37,7 @@ fn main() {
     let witness = C::deserialize_witness(&witness_bytes);
 
     // Verify the root proofs being aggregated in the circuit.
-    let agg_proofs = C::verify_proofs(witness, [CHUNK_EXE_COMMIT, CHUNK_LEAF_COMMIT]);
+    let agg_proofs = C::verify_proofs(witness);
 
     // Get the public-input values of the proofs being aggregated from witness.
     let agg_pis = C::aggregated_public_inputs(witness);

@@ -64,18 +64,20 @@ where
     /// The public-input values of the proofs being aggregated.
     type AggregatedPublicInputs: PublicInputs;
 
+    /// Check if the commitment in proof is valid (from program(s)
+    /// we have expected)
+    fn verify_commitments(_prog_commitment: &[[u32; 8]; 2]);
+
     /// Verify the proofs being aggregated.
     ///
     /// Also returns the root proofs being aggregated.
-    fn verify_proofs(
-        witness: &Self::Witness,
-        program_commitments: [[u32; 8]; 2],
-    ) -> Vec<RootProofWithPublicValues> {
+    fn verify_proofs(witness: &Self::Witness) -> Vec<RootProofWithPublicValues> {
         let proofs = witness.get_proofs();
 
         for proof in proofs.iter() {
+            Self::verify_commitments(&proof.program_commit);
             proof::verify_proof(
-                program_commitments,
+                proof.program_commit,
                 proof.flattened_proof.as_slice(),
                 proof.public_values.as_slice(),
             );

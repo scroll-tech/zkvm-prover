@@ -7,6 +7,7 @@ use scroll_zkvm_circuit_input_types::{
     utils::read_witnesses,
 };
 
+use crate::child_commitments::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT};
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use openvm_keccak256_guest; // trigger extern native-keccak256
 
@@ -41,6 +42,21 @@ impl Circuit for BatchCircuit {
 
 impl AggCircuit for BatchCircuit {
     type AggregatedPublicInputs = ChunkInfo;
+
+    fn verify_commitments(prog_commitment: &[[u32; 8]; 2]) {
+        if prog_commitment[0] != CHUNK_EXE_COMMIT {
+            panic!(
+                "exe commit for chunk proof is not match: expdcted {:?} but have {:?}",
+                CHUNK_EXE_COMMIT, prog_commitment[0]
+            );
+        }
+        if prog_commitment[1] != CHUNK_LEAF_COMMIT {
+            panic!(
+                "leaf commit for chunk proof is not match: expdcted {:?} but have {:?}",
+                CHUNK_EXE_COMMIT, prog_commitment[1]
+            );
+        }
+    }
 
     fn aggregated_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs> {
         witness

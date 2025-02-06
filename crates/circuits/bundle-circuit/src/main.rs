@@ -7,7 +7,6 @@ openvm::entry!(main);
 
 #[rustfmt::skip]
 mod child_commitments;
-use child_commitments::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT};
 // The commitment to the batch program exe.
 // const BATCH_EXE_COMMIT: [u32; 8] = [
 // 385336439, 1505313270, 27681628, 120937705, 373468875, 938368382, 1052134188, 81732049,
@@ -29,7 +28,7 @@ fn main() {
     let witness = C::deserialize_witness(&witness_bytes);
 
     // Verify the root proofs being aggregated in this circuit.
-    let agg_proofs = C::verify_proofs(witness, [BATCH_EXE_COMMIT, BATCH_LEAF_COMMIT]); // FIXME
+    let agg_proofs = C::verify_proofs(witness); // FIXME
 
     // Get the public-input values of the aggregated proofs from witness.
     let agg_pis = C::aggregated_public_inputs(witness);
