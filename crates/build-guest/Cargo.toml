@@ -1,0 +1,25 @@
+[package]
+name = "scroll-zkvm-build-guest"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+openvm-instructions.workspace = true
+openvm-native-compiler.workspace = true
+openvm-native-recursion.workspace = true
+openvm-rv32im-transpiler.workspace = true
+openvm-sdk.workspace = true
+openvm-stark-sdk.workspace = true
+
+bitcode.workspace = true
+halo2curves-axiom.workspace = true
+p3-field.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_with.workspace = true
+snark-verifier-sdk.workspace = true
+
+scroll-zkvm-integration.workspace = true
+scroll-zkvm-prover.workspace = true
+
+cargo_metadata = "0.19.1"

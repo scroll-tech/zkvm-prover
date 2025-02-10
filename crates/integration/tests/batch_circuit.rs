@@ -2,10 +2,29 @@ use scroll_zkvm_integration::{
     ProverTester, prove_verify_multi, prove_verify_single,
     testers::{
         batch::{BatchProverTester, MultiBatchProverTester},
-        chunk::MultiChunkProverTester,
+        chunk::{ChunkProverTester, MultiChunkProverTester},
     },
     utils::build_batch_task,
 };
+use scroll_zkvm_prover::{ChunkProof, task::batch::BatchProvingTask, utils::read_json_deep};
+
+fn load_recent_chunk_proofs() -> eyre::Result<BatchProvingTask> {
+    let proof_path = glob::glob("../../.output/chunk-tests-*/chunk/proofs/chunk-*.json")?
+        .next()
+        .unwrap()?;
+    println!("proof_path: {:?}", proof_path);
+    let chunk_proof = read_json_deep::<_, ChunkProof>(&proof_path)?;
+
+    let chunk_task = ChunkProverTester::gen_proving_task()?;
+
+    let task = build_batch_task(
+        &[chunk_task],
+        &[chunk_proof],
+        scroll_zkvm_circuit_input_types::batch::MAX_AGG_CHUNKS,
+        Default::default(),
+    );
+    Ok(task)
+}
 
 #[test]
 fn test_execute() -> eyre::Result<()> {
@@ -13,9 +32,11 @@ fn test_execute() -> eyre::Result<()> {
 
     let elf = MultiBatchProverTester::build()?;
 
-    let (_, app_config, exe_path) = MultiBatchProverTester::transpile(elf)?;
+    let (_, app_config, exe_path) = MultiBatchProverTester::transpile(elf, None)?;
 
-    for task in MultiBatchProverTester::gen_multi_proving_tasks()? {
+    // let tasks = MultiBatchProverTester::gen_multi_proving_tasks()?;
+    let tasks = vec![load_recent_chunk_proofs()?];
+    for task in tasks {
         MultiBatchProverTester::execute(app_config.clone(), &task, exe_path.clone())?;
     }
 
@@ -26,7 +47,8 @@ fn test_execute() -> eyre::Result<()> {
 fn setup_prove_verify_single() -> eyre::Result<()> {
     BatchProverTester::setup()?;
 
-    prove_verify_single::<BatchProverTester>(None)?;
+    let task = load_recent_chunk_proofs()?;
+    prove_verify_single::<BatchProverTester>(Some(task))?;
 
     Ok(())
 }

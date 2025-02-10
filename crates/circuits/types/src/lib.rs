@@ -1,7 +1,5 @@
 use alloy_primitives::B256;
 
-use crate::proof::RootProofWithPublicValues;
-
 pub mod batch;
 
 pub mod bundle;
@@ -50,7 +48,7 @@ pub trait Circuit {
     fn reveal_pi(pi: &Self::PublicInputs) {
         for (i, part) in pi.pi_hash().chunks_exact(CHUNK_SIZE).enumerate() {
             let value = u32::from_le_bytes(part.try_into().unwrap());
-            openvm::io::print(format!("pi[{i}] = {value:?}"));
+            openvm::io::println(format!("pi[{i}] = {value:?}"));
             openvm::io::reveal(value, i)
         }
     }
@@ -64,14 +62,20 @@ where
     /// The public-input values of the proofs being aggregated.
     type AggregatedPublicInputs: PublicInputs;
 
+    /// Check if the commitment in proof is valid (from program(s)
+    /// we have expected)
+    fn verify_commitments(commitment: &proof::ProgramCommitment);
+
     /// Verify the proofs being aggregated.
     ///
     /// Also returns the root proofs being aggregated.
-    fn verify_proofs(witness: &Self::Witness) -> Vec<RootProofWithPublicValues> {
+    fn verify_proofs(witness: &Self::Witness) -> Vec<proof::RootProofWithPublicValues> {
         let proofs = witness.get_proofs();
 
         for proof in proofs.iter() {
+            Self::verify_commitments(&proof.commitment);
             proof::verify_proof(
+                &proof.commitment,
                 proof.flattened_proof.as_slice(),
                 proof.public_values.as_slice(),
             );
@@ -84,7 +88,7 @@ where
     fn aggregated_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs>;
 
     /// Derive the public-input hashes of the aggregated proofs from the proofs itself.
-    fn aggregated_pi_hashes(proofs: &[RootProofWithPublicValues]) -> Vec<B256>;
+    fn aggregated_pi_hashes(proofs: &[proof::RootProofWithPublicValues]) -> Vec<B256>;
 
     /// Validate that the public-input values of the aggregated proofs are well-formed.
     ///
@@ -111,5 +115,5 @@ where
 /// aggregated.
 pub trait ProofCarryingWitness {
     /// Get the root proofs from the witness.
-    fn get_proofs(&self) -> Vec<RootProofWithPublicValues>;
+    fn get_proofs(&self) -> Vec<proof::RootProofWithPublicValues>;
 }

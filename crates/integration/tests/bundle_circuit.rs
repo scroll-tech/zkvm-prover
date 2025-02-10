@@ -5,13 +5,27 @@ use scroll_zkvm_integration::{
     },
     utils::{LastHeader, build_batch_task},
 };
-use scroll_zkvm_prover::task::bundle::BundleProvingTask;
+use scroll_zkvm_prover::{BatchProof, task::bundle::BundleProvingTask, utils::read_json_deep};
+
+fn load_recent_batch_proofs() -> eyre::Result<BundleProvingTask> {
+    let proof_path = glob::glob("../../.output/batch-tests-*/batch/proofs/batch-*.json")?
+        .next()
+        .unwrap()?;
+    println!("proof_path: {:?}", proof_path);
+    let batch_proof = read_json_deep::<_, BatchProof>(&proof_path)?;
+
+    let task = BundleProvingTask {
+        batch_proofs: vec![batch_proof],
+    };
+    Ok(task)
+}
 
 #[test]
 fn setup_prove_verify() -> eyre::Result<()> {
     BundleProverTester::setup()?;
 
-    prove_verify_single_evm::<BundleProverTester>(None)?;
+    let task = load_recent_batch_proofs()?;
+    prove_verify_single_evm::<BundleProverTester>(Some(task))?;
 
     Ok(())
 }

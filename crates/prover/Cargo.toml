@@ -14,7 +14,7 @@ rkyv.workspace = true
 sbv.workspace = true
 tracing.workspace = true
 
-openvm-circuit = { workspace = true }
+openvm-circuit = { workspace = true, features = ["test-utils"] }
 openvm-native-circuit = { workspace = true, default-features = false }
 openvm-native-recursion = { workspace = true }
 openvm-sdk = { workspace = true, default-features = false }
@@ -34,3 +34,4 @@ revm = "18.0"
 [features]
 default = ["scroll"]
 scroll = ["sbv/scroll"]
+execute-and-prove = []

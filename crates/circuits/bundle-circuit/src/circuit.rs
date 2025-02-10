@@ -3,10 +3,11 @@ use scroll_zkvm_circuit_input_types::{
     AggCircuit, Circuit,
     batch::BatchInfo,
     bundle::{ArchivedBundleWitness, BundleInfo},
-    proof::RootProofWithPublicValues,
+    proof::{ProgramCommitment, RootProofWithPublicValues},
     utils::read_witnesses,
 };
 
+use crate::child_commitments::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT};
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use openvm_keccak256_guest;
 
@@ -73,6 +74,21 @@ impl Circuit for BundleCircuit {
 
 impl AggCircuit for BundleCircuit {
     type AggregatedPublicInputs = BatchInfo;
+
+    fn verify_commitments(commitment: &ProgramCommitment) {
+        if commitment.exe != BATCH_EXE_COMMIT {
+            panic!(
+                "mismatch batch-proof exe commitment: expected={:?}, got={:?}",
+                BATCH_EXE_COMMIT, commitment.exe,
+            );
+        }
+        if commitment.leaf != BATCH_LEAF_COMMIT {
+            panic!(
+                "mismatch batch-proof leaf commitment: expected={:?}, got={:?}",
+                BATCH_EXE_COMMIT, commitment.leaf,
+            );
+        }
+    }
 
     fn aggregated_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs> {
         witness

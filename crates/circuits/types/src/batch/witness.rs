@@ -1,4 +1,8 @@
-use crate::{ProofCarryingWitness, chunk::ChunkInfo, proof::RootProofWithPublicValues};
+use crate::{
+    ProofCarryingWitness,
+    chunk::ChunkInfo,
+    proof::{ProgramCommitment, RootProofWithPublicValues},
+};
 
 use super::ReferenceHeader;
 
@@ -35,6 +39,7 @@ impl ProofCarryingWitness for ArchivedBatchWitness {
                     .iter()
                     .map(|u32_le| u32_le.to_native())
                     .collect(),
+                commitment: ProgramCommitment::from(&archived.commitment),
             })
             .collect()
     }

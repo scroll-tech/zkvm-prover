@@ -5,6 +5,7 @@ use std::{
 
 use once_cell::sync::OnceCell;
 use openvm_build::GuestOptions;
+use openvm_circuit::openvm_stark_sdk::p3_baby_bear::BabyBear;
 use openvm_native_recursion::halo2::EvmProof;
 use openvm_sdk::{
     Sdk, StdIn,
@@ -101,18 +102,33 @@ pub trait ProverTester {
         Ok(elf)
     }
 
+    /// Load the app config.
+    fn load() -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
+        let path_assets = Path::new(Self::PATH_PROJECT_ROOT).join("openvm");
+        let path_app_config = path_assets.join(FD_APP_CONFIG);
+        let app_config = read_app_config(&path_app_config)?;
+        let path_app_exe = path_assets.join(FD_APP_EXE);
+        Ok((path_app_config, app_config, path_app_exe))
+    }
+
     /// Transpile the ELF into a VmExe.
     #[instrument(
         "ProverTester::transpile",
         skip_all,
         fields(path_app_config, path_app_exe)
     )]
-    fn transpile(elf: Elf) -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
+    fn transpile(
+        elf: Elf,
+        path_assets: Option<PathBuf>,
+    ) -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
         // Create the assets dir if not already present.
-        let path_assets = DIR_TESTRUN
-            .get()
-            .ok_or(eyre::eyre!("missing assets dir"))?
-            .join(Self::DIR_ASSETS);
+        let path_assets = match path_assets {
+            Some(path_assets) => path_assets,
+            None => DIR_TESTRUN
+                .get()
+                .ok_or(eyre::eyre!("missing assets dir"))?
+                .join(Self::DIR_ASSETS),
+        };
         std::fs::create_dir_all(&path_assets)?;
 
         // First read the app config specified in the project's root directory.
@@ -159,21 +175,19 @@ pub trait ProverTester {
         app_config: AppConfig<SdkVmConfig>,
         task: &<Self::Prover as ProverType>::ProvingTask,
         exe_path: impl AsRef<Path>,
-    ) -> eyre::Result<()> {
+    ) -> eyre::Result<Vec<BabyBear>> {
         let serialized = task.to_witness_serialized()?;
 
         let mut stdin = StdIn::default();
         stdin.write_bytes(&serialized);
 
-        Sdk.execute(read_app_exe(exe_path)?, app_config.app_vm_config, stdin)?;
-
-        Ok(())
+        Ok(Sdk.execute(read_app_exe(exe_path)?, app_config.app_vm_config, stdin)?)
     }
 
     fn execute_with_proving_task(
         app_config: AppConfig<SdkVmConfig>,
         exe_path: impl AsRef<Path>,
-    ) -> eyre::Result<()> {
+    ) -> eyre::Result<Vec<BabyBear>> {
         Self::execute(app_config, &Self::gen_proving_task()?, exe_path)
     }
 }
@@ -261,11 +275,7 @@ where
     <T::Prover as ProverType>::ProofMetadata: Clone,
     <T::Prover as ProverType>::ProofType: Clone,
 {
-    // Build the ELF binary from the circuit program.
-    let elf = T::build()?;
-
-    // Transpile the ELF into a VmExe.
-    let (path_app_config, _, path_exe) = T::transpile(elf)?;
+    let (path_app_config, _, path_exe) = T::load()?;
 
     // Setup prover.
     let cache_dir = DIR_TESTRUN
@@ -303,11 +313,7 @@ where
     <T::Prover as ProverType>::ProofMetadata: Clone,
     <T::Prover as ProverType>::ProofType: Clone,
 {
-    // Build the ELF binary from the circuit program.
-    let elf = T::build()?;
-
-    // Transpile the ELF into a VmExe.
-    let (path_app_config, _, path_exe) = T::transpile(elf)?;
+    let (path_app_config, _, path_exe) = T::load()?;
 
     // Setup prover.
     let cache_dir = DIR_TESTRUN
@@ -351,11 +357,7 @@ where
     <T::Prover as ProverType>::ProofMetadata: Clone,
     <T::Prover as ProverType>::ProofType: Clone,
 {
-    // Build the ELF binary from the circuit program.
-    let elf = T::build()?;
-
-    // Transpile the ELF into a VmExe.
-    let (path_app_config, _, path_exe) = T::transpile(elf)?;
+    let (path_app_config, _, path_exe) = T::load()?;
 
     // Setup prover.
     let path_assets = DIR_TESTRUN

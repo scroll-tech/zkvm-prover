@@ -5,6 +5,9 @@ use circuit::BundleCircuit as C;
 
 openvm::entry!(main);
 
+#[rustfmt::skip]
+mod child_commitments;
+
 fn main() {
     // Setup openvm extensions for the circuit.
     C::setup();
