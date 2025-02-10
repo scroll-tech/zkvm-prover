@@ -6391,7 +6391,7 @@ checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
 name = "scroll-zkvm-batch-circuit"
-version = "0.1.0-rc.1"
+version = "0.1.0-rc.2"
 dependencies = [
  "alloy-primitives",
  "bitcode",
@@ -6412,7 +6412,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-build-guest"
-version = "0.1.0-rc.1"
+version = "0.1.0-rc.2"
 dependencies = [
  "bitcode",
  "cargo_metadata 0.19.1",
@@ -6434,7 +6434,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-bundle-circuit"
-version = "0.1.0-rc.1"
+version = "0.1.0-rc.2"
 dependencies = [
  "alloy-primitives",
  "openvm",
@@ -6447,7 +6447,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-chunk-circuit"
-version = "0.1.0-rc.1"
+version = "0.1.0-rc.2"
 dependencies = [
  "openvm",
  "openvm-algebra-complex-macros",
@@ -6464,7 +6464,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-circuit-input-types"
-version = "0.1.0-rc.1"
+version = "0.1.0-rc.2"
 dependencies = [
  "alloy-primitives",
  "alloy-serde",
@@ -6478,7 +6478,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-integration"
-version = "0.1.0-rc.1"
+version = "0.1.0-rc.2"
 dependencies = [
  "alloy-primitives",
  "bls12_381 0.8.0",
@@ -6510,7 +6510,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-prover"
-version = "0.1.0-rc.1"
+version = "0.1.0-rc.2"
 dependencies = [
  "alloy-primitives",
  "base64",
@@ -6537,7 +6537,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-verifier"
-version = "0.1.0-rc.1"
+version = "0.1.0-rc.2"
 dependencies = [
  "eyre",
  "openvm-native-recursion",
