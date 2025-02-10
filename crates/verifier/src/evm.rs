@@ -14,14 +14,16 @@ pub use snark_verifier_sdk::{
     },
 };
 
-/// Serialize vk, code extracted from legacy prover
+/// Serialize vk, code extracted from legacy prover.
 pub fn serialize_vk(vk: &VerifyingKey<G1Affine>) -> Vec<u8> {
     let mut result = Vec::<u8>::new();
     vk.write(&mut result, SerdeFormat::Processed).unwrap();
     result
 }
 
-/// Deserialize vk, code extracted from legacy prover
+/// Deserialize vk, code extracted from legacy prover.
+///
+/// Panics if the deserialization fails.
 pub fn deserialize_vk<C: Circuit<Fr, Params = ()>>(raw_vk: &[u8]) -> VerifyingKey<G1Affine> {
     VerifyingKey::<G1Affine>::read::<_, C>(
         &mut std::io::Cursor::new(raw_vk),

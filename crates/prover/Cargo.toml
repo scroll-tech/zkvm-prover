@@ -34,3 +34,4 @@ revm = "18.0"
 [features]
 default = ["scroll"]
 scroll = ["sbv/scroll"]
+execute-and-prove = []

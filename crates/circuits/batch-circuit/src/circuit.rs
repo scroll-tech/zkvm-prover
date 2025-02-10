@@ -3,7 +3,7 @@ use scroll_zkvm_circuit_input_types::{
     AggCircuit, Circuit,
     batch::{ArchivedBatchWitness, BatchInfo},
     chunk::ChunkInfo,
-    proof::RootProofWithPublicValues,
+    proof::{ProgramCommitment, RootProofWithPublicValues},
     utils::read_witnesses,
 };
 
@@ -43,17 +43,17 @@ impl Circuit for BatchCircuit {
 impl AggCircuit for BatchCircuit {
     type AggregatedPublicInputs = ChunkInfo;
 
-    fn verify_commitments(prog_commitment: &[[u32; 8]; 2]) {
-        if prog_commitment[0] != CHUNK_EXE_COMMIT {
+    fn verify_commitments(commitment: &ProgramCommitment) {
+        if commitment.exe != CHUNK_EXE_COMMIT {
             panic!(
-                "exe commit for chunk proof is not match: expdcted {:?} but have {:?}",
-                CHUNK_EXE_COMMIT, prog_commitment[0]
+                "mismatch chunk-proof exe commitment: expected={:?}, got={:?}",
+                CHUNK_EXE_COMMIT, commitment.exe,
             );
         }
-        if prog_commitment[1] != CHUNK_LEAF_COMMIT {
+        if commitment.leaf != CHUNK_LEAF_COMMIT {
             panic!(
-                "leaf commit for chunk proof is not match: expdcted {:?} but have {:?}",
-                CHUNK_EXE_COMMIT, prog_commitment[1]
+                "mismatch chunk-proof leaf commitment: expected={:?}, got={:?}",
+                CHUNK_EXE_COMMIT, commitment.leaf,
             );
         }
     }

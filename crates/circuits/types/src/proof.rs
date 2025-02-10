@@ -15,27 +15,39 @@ pub struct RootProofWithPublicValues {
     /// Flattened public values.
     pub public_values: Vec<u32>,
     /// Represent the commitment needed to verify a root proof
-    pub program_commit: [[u32; 8]; 2],
+    pub commitment: ProgramCommitment,
 }
 
-/// Represent the commitment needed to verify a root proof
-#[derive(Clone, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+/// Represent the commitment needed to verify a [`RootProof`].
+#[derive(
+    Clone,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    serde::Deserialize,
+    serde::Serialize,
+)]
 #[rkyv(derive(Debug))]
-pub struct ProgramCommit {
-    /// The commitment to the root verifier's exe.
+pub struct ProgramCommitment {
+    /// The commitment to the child program exe.
     pub exe: [u32; 8],
-    /// The commitment to the root verifier's leaf.
+    /// The commitment to the child program leaf.
     pub leaf: [u32; 8],
 }
 
-impl ProgramCommit {
-    pub fn deserialize(commit_bytes: &[u8]) -> Self {
+impl ProgramCommitment {
+    pub fn deserialize(commitment_bytes: &[u8]) -> Self {
         // TODO: temporary skip deserialize if no vk is provided
-        if commit_bytes.is_empty() {
+        if commitment_bytes.is_empty() {
             return Default::default();
         }
+
         let archived_data =
-            rkyv::access::<ArchivedProgramCommit, rkyv::rancor::BoxedError>(commit_bytes).unwrap();
+            rkyv::access::<ArchivedProgramCommitment, rkyv::rancor::BoxedError>(commitment_bytes)
+                .unwrap();
+
         Self {
             exe: archived_data.exe.map(|u32_le| u32_le.to_native()),
             leaf: archived_data.leaf.map(|u32_le| u32_le.to_native()),
@@ -49,6 +61,15 @@ impl ProgramCommit {
     }
 }
 
+impl From<&ArchivedProgramCommitment> for ProgramCommitment {
+    fn from(archived: &ArchivedProgramCommitment) -> Self {
+        Self {
+            exe: archived.exe.map(|u32_le| u32_le.to_native()),
+            leaf: archived.leaf.map(|u32_le| u32_le.to_native()),
+        }
+    }
+}
+
 /// Number of public-input values, i.e. [u32; N].
 ///
 /// Note that the actual value for each u32 is a byte.
@@ -56,7 +77,7 @@ const NUM_PUBLIC_VALUES: usize = 32;
 
 /// Verify a root proof.
 pub fn verify_proof(
-    program_commitments: [[u32; 8]; 2],
+    commitment: &ProgramCommitment,
     flattened_proof: &[u32],
     public_inputs: &[u32],
 ) {
@@ -66,14 +87,12 @@ pub fn verify_proof(
     // Extend the public-input values by prepending the commitments to the root verifier's exe and
     // leaf.
     let mut extended_public_inputs = vec![];
-    extended_public_inputs.extend(program_commitments[0]);
-    extended_public_inputs.extend(program_commitments[1]);
+    extended_public_inputs.extend(commitment.exe);
+    extended_public_inputs.extend(commitment.leaf);
     extended_public_inputs.extend_from_slice(public_inputs);
 
-    println!("verify proof with pi: {:?}", extended_public_inputs);
     // Pass through kernel and verify against root verifier's ASM.
     exec_kernel(flattened_proof, &extended_public_inputs);
-    println!("verify proof done");
 }
 
 fn exec_kernel(input: &[u32], output: &[u32]) {

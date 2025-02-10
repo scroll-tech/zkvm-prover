@@ -1,4 +1,8 @@
-use crate::{ProofCarryingWitness, batch::BatchInfo, proof::RootProofWithPublicValues};
+use crate::{
+    ProofCarryingWitness,
+    batch::BatchInfo,
+    proof::{ProgramCommitment, RootProofWithPublicValues},
+};
 
 /// The witness for the bundle circuit.
 #[derive(Clone, Debug, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
@@ -27,9 +31,7 @@ impl ProofCarryingWitness for ArchivedBundleWitness {
                     .iter()
                     .map(|u32_le| u32_le.to_native())
                     .collect(),
-                program_commit: archived
-                    .program_commit
-                    .map(|ct| ct.map(|u32_le| u32_le.to_native())),
+                commitment: ProgramCommitment::from(&archived.commitment),
             })
             .collect()
     }

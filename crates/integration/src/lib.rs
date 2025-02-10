@@ -5,6 +5,7 @@ use std::{
 
 use once_cell::sync::OnceCell;
 use openvm_build::GuestOptions;
+use openvm_circuit::openvm_stark_sdk::p3_baby_bear::BabyBear;
 use openvm_native_recursion::halo2::EvmProof;
 use openvm_sdk::{
     Sdk, StdIn,
@@ -97,18 +98,19 @@ pub trait ProverTester {
     #[instrument("ProverTester::build", fields(project_root = Self::PATH_PROJECT_ROOT))]
     fn build() -> eyre::Result<Elf> {
         let guest_opts = GuestOptions::default().with_features([FEATURE_SCROLL]);
-        println!("building using path {}", Self::PATH_PROJECT_ROOT);
         let elf = Sdk.build(guest_opts, Self::PATH_PROJECT_ROOT, &Default::default())?;
         Ok(elf)
     }
 
+    /// Load the app config.
     fn load() -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
-        let path_assets: PathBuf = format!("{}/{}", Self::PATH_PROJECT_ROOT, "openvm").into();
+        let path_assets = Path::new(Self::PATH_PROJECT_ROOT).join("openvm");
         let path_app_config = path_assets.join(FD_APP_CONFIG);
         let app_config = read_app_config(&path_app_config)?;
         let path_app_exe = path_assets.join(FD_APP_EXE);
         Ok((path_app_config, app_config, path_app_exe))
     }
+
     /// Transpile the ELF into a VmExe.
     #[instrument(
         "ProverTester::transpile",
@@ -173,22 +175,19 @@ pub trait ProverTester {
         app_config: AppConfig<SdkVmConfig>,
         task: &<Self::Prover as ProverType>::ProvingTask,
         exe_path: impl AsRef<Path>,
-    ) -> eyre::Result<()> {
+    ) -> eyre::Result<Vec<BabyBear>> {
         let serialized = task.to_witness_serialized()?;
 
         let mut stdin = StdIn::default();
         stdin.write_bytes(&serialized);
 
-        let pi = Sdk.execute(read_app_exe(exe_path)?, app_config.app_vm_config, stdin)?;
-        println!("pi: {pi:?}");
-
-        Ok(())
+        Ok(Sdk.execute(read_app_exe(exe_path)?, app_config.app_vm_config, stdin)?)
     }
 
     fn execute_with_proving_task(
         app_config: AppConfig<SdkVmConfig>,
         exe_path: impl AsRef<Path>,
-    ) -> eyre::Result<()> {
+    ) -> eyre::Result<Vec<BabyBear>> {
         Self::execute(app_config, &Self::gen_proving_task()?, exe_path)
     }
 }

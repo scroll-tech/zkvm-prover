@@ -25,6 +25,7 @@ fn load_recent_chunk_proofs() -> eyre::Result<BatchProvingTask> {
     );
     Ok(task)
 }
+
 #[test]
 fn test_execute() -> eyre::Result<()> {
     MultiBatchProverTester::setup()?;
