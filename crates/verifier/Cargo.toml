@@ -11,7 +11,7 @@ scroll-zkvm-circuit-input-types.workspace = true
 openvm-native-recursion = { workspace = true, features = ["static-verifier"] }
 snark-verifier-sdk = {workspace = true, default-features = false, features = ["loader_evm"]}
 
-revm = "18.0"
+revm = "19.0"
 
 [dev-dependencies]
 scroll-zkvm-prover.workspace = true

@@ -1,7 +1,7 @@
 use crate::{
     ProofCarryingWitness,
     batch::BatchInfo,
-    proof::{ProgramCommitment, RootProofWithPublicValues},
+    proof::{AggregationInput, ProgramCommitment},
 };
 
 /// The witness for the bundle circuit.
@@ -10,22 +10,17 @@ use crate::{
 pub struct BundleWitness {
     /// Batch proofs being aggregated in the bundle.
     #[rkyv()]
-    pub batch_proofs: Vec<RootProofWithPublicValues>,
+    pub batch_proofs: Vec<AggregationInput>,
     /// Public-input values for the corresponding batch proofs.
     #[rkyv()]
     pub batch_infos: Vec<BatchInfo>,
 }
 
 impl ProofCarryingWitness for ArchivedBundleWitness {
-    fn get_proofs(&self) -> Vec<RootProofWithPublicValues> {
+    fn get_proofs(&self) -> Vec<AggregationInput> {
         self.batch_proofs
             .iter()
-            .map(|archived| RootProofWithPublicValues {
-                flattened_proof: archived
-                    .flattened_proof
-                    .iter()
-                    .map(|u32_le| u32_le.to_native())
-                    .collect(),
+            .map(|archived| AggregationInput {
                 public_values: archived
                     .public_values
                     .iter()

@@ -1,7 +1,7 @@
 use crate::{
     ProofCarryingWitness,
     chunk::ChunkInfo,
-    proof::{ProgramCommitment, RootProofWithPublicValues},
+    proof::{AggregationInput, ProgramCommitment},
 };
 
 use super::ReferenceHeader;
@@ -12,7 +12,7 @@ use super::ReferenceHeader;
 pub struct BatchWitness {
     /// Flattened root proofs from all chunks in the batch.
     #[rkyv()]
-    pub chunk_proofs: Vec<RootProofWithPublicValues>,
+    pub chunk_proofs: Vec<AggregationInput>,
     /// Chunk infos.
     #[rkyv()]
     pub chunk_infos: Vec<ChunkInfo>,
@@ -25,15 +25,10 @@ pub struct BatchWitness {
 }
 
 impl ProofCarryingWitness for ArchivedBatchWitness {
-    fn get_proofs(&self) -> Vec<RootProofWithPublicValues> {
+    fn get_proofs(&self) -> Vec<AggregationInput> {
         self.chunk_proofs
             .iter()
-            .map(|archived| RootProofWithPublicValues {
-                flattened_proof: archived
-                    .flattened_proof
-                    .iter()
-                    .map(|u32_le| u32_le.to_native())
-                    .collect(),
+            .map(|archived| AggregationInput {
                 public_values: archived
                     .public_values
                     .iter()

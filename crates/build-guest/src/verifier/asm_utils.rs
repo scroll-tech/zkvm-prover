@@ -1,8 +1,10 @@
 use openvm_instructions::{
-    LocalOpcode, PhantomDiscriminant, SystemOpcode, VmOpcode, instruction::Instruction,
+    LocalOpcode, PhantomDiscriminant, PublishOpcode, SystemOpcode, SystemOpcode::PHANTOM, VmOpcode,
+    instruction::Instruction,
 };
 use openvm_native_compiler::{
-    FieldArithmeticOpcode, NativeBranchEqualOpcode, NativePhantom, conversion::AS,
+    FieldArithmeticOpcode, NativeBranchEqualOpcode, NativeJalOpcode, NativeLoadStoreOpcode,
+    NativePhantom, conversion::AS,
 };
 use openvm_rv32im_transpiler::BranchEqualOpcode;
 use openvm_stark_sdk::p3_baby_bear::BabyBear as F;
@@ -11,14 +13,10 @@ use p3_field::FieldAlgebra;
 
 ////////////////// constants //////////////////////////////
 
-#[allow(dead_code)]
 pub const X0: usize = 0; // x0
-#[allow(dead_code)]
 pub const X10: usize = 10; // a0
-pub const X28: usize = 28; // t3
 pub const X29: usize = 29; // t4
 pub const X30: usize = 30; // t5
-pub const X31: usize = 31; // t6
 
 pub const AS_IMM: usize = AS::Immediate as usize;
 pub const AS_REGISTER: usize = 1; //AS::REGISTER;
@@ -58,9 +56,26 @@ pub fn op_halt() -> VmOpcode {
     SystemOpcode::TERMINATE.global_opcode()
 }
 
+pub fn op_publish() -> usize {
+    PublishOpcode::PUBLISH.global_opcode().as_usize()
+}
+
+pub fn op_hintstore() -> usize {
+    NativeLoadStoreOpcode::HINT_STOREW
+        .global_opcode()
+        .as_usize()
+}
+
+pub fn op_phantom() -> usize {
+    PHANTOM.global_opcode().as_usize()
+}
+
+pub fn op_jal() -> usize {
+    NativeJalOpcode::JAL.global_opcode().as_usize()
+}
+
 /////////////////// debug //////////////////////////
 
-#[allow(dead_code)]
 pub fn print_native(mem_addr: F) -> Vec<Instruction<F>> {
     vec![Instruction::<F>::phantom(
         PhantomDiscriminant(NativePhantom::Print as u16),
@@ -69,7 +84,7 @@ pub fn print_native(mem_addr: F) -> Vec<Instruction<F>> {
         AS_NATIVE as u16,
     )]
 }
-#[allow(dead_code)]
+
 pub fn print_mem(mem_addr: F) -> Vec<Instruction<F>> {
     vec![Instruction::<F>::phantom(
         PhantomDiscriminant(NativePhantom::Print as u16),
@@ -78,7 +93,7 @@ pub fn print_mem(mem_addr: F) -> Vec<Instruction<F>> {
         AS_MEM as u16,
     )]
 }
-#[allow(dead_code)]
+
 pub fn print_register(register_idx: usize) -> Vec<Instruction<F>> {
     [0, 1, 2, 3]
         .map(|idx| {

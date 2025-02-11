@@ -1,3 +1,4 @@
+use openvm_sdk::StdIn;
 use sbv::primitives::types::BlockWitness;
 
 use crate::task::ProvingTask;
@@ -35,7 +36,10 @@ impl ProvingTask for ChunkProvingTask {
         format!("{first}-{last}")
     }
 
-    fn to_witness_serialized(&self) -> Result<rkyv::util::AlignedVec, rkyv::rancor::Error> {
-        rkyv::to_bytes::<rkyv::rancor::Error>(&self.block_witnesses)
+    fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error> {
+        let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&self.block_witnesses)?;
+        let mut stdin = StdIn::default();
+        stdin.write_bytes(&serialized);
+        Ok(stdin)
     }
 }

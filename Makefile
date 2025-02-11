@@ -4,7 +4,7 @@ export RUST_MIN_STACK
 RUST_BACKTRACE ?= 1
 export RUST_BACKTRACE
 
-RUST_LOG ?= "info,p3_dft=none,p3_fri=none"
+RUST_LOG ?= off,scroll_zkvm_integration=debug,scroll_zkvm_verifier=debug,scroll_zkvm_prover=debug
 export RUST_LOG
 
 fmt:

@@ -8,7 +8,7 @@ use openvm_build::GuestOptions;
 use openvm_circuit::openvm_stark_sdk::p3_baby_bear::BabyBear;
 use openvm_native_recursion::halo2::EvmProof;
 use openvm_sdk::{
-    Sdk, StdIn,
+    Sdk,
     config::{AppConfig, SdkVmConfig},
     fs::write_exe_to_file,
     verifier::root::types::RootVmVerifierInput,
@@ -176,10 +176,7 @@ pub trait ProverTester {
         task: &<Self::Prover as ProverType>::ProvingTask,
         exe_path: impl AsRef<Path>,
     ) -> eyre::Result<Vec<BabyBear>> {
-        let serialized = task.to_witness_serialized()?;
-
-        let mut stdin = StdIn::default();
-        stdin.write_bytes(&serialized);
+        let stdin = task.build_guest_input()?;
 
         Ok(Sdk.execute(read_app_exe(exe_path)?, app_config.app_vm_config, stdin)?)
     }

@@ -3,7 +3,7 @@ use scroll_zkvm_circuit_input_types::{
     AggCircuit, Circuit,
     batch::BatchInfo,
     bundle::{ArchivedBundleWitness, BundleInfo},
-    proof::{ProgramCommitment, RootProofWithPublicValues},
+    proof::{AggregationInput, ProgramCommitment},
     utils::read_witnesses,
 };
 
@@ -98,7 +98,7 @@ impl AggCircuit for BundleCircuit {
             .collect()
     }
 
-    fn aggregated_pi_hashes(proofs: &[RootProofWithPublicValues]) -> Vec<B256> {
+    fn aggregated_pi_hashes(proofs: &[AggregationInput]) -> Vec<B256> {
         proofs
             .iter()
             .map(|proof| {

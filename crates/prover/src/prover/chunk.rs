@@ -10,7 +10,7 @@ use scroll_zkvm_circuit_input_types::chunk::{ChunkInfo, make_providers};
 #[cfg(feature = "scroll")]
 use sbv::{
     core::ChunkInfo as SbvChunkInfo,
-    primitives::{BlockWithSenders, BlockWitness},
+    primitives::{Block, BlockWitness, RecoveredBlock},
 };
 
 use crate::{
@@ -67,13 +67,10 @@ impl ProverType for ChunkProverType {
             .block_witnesses
             .iter()
             .map(|s| s.build_reth_block())
-            .collect::<Result<Vec<BlockWithSenders>, _>>()
+            .collect::<Result<Vec<RecoveredBlock<Block>>, _>>()
             .map_err(|e| Error::GenProof(e.to_string()))?;
-        let sbv_chunk_info = SbvChunkInfo::from_blocks_iter(
-            chain_id,
-            first_block.pre_state_root(),
-            blocks.iter().map(|b| &b.block),
-        );
+        let sbv_chunk_info =
+            SbvChunkInfo::from_blocks(chain_id, first_block.pre_state_root(), &blocks);
 
         let chain_spec = get_chain_spec(Chain::from_id(sbv_chunk_info.chain_id())).ok_or(
             Error::GenProof(format!("{err_prefix}: failed to get chain spec")),
@@ -123,7 +120,7 @@ impl ProverType for ChunkProverType {
         let mut rlp_buffer = Vec::with_capacity(2048);
         let tx_data_digest = blocks
             .iter()
-            .flat_map(|b| b.body.transactions.iter())
+            .flat_map(|b| b.body().transactions.iter())
             .tx_bytes_hash_in(rlp_buffer.as_mut());
 
         let chunk_info = ChunkInfo {
