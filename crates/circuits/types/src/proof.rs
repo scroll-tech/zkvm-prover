@@ -1,4 +1,4 @@
-/// Represents an openvm root proof with the proof and public values flattened.
+/// Represents an openvm program commitments and public values.
 #[derive(
     Clone,
     Debug,
@@ -9,10 +9,8 @@
     serde::Serialize,
 )]
 #[rkyv(derive(Debug))]
-pub struct RootProofWithPublicValues {
-    /// Flattened proof bytes.
-    //pub flattened_proof: Vec<u32>,
-    /// Flattened public values.
+pub struct AggregationInput {
+    /// Public values.
     pub public_values: Vec<u32>,
     /// Represent the commitment needed to verify a root proof
     pub commitment: ProgramCommitment,
@@ -78,7 +76,7 @@ const NUM_PUBLIC_VALUES: usize = 32;
 /// Verify a root proof.
 pub fn verify_proof(
     commitment: &ProgramCommitment,
-    //flattened_proof: &[u32],
+    // flattened_proof: &[u32],
     public_inputs: &[u32],
 ) {
     // Sanity check for the number of public-input values.
@@ -96,7 +94,7 @@ pub fn verify_proof(
 }
 
 fn exec_kernel(output: &[u32]) {
-    //let mut _input_ptr: *const u32 = input.as_ptr();
+    // let mut _input_ptr: *const u32 = input.as_ptr();
     let mut _output_ptr: *const u32 = output.as_ptr();
     let mut _buf1: u32 = 0;
     let mut _buf2: u32 = 0;

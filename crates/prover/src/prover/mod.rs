@@ -337,10 +337,7 @@ impl<Type: ProverType> Prover<Type> {
             .build_guest_input()
             .map_err(|e| Error::GenProof(e.to_string()))?;
 
-        
-
-        #[cfg(feature = "execute-and-prove")]
-        self.execute(&stdin)?;
+        self.mock_prove_if_needed(&stdin)?;
 
         let task_id = task.identifier();
 
@@ -354,12 +351,11 @@ impl<Type: ProverType> Prover<Type> {
         .map_err(|e| Error::GenProof(e.to_string()))
     }
 
-    #[cfg(feature = "execute-and-prove")]
-    fn execute(&self, stdin: &StdIn) -> Result<(), Error> {
-        tracing::debug!(
-            name: "program counter",
-            pc = self.app_committed_exe.exe.pc_start,
-        );
+    fn mock_prove_if_needed(&self, stdin: &StdIn) -> Result<(), Error> {
+        // if env var MOCK_PROVE is not "true", return Ok(())
+        if std::env::var("MOCK_PROVE").as_deref() != Ok("true") {
+            return Ok(());
+        }
 
         let pi = Sdk
             .execute(

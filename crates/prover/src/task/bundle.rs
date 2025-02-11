@@ -1,10 +1,10 @@
-use openvm_sdk::StdIn;
-use openvm_native_recursion::hints::Hintable;
-use scroll_zkvm_circuit_input_types::bundle::BundleWitness;
 use crate::{
     BatchProof,
     task::{ProvingTask, flatten_wrapped_proof},
 };
+use openvm_native_recursion::hints::Hintable;
+use openvm_sdk::StdIn;
+use scroll_zkvm_circuit_input_types::bundle::BundleWitness;
 
 /// Message indicating a sanity check failure.
 const BUNDLE_SANITY_MSG: &str = "bundle must have at least one batch";

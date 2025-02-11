@@ -69,16 +69,12 @@ where
     /// Verify the proofs being aggregated.
     ///
     /// Also returns the root proofs being aggregated.
-    fn verify_proofs(witness: &Self::Witness) -> Vec<proof::RootProofWithPublicValues> {
+    fn verify_proofs(witness: &Self::Witness) -> Vec<proof::AggregationInput> {
         let proofs = witness.get_proofs();
 
         for proof in proofs.iter() {
             Self::verify_commitments(&proof.commitment);
-            proof::verify_proof(
-                &proof.commitment,
-                //proof.flattened_proof.as_slice(),
-                proof.public_values.as_slice(),
-            );
+            proof::verify_proof(&proof.commitment, proof.public_values.as_slice());
         }
 
         proofs
@@ -88,7 +84,7 @@ where
     fn aggregated_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs>;
 
     /// Derive the public-input hashes of the aggregated proofs from the proofs itself.
-    fn aggregated_pi_hashes(proofs: &[proof::RootProofWithPublicValues]) -> Vec<B256>;
+    fn aggregated_pi_hashes(proofs: &[proof::AggregationInput]) -> Vec<B256>;
 
     /// Validate that the public-input values of the aggregated proofs are well-formed.
     ///
@@ -115,5 +111,5 @@ where
 /// aggregated.
 pub trait ProofCarryingWitness {
     /// Get the root proofs from the witness.
-    fn get_proofs(&self) -> Vec<proof::RootProofWithPublicValues>;
+    fn get_proofs(&self) -> Vec<proof::AggregationInput>;
 }

@@ -8,7 +8,7 @@ use openvm_build::GuestOptions;
 use openvm_circuit::openvm_stark_sdk::p3_baby_bear::BabyBear;
 use openvm_native_recursion::halo2::EvmProof;
 use openvm_sdk::{
-    Sdk, StdIn,
+    Sdk,
     config::{AppConfig, SdkVmConfig},
     fs::write_exe_to_file,
     verifier::root::types::RootVmVerifierInput,
