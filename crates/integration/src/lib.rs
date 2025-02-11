@@ -216,8 +216,9 @@ impl<T: Clone, P: Clone> ProveVerifyOutcome<T, P> {
 /// Setup test environment
 fn setup_logger() -> eyre::Result<()> {
     let fmt_layer = tracing_subscriber::fmt::layer()
-        .pretty()
-        .with_span_events(FmtSpan::CLOSE);
+        .compact()
+        .with_ansi(false)
+        .with_span_events(FmtSpan::NONE);
 
     #[cfg(feature = "limit-logs")]
     {
