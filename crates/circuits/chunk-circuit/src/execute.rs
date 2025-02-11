@@ -34,7 +34,7 @@ pub fn execute<W: BlockWitness>(witnesses: &[W]) -> ChunkInfo {
     let sbv_chunk_info = SbvChunkInfo::from_blocks(
         witnesses[0].chain_id(),
         witnesses[0].pre_state_root(),
-        &blocks,
+        blocks,
     );
 
     let chain_spec = get_chain_spec(Chain::from_id(sbv_chunk_info.chain_id()))
