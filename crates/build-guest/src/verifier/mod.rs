@@ -13,7 +13,6 @@ use io_converter::*;
 mod asm_writer;
 use asm_writer::*;
 
-
 fn load_root_program(agg_stark_pk: &AggStarkProvingKey) -> Program<F> {
     let root_exe = {
         let root_exe = &agg_stark_pk.root_verifier_pk.root_committed_exe;
@@ -44,11 +43,8 @@ fn dump_root_program(stark_pk: &AggStarkProvingKey, output_file: &str) {
             if op.0.opcode.as_usize() == op_publish() {
                 let instructions = convert_publish(op.0.clone(), publish_counter);
                 publish_counter += 1;
-                new_instructions_and_debug_infos.extend(
-                    instructions
-                        .iter()
-                        .map(|x| Some((x.clone(), None))),
-                );
+                new_instructions_and_debug_infos
+                    .extend(instructions.iter().map(|x| Some((x.clone(), None))));
                 continue;
             }
         };

@@ -1,6 +1,5 @@
-use openvm_instructions::SystemOpcode::PHANTOM;
 use openvm_instructions::{
-    LocalOpcode, PhantomDiscriminant, PublishOpcode, SystemOpcode, VmOpcode,
+    LocalOpcode, PhantomDiscriminant, PublishOpcode, SystemOpcode, SystemOpcode::PHANTOM, VmOpcode,
     instruction::Instruction,
 };
 use openvm_native_compiler::{
