@@ -29,7 +29,7 @@ serde_json = "1.0"
 serde_stacker = "0.1"
 thiserror = "2.0"
 toml = "0.8"
-revm = "18.0"
+revm = "19.0"
 
 [features]
 default = ["scroll"]
