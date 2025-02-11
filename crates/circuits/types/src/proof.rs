@@ -11,7 +11,7 @@
 #[rkyv(derive(Debug))]
 pub struct RootProofWithPublicValues {
     /// Flattened proof bytes.
-    pub flattened_proof: Vec<u32>,
+    //pub flattened_proof: Vec<u32>,
     /// Flattened public values.
     pub public_values: Vec<u32>,
     /// Represent the commitment needed to verify a root proof
@@ -78,7 +78,7 @@ const NUM_PUBLIC_VALUES: usize = 32;
 /// Verify a root proof.
 pub fn verify_proof(
     commitment: &ProgramCommitment,
-    flattened_proof: &[u32],
+    //flattened_proof: &[u32],
     public_inputs: &[u32],
 ) {
     // Sanity check for the number of public-input values.
@@ -92,11 +92,11 @@ pub fn verify_proof(
     extended_public_inputs.extend_from_slice(public_inputs);
 
     // Pass through kernel and verify against root verifier's ASM.
-    exec_kernel(flattened_proof, &extended_public_inputs);
+    exec_kernel(&extended_public_inputs);
 }
 
-fn exec_kernel(input: &[u32], output: &[u32]) {
-    let mut _input_ptr: *const u32 = input.as_ptr();
+fn exec_kernel(output: &[u32]) {
+    //let mut _input_ptr: *const u32 = input.as_ptr();
     let mut _output_ptr: *const u32 = output.as_ptr();
     let mut _buf1: u32 = 0;
     let mut _buf2: u32 = 0;
@@ -104,7 +104,7 @@ fn exec_kernel(input: &[u32], output: &[u32]) {
     unsafe {
         std::arch::asm!(
             include_str!("../../../build-guest/root_verifier.asm"),
-            inout("x28") _input_ptr,
+            //inout("x28") _input_ptr,
             inout("x29") _output_ptr,
             inout("x30") _buf1,
             inout("x31") _buf2,

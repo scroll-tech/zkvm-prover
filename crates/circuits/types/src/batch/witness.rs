@@ -29,11 +29,11 @@ impl ProofCarryingWitness for ArchivedBatchWitness {
         self.chunk_proofs
             .iter()
             .map(|archived| RootProofWithPublicValues {
-                flattened_proof: archived
-                    .flattened_proof
-                    .iter()
-                    .map(|u32_le| u32_le.to_native())
-                    .collect(),
+                //flattened_proof: archived
+                  //  .flattened_proof
+                    //.iter()
+                 //   .map(|u32_le| u32_le.to_native())
+                //    .collect(),
                 public_values: archived
                     .public_values
                     .iter()

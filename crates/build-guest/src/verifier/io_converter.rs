@@ -8,14 +8,33 @@ use super::asm_utils::*;
 
 //////////////// convert `hint_read`` and `publish` ///////////////////
 
-pub fn convert_hintread(op: Instruction<F>) -> Vec<Instruction<F>> {
-    // x28
+
+// different from "hintinput", "hintflet" will not prepad the length of stream.
+// So here we just need to add 4 to the input pointer to skip the prepadded length.
+pub fn convert_hintfelt(_op: Instruction<F>) -> Vec<Instruction<F>> {
+    // x28: "hint buf" ptr
+    vec![
+        Instruction::<F> {
+            opcode: BaseAluOpcode::ADD.global_opcode(),
+            a: F::from_canonical_usize(X28 * 4),
+            b: F::from_canonical_usize(X28 * 4),
+            c: F::from_canonical_usize(4),
+            d: as_register(),
+            e: as_imm(),
+            f: F::from_canonical_usize(0),
+            g: F::from_canonical_usize(0),
+        }
+    ]
+}
+
+pub fn convert_hintstore(op: Instruction<F>) -> Vec<Instruction<F>> {
+    // x28: "hint buf" ptr
     // x30: value
 
     let native_addr = op.c.as_canonical_u32() as usize;
     let offset = op.b.as_canonical_u32() as usize;
     let tmp_slot = A0 - 4;
-    // VmOpcode(260) 0 0 16777150 5 5 0 0    // StoreHintWord
+    // a StoreHintWord exmaple: VmOpcode(260) 0 0 16777150 5 5 0 0
     vec![Instruction::<F> {
         opcode: Rv32LoadStoreOpcode::LOADW.global_opcode(),
         a: F::from_canonical_usize(X30 * 4),

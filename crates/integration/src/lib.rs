@@ -176,10 +176,7 @@ pub trait ProverTester {
         task: &<Self::Prover as ProverType>::ProvingTask,
         exe_path: impl AsRef<Path>,
     ) -> eyre::Result<Vec<BabyBear>> {
-        let serialized = task.to_witness_serialized()?;
-
-        let mut stdin = StdIn::default();
-        stdin.write_bytes(&serialized);
+        let stdin = task.build_guest_input()?;
 
         Ok(Sdk.execute(read_app_exe(exe_path)?, app_config.app_vm_config, stdin)?)
     }

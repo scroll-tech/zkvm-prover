@@ -333,12 +333,11 @@ impl<Type: ProverType> Prover<Type> {
                 "agg stark pk not initialized! Prover::setup",
             )))?;
 
-        let serialized = task
-            .to_witness_serialized()
+        let stdin = task
+            .build_guest_input()
             .map_err(|e| Error::GenProof(e.to_string()))?;
 
-        let mut stdin = StdIn::default();
-        stdin.write_bytes(&serialized);
+        
 
         #[cfg(feature = "execute-and-prove")]
         self.execute(&stdin)?;
@@ -408,12 +407,9 @@ impl<Type: ProverType> Prover<Type> {
     ///
     /// [evm_proof][openvm_native_recursion::halo2::EvmProof]
     fn gen_proof_snark(&self, task: &Type::ProvingTask) -> Result<EvmProof, Error> {
-        let serialized = task
-            .to_witness_serialized()
+        let stdin = task
+            .build_guest_input()
             .map_err(|e| Error::GenProof(e.to_string()))?;
-
-        let mut stdin = StdIn::default();
-        stdin.write_bytes(&serialized);
 
         Ok(self
             .evm_prover

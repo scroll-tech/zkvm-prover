@@ -1,5 +1,6 @@
+use openvm_sdk::StdIn;
+use openvm_native_recursion::hints::Hintable;
 use scroll_zkvm_circuit_input_types::bundle::BundleWitness;
-
 use crate::{
     BatchProof,
     task::{ProvingTask, flatten_wrapped_proof},
@@ -33,7 +34,7 @@ impl ProvingTask for BundleProvingTask {
         format!("{first}-{last}")
     }
 
-    fn to_witness_serialized(&self) -> Result<rkyv::util::AlignedVec, rkyv::rancor::Error> {
+    fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error> {
         let witness = BundleWitness {
             batch_proofs: self
                 .batch_proofs
@@ -46,6 +47,16 @@ impl ProvingTask for BundleProvingTask {
                 .map(|wrapped_proof| wrapped_proof.metadata.batch_info.clone())
                 .collect(),
         };
-        rkyv::to_bytes::<rkyv::rancor::Error>(&witness)
+        let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&witness)?;
+        let mut stdin = StdIn::default();
+        stdin.write_bytes(&serialized);
+        for batch_proof in &self.batch_proofs {
+            let root_input = &batch_proof.proof;
+            let streams = root_input.write();
+            for s in &streams {
+                stdin.write_field(s);
+            }
+        }
+        Ok(stdin)
     }
 }

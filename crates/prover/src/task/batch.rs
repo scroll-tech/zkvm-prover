@@ -1,6 +1,8 @@
+use openvm_sdk::StdIn;
 use scroll_zkvm_circuit_input_types::batch::{
     BatchHeader, BatchHeaderV3, BatchInfo, BatchWitness, ReferenceHeader,
 };
+use openvm_native_recursion::hints::Hintable;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -29,7 +31,7 @@ impl ProvingTask for BatchProvingTask {
         self.batch_header.batch_hash().to_string()
     }
 
-    fn to_witness_serialized(&self) -> Result<rkyv::util::AlignedVec, rkyv::rancor::Error> {
+    fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error> {
         let witness = BatchWitness {
             chunk_proofs: self
                 .chunk_proofs
@@ -44,7 +46,18 @@ impl ProvingTask for BatchProvingTask {
             blob_bytes: self.blob_bytes.clone(),
             reference_header: ReferenceHeader::V3(self.batch_header),
         };
-        rkyv::to_bytes::<rkyv::rancor::Error>(&witness)
+
+        let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&witness)?;
+        let mut stdin = StdIn::default();
+        stdin.write_bytes(&serialized);
+        for chunk_proof in &self.chunk_proofs {
+            let root_input = &chunk_proof.proof;
+            let streams = root_input.write();
+            for s in &streams {
+                stdin.write_field(s);
+            }
+        }
+        Ok(stdin)
     }
 }
 

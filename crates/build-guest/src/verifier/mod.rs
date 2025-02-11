@@ -107,8 +107,20 @@ fn dump_root_program(stark_pk: &AggStarkProvingKey, output_file: &str) {
                 continue;
             }
             if op.0.opcode.as_usize() == op_phantom() {
-                if op.0.c.as_canonical_u32() as usize == NativePhantom::HintInput as usize {
-                    // nop
+                if false && op.0.c.as_canonical_u32() as usize == NativePhantom::HintFelt as usize {
+                    let instructions = convert_hintfelt(op.0.clone());
+                    new_instructions_and_debug_infos.extend(
+                        instructions
+                            .iter()
+                            .map(|x| (Some((x.clone(), None)), idx * 4)),
+                    );
+                    continue;
+                }
+                if false && op.0.c.as_canonical_u32() as usize == NativePhantom::HintInput as usize {    
+                    // the original "hint_store" opcode will move a stream from "input_streams" to "hint_streams",
+                    // and prepad the length of the stream.
+                    // Since our "flatten proof" already prepads the length, we can do nothing for "hint_input" opcode.
+                    // below is "nop".
                     let instructions = [Instruction {
                         opcode: SystemOpcode::PHANTOM.global_opcode(),
                         ..Default::default()
@@ -120,7 +132,7 @@ fn dump_root_program(stark_pk: &AggStarkProvingKey, output_file: &str) {
                     );
                     continue;
                 }
-                if op.0.c.as_canonical_u32() as usize
+                if false && op.0.c.as_canonical_u32() as usize
                     == (AS_NATIVE << 16 | (NativePhantom::HintBits as usize))
                 {
                     context.enable_hint_bits_mode(op.0.b.as_canonical_u32() as usize);
@@ -128,13 +140,13 @@ fn dump_root_program(stark_pk: &AggStarkProvingKey, output_file: &str) {
                     continue;
                 }
             }
-            if op.0.opcode.as_usize() == op_hintstore() {
+            if false && op.0.opcode.as_usize() == op_hintstore() {
                 if context.hint_bits_mode() {
                     new_instructions_and_debug_infos.push((op_elem.clone(), idx * 4));
                     context.inc();
                     continue;
                 } else {
-                    let instructions = convert_hintread(op.0.clone());
+                    let instructions = convert_hintstore(op.0.clone());
                     new_instructions_and_debug_infos.extend(
                         instructions
                             .iter()
@@ -228,6 +240,7 @@ fn fix_pc(new_instructions_and_debug_infos: &mut InstructionsWithDbgInfo) {
             }
         }
     }
+    println!("number of pc rewrite: {}", pc_rewrite.len());
     for (idx, new_pc_diff, op_idx) in pc_rewrite {
         if op_idx == 1 {
             new_instructions_and_debug_infos[idx]

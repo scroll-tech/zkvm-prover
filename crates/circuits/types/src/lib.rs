@@ -76,7 +76,7 @@ where
             Self::verify_commitments(&proof.commitment);
             proof::verify_proof(
                 &proof.commitment,
-                proof.flattened_proof.as_slice(),
+                //proof.flattened_proof.as_slice(),
                 proof.public_values.as_slice(),
             );
         }

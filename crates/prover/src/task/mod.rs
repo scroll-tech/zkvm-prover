@@ -1,4 +1,5 @@
 use openvm_native_recursion::hints::Hintable;
+use openvm_sdk::StdIn;
 use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
 use scroll_zkvm_circuit_input_types::proof::{ProgramCommitment, RootProofWithPublicValues};
 
@@ -15,7 +16,7 @@ pub mod bundle;
 pub trait ProvingTask {
     fn identifier(&self) -> String;
 
-    fn to_witness_serialized(&self) -> Result<rkyv::util::AlignedVec, rkyv::rancor::Error>;
+    fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error>;
 }
 
 /// Flatten a [`WrappedProof`] and split the proof from the public values. We also split out the
@@ -54,4 +55,18 @@ fn flatten_root_proof(root_proof: &RootProof) -> (Vec<u32>, Vec<u32>) {
     );
 
     (flattened_proof, public_values)
+}
+
+pub fn flatten_wrapped_proof<Metadata>(
+    wrapped_proof: &WrappedProof<Metadata, RootProof>,
+) -> RootProofWithPublicValues {
+    let (_flattened_proof, public_values) = flatten_root_proof(&wrapped_proof.proof);
+
+    let program_commit = ProgramCommit::deserialize(&wrapped_proof.vk);
+
+    RootProofWithPublicValues {
+        //flattened_proof,
+        public_values,
+        program_commit: [program_commit.exe, program_commit.leaf],
+    }
 }
