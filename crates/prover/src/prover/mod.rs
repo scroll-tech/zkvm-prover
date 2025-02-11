@@ -192,6 +192,39 @@ impl<Type: ProverType> Prover<Type> {
         ]))
     }
 
+    /// Pick up app commit as "vk" in proof, to distinguish from which circuit the proof comes
+    pub fn get_app_vk(&self) -> Vec<u8> {
+        use openvm_sdk::commit::AppExecutionCommit;
+        use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
+        use scroll_zkvm_circuit_input_types::proof::ProgramCommitment;
+
+        let app_pk = &self.app_pk;
+
+        let commits = AppExecutionCommit::compute(
+            &app_pk.app_vm_pk.vm_config,
+            &self.app_committed_exe,
+            &app_pk.leaf_committed_exe,
+        );
+
+        let exe = commits.exe_commit.map(|v| v.as_canonical_u32());
+        let leaf = commits
+            .leaf_vm_verifier_commit
+            .map(|v| v.as_canonical_u32());
+
+        ProgramCommitment { exe, leaf }.serialize()
+    }
+
+    /// Pick up the actual vk (serialized) for evm proof, would be empty if prover
+    /// do not contain evm prover
+    pub fn get_evm_vk(&self) -> Vec<u8> {
+        self.evm_prover
+            .as_ref()
+            .map(|evm_prover| {
+                scroll_zkvm_verifier::evm::serialize_vk(evm_prover.halo2_pk.pinning.pk.get_vk())
+            })
+            .unwrap_or_default()
+    }
+
     /// Early-return if a proof is found in disc, otherwise generate and return the proof after
     /// writing to disc.
     #[instrument("Prover::gen_proof", skip_all, fields(task_id))]
@@ -413,39 +446,6 @@ impl<Type: ProverType> Prover<Type> {
             .expect("Prover::gen_proof_snark expects EVM-prover setup")
             .continuation_prover
             .generate_proof_for_evm(stdin))
-    }
-
-    /// Pick up app commit as "vk" in proof, to distinguish from which circuit the proof comes
-    fn get_app_vk(&self) -> Vec<u8> {
-        use openvm_sdk::commit::AppExecutionCommit;
-        use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
-        use scroll_zkvm_circuit_input_types::proof::ProgramCommitment;
-
-        let app_pk = &self.app_pk;
-
-        let commits = AppExecutionCommit::compute(
-            &app_pk.app_vm_pk.vm_config,
-            &self.app_committed_exe,
-            &app_pk.leaf_committed_exe,
-        );
-
-        let exe = commits.exe_commit.map(|v| v.as_canonical_u32());
-        let leaf = commits
-            .leaf_vm_verifier_commit
-            .map(|v| v.as_canonical_u32());
-
-        ProgramCommitment { exe, leaf }.serialize()
-    }
-
-    /// Pick up the actual vk (serialized) for evm proof, would be empty if prover
-    /// do not contain evm prover
-    fn get_evm_vk(&self) -> Vec<u8> {
-        self.evm_prover
-            .as_ref()
-            .map(|evm_prover| {
-                scroll_zkvm_verifier::evm::serialize_vk(evm_prover.halo2_pk.pinning.pk.get_vk())
-            })
-            .unwrap_or_default()
     }
 }
 
