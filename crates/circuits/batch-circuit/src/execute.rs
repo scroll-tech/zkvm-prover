@@ -14,5 +14,6 @@ pub fn execute(witness: &ArchivedBatchWitness) -> BatchInfo {
             &chunk_infos,
             &witness.blob_bytes,
         ),
+        ArchivedReferenceHeader::V7(_header) => todo!(),
     }
 }
