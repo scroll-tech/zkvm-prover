@@ -128,8 +128,9 @@ impl ProverType for ChunkProverType {
             prev_state_root: sbv_chunk_info.prev_state_root(),
             post_state_root: sbv_chunk_info.post_state_root(),
             withdraw_root,
-            data_hash: sbv_chunk_info.data_hash(),
             tx_data_digest,
+            prev_msg_queue_hash: todo!(),
+            post_msg_queue_hash: todo!(),
         };
 
         Ok(ChunkProofMetadata { chunk_info })

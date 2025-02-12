@@ -4,6 +4,7 @@ use sbv::{
     core::{ChunkInfo as SbvChunkInfo, EvmDatabase, EvmExecutor},
     primitives::{
         Block, BlockWitness, RecoveredBlock,
+        alloy_primitives::B256,
         chainspec::{Chain, get_chain_spec},
         ext::{BlockWitnessChunkExt, TxBytesHashExt},
     },
@@ -85,7 +86,8 @@ pub fn execute<W: BlockWitness>(witnesses: &[W]) -> ChunkInfo {
         prev_state_root: sbv_chunk_info.prev_state_root(),
         post_state_root: sbv_chunk_info.post_state_root(),
         withdraw_root,
-        data_hash: sbv_chunk_info.data_hash(),
         tx_data_digest,
+        prev_msg_queue_hash: B256::ZERO, // TODO
+        post_msg_queue_hash: B256::ZERO, // TODO
     }
 }

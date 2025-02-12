@@ -1,7 +1,7 @@
 use openvm_native_recursion::hints::Hintable;
 use openvm_sdk::StdIn;
 use scroll_zkvm_circuit_input_types::batch::{
-    BatchHeader, BatchHeaderV3, BatchInfo, BatchWitness, ReferenceHeader,
+    BatchHeader, BatchHeaderV7, BatchInfo, BatchWitness, ReferenceHeader,
 };
 use serde::{Deserialize, Serialize};
 
@@ -16,10 +16,8 @@ use crate::{
 pub struct BatchProvingTask {
     /// Chunk proofs for the contiguous list of chunks within the batch.
     pub chunk_proofs: Vec<ChunkProof>,
-    /// The [`BatchHeaderV3`], as computed on-chain for this batch.
-    ///
-    /// Ref: https://github.com/scroll-tech/scroll-contracts/blob/2ac4f3f7e090d7127db4b13b3627cb3ce2d762bc/src/libraries/codec/BatchHeaderV3Codec.sol
-    pub batch_header: BatchHeaderV3,
+    /// The [`BatchHeaderV7`], as computed on-chain for this batch.
+    pub batch_header: BatchHeaderV7,
     /// The bytes encoding the batch data that will finally be published on-chain in the form of an
     /// EIP-4844 blob.
     #[serde(with = "base64")]
@@ -44,7 +42,7 @@ impl ProvingTask for BatchProvingTask {
                 .map(|p| p.metadata.chunk_info.clone())
                 .collect(),
             blob_bytes: self.blob_bytes.clone(),
-            reference_header: ReferenceHeader::V3(self.batch_header),
+            reference_header: ReferenceHeader::V7(self.batch_header),
         };
 
         let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&witness)?;
@@ -63,7 +61,14 @@ impl ProvingTask for BatchProvingTask {
 
 impl From<&BatchProvingTask> for BatchInfo {
     fn from(task: &BatchProvingTask) -> Self {
-        let (parent_state_root, state_root, chain_id, withdraw_root) = (
+        let (
+            parent_state_root,
+            state_root,
+            chain_id,
+            withdraw_root,
+            prev_msg_queue_hash,
+            post_msg_queue_hash,
+        ) = (
             task.chunk_proofs
                 .first()
                 .expect("at least one chunk in batch")
@@ -88,6 +93,18 @@ impl From<&BatchProvingTask> for BatchInfo {
                 .metadata
                 .chunk_info
                 .withdraw_root,
+            task.chunk_proofs
+                .first()
+                .expect("at least one chunk in batch")
+                .metadata
+                .chunk_info
+                .prev_msg_queue_hash,
+            task.chunk_proofs
+                .last()
+                .expect("at least one chunk in batch")
+                .metadata
+                .chunk_info
+                .post_msg_queue_hash,
         );
 
         let parent_batch_hash = task.batch_header.parent_batch_hash;
@@ -100,6 +117,8 @@ impl From<&BatchProvingTask> for BatchInfo {
             batch_hash,
             chain_id,
             withdraw_root,
+            prev_msg_queue_hash,
+            post_msg_queue_hash,
         }
     }
 }

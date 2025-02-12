@@ -19,12 +19,15 @@ pub struct ChunkInfo {
     /// The withdrawals root after applying the chunk.
     #[rkyv()]
     pub withdraw_root: B256,
-    /// Digest of L1 message txs force included in the chunk.
-    #[rkyv()]
-    pub data_hash: B256,
     /// Digest of L2 tx data flattened over all L2 txs in the chunk.
     #[rkyv()]
     pub tx_data_digest: B256,
+    /// The L1 msg queue hash at the end of the previous chunk.
+    #[rkyv()]
+    pub prev_msg_queue_hash: B256,
+    /// The L1 msg queue hash at the end of the current chunk.
+    #[rkyv()]
+    pub post_msg_queue_hash: B256,
 }
 
 impl From<&ArchivedChunkInfo> for ChunkInfo {
@@ -34,8 +37,9 @@ impl From<&ArchivedChunkInfo> for ChunkInfo {
             prev_state_root: archived.prev_state_root.into(),
             post_state_root: archived.post_state_root.into(),
             withdraw_root: archived.withdraw_root.into(),
-            data_hash: archived.data_hash.into(),
             tx_data_digest: archived.tx_data_digest.into(),
+            prev_msg_queue_hash: archived.prev_msg_queue_hash.into(),
+            post_msg_queue_hash: archived.post_msg_queue_hash.into(),
         }
     }
 }
@@ -48,8 +52,9 @@ impl PublicInputs for ChunkInfo {
     ///     prev state root ||
     ///     post state root ||
     ///     withdraw root ||
-    ///     chunk data hash ||
-    ///     tx data hash
+    ///     tx data hash ||
+    ///     prev msg queue hash ||
+    ///     post msg queue hash
     /// )
     fn pi_hash(&self) -> B256 {
         keccak256(
@@ -58,8 +63,9 @@ impl PublicInputs for ChunkInfo {
                 .chain(self.prev_state_root.as_slice())
                 .chain(self.post_state_root.as_slice())
                 .chain(self.withdraw_root.as_slice())
-                .chain(self.data_hash.as_slice())
                 .chain(self.tx_data_digest.as_slice())
+                .chain(self.prev_msg_queue_hash.as_slice())
+                .chain(self.post_msg_queue_hash.as_slice())
                 .cloned()
                 .collect::<Vec<u8>>(),
         )
@@ -69,8 +75,10 @@ impl PublicInputs for ChunkInfo {
     ///
     /// - chain id MUST match
     /// - state roots MUST be chained
+    /// - L1 msg queue hash MUST be chained
     fn validate(&self, prev_pi: &Self) {
         assert_eq!(self.chain_id, prev_pi.chain_id);
         assert_eq!(self.prev_state_root, prev_pi.post_state_root);
+        assert_eq!(self.prev_msg_queue_hash, prev_pi.post_msg_queue_hash);
     }
 }
