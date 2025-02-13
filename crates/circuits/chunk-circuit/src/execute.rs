@@ -9,39 +9,46 @@ use sbv::{
         ext::{BlockWitnessChunkExt, TxBytesHashExt},
     },
 };
-use scroll_zkvm_circuit_input_types::chunk::{ChunkInfo, make_providers};
+use scroll_zkvm_circuit_input_types::chunk::{ArchivedChunkWitness, ChunkInfo, make_providers};
 
-pub fn execute<W: BlockWitness>(witnesses: &[W]) -> ChunkInfo {
+pub fn execute(witness: &ArchivedChunkWitness) -> ChunkInfo {
     assert!(
-        !witnesses.is_empty(),
+        !witness.blocks.is_empty(),
         "At least one witness must be provided in chunk mode"
     );
     assert!(
-        witnesses.has_same_chain_id(),
+        witness.blocks.has_same_chain_id(),
         "All witnesses must have the same chain id in chunk mode"
     );
     assert!(
-        witnesses.has_seq_block_number(),
+        witness.blocks.has_seq_block_number(),
         "All witnesses must have sequential block numbers in chunk mode"
     );
 
-    let blocks = witnesses
+    let blocks = witness
+        .blocks
         .iter()
         .map(|w| w.build_reth_block())
         .collect::<Result<Vec<_>, _>>()
         .expect("failed to build reth block")
         .leak() as &'static [RecoveredBlock<Block>];
 
+    // TODO: after updating sbv pass the prev_msg_queue_hash argument.
+    let prev_msg_queue_hash = witness.prev_msg_queue_hash.into();
     let sbv_chunk_info = SbvChunkInfo::from_blocks(
-        witnesses[0].chain_id(),
-        witnesses[0].pre_state_root(),
+        witness.blocks[0].chain_id(),
+        witness.blocks[0].pre_state_root(),
+        // prev_msg_queue_hash,
         blocks,
     );
+    // TODO: after updating sbv, this line should compile.
+    // let post_msg_queue_hash = sbv_chunk_info.post_msg_queue_hash;
+    let post_msg_queue_hash = B256::ZERO; // FIXME
 
     let chain_spec = get_chain_spec(Chain::from_id(sbv_chunk_info.chain_id()))
         .expect("failed to get chain spec");
 
-    let (code_db, nodes_provider, block_hashes) = make_providers(witnesses);
+    let (code_db, nodes_provider, block_hashes) = make_providers(&witness.blocks);
     let nodes_provider = ManuallyDrop::new(nodes_provider);
 
     let mut db = ManuallyDrop::new(
@@ -87,7 +94,7 @@ pub fn execute<W: BlockWitness>(witnesses: &[W]) -> ChunkInfo {
         post_state_root: sbv_chunk_info.post_state_root(),
         withdraw_root,
         tx_data_digest,
-        prev_msg_queue_hash: B256::ZERO, // TODO
-        post_msg_queue_hash: B256::ZERO, // TODO
+        prev_msg_queue_hash,
+        post_msg_queue_hash,
     }
 }
