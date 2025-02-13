@@ -19,6 +19,8 @@ openvm-native-circuit = { workspace = true, default-features = false }
 openvm-native-recursion = { workspace = true }
 openvm-sdk = { workspace = true, default-features = false }
 openvm-stark-sdk = { workspace = true, default-features = false }
+bls12_381 = "0.8"
+c-kzg = "1.0"
 
 base64 = "0.22"
 git-version = "0.3.5"

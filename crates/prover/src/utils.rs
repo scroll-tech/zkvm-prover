@@ -78,3 +78,8 @@ pub mod base64 {
             .map_err(serde::de::Error::custom)
     }
 }
+
+pub mod point_eval {
+    use c_kzg;
+    use bls12_381;
+}

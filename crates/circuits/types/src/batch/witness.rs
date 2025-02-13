@@ -6,6 +6,21 @@ use crate::{
 
 use super::ReferenceHeader;
 
+/// Simply rewrap byte48 to avoid unnecessary dep
+pub type Byte48 = [u8; 48];
+
+/// Witness required by applying point evaluation
+#[derive(Clone, Debug, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[rkyv(derive(Debug))]
+pub struct PointEvalWitness {
+    /// kzg commitment
+    #[rkyv()]
+    pub kzg_commitment: Byte48,
+    /// kzg proof
+    #[rkyv()]
+    pub kzg_proof: Byte48,
+}
+
 /// Witness to the batch circuit.
 #[derive(Clone, Debug, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 #[rkyv(derive(Debug))]
@@ -19,6 +34,8 @@ pub struct BatchWitness {
     /// Blob bytes.
     #[rkyv()]
     pub blob_bytes: Vec<u8>,
+    /// Witness for point evaluation
+    pub point_eval_witness: PointEvalWitness,
     /// Header for reference.
     #[rkyv()]
     pub reference_header: ReferenceHeader,

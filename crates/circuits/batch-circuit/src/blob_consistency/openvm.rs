@@ -3,7 +3,10 @@ use std::sync::LazyLock;
 use algebra::{Field, IntMod};
 use alloy_primitives::U256;
 use itertools::Itertools;
-use openvm_pairing_guest::{algebra, bls12_381::Scalar};
+use openvm_pairing_guest::{
+    algebra, bls12_381::{Bls12_381, Fp, Fp2, Scalar},
+    pairing::PairingCheck,
+};
 
 use super::{BLOB_WIDTH, LOG_BLOB_WIDTH};
 
