@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     ChunkProof,
     task::{ProvingTask, flatten_wrapped_proof},
-    utils::base64,
+    utils::{base64, point_eval},
 };
 
 /// Defines a proving task for batch proof generation.

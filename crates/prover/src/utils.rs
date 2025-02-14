@@ -81,5 +81,68 @@ pub mod base64 {
 
 pub mod point_eval {
     use c_kzg;
-    use bls12_381;
+    use sbv::primitives::{B256 as H256, U256};
+
+    const N_BLOB_BYTES: usize = 32*4096;
+
+    type BlobByte = [u8; N_BLOB_BYTES];
+
+    /// translate the enveloped bytes to fixed length blob byte 
+    /// (use 32 bytes in blob to envelop each 31 byte)
+    pub fn to_blob_bytes(enveloped_bytes: &[u8]) -> BlobByte {
+        let mut blob_bytes = [0u8; N_BLOB_BYTES];
+
+        assert!(
+            blob_bytes.len() <= N_BLOB_BYTES,
+            "too many bytes in batch data"
+        );
+
+        for (i, &byte) in enveloped_bytes.iter().enumerate() {
+            blob_bytes[(i / 31)*32 + (i % 31)] = byte;
+        }
+
+        blob_bytes
+    }
+
+    /// turn envolped bytes into kzg commitment
+    pub fn bytes_to_kzg_commitment(blob_bytes: BlobByte) -> c_kzg::Bytes48 {
+        c_kzg::KzgCommitment::blob_to_kzg_commitment(
+            &c_kzg::Blob::new(blob_bytes), 
+            c_kzg::ethereum_kzg_settings()
+        )
+        .expect("blob to kzg commitment should succeed")
+        .to_bytes()
+    }
+
+    /// feasible entry to get versioned hash
+    pub fn get_versioned_hash(commitment: &c_kzg::Bytes48) -> H256 {
+        H256::new(revm::precompile::kzg_point_evaluation::kzg_to_versioned_hash(
+            commitment.as_slice()
+        ))
+    }
+
+    /// calculate the proof and y from challenge
+    pub fn get_kzg_proof(
+        blob_bytes: BlobByte,
+        challenge: H256,
+    ) -> (c_kzg::Bytes48, U256) {
+        // notice U256 use little endian while c_kzg use be
+        let bls12_381_modulus = U256::from_limbs(
+            [
+                0xffff_ffff_0000_0001,
+                0x53bd_a402_fffe_5bfe,
+                0x3339_d808_09a1_d805,
+                0x73ed_a753_299d_7d48,
+            ]);
+
+        let scalar_chg = U256::from_be_bytes(challenge.0) % bls12_381_modulus;
+
+        let (proof, y) = c_kzg::KzgProof::compute_kzg_proof(
+            &c_kzg::Blob::new(blob_bytes), 
+            &c_kzg::Bytes32::new(scalar_chg.to_be_bytes()), 
+            c_kzg::ethereum_kzg_settings()
+        ).expect("kzg proof should succeed");
+
+        (proof.to_bytes(), U256::from_be_bytes(*y.as_ref()))
+    }
 }
