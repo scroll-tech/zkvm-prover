@@ -9,8 +9,6 @@ use circuit::BatchCircuit as C;
 
 mod execute;
 
-mod payload;
-
 openvm::entry!(main);
 
 #[rustfmt::skip]

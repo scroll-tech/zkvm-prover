@@ -9,7 +9,8 @@ mod public_inputs;
 pub use public_inputs::{ArchivedBatchInfo, BatchInfo};
 
 mod witness;
-pub use witness::{ArchivedBatchWitness, BatchWitness};
+pub use witness::{ArchivedBatchWitness, BatchWitness, PointEvalWitness};
 
-/// The upper bound for the number of chunks that can be aggregated in a single batch.
-pub const MAX_AGG_CHUNKS: usize = 45;
+mod payload;
+pub use payload::{PayloadV3, PayloadV7, MAX_AGG_CHUNKS};
+

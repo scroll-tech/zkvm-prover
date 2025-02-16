@@ -1,13 +1,6 @@
 use alloy_primitives::{B256 as H256, U256};
 
-#[cfg(feature = "common_curve")]
-mod general;
-#[cfg(feature = "common_curve")]
-use general::point_evaluation;
-
-#[cfg(not(feature = "common_curve"))]
 mod openvm;
-#[cfg(not(feature = "common_curve"))]
 use openvm::point_evaluation;
 
 // Number of bytes in a u256.
@@ -53,10 +46,6 @@ impl BlobConsistency {
         // blob data proof is [challenge, point_evaluation] mapped into H256
         let challenge_digest = U256::from_be_bytes(challenge_digest.0);
 
-        #[cfg(feature = "common_curve")]
-        let (challenge, evaluation) = point_evaluation(&self.0, challenge_digest);
-
-        #[cfg(not(feature = "common_curve"))]
         let (challenge, evaluation) = point_evaluation(&self.0, challenge_digest);
 
         [challenge, evaluation].map(|u| H256::new(u.to_be_bytes()))

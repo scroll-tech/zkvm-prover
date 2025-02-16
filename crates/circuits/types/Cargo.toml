@@ -13,6 +13,7 @@ alloy-serde.workspace = true
 rkyv.workspace = true
 sbv.workspace = true
 serde.workspace = true
+itertools.workspace = true
 tiny-keccak = {workspace = true, features = ["openvm"]}
 
 openvm = { workspace = true, features = ["std"] }

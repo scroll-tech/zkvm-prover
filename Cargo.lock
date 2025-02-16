@@ -5988,6 +5988,7 @@ version = "0.1.0-rc.3"
 dependencies = [
  "alloy-primitives",
  "alloy-serde 0.8.3",
+ "itertools 0.14.0",
  "openvm",
  "openvm-rv32im-guest",
  "rkyv",
