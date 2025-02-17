@@ -7,6 +7,7 @@ use scroll_zkvm_integration::{
     utils::build_batch_task,
 };
 use scroll_zkvm_prover::{ChunkProof, task::batch::BatchProvingTask, utils::read_json_deep};
+use openvm_stark_sdk::bench::run_with_metric_collection;
 
 fn load_recent_chunk_proofs() -> eyre::Result<BatchProvingTask> {
     let proof_path = glob::glob("../../.output/chunk-tests-*/chunk/proofs/chunk-*.json")?
@@ -47,34 +48,38 @@ fn test_execute() -> eyre::Result<()> {
 fn setup_prove_verify_single() -> eyre::Result<()> {
     BatchProverTester::setup()?;
 
-    let task = load_recent_chunk_proofs()?;
-    prove_verify_single::<BatchProverTester>(Some(task))?;
-
-    Ok(())
+    run_with_metric_collection("OUTPUT_PATH", || -> eyre::Result<()> {
+        let task = load_recent_chunk_proofs()?;
+        prove_verify_single::<BatchProverTester>(Some(task))?;
+        Ok(())
+    })
 }
 
 #[test]
 fn setup_prove_verify_multi() -> eyre::Result<()> {
     MultiBatchProverTester::setup()?;
 
-    prove_verify_single::<MultiBatchProverTester>(None)?;
-
-    Ok(())
+    run_with_metric_collection("OUTPUT_PATH", || -> eyre::Result<()> {
+        prove_verify_single::<MultiBatchProverTester>(None)?;
+        Ok(())
+    })
 }
 
 #[test]
 fn e2e() -> eyre::Result<()> {
     BatchProverTester::setup()?;
 
-    let outcome = prove_verify_multi::<MultiChunkProverTester>(None)?;
+    run_with_metric_collection("OUTPUT_PATH", || -> eyre::Result<()> {
+        let outcome = prove_verify_multi::<MultiChunkProverTester>(None)?;
 
-    let batch_task = build_batch_task(
-        &outcome.tasks,
-        &outcome.proofs,
-        scroll_zkvm_circuit_input_types::batch::MAX_AGG_CHUNKS,
-        Default::default(),
-    );
-    prove_verify_single::<BatchProverTester>(Some(batch_task))?;
-
-    Ok(())
+        let batch_task = build_batch_task(
+            &outcome.tasks,
+            &outcome.proofs,
+            scroll_zkvm_circuit_input_types::batch::MAX_AGG_CHUNKS,
+            Default::default(),
+        );
+        prove_verify_single::<BatchProverTester>(Some(batch_task))?;
+    
+        Ok(())
+    })
 }
