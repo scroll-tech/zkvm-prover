@@ -25,12 +25,11 @@ serde.workspace = true
 tiny-keccak.workspace = true
 vm-zstd.workspace = true
 
-bls12_381 = { version = "0.8", optional = true }
-ff = { version = "0.13", optional = true }
-
 [features]
 default = ["scroll"]
 scroll = ["scroll-zkvm-circuit-input-types/scroll"]
 
-# use common implement for curves for verification and testing
-common_curve = ["dep:bls12_381", "dep:ff"]
+[dev-dependencies]
+bls12_381 = { version = "0.8" }
+ff = { version = "0.13" }
+c-kzg = "1.0"
