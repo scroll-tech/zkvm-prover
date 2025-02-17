@@ -8,6 +8,8 @@ use crate::{
     task::batch::BatchProvingTask,
 };
 
+use openvm_stark_sdk::config::FriParameters;
+
 /// Prover for [`BatchCircuit`].
 pub type BatchProver = Prover<BatchProverType>;
 
@@ -33,11 +35,17 @@ impl ProverType for BatchProverType {
     ) -> Result<openvm_sdk::config::AppConfig<openvm_sdk::config::SdkVmConfig>, Error> {
         let mut app_config = read_app_config(path_app_config)?;
         app_config.app_vm_config.castf = Some(openvm_native_circuit::CastFExtension);
+
+        app_config.app_fri_params.fri_params =
+            FriParameters::standard_with_100_bits_conjectured_security(1 /* app_log_blowup */);
+        app_config.leaf_fri_params.fri_params =
+            FriParameters::standard_with_100_bits_conjectured_security(1 /* agg_log_blowup */);
         app_config.app_vm_config.system.config = app_config
             .app_vm_config
             .system
             .config
-            .with_max_segment_len(8388508 * 2);
+            .with_max_segment_len((1 << 22) - 100);
+
         Ok(app_config)
     }
 

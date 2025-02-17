@@ -1,3 +1,4 @@
+use openvm_stark_sdk::config::FriParameters;
 use sbv::{
     core::{EvmDatabase, EvmExecutor},
     primitives::{
@@ -46,13 +47,19 @@ impl ProverType for ChunkProverType {
     fn read_app_config<P: AsRef<std::path::Path>>(
         path_app_config: P,
     ) -> Result<openvm_sdk::config::AppConfig<openvm_sdk::config::SdkVmConfig>, Error> {
-        let mut config = read_app_config(path_app_config)?;
-        config.app_vm_config.system.config = config
+        let mut app_config = read_app_config(path_app_config)?;
+
+        app_config.app_fri_params.fri_params =
+            FriParameters::standard_with_100_bits_conjectured_security(1 /* app_log_blowup */);
+        app_config.leaf_fri_params.fri_params =
+            FriParameters::standard_with_100_bits_conjectured_security(1 /* agg_log_blowup */);
+        app_config.app_vm_config.system.config = app_config
             .app_vm_config
             .system
             .config
-            .with_max_segment_len(8388508);
-        Ok(config)
+            .with_max_segment_len((1 << 22) - 100);
+
+        Ok(app_config)
     }
 
     fn metadata_with_prechecks(task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error> {
