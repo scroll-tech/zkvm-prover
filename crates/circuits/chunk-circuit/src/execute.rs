@@ -1,15 +1,17 @@
 use std::mem::ManuallyDrop;
 
 use sbv::{
-    core::{ChunkInfo as SbvChunkInfo, EvmDatabase, EvmExecutor},
+    core::{EvmDatabase, EvmExecutor},
     primitives::{
         Block, BlockWitness, RecoveredBlock,
-        alloy_primitives::B256,
         chainspec::{Chain, get_chain_spec},
         ext::{BlockWitnessChunkExt, TxBytesHashExt},
+        types::ChunkInfoBuilder,
     },
 };
-use scroll_zkvm_circuit_input_types::chunk::{ArchivedChunkWitness, ChunkInfo, make_providers};
+use scroll_zkvm_circuit_input_types::chunk::{
+    ArchivedChunkWitness, BlockContextV2, ChunkInfo, make_providers,
+};
 
 pub fn execute(witness: &ArchivedChunkWitness) -> ChunkInfo {
     assert!(
@@ -33,20 +35,14 @@ pub fn execute(witness: &ArchivedChunkWitness) -> ChunkInfo {
         .expect("failed to build reth block")
         .leak() as &'static [RecoveredBlock<Block>];
 
-    // TODO: after updating sbv pass the prev_msg_queue_hash argument.
-    let prev_msg_queue_hash = witness.prev_msg_queue_hash.into();
-    let sbv_chunk_info = SbvChunkInfo::from_blocks(
-        witness.blocks[0].chain_id(),
-        witness.blocks[0].pre_state_root(),
-        // prev_msg_queue_hash,
-        blocks,
-    );
-    // TODO: after updating sbv, this line should compile.
-    // let post_msg_queue_hash = sbv_chunk_info.post_msg_queue_hash;
-    let post_msg_queue_hash = B256::ZERO; // FIXME
-
-    let chain_spec = get_chain_spec(Chain::from_id(sbv_chunk_info.chain_id()))
+    let chain_spec = get_chain_spec(Chain::from_id(witness.blocks[0].chain_id()))
         .expect("failed to get chain spec");
+
+    let prev_msg_queue_hash = witness.prev_msg_queue_hash.into();
+    let sbv_chunk_info = ChunkInfoBuilder::new(chain_spec, blocks)
+        .prev_msg_queue_hash(prev_msg_queue_hash)
+        .build();
+    let post_msg_queue_hash = sbv_chunk_info.post_msg_queue_hash;
 
     let (code_db, nodes_provider, block_hashes) = make_providers(&witness.blocks);
     let nodes_provider = ManuallyDrop::new(nodes_provider);
@@ -80,10 +76,12 @@ pub fn execute(witness: &ArchivedChunkWitness) -> ChunkInfo {
     let withdraw_root = db.withdraw_root().expect("failed to get withdraw root");
 
     let mut rlp_buffer = ManuallyDrop::new(Vec::with_capacity(2048));
-    let tx_data_digest = blocks
+    let (tx_data_length, tx_data_digest) = blocks
         .iter()
         .flat_map(|b| b.body().transactions.iter())
         .tx_bytes_hash_in(rlp_buffer.as_mut());
+
+    let block_ctxs = blocks.iter().map(BlockContextV2::from).collect();
 
     openvm::io::println(format!("withdraw_root = {:?}", withdraw_root));
     openvm::io::println(format!("tx_bytes_hash = {:?}", tx_data_digest));
@@ -96,5 +94,7 @@ pub fn execute(witness: &ArchivedChunkWitness) -> ChunkInfo {
         tx_data_digest,
         prev_msg_queue_hash,
         post_msg_queue_hash,
+        tx_data_length,
+        block_ctxs,
     }
 }

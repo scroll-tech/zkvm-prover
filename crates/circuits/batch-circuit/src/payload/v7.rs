@@ -1,4 +1,5 @@
-use alloy_primitives::{B256, U256};
+use alloy_primitives::B256;
+use scroll_zkvm_circuit_input_types::chunk::{BlockContextV2, SIZE_BLOCK_CTX};
 
 use crate::blob_consistency::N_BLOB_BYTES;
 
@@ -18,43 +19,6 @@ pub struct EnvelopeV7 {
     pub is_encoded: u8,
     /// The unpadded bytes that possibly encode the [`PayloadV7`].
     pub unpadded_bytes: Vec<u8>,
-}
-
-/// Represents the version 2 of block context.
-///
-/// The difference between v2 and v1 is that the block number field has been removed since v2.
-#[derive(Debug, Clone)]
-pub struct BlockContextV2 {
-    /// The timestamp of the block.
-    pub timestamp: u64,
-    /// The base fee of the block.
-    pub base_fee: U256,
-    /// The gas limit of the block.
-    pub gas_limit: u64,
-    /// The number of transactions in the block, including both L1 msg txs as well as L2 txs.
-    pub num_txs: u16,
-    /// The number of L1 msg txs in the block.
-    pub num_l1_msgs: u16,
-}
-
-impl From<&[u8]> for BlockContextV2 {
-    fn from(bytes: &[u8]) -> Self {
-        assert_eq!(bytes.len(), SIZE_BLOCK_CTX);
-
-        let timestamp = u64::from_be_bytes(bytes[0..8].try_into().expect("should not fail"));
-        let base_fee = U256::from_be_slice(&bytes[8..40]);
-        let gas_limit = u64::from_be_bytes(bytes[40..48].try_into().expect("should not fail"));
-        let num_txs = u16::from_be_bytes(bytes[48..50].try_into().expect("should not fail"));
-        let num_l1_msgs = u16::from_be_bytes(bytes[50..52].try_into().expect("should not fail"));
-
-        Self {
-            timestamp,
-            base_fee,
-            gas_limit,
-            num_txs,
-            num_l1_msgs,
-        }
-    }
 }
 
 /// Represents the batch data, eventually encoded into an [`EnvelopeV7`].
@@ -118,7 +82,6 @@ const INDEX_LAST_L1_MSG_QUEUE_HASH: usize = INDEX_L1_MSG_QUEUE_HASH + 32;
 const INDEX_L2_BLOCK_NUM: usize = INDEX_LAST_L1_MSG_QUEUE_HASH + 32;
 const INDEX_NUM_BLOCKS: usize = INDEX_L2_BLOCK_NUM + 8;
 const INDEX_BLOCK_CTX: usize = INDEX_NUM_BLOCKS + 2;
-const SIZE_BLOCK_CTX: usize = 52;
 
 impl From<&EnvelopeV7> for PayloadV7 {
     fn from(envelope: &EnvelopeV7) -> Self {
