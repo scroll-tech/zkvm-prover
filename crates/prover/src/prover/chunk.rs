@@ -6,6 +6,7 @@ use sbv::{
     },
 };
 use scroll_zkvm_circuit_input_types::chunk::{ChunkInfo, make_providers};
+use openvm_stark_sdk::config::FriParameters;
 
 #[cfg(feature = "scroll")]
 use sbv::{
@@ -41,7 +42,21 @@ impl ProverType for ChunkProverType {
     fn read_app_config<P: AsRef<std::path::Path>>(
         path_app_config: P,
     ) -> Result<openvm_sdk::config::AppConfig<openvm_sdk::config::SdkVmConfig>, Error> {
-        read_app_config(path_app_config)
+        let mut app_config = read_app_config(path_app_config)?;
+        
+        println!("app_fri_params: {:?}", app_config.app_fri_params.fri_params);
+        println!("leaf_fri_params: {:?}", app_config.leaf_fri_params.fri_params);
+
+        app_config.app_fri_params.fri_params = FriParameters::standard_with_100_bits_conjectured_security(1/*app_log_blowup*/);
+        app_config.leaf_fri_params.fri_params = FriParameters::standard_with_100_bits_conjectured_security(1/*agg_log_blowup*/);
+        app_config.app_vm_config.system.config = app_config.app_vm_config.system.config.with_max_segment_len((1 << 22) - 100);
+
+        println!("set max_seg < d22, log_blowup: 1...");
+
+        println!("app_fri_params: {:?}", app_config.app_fri_params.fri_params);
+        println!("leaf_fri_params: {:?}", app_config.leaf_fri_params.fri_params);
+
+        Ok(app_config)
     }
 
     fn metadata_with_prechecks(task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error> {
