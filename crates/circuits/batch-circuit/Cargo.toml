@@ -12,7 +12,7 @@ openvm = { workspace = true, features = ["std"] }
 openvm-algebra-guest.workspace = true
 openvm-keccak256-guest.workspace = true
 openvm-sha256-guest.workspace = true
-openvm-ecc-guest = { workspace = true, features = ["k256"] }
+openvm-ecc-guest = { workspace = true, features = ["halo2curves"] }
 openvm-algebra-complex-macros = { workspace = true } 
 openvm-pairing-guest = { workspace = true, features = ["halo2curves"] }
 openvm-rv32im-guest.workspace = true
