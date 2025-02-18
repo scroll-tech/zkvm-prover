@@ -12,6 +12,7 @@ pub const SIZE_BLOCK_CTX: usize = 52;
 #[derive(
     Debug,
     Clone,
+    PartialEq,
     rkyv::Archive,
     rkyv::Deserialize,
     rkyv::Serialize,
@@ -81,6 +82,19 @@ impl From<&RecoveredBlock<Block>> for BlockContextV2 {
             )
             .expect("num l1 msgs u16"),
         }
+    }
+}
+
+impl BlockContextV2 {
+    /// Serialize the block context in packed form.
+    pub fn to_bytes(&self) -> Vec<u8> {
+        std::iter::empty()
+            .chain(self.timestamp.to_be_bytes())
+            .chain(self.base_fee.to_be_bytes::<32>())
+            .chain(self.gas_limit.to_be_bytes())
+            .chain(self.num_txs.to_be_bytes())
+            .chain(self.num_l1_msgs.to_be_bytes())
+            .collect()
     }
 }
 
@@ -157,9 +171,11 @@ impl PublicInputs for ChunkInfo {
     ///     prev state root ||
     ///     post state root ||
     ///     withdraw root ||
-    ///     tx data hash ||
+    ///     tx data digest ||
     ///     prev msg queue hash ||
-    ///     post msg queue hash
+    ///     post msg queue hash ||
+    ///     initial block number ||
+    ///     block_ctx for block_ctx in block_ctxs
     /// )
     fn pi_hash(&self) -> B256 {
         keccak256(
@@ -171,6 +187,14 @@ impl PublicInputs for ChunkInfo {
                 .chain(self.tx_data_digest.as_slice())
                 .chain(self.prev_msg_queue_hash.as_slice())
                 .chain(self.post_msg_queue_hash.as_slice())
+                .chain(&self.initial_block_number.to_be_bytes())
+                .chain(
+                    self.block_ctxs
+                        .iter()
+                        .flat_map(|block_ctx| block_ctx.to_bytes())
+                        .collect::<Vec<u8>>()
+                        .as_slice(),
+                )
                 .cloned()
                 .collect::<Vec<u8>>(),
         )

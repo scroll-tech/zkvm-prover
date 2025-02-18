@@ -245,11 +245,7 @@ impl PayloadV7 {
                 .iter()
                 .flat_map(|chunk_info| &chunk_info.block_ctxs),
         ) {
-            assert_eq!(block_ctx.timestamp, witness_block_ctx.timestamp);
-            assert_eq!(block_ctx.gas_limit, witness_block_ctx.gas_limit);
-            assert_eq!(block_ctx.base_fee, witness_block_ctx.base_fee);
-            assert_eq!(block_ctx.num_txs, witness_block_ctx.num_txs);
-            assert_eq!(block_ctx.num_l1_msgs, witness_block_ctx.num_l1_msgs);
+            assert_eq!(block_ctx, witness_block_ctx);
         }
 
         (first_chunk, last_chunk)
