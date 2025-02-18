@@ -1,6 +1,7 @@
 use alloy_primitives::B256;
 use scroll_zkvm_circuit_input_types::{
-    chunk::{BlockContextV2, SIZE_BLOCK_CTX},
+    batch::BatchHeaderV7,
+    chunk::{BlockContextV2, ChunkInfo, SIZE_BLOCK_CTX},
     utils::keccak256,
 };
 
@@ -172,5 +173,16 @@ impl From<&EnvelopeV7> for PayloadV7 {
             block_contexts,
             tx_data,
         }
+    }
+}
+
+impl PayloadV7 {
+    pub fn validate(
+        &self,
+        header: &BatchHeaderV7,
+        first_chunk: &ChunkInfo,
+        last_chunk: &ChunkInfo,
+    ) {
+        unimplemented!()
     }
 }
