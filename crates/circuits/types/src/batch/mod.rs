@@ -2,6 +2,7 @@ mod header;
 pub use header::{
     ArchivedReferenceHeader, BatchHeader, ReferenceHeader,
     v3::{ArchivedBatchHeaderV3, BatchHeaderV3},
+    v7::{ArchivedBatchHeaderV7, BatchHeaderV7},
 };
 
 mod public_inputs;

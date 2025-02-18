@@ -78,6 +78,7 @@ impl ProverType for BundleProverType {
 
         let bundle_info = BundleInfo {
             chain_id,
+            msg_queue_hash: todo!(),
             num_batches,
             prev_state_root,
             prev_batch_hash,

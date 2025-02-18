@@ -51,7 +51,7 @@ itertools = "0.14"
 serde = { version = "1", default-features = false, features = ["derive"] }
 alloy-primitives = "0.8"
 alloy-serde = { version = "0.8", default-features = false }
-sbv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/revm-v55-upgrade" }
+sbv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "feat/euclid-v2" }
 vm-zstd = { git = "https://github.com/scroll-tech/rust-zstd-decompressor.git", tag = "v0.1.1" }
 tracing = "0.1"
 tracing-subscriber = "0.3"
@@ -71,9 +71,9 @@ scroll-zkvm-integration = { path = "crates/integration" }
 
 [patch.crates-io]
 alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.18" }
-revm = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/chore/v55-upgrade" }
-revm-interpreter = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/chore/v55-upgrade" }
-revm-precompile = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/chore/v55-upgrade" }
-revm-primitives = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/chore/v55-upgrade" }
+revm = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/feat/v55/euclid-v2" }
+revm-interpreter = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/feat/v55/euclid-v2" }
+revm-precompile = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/feat/v55/euclid-v2" }
+revm-primitives = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/feat/v55/euclid-v2" }
 ruint = { git = "https://github.com/scroll-tech/uint.git", branch = "v1.12.3" }
 tiny-keccak = { git = "https://github.com/scroll-tech/tiny-keccak", branch = "scroll-patch-v2.0.2-openvm-v1.0.0-rc.1" }

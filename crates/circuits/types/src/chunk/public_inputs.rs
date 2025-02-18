@@ -1,10 +1,99 @@
-use alloy_primitives::B256;
-use rkyv::{Archive, Deserialize, Serialize};
+use alloy_primitives::{B256, U256};
+use sbv::primitives::{RecoveredBlock, alloy_consensus::BlockHeader, types::reth::Block};
 
 use crate::{PublicInputs, utils::keccak256};
 
+/// Number of bytes used to serialise [`BlockContextV2`].
+pub const SIZE_BLOCK_CTX: usize = 52;
+
+/// Represents the version 2 of block context.
+///
+/// The difference between v2 and v1 is that the block number field has been removed since v2.
+#[derive(
+    Debug,
+    Clone,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    serde::Deserialize,
+    serde::Serialize,
+)]
+#[rkyv(derive(Debug))]
+pub struct BlockContextV2 {
+    /// The timestamp of the block.
+    pub timestamp: u64,
+    /// The base fee of the block.
+    pub base_fee: U256,
+    /// The gas limit of the block.
+    pub gas_limit: u64,
+    /// The number of transactions in the block, including both L1 msg txs as well as L2 txs.
+    pub num_txs: u16,
+    /// The number of L1 msg txs in the block.
+    pub num_l1_msgs: u16,
+}
+
+impl From<&ArchivedBlockContextV2> for BlockContextV2 {
+    fn from(archived: &ArchivedBlockContextV2) -> Self {
+        Self {
+            timestamp: archived.timestamp.into(),
+            base_fee: archived.base_fee.into(),
+            gas_limit: archived.gas_limit.into(),
+            num_txs: archived.num_txs.into(),
+            num_l1_msgs: archived.num_l1_msgs.into(),
+        }
+    }
+}
+
+impl From<&[u8]> for BlockContextV2 {
+    fn from(bytes: &[u8]) -> Self {
+        assert_eq!(bytes.len(), SIZE_BLOCK_CTX);
+
+        let timestamp = u64::from_be_bytes(bytes[0..8].try_into().expect("should not fail"));
+        let base_fee = U256::from_be_slice(&bytes[8..40]);
+        let gas_limit = u64::from_be_bytes(bytes[40..48].try_into().expect("should not fail"));
+        let num_txs = u16::from_be_bytes(bytes[48..50].try_into().expect("should not fail"));
+        let num_l1_msgs = u16::from_be_bytes(bytes[50..52].try_into().expect("should not fail"));
+
+        Self {
+            timestamp,
+            base_fee,
+            gas_limit,
+            num_txs,
+            num_l1_msgs,
+        }
+    }
+}
+
+impl From<&RecoveredBlock<Block>> for BlockContextV2 {
+    fn from(value: &RecoveredBlock<Block>) -> Self {
+        Self {
+            timestamp: value.timestamp,
+            gas_limit: value.gas_limit,
+            base_fee: U256::from(value.base_fee_per_gas().expect("base_fee_expected")),
+            num_txs: u16::try_from(value.body().transactions.len()).expect("num txs u16"),
+            num_l1_msgs: u16::try_from(
+                value
+                    .body()
+                    .transactions
+                    .iter()
+                    .filter(|tx| tx.is_l1_message())
+                    .count(),
+            )
+            .expect("num l1 msgs u16"),
+        }
+    }
+}
+
 /// Represents header-like information for the chunk.
-#[derive(Debug, Clone, Archive, Serialize, Deserialize, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug,
+    Clone,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    serde::Deserialize,
+    serde::Serialize,
+)]
 #[rkyv(derive(Debug))]
 pub struct ChunkInfo {
     /// The EIP-155 chain ID for all txs in the chunk.
@@ -19,12 +108,21 @@ pub struct ChunkInfo {
     /// The withdrawals root after applying the chunk.
     #[rkyv()]
     pub withdraw_root: B256,
-    /// Digest of L1 message txs force included in the chunk.
-    #[rkyv()]
-    pub data_hash: B256,
     /// Digest of L2 tx data flattened over all L2 txs in the chunk.
     #[rkyv()]
     pub tx_data_digest: B256,
+    /// The L1 msg queue hash at the end of the previous chunk.
+    #[rkyv()]
+    pub prev_msg_queue_hash: B256,
+    /// The L1 msg queue hash at the end of the current chunk.
+    #[rkyv()]
+    pub post_msg_queue_hash: B256,
+    /// The length of rlp encoded L2 tx bytes flattened over all L2 txs in the chunk.
+    #[rkyv()]
+    pub tx_data_length: u64,
+    /// The block contexts of the blocks in the chunk.
+    #[rkyv()]
+    pub block_ctxs: Vec<BlockContextV2>,
 }
 
 impl From<&ArchivedChunkInfo> for ChunkInfo {
@@ -34,8 +132,15 @@ impl From<&ArchivedChunkInfo> for ChunkInfo {
             prev_state_root: archived.prev_state_root.into(),
             post_state_root: archived.post_state_root.into(),
             withdraw_root: archived.withdraw_root.into(),
-            data_hash: archived.data_hash.into(),
             tx_data_digest: archived.tx_data_digest.into(),
+            prev_msg_queue_hash: archived.prev_msg_queue_hash.into(),
+            post_msg_queue_hash: archived.post_msg_queue_hash.into(),
+            tx_data_length: archived.tx_data_length.into(),
+            block_ctxs: archived
+                .block_ctxs
+                .iter()
+                .map(BlockContextV2::from)
+                .collect(),
         }
     }
 }
@@ -48,8 +153,9 @@ impl PublicInputs for ChunkInfo {
     ///     prev state root ||
     ///     post state root ||
     ///     withdraw root ||
-    ///     chunk data hash ||
-    ///     tx data hash
+    ///     tx data hash ||
+    ///     prev msg queue hash ||
+    ///     post msg queue hash
     /// )
     fn pi_hash(&self) -> B256 {
         keccak256(
@@ -58,8 +164,9 @@ impl PublicInputs for ChunkInfo {
                 .chain(self.prev_state_root.as_slice())
                 .chain(self.post_state_root.as_slice())
                 .chain(self.withdraw_root.as_slice())
-                .chain(self.data_hash.as_slice())
                 .chain(self.tx_data_digest.as_slice())
+                .chain(self.prev_msg_queue_hash.as_slice())
+                .chain(self.post_msg_queue_hash.as_slice())
                 .cloned()
                 .collect::<Vec<u8>>(),
         )
@@ -69,8 +176,10 @@ impl PublicInputs for ChunkInfo {
     ///
     /// - chain id MUST match
     /// - state roots MUST be chained
+    /// - L1 msg queue hash MUST be chained
     fn validate(&self, prev_pi: &Self) {
         assert_eq!(self.chain_id, prev_pi.chain_id);
         assert_eq!(self.prev_state_root, prev_pi.post_state_root);
+        assert_eq!(self.prev_msg_queue_hash, prev_pi.post_msg_queue_hash);
     }
 }

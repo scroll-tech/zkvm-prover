@@ -7,6 +7,8 @@ use crate::{PublicInputs, utils::keccak256};
 pub struct BundleInfo {
     /// The EIP-155 chain ID of all txs in the bundle.
     pub chain_id: u64,
+    /// The L1 msg queue hash at the end of the last batch in the bundle.
+    pub msg_queue_hash: B256,
     /// The number of batches bundled together in the bundle.
     pub num_batches: u32,
     /// The last finalized on-chain state root.
@@ -32,6 +34,7 @@ impl PublicInputs for BundleInfo {
     ///
     /// keccak(
     ///     chain id ||
+    ///     msg queue hash ||
     ///     num batches ||
     ///     prev state root ||
     ///     prev batch hash ||
@@ -43,6 +46,7 @@ impl PublicInputs for BundleInfo {
         keccak256(
             std::iter::empty()
                 .chain(self.chain_id.to_be_bytes().as_slice())
+                .chain(self.msg_queue_hash.as_slice())
                 .chain(self.num_batches.to_be_bytes().as_slice())
                 .chain(self.prev_state_root.as_slice())
                 .chain(self.prev_batch_hash.as_slice())
