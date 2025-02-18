@@ -2608,15 +2608,6 @@ dependencies = [
 
 [[package]]
 name = "itertools"
-version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba291022dbbd398a455acf126c1e341954079855bc60dfdda641363bd6922569"
-dependencies = [
- "either",
-]
-
-[[package]]
-name = "itertools"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
@@ -3207,7 +3198,7 @@ dependencies = [
 [[package]]
 name = "openvm"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "bytemuck",
  "hex-literal",
@@ -3235,7 +3226,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-circuit"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -3274,7 +3265,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-complex-macros"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "openvm-macros-common 1.0.0-rc.0",
  "quote",
@@ -3284,12 +3275,12 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-guest"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "halo2curves-axiom",
  "num-bigint 0.4.6",
  "openvm 1.0.0-rc.0",
- "openvm-algebra-complex-macros 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient)",
+ "openvm-algebra-complex-macros 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218)",
  "openvm-algebra-moduli-macros 1.0.0-rc.0",
  "openvm-platform 1.0.0-rc.0",
  "serde",
@@ -3316,7 +3307,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-moduli-macros"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "openvm-macros-common 1.0.0-rc.0",
  "quote",
@@ -3336,7 +3327,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-transpiler"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "openvm-algebra-guest 1.0.0-rc.0",
  "openvm-instructions",
@@ -3351,7 +3342,7 @@ dependencies = [
 [[package]]
 name = "openvm-bigint-circuit"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -3373,7 +3364,7 @@ dependencies = [
 [[package]]
 name = "openvm-bigint-guest"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "num-bigint 0.4.6",
  "num-traits",
@@ -3386,7 +3377,7 @@ dependencies = [
 [[package]]
 name = "openvm-bigint-transpiler"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "openvm-bigint-guest",
  "openvm-instructions",
@@ -3401,7 +3392,7 @@ dependencies = [
 [[package]]
 name = "openvm-build"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "cargo_metadata 0.18.1",
  "dirs",
@@ -3416,7 +3407,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "async-trait",
  "backtrace",
@@ -3437,8 +3428,8 @@ dependencies = [
  "openvm-poseidon2-air",
  "openvm-stark-backend",
  "openvm-stark-sdk",
- "p3-baby-bear",
- "p3-symmetric",
+ "p3-baby-bear 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-symmetric 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
  "rand",
  "rayon",
  "rustc-hash 2.1.0",
@@ -3453,7 +3444,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit-derive"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "itertools 0.13.0",
  "proc-macro2",
@@ -3464,7 +3455,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit-primitives"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "bitcode",
  "derive-new 0.6.0",
@@ -3482,7 +3473,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit-primitives-derive"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "itertools 0.13.0",
  "proc-macro2",
@@ -3503,7 +3494,7 @@ dependencies = [
 [[package]]
 name = "openvm-custom-insn"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3513,7 +3504,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-circuit"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -3544,7 +3535,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-guest"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
@@ -3596,7 +3587,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-sw-macros"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "openvm-macros-common 1.0.0-rc.0",
  "quote",
@@ -3616,7 +3607,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-transpiler"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "openvm-ecc-guest 1.0.0-rc.0",
  "openvm-instructions",
@@ -3630,7 +3621,7 @@ dependencies = [
 [[package]]
 name = "openvm-instructions"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "backtrace",
  "derive-new 0.6.0",
@@ -3647,7 +3638,7 @@ dependencies = [
 [[package]]
 name = "openvm-instructions-derive"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3657,7 +3648,7 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-circuit"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "bitcode",
  "derive-new 0.6.0",
@@ -3686,7 +3677,7 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-guest"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "openvm-platform 1.0.0-rc.0",
  "serde",
@@ -3706,7 +3697,7 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-transpiler"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "openvm-instructions",
  "openvm-instructions-derive",
@@ -3720,7 +3711,7 @@ dependencies = [
 [[package]]
 name = "openvm-macros-common"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "syn 2.0.96",
 ]
@@ -3736,7 +3727,7 @@ dependencies = [
 [[package]]
 name = "openvm-mod-circuit-builder"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "itertools 0.13.0",
  "num-bigint 0.4.6",
@@ -3755,7 +3746,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-circuit"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "bitcode",
  "derive-new 0.6.0",
@@ -3783,7 +3774,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-compiler"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "backtrace",
  "itertools 0.13.0",
@@ -3806,7 +3797,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-compiler-derive"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3816,7 +3807,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-recursion"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "cfg-if",
  "itertools 0.13.0",
@@ -3828,11 +3819,11 @@ dependencies = [
  "openvm-native-compiler-derive",
  "openvm-stark-backend",
  "openvm-stark-sdk",
- "p3-dft",
- "p3-fri",
- "p3-gpu-backend",
- "p3-merkle-tree",
- "p3-symmetric",
+ "p3-dft 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-fri 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-gpu-backend 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-merkle-tree 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-symmetric 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
  "rand",
  "serde",
  "serde_json",
@@ -3843,17 +3834,17 @@ dependencies = [
 [[package]]
 name = "openvm-native-transpiler"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "openvm-instructions",
  "openvm-transpiler",
- "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
 ]
 
 [[package]]
 name = "openvm-pairing-circuit"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -3884,7 +3875,7 @@ dependencies = [
 [[package]]
 name = "openvm-pairing-guest"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "group 0.13.0",
  "halo2curves-axiom",
@@ -3894,7 +3885,7 @@ dependencies = [
  "num-bigint 0.4.6",
  "num-traits",
  "openvm 1.0.0-rc.0",
- "openvm-algebra-complex-macros 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient)",
+ "openvm-algebra-complex-macros 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218)",
  "openvm-algebra-guest 1.0.0-rc.0",
  "openvm-algebra-moduli-macros 1.0.0-rc.0",
  "openvm-ecc-guest 1.0.0-rc.0",
@@ -3933,7 +3924,7 @@ dependencies = [
 [[package]]
 name = "openvm-pairing-transpiler"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "openvm-instructions",
  "openvm-instructions-derive",
@@ -3947,11 +3938,11 @@ dependencies = [
 [[package]]
 name = "openvm-platform"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "getrandom",
  "libm",
- "openvm-custom-insn 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient)",
+ "openvm-custom-insn 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218)",
  "stability",
  "strum_macros 0.26.4",
 ]
@@ -3971,7 +3962,7 @@ dependencies = [
 [[package]]
 name = "openvm-poseidon2-air"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "derivative",
  "itertools 0.13.0",
@@ -3979,10 +3970,10 @@ dependencies = [
  "openvm-circuit-primitives",
  "openvm-stark-backend",
  "openvm-stark-sdk",
- "p3-monty-31",
- "p3-poseidon2",
+ "p3-monty-31 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-poseidon2 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
  "p3-poseidon2-air",
- "p3-symmetric",
+ "p3-symmetric 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
  "rand",
  "tracing",
  "zkhash",
@@ -3991,7 +3982,7 @@ dependencies = [
 [[package]]
 name = "openvm-rv32-adapters"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "derive-new 0.6.0",
  "itertools 0.13.0",
@@ -4012,7 +4003,7 @@ dependencies = [
 [[package]]
 name = "openvm-rv32im-circuit"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "bitcode",
  "derive-new 0.6.0",
@@ -4039,7 +4030,7 @@ dependencies = [
 [[package]]
 name = "openvm-rv32im-guest"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "openvm-platform 1.0.0-rc.0",
  "strum_macros 0.26.4",
@@ -4057,7 +4048,7 @@ dependencies = [
 [[package]]
 name = "openvm-rv32im-transpiler"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "openvm-instructions",
  "openvm-instructions-derive",
@@ -4073,7 +4064,7 @@ dependencies = [
 [[package]]
 name = "openvm-sdk"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "async-trait",
  "bitcode",
@@ -4116,7 +4107,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-air"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "openvm-circuit-primitives",
  "openvm-stark-backend",
@@ -4127,7 +4118,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-circuit"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "bitcode",
  "derive-new 0.6.0",
@@ -4151,7 +4142,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-guest"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "openvm 1.0.0-rc.0",
  "openvm-platform 1.0.0-rc.0",
@@ -4171,7 +4162,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-transpiler"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "openvm-instructions",
  "openvm-instructions-derive",
@@ -4185,7 +4176,7 @@ dependencies = [
 [[package]]
 name = "openvm-stark-backend"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-stark-gpu.git?branch=feat%2Fgpu-quotient-rebase#989b497fe99eb76f7aa9f60b84dc8a58db32f045"
+source = "git+ssh://git@github.com/scroll-tech/openvm-stark-gpu.git?branch=process-single-rap#67e30f6d3c1d9be07b26d086b5a41f50a2c9ffa0"
 dependencies = [
  "async-trait",
  "cfg-if",
@@ -4193,17 +4184,17 @@ dependencies = [
  "derive-new 0.7.0",
  "itertools 0.13.0",
  "mimalloc",
- "p3-air",
- "p3-challenger",
- "p3-commit",
- "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-gpu-backend",
- "p3-gpu-base",
+ "p3-air 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-challenger 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-commit 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-field 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-gpu-backend 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-gpu-base 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
  "p3-gpu-module",
- "p3-matrix",
- "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
+ "p3-matrix 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-maybe-rayon 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
  "p3-uni-stark",
- "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
+ "p3-util 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
  "rayon",
  "rustc-hash 2.1.0",
  "serde",
@@ -4214,7 +4205,7 @@ dependencies = [
 [[package]]
 name = "openvm-stark-sdk"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-stark-gpu.git?branch=feat%2Fgpu-quotient-rebase#989b497fe99eb76f7aa9f60b84dc8a58db32f045"
+source = "git+ssh://git@github.com/scroll-tech/openvm-stark-gpu.git?branch=process-single-rap#67e30f6d3c1d9be07b26d086b5a41f50a2c9ffa0"
 dependencies = [
  "derivative",
  "derive_more 0.99.18",
@@ -4224,18 +4215,18 @@ dependencies = [
  "metrics-tracing-context",
  "metrics-util",
  "openvm-stark-backend",
- "p3-baby-bear",
+ "p3-baby-bear 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
  "p3-blake3",
  "p3-bn254-fr",
- "p3-dft",
- "p3-fri",
+ "p3-dft 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-fri 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
  "p3-goldilocks",
- "p3-gpu-backend",
+ "p3-gpu-backend 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
  "p3-keccak",
- "p3-merkle-tree",
+ "p3-merkle-tree 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
  "p3-poseidon",
- "p3-poseidon2",
- "p3-symmetric",
+ "p3-poseidon2 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-symmetric 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
  "rand",
  "serde",
  "serde_json",
@@ -4250,7 +4241,7 @@ dependencies = [
 [[package]]
 name = "openvm-transpiler"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient#12dbf8e0ef701f967779f64c193b126ca7440c44"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218#917a7741511a2bf91a8e5685734a2e0a7d77ca81"
 dependencies = [
  "derive_more 1.0.0",
  "elf",
@@ -4300,22 +4291,59 @@ dependencies = [
 [[package]]
 name = "p3-air"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218#c620234dfe4d6a208cc64bcffbed47693840621b"
 dependencies = [
- "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-matrix",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-matrix 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+]
+
+[[package]]
+name = "p3-air"
+version = "0.1.0"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+dependencies = [
+ "p3-field 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-matrix 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
 ]
 
 [[package]]
 name = "p3-baby-bear"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218#c620234dfe4d6a208cc64bcffbed47693840621b"
 dependencies = [
- "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-mds",
- "p3-monty-31",
- "p3-poseidon2",
- "p3-symmetric",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-mds 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-monty-31 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-poseidon2 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-symmetric 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "rand",
+ "serde",
+]
+
+[[package]]
+name = "p3-baby-bear"
+version = "0.1.0"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#21150f1c824cc755b4ccbeb61cadd5dcfa10ec37"
+dependencies = [
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-mds 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-monty-31 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-poseidon2 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-symmetric 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "rand",
+ "serde",
+]
+
+[[package]]
+name = "p3-baby-bear"
+version = "0.1.0"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+dependencies = [
+ "p3-field 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-mds 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-monty-31 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-poseidon2 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-symmetric 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
  "rand",
  "serde",
 ]
@@ -4323,24 +4351,24 @@ dependencies = [
 [[package]]
 name = "p3-blake3"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
 dependencies = [
  "blake3",
- "p3-symmetric",
- "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
+ "p3-symmetric 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-util 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
 ]
 
 [[package]]
 name = "p3-bn254-fr"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
 dependencies = [
  "ff 0.13.0",
  "halo2curves",
  "num-bigint 0.4.6",
- "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-poseidon2",
- "p3-symmetric",
+ "p3-field 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-poseidon2 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-symmetric 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
  "rand",
  "serde",
 ]
@@ -4348,55 +4376,151 @@ dependencies = [
 [[package]]
 name = "p3-challenger"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218#c620234dfe4d6a208cc64bcffbed47693840621b"
 dependencies = [
- "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-symmetric",
- "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-symmetric 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "tracing",
+]
+
+[[package]]
+name = "p3-challenger"
+version = "0.1.0"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#21150f1c824cc755b4ccbeb61cadd5dcfa10ec37"
+dependencies = [
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-symmetric 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "tracing",
+]
+
+[[package]]
+name = "p3-challenger"
+version = "0.1.0"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+dependencies = [
+ "p3-field 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-maybe-rayon 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-symmetric 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-util 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
  "tracing",
 ]
 
 [[package]]
 name = "p3-commit"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218#c620234dfe4d6a208cc64bcffbed47693840621b"
 dependencies = [
  "itertools 0.13.0",
- "p3-challenger",
- "p3-dft",
- "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-gpu-base",
- "p3-matrix",
- "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
+ "p3-challenger 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-dft 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-gpu-base 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-matrix 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "serde",
+]
+
+[[package]]
+name = "p3-commit"
+version = "0.1.0"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#21150f1c824cc755b4ccbeb61cadd5dcfa10ec37"
+dependencies = [
+ "itertools 0.13.0",
+ "p3-challenger 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-dft 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-gpu-base 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-matrix 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "serde",
+]
+
+[[package]]
+name = "p3-commit"
+version = "0.1.0"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+dependencies = [
+ "itertools 0.13.0",
+ "p3-challenger 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-dft 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-field 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-matrix 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-util 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
  "serde",
 ]
 
 [[package]]
 name = "p3-dft"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218#c620234dfe4d6a208cc64bcffbed47693840621b"
 dependencies = [
  "itertools 0.13.0",
- "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-matrix",
- "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-matrix 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "tracing",
+]
+
+[[package]]
+name = "p3-dft"
+version = "0.1.0"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#21150f1c824cc755b4ccbeb61cadd5dcfa10ec37"
+dependencies = [
+ "itertools 0.13.0",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-matrix 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "tracing",
+]
+
+[[package]]
+name = "p3-dft"
+version = "0.1.0"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+dependencies = [
+ "itertools 0.13.0",
+ "p3-field 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-matrix 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-maybe-rayon 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-util 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
  "tracing",
 ]
 
 [[package]]
 name = "p3-field"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218#c620234dfe4d6a208cc64bcffbed47693840621b"
 dependencies = [
  "itertools 0.13.0",
  "num-bigint 0.4.6",
  "num-integer",
  "num-traits",
  "nums",
- "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
+ "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "rand",
+ "serde",
+ "tracing",
+]
+
+[[package]]
+name = "p3-field"
+version = "0.1.0"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#21150f1c824cc755b4ccbeb61cadd5dcfa10ec37"
+dependencies = [
+ "itertools 0.13.0",
+ "num-bigint 0.4.6",
+ "num-integer",
+ "num-traits",
+ "nums",
+ "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
  "rand",
  "serde",
  "tracing",
@@ -4422,20 +4546,20 @@ dependencies = [
 [[package]]
 name = "p3-fri"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218#c620234dfe4d6a208cc64bcffbed47693840621b"
 dependencies = [
  "itertools 0.13.0",
- "p3-challenger",
- "p3-commit",
- "p3-dft",
- "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-gpu-backend",
- "p3-gpu-base",
- "p3-interpolation",
- "p3-matrix",
- "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-merkle-tree",
- "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
+ "p3-challenger 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-commit 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-dft 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-gpu-backend 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-gpu-base 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-interpolation 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-matrix 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-merkle-tree 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
  "rand",
  "serde",
  "tracing",
@@ -4443,18 +4567,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "p3-fri"
+version = "0.1.0"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+dependencies = [
+ "itertools 0.13.0",
+ "p3-challenger 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-commit 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-dft 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-field 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-interpolation 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-matrix 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-maybe-rayon 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-util 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "rand",
+ "serde",
+ "tracing",
+]
+
+[[package]]
 name = "p3-goldilocks"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
 dependencies = [
  "num-bigint 0.4.6",
- "p3-dft",
- "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-mds",
+ "p3-dft 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-field 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-mds 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
  "p3-poseidon",
- "p3-poseidon2",
- "p3-symmetric",
- "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
+ "p3-poseidon2 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-symmetric 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-util 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
  "rand",
  "serde",
 ]
@@ -4462,7 +4605,7 @@ dependencies = [
 [[package]]
 name = "p3-gpu-backend"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218#c620234dfe4d6a208cc64bcffbed47693840621b"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -4474,14 +4617,48 @@ dependencies = [
  "lazy_static",
  "ndarray",
  "once_cell",
- "p3-baby-bear",
- "p3-commit",
- "p3-dft",
- "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-gpu-base",
- "p3-gpu-build",
- "p3-matrix",
- "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
+ "p3-baby-bear 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-commit 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-dft 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-gpu-base 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-gpu-build 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-matrix 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "parking_lot",
+ "paste",
+ "rand",
+ "rand_core",
+ "rayon",
+ "serde",
+ "sppark",
+ "tracing",
+ "transpose",
+]
+
+[[package]]
+name = "p3-gpu-backend"
+version = "0.1.0"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#21150f1c824cc755b4ccbeb61cadd5dcfa10ec37"
+dependencies = [
+ "anyhow",
+ "bytemuck",
+ "cc",
+ "cust",
+ "cust_raw",
+ "ff 0.13.0",
+ "itertools 0.13.0",
+ "lazy_static",
+ "ndarray",
+ "once_cell",
+ "p3-baby-bear 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-commit 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-dft 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-gpu-base 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-gpu-build 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-matrix 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
  "parking_lot",
  "paste",
  "rand",
@@ -4496,7 +4673,7 @@ dependencies = [
 [[package]]
 name = "p3-gpu-base"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218#c620234dfe4d6a208cc64bcffbed47693840621b"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -4504,7 +4681,23 @@ dependencies = [
  "cust_raw",
  "hex",
  "lazy_static",
- "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "parking_lot",
+ "tracing",
+]
+
+[[package]]
+name = "p3-gpu-base"
+version = "0.1.0"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#21150f1c824cc755b4ccbeb61cadd5dcfa10ec37"
+dependencies = [
+ "anyhow",
+ "bytemuck",
+ "cust",
+ "cust_raw",
+ "hex",
+ "lazy_static",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
  "parking_lot",
  "tracing",
 ]
@@ -4512,12 +4705,25 @@ dependencies = [
 [[package]]
 name = "p3-gpu-build"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218#c620234dfe4d6a208cc64bcffbed47693840621b"
 dependencies = [
  "cc",
  "directories",
  "hex",
- "p3-gpu-field",
+ "p3-gpu-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "sha2",
+ "tempfile",
+]
+
+[[package]]
+name = "p3-gpu-build"
+version = "0.1.0"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#21150f1c824cc755b4ccbeb61cadd5dcfa10ec37"
+dependencies = [
+ "cc",
+ "directories",
+ "hex",
+ "p3-gpu-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
  "sha2",
  "tempfile",
 ]
@@ -4525,60 +4731,70 @@ dependencies = [
 [[package]]
 name = "p3-gpu-field"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218#c620234dfe4d6a208cc64bcffbed47693840621b"
+
+[[package]]
+name = "p3-gpu-field"
+version = "0.1.0"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#21150f1c824cc755b4ccbeb61cadd5dcfa10ec37"
 
 [[package]]
 name = "p3-gpu-module"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#21150f1c824cc755b4ccbeb61cadd5dcfa10ec37"
 dependencies = [
- "cust",
- "itertools 0.12.1",
- "p3-commit",
- "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-fri",
- "p3-gpu-base",
- "p3-gpu-field",
- "p3-matrix",
- "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "rand",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-gpu-base 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-matrix 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
  "tracing",
 ]
 
 [[package]]
 name = "p3-interpolation"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218#c620234dfe4d6a208cc64bcffbed47693840621b"
 dependencies = [
- "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-matrix",
- "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-matrix 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+]
+
+[[package]]
+name = "p3-interpolation"
+version = "0.1.0"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+dependencies = [
+ "p3-field 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-matrix 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-maybe-rayon 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-util 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
 ]
 
 [[package]]
 name = "p3-keccak"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
 dependencies = [
  "itertools 0.13.0",
- "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-symmetric",
- "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
+ "p3-field 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-symmetric 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-util 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
  "tiny-keccak",
 ]
 
 [[package]]
 name = "p3-keccak-air"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218#c620234dfe4d6a208cc64bcffbed47693840621b"
 dependencies = [
- "p3-air",
- "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-gpu-backend",
- "p3-matrix",
- "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
+ "p3-air 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-gpu-backend 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-matrix 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
  "rand",
  "tracing",
  "zkhash",
@@ -4587,12 +4803,42 @@ dependencies = [
 [[package]]
 name = "p3-matrix"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218#c620234dfe4d6a208cc64bcffbed47693840621b"
 dependencies = [
  "itertools 0.13.0",
- "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "rand",
+ "serde",
+ "tracing",
+ "transpose",
+]
+
+[[package]]
+name = "p3-matrix"
+version = "0.1.0"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#21150f1c824cc755b4ccbeb61cadd5dcfa10ec37"
+dependencies = [
+ "itertools 0.13.0",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "rand",
+ "serde",
+ "tracing",
+ "transpose",
+]
+
+[[package]]
+name = "p3-matrix"
+version = "0.1.0"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+dependencies = [
+ "itertools 0.13.0",
+ "p3-field 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-maybe-rayon 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-util 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
  "rand",
  "serde",
  "tracing",
@@ -4602,7 +4848,7 @@ dependencies = [
 [[package]]
 name = "p3-maybe-rayon"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218#c620234dfe4d6a208cc64bcffbed47693840621b"
 dependencies = [
  "rayon",
 ]
@@ -4610,36 +4856,89 @@ dependencies = [
 [[package]]
 name = "p3-maybe-rayon"
 version = "0.1.0"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#21150f1c824cc755b4ccbeb61cadd5dcfa10ec37"
+
+[[package]]
+name = "p3-maybe-rayon"
+version = "0.1.0"
 source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+dependencies = [
+ "rayon",
+]
 
 [[package]]
 name = "p3-mds"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218#c620234dfe4d6a208cc64bcffbed47693840621b"
 dependencies = [
  "itertools 0.13.0",
- "p3-dft",
- "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-matrix",
- "p3-symmetric",
- "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
+ "p3-dft 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-matrix 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-symmetric 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "rand",
+]
+
+[[package]]
+name = "p3-mds"
+version = "0.1.0"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#21150f1c824cc755b4ccbeb61cadd5dcfa10ec37"
+dependencies = [
+ "itertools 0.13.0",
+ "p3-dft 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-matrix 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-symmetric 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "rand",
+]
+
+[[package]]
+name = "p3-mds"
+version = "0.1.0"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+dependencies = [
+ "itertools 0.13.0",
+ "p3-dft 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-field 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-matrix 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-symmetric 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-util 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
  "rand",
 ]
 
 [[package]]
 name = "p3-merkle-tree"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218#c620234dfe4d6a208cc64bcffbed47693840621b"
 dependencies = [
  "itertools 0.13.0",
- "p3-commit",
- "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-gpu-backend",
- "p3-gpu-base",
- "p3-matrix",
- "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-symmetric",
- "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
+ "p3-commit 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-gpu-backend 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-gpu-base 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-matrix 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-symmetric 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "rand",
+ "serde",
+ "tracing",
+]
+
+[[package]]
+name = "p3-merkle-tree"
+version = "0.1.0"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+dependencies = [
+ "itertools 0.13.0",
+ "p3-commit 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-field 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-matrix 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-maybe-rayon 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-symmetric 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-util 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
  "rand",
  "serde",
  "tracing",
@@ -4648,18 +4947,60 @@ dependencies = [
 [[package]]
 name = "p3-monty-31"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218#c620234dfe4d6a208cc64bcffbed47693840621b"
 dependencies = [
  "itertools 0.13.0",
  "num-bigint 0.4.6",
- "p3-dft",
- "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-matrix",
- "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-mds",
- "p3-poseidon2",
- "p3-symmetric",
- "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
+ "p3-dft 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-matrix 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-mds 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-poseidon2 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-symmetric 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "rand",
+ "serde",
+ "tracing",
+ "transpose",
+]
+
+[[package]]
+name = "p3-monty-31"
+version = "0.1.0"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#21150f1c824cc755b4ccbeb61cadd5dcfa10ec37"
+dependencies = [
+ "itertools 0.13.0",
+ "num-bigint 0.4.6",
+ "p3-dft 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-matrix 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-mds 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-poseidon2 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-symmetric 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "rand",
+ "serde",
+ "tracing",
+ "transpose",
+]
+
+[[package]]
+name = "p3-monty-31"
+version = "0.1.0"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+dependencies = [
+ "itertools 0.13.0",
+ "num-bigint 0.4.6",
+ "p3-dft 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-field 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-matrix 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-maybe-rayon 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-mds 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-poseidon2 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-symmetric 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-util 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
  "rand",
  "serde",
  "tracing",
@@ -4669,37 +5010,61 @@ dependencies = [
 [[package]]
 name = "p3-poseidon"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
 dependencies = [
- "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-mds",
- "p3-symmetric",
+ "p3-field 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-mds 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-symmetric 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
  "rand",
 ]
 
 [[package]]
 name = "p3-poseidon2"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218#c620234dfe4d6a208cc64bcffbed47693840621b"
 dependencies = [
  "gcd",
- "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-mds",
- "p3-symmetric",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-mds 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-symmetric 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "rand",
+]
+
+[[package]]
+name = "p3-poseidon2"
+version = "0.1.0"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#21150f1c824cc755b4ccbeb61cadd5dcfa10ec37"
+dependencies = [
+ "gcd",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-mds 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "p3-symmetric 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "rand",
+]
+
+[[package]]
+name = "p3-poseidon2"
+version = "0.1.0"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+dependencies = [
+ "gcd",
+ "p3-field 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-mds 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-symmetric 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
  "rand",
 ]
 
 [[package]]
 name = "p3-poseidon2-air"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218#c620234dfe4d6a208cc64bcffbed47693840621b"
 dependencies = [
- "p3-air",
- "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-matrix",
- "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-poseidon2",
- "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
+ "p3-air 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-matrix 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-poseidon2 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
  "rand",
  "tikv-jemallocator",
  "tracing",
@@ -4708,27 +5073,47 @@ dependencies = [
 [[package]]
 name = "p3-symmetric"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218#c620234dfe4d6a208cc64bcffbed47693840621b"
 dependencies = [
  "itertools 0.13.0",
- "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218)",
+ "serde",
+]
+
+[[package]]
+name = "p3-symmetric"
+version = "0.1.0"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#21150f1c824cc755b4ccbeb61cadd5dcfa10ec37"
+dependencies = [
+ "itertools 0.13.0",
+ "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2)",
+ "serde",
+]
+
+[[package]]
+name = "p3-symmetric"
+version = "0.1.0"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+dependencies = [
+ "itertools 0.13.0",
+ "p3-field 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
  "serde",
 ]
 
 [[package]]
 name = "p3-uni-stark"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
 dependencies = [
  "itertools 0.13.0",
- "p3-air",
- "p3-challenger",
- "p3-commit",
- "p3-dft",
- "p3-field 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-matrix",
- "p3-maybe-rayon 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
- "p3-util 0.1.0 (git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2)",
+ "p3-air 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-challenger 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-commit 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-dft 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-field 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-matrix 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-maybe-rayon 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
+ "p3-util 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9)",
  "serde",
  "tracing",
 ]
@@ -4736,7 +5121,15 @@ dependencies = [
 [[package]]
 name = "p3-util"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=dev-openvm-quotient-v2#718f8386252f9073ea039305bf0ff03be019b81e"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=bench-log-0218#c620234dfe4d6a208cc64bcffbed47693840621b"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "p3-util"
+version = "0.1.0"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#21150f1c824cc755b4ccbeb61cadd5dcfa10ec37"
 dependencies = [
  "serde",
 ]
@@ -6423,7 +6816,7 @@ name = "scroll-zkvm-chunk-circuit"
 version = "0.1.0-rc.2"
 dependencies = [
  "openvm 1.0.0-rc.0",
- "openvm-algebra-complex-macros 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=feat%2Fgpu-quotient)",
+ "openvm-algebra-complex-macros 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=bench-0218)",
  "openvm-algebra-guest 1.0.0-rc.0",
  "openvm-bigint-guest",
  "openvm-ecc-guest 1.0.0-rc.0",

@@ -20,26 +20,26 @@ repository = "https://github.com/scroll-tech/zkvm-prover"
 version = "0.1.0-rc.2"
 
 [workspace.dependencies]
-openvm = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-openvm-algebra-complex-macros = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-openvm-algebra-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-openvm-bigint-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-openvm-build ={ git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-openvm-circuit ={ git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-openvm-native-circuit = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-openvm-native-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-openvm-native-compiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-openvm-native-recursion = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-openvm-ecc-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-openvm-instructions ={ git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-openvm-keccak256-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-openvm-pairing-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-openvm-rv32im-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-openvm-rv32im-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-openvm-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-openvm-sdk = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
+openvm = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
+openvm-algebra-complex-macros = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
+openvm-algebra-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
+openvm-bigint-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
+openvm-build ={ git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
+openvm-circuit ={ git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
+openvm-native-circuit = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
+openvm-native-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
+openvm-native-compiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
+openvm-native-recursion = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
+openvm-ecc-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
+openvm-instructions ={ git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
+openvm-keccak256-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
+openvm-pairing-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
+openvm-rv32im-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
+openvm-rv32im-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
+openvm-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
+openvm-sdk = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
 
-openvm-stark-sdk = { git = "ssh://git@github.com/scroll-tech/openvm-stark-gpu.git", branch = "feat/gpu-quotient-rebase", features = ["gpu"] }
+openvm-stark-sdk = { git = "ssh://git@github.com/scroll-tech/openvm-stark-gpu.git", branch = "process-single-rap", features = ["gpu"] }
 
 bitcode = { version = "0.6.3", default-features = false, features = ["serde", "derive"] }
 derivative = "2.2.0"
@@ -78,25 +78,3 @@ revm-primitives = { git = "https://github.com/scroll-tech/revm", branch = "scrol
 ruint = { git = "https://github.com/scroll-tech/uint.git", branch = "v1.12.3" }
 tiny-keccak = { git = "https://github.com/scroll-tech/tiny-keccak", branch = "scroll-patch-v2.0.2-openvm-v1.0.0-rc.1" }
 
-# [patch."https://github.com/openvm-org/stark-backend.git"]
-# openvm-stark-sdk = { git = "ssh://git@github.com/scroll-tech/openvm-stark-gpu.git", branch = "v2-base", features = ["gpu"] }
-
-# [patch."https://github.com/scroll-tech/openvm-gpu.git"]
-# openvm = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-# openvm-algebra-complex-macros = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-# openvm-algebra-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-# openvm-bigint-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-# openvm-build ={ git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-# openvm-circuit ={ git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-# openvm-native-circuit = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-# openvm-native-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-# openvm-native-compiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-# openvm-native-recursion = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-# openvm-ecc-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-# openvm-instructions ={ git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-# openvm-keccak256-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-# openvm-pairing-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-# openvm-rv32im-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-# openvm-rv32im-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-# openvm-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient" }
-# openvm-sdk = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "feat/gpu-quotient"}
