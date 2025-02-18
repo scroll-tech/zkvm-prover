@@ -5,12 +5,12 @@ use sbv::{
         ext::TxBytesHashExt,
     },
 };
-use scroll_zkvm_circuit_input_types::chunk::{ChunkInfo, make_providers};
+use scroll_zkvm_circuit_input_types::chunk::{BlockContextV2, ChunkInfo, make_providers};
 
 #[cfg(feature = "scroll")]
-use sbv::{
-    core::ChunkInfo as SbvChunkInfo,
-    primitives::{Block, BlockWitness, RecoveredBlock},
+use sbv::primitives::{
+    BlockWitness, RecoveredBlock,
+    types::{ChunkInfoBuilder, reth::Block},
 };
 
 use crate::{
@@ -69,10 +69,8 @@ impl ProverType for ChunkProverType {
             .map(|s| s.build_reth_block())
             .collect::<Result<Vec<RecoveredBlock<Block>>, _>>()
             .map_err(|e| Error::GenProof(e.to_string()))?;
-        let sbv_chunk_info =
-            SbvChunkInfo::from_blocks(chain_id, first_block.pre_state_root(), &blocks);
 
-        let chain_spec = get_chain_spec(Chain::from_id(sbv_chunk_info.chain_id())).ok_or(
+        let chain_spec = get_chain_spec(Chain::from_id(task.block_witnesses[0].chain_id())).ok_or(
             Error::GenProof(format!("{err_prefix}: failed to get chain spec")),
         )?;
 
@@ -80,7 +78,7 @@ impl ProverType for ChunkProverType {
 
         let mut db = EvmDatabase::new_from_root(
             code_db,
-            sbv_chunk_info.prev_state_root(),
+            task.block_witnesses[0].pre_state_root,
             &nodes_provider,
             block_hashes,
         )
@@ -102,13 +100,6 @@ impl ProverType for ChunkProverType {
         }
 
         let post_state_root = db.commit_changes();
-        if post_state_root != sbv_chunk_info.post_state_root() {
-            return Err(Error::GenProof(format!(
-                "{err_prefix}: state root mismatch: expected={}, found={}",
-                sbv_chunk_info.post_state_root(),
-                post_state_root
-            )));
-        }
 
         let withdraw_root = db.withdraw_root().map_err(|e| {
             Error::GenProof(format!(
@@ -118,19 +109,38 @@ impl ProverType for ChunkProverType {
         })?;
 
         let mut rlp_buffer = Vec::with_capacity(2048);
-        let tx_data_digest = blocks
+        let (tx_data_length, tx_data_digest) = blocks
             .iter()
             .flat_map(|b| b.body().transactions.iter())
             .tx_bytes_hash_in(rlp_buffer.as_mut());
 
+        let block_ctxs = blocks.iter().map(BlockContextV2::from).collect();
+
+        let sbv_chunk_info = {
+            let mut builder = ChunkInfoBuilder::new(&chain_spec, &blocks);
+            builder.prev_msg_queue_hash(task.prev_msg_queue_hash);
+            builder
+                .build(withdraw_root)
+                .into_euclid_v2()
+                .expect("euclid-v2")
+        };
+        if post_state_root != sbv_chunk_info.post_state_root {
+            return Err(Error::GenProof(format!(
+                "{err_prefix}: state root mismatch: expected={}, found={}",
+                sbv_chunk_info.post_state_root, post_state_root
+            )));
+        }
+
         let chunk_info = ChunkInfo {
-            chain_id: sbv_chunk_info.chain_id(),
-            prev_state_root: sbv_chunk_info.prev_state_root(),
-            post_state_root: sbv_chunk_info.post_state_root(),
+            chain_id: sbv_chunk_info.chain_id,
+            prev_state_root: sbv_chunk_info.prev_state_root,
+            post_state_root: sbv_chunk_info.post_state_root,
             withdraw_root,
             tx_data_digest,
-            prev_msg_queue_hash: todo!(),
-            post_msg_queue_hash: todo!(),
+            tx_data_length: u64::try_from(tx_data_length).expect("tx_data_length: u64"),
+            prev_msg_queue_hash: task.prev_msg_queue_hash,
+            post_msg_queue_hash: sbv_chunk_info.post_msg_queue_hash,
+            block_ctxs,
         };
 
         Ok(ChunkProofMetadata { chunk_info })
