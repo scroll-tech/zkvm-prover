@@ -1,5 +1,5 @@
 use alloy_primitives::{B256, U256};
-use sbv::primitives::{Block, BlockHeader, RecoveredBlock};
+use sbv::primitives::{RecoveredBlock, alloy_consensus::BlockHeader, types::reth::Block};
 
 use crate::{PublicInputs, utils::keccak256};
 

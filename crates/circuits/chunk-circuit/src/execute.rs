@@ -3,10 +3,10 @@ use std::mem::ManuallyDrop;
 use sbv::{
     core::{EvmDatabase, EvmExecutor},
     primitives::{
-        Block, BlockWitness, RecoveredBlock,
+        BlockWitness, RecoveredBlock,
         chainspec::{Chain, get_chain_spec},
         ext::{BlockWitnessChunkExt, TxBytesHashExt},
-        types::ChunkInfoBuilder,
+        types::{ChunkInfoBuilder, reth::Block},
     },
 };
 use scroll_zkvm_circuit_input_types::chunk::{
@@ -38,23 +38,13 @@ pub fn execute(witness: &ArchivedChunkWitness) -> ChunkInfo {
     let chain_spec = get_chain_spec(Chain::from_id(witness.blocks[0].chain_id()))
         .expect("failed to get chain spec");
 
-    let prev_msg_queue_hash = witness.prev_msg_queue_hash.into();
-    let sbv_chunk_info = ChunkInfoBuilder::new(chain_spec, blocks)
-        .prev_msg_queue_hash(prev_msg_queue_hash)
-        .build();
-    let post_msg_queue_hash = sbv_chunk_info.post_msg_queue_hash;
-
     let (code_db, nodes_provider, block_hashes) = make_providers(&witness.blocks);
     let nodes_provider = ManuallyDrop::new(nodes_provider);
 
+    let prev_state_root = witness.blocks[0].pre_state_root();
     let mut db = ManuallyDrop::new(
-        EvmDatabase::new_from_root(
-            code_db,
-            sbv_chunk_info.prev_state_root(),
-            &nodes_provider,
-            block_hashes,
-        )
-        .expect("failed to create EvmDatabase"),
+        EvmDatabase::new_from_root(code_db, prev_state_root, &nodes_provider, block_hashes)
+            .expect("failed to create EvmDatabase"),
     );
     for block in blocks.iter() {
         let output = ManuallyDrop::new(
@@ -67,11 +57,6 @@ pub fn execute(witness: &ArchivedChunkWitness) -> ChunkInfo {
     }
 
     let post_state_root = db.commit_changes();
-    assert_eq!(
-        sbv_chunk_info.post_state_root(),
-        post_state_root,
-        "state root mismatch"
-    );
 
     let withdraw_root = db.withdraw_root().expect("failed to get withdraw root");
 
@@ -83,18 +68,34 @@ pub fn execute(witness: &ArchivedChunkWitness) -> ChunkInfo {
 
     let block_ctxs = blocks.iter().map(BlockContextV2::from).collect();
 
+    let prev_msg_queue_hash = witness.prev_msg_queue_hash.into();
+    let sbv_chunk_info = {
+        let mut builder = ChunkInfoBuilder::new(&chain_spec, blocks);
+        builder.prev_msg_queue_hash(prev_msg_queue_hash);
+        builder
+            .build(withdraw_root)
+            .into_euclid_v2()
+            .expect("euclid-v2")
+    };
+    let post_msg_queue_hash = sbv_chunk_info.post_msg_queue_hash;
+
+    assert_eq!(
+        sbv_chunk_info.post_state_root, post_state_root,
+        "state root mismatch"
+    );
+
     openvm::io::println(format!("withdraw_root = {:?}", withdraw_root));
     openvm::io::println(format!("tx_bytes_hash = {:?}", tx_data_digest));
 
     ChunkInfo {
-        chain_id: sbv_chunk_info.chain_id(),
-        prev_state_root: sbv_chunk_info.prev_state_root(),
-        post_state_root: sbv_chunk_info.post_state_root(),
+        chain_id: sbv_chunk_info.chain_id,
+        prev_state_root: sbv_chunk_info.prev_state_root,
+        post_state_root: sbv_chunk_info.post_state_root,
         withdraw_root,
         tx_data_digest,
         prev_msg_queue_hash,
         post_msg_queue_hash,
-        tx_data_length,
+        tx_data_length: u64::try_from(tx_data_length).expect("tx_data_length: u64"),
         block_ctxs,
     }
 }
