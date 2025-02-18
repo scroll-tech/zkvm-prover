@@ -21,7 +21,6 @@ pub struct EnvelopeV7 {
     /// Caching just for re-use later in challenge digest computation.
     pub envelope_bytes: Vec<u8>,
     /// The version from da-codec, i.e. v7 in this case.
-    #[allow(dead_code)]
     pub version: u8,
     /// A single byte boolean flag (value is 0 or 1) to denote whether or not the following blob
     /// bytes represent a batch in its zstd-encoded or raw form.
@@ -92,13 +91,19 @@ impl EnvelopeV7 {
 /// Represents the batch data, eventually encoded into an [`EnvelopeV7`].
 #[derive(Debug, Clone)]
 pub struct PayloadV7 {
+    /// The version from da-codec, i.e. v7 in this case.
+    ///
+    /// Copied from the envelope.
+    pub version: u8,
     /// The L1 msg queue index of the first L1 msg in the block.
+    #[allow(dead_code)]
     pub initial_msg_index: u64,
     /// Message queue hash at the end of the previous batch.
     pub prev_msg_queue_hash: B256,
     /// Message queue hash at the end of the current batch.
     pub post_msg_queue_hash: B256,
     /// The block number of the first block in the batch.
+    #[allow(dead_code)]
     pub initial_block_number: u64,
     /// The number of blocks in the batch.
     pub num_blocks: u16,
@@ -165,6 +170,7 @@ impl From<&EnvelopeV7> for PayloadV7 {
             payload_bytes[INDEX_BLOCK_CTX + ((num_blocks as usize) * SIZE_BLOCK_CTX)..].to_vec();
 
         Self {
+            version: envelope.version,
             initial_msg_index,
             prev_msg_queue_hash,
             post_msg_queue_hash,
@@ -177,12 +183,67 @@ impl From<&EnvelopeV7> for PayloadV7 {
 }
 
 impl PayloadV7 {
-    pub fn validate(
-        &self,
-        header: &BatchHeaderV7,
-        first_chunk: &ChunkInfo,
-        last_chunk: &ChunkInfo,
-    ) {
-        unimplemented!()
+    /// Validate the payload contents.
+    pub fn validate(&self, header: &BatchHeaderV7, chunk_infos: &[ChunkInfo]) {
+        // Get the first and last chunks' info, to construct the batch info.
+        let (first, last) = (
+            chunk_infos.first().expect("at least one chunk in batch"),
+            chunk_infos.last().expect("at least one chunk in batch"),
+        );
+
+        // version from payload is what's present in the on-chain batch header
+        assert_eq!(self.version, header.version);
+
+        // number of blocks in the batch
+        assert_eq!(
+            usize::from(self.num_blocks),
+            chunk_infos
+                .iter()
+                .flat_map(|chunk_info| &chunk_info.block_ctxs)
+                .count()
+        );
+        assert_eq!(usize::from(self.num_blocks), self.block_contexts.len());
+
+        // prev message queue hash
+        assert_eq!(self.prev_msg_queue_hash, first.prev_msg_queue_hash);
+
+        // post message queue hash
+        assert_eq!(self.post_msg_queue_hash, last.post_msg_queue_hash);
+
+        // for each chunk, the tx_data_digest, i.e. keccak digest of the rlp-encoded L2 tx bytes
+        // flattened over every tx in the chunk, should be re-computed and matched against the
+        // public input of the chunk-circuit.
+        //
+        // first check that the total size of rlp-encoded tx data flattened over all txs in the
+        // chunk is in fact the size available from the payload.
+        assert_eq!(
+            u64::try_from(self.tx_data.len()).expect("len(tx-data) is u64"),
+            chunk_infos
+                .iter()
+                .map(|chunk_info| chunk_info.tx_data_length)
+                .sum::<u64>(),
+        );
+        let mut index: usize = 0;
+        for chunk_info in chunk_infos.iter() {
+            let chunk_size = chunk_info.tx_data_length as usize;
+            let chunk_tx_data_digest =
+                keccak256(&self.tx_data.as_slice()[index..(index + chunk_size)]);
+            assert_eq!(chunk_tx_data_digest, chunk_info.tx_data_digest);
+            index += chunk_size;
+        }
+
+        // for each block in the batch, check that the block context matches what's provided as
+        // witness.
+        for (block_ctx, witness_block_ctx) in self.block_contexts.iter().zip(
+            chunk_infos
+                .iter()
+                .flat_map(|chunk_info| &chunk_info.block_ctxs),
+        ) {
+            assert_eq!(block_ctx.timestamp, witness_block_ctx.timestamp);
+            assert_eq!(block_ctx.gas_limit, witness_block_ctx.gas_limit);
+            assert_eq!(block_ctx.base_fee, witness_block_ctx.base_fee);
+            assert_eq!(block_ctx.num_txs, witness_block_ctx.num_txs);
+            assert_eq!(block_ctx.num_l1_msgs, witness_block_ctx.num_l1_msgs);
+        }
     }
 }

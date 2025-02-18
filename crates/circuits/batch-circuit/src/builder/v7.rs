@@ -21,7 +21,7 @@ impl BatchInfoBuilderV7 {
     /// by processing the witness, while making some validations.
     pub fn build(
         header: &BatchHeaderV7,
-        chunks_info: &[ChunkInfo],
+        chunk_infos: &[ChunkInfo],
         blob_bytes: &[u8],
         kzg_commitment: &Bytes48,
         kzg_proof: &Bytes48,
@@ -30,12 +30,6 @@ impl BatchInfoBuilderV7 {
         assert!(
             blob_bytes.len() < N_BLOB_BYTES,
             "blob-envelope bigger than allowed"
-        );
-
-        // Get the first and last chunks' info, to construct the batch info.
-        let (first, last) = (
-            chunks_info.first().expect("at least one chunk in batch"),
-            chunks_info.last().expect("at least one chunk in batch"),
         );
 
         let envelope_bytes = {
@@ -47,7 +41,7 @@ impl BatchInfoBuilderV7 {
         let payload = crate::payload::v7::PayloadV7::from(&envelope);
 
         // Validate payload (batch data).
-        payload.validate(header, first, last);
+        payload.validate(header, chunk_infos);
 
         // Barycentric evaluation of blob polynomial.
         let challenge_digest = envelope.challenge_digest(header.blob_versioned_hash);
@@ -76,6 +70,12 @@ impl BatchInfoBuilderV7 {
                 (proof.x().clone(), proof.y().clone()),
             );
         }
+
+        // Get the first and last chunks' info, to construct the batch info.
+        let (first, last) = (
+            chunk_infos.first().expect("at least one chunk in batch"),
+            chunk_infos.last().expect("at least one chunk in batch"),
+        );
 
         BatchInfo {
             parent_state_root: first.prev_state_root,
