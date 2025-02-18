@@ -1,6 +1,6 @@
+use crate::utils::keccak256;
 use alloy_primitives::B256;
 use itertools::Itertools;
-use crate::utils::keccak256;
 
 /// The number of bytes to encode number of chunks in a batch.
 const N_BYTES_NUM_CHUNKS: usize = 2;
@@ -13,7 +13,6 @@ pub const MAX_AGG_CHUNKS: usize = 45;
 pub struct PayloadV3<const N_MAX_CHUNKS: usize> {}
 
 impl<const N_MAX_CHUNKS: usize> PayloadV3<N_MAX_CHUNKS> {
-
     /// The number of bytes in payload Data to represent the "payload metadata" section: a u16 to
     /// represent the size of chunks and max_chunks * u32 to represent chunk sizes
     const fn n_bytes_metadata() -> usize {
@@ -21,10 +20,7 @@ impl<const N_MAX_CHUNKS: usize> PayloadV3<N_MAX_CHUNKS> {
     }
 
     /// parsed the payload_data with v3 format and calculate the challenge
-    pub fn challenge(
-        payload_data: &[u8],
-        versioned_hash: B256,
-    ) -> B256 {
+    pub fn challenge(payload_data: &[u8], versioned_hash: B256) -> B256 {
         let n_bytes_metadata = Self::n_bytes_metadata();
         let metadata_bytes = &payload_data[..n_bytes_metadata];
         let metadata_digest = keccak256(metadata_bytes);
@@ -57,7 +53,7 @@ impl<const N_MAX_CHUNKS: usize> PayloadV3<N_MAX_CHUNKS> {
             "chunk segmentation len must add up to the correct value"
         );
 
-        let chunk_data_digests : Vec<B256> = segmented_batch_data
+        let chunk_data_digests: Vec<B256> = segmented_batch_data
             .iter()
             .map(|bytes| B256::from(keccak256(bytes)))
             .collect();
@@ -71,9 +67,7 @@ impl<const N_MAX_CHUNKS: usize> PayloadV3<N_MAX_CHUNKS> {
         // where chunk_data_digest for a padded chunk is set equal to the "last valid chunk"'s
         // chunk_data_digest.
         let mut preimage = metadata_digest.to_vec();
-        let last_digest = chunk_data_digests
-            .last()
-            .expect("at least we have one");
+        let last_digest = chunk_data_digests.last().expect("at least we have one");
         for chunk_digest in chunk_data_digests
             .iter()
             .chain(std::iter::repeat(last_digest))
@@ -81,23 +75,17 @@ impl<const N_MAX_CHUNKS: usize> PayloadV3<N_MAX_CHUNKS> {
         {
             preimage.extend_from_slice(chunk_digest.as_slice());
         }
-        preimage.extend_from_slice(versioned_hash.as_slice());            
+        preimage.extend_from_slice(versioned_hash.as_slice());
 
         keccak256(preimage)
-
     }
-
 }
 
 pub struct PayloadV7 {}
 
 impl PayloadV7 {
     /// use payload_data and calculate the challenge under v7 protocol
-    pub fn challenge_digest(
-        payload_data: &[u8],
-        versioned_hash: B256,
-    ) -> B256 {
-
+    pub fn challenge_digest(payload_data: &[u8], versioned_hash: B256) -> B256 {
         // primage = keccak(blobBytes) + blob_versioned_hash
         let payload_digest = keccak256(payload_data);
         let mut chg_preimage = payload_digest.to_vec();

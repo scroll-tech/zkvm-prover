@@ -12,5 +12,4 @@ mod witness;
 pub use witness::{ArchivedBatchWitness, BatchWitness, PointEvalWitness};
 
 mod payload;
-pub use payload::{PayloadV3, PayloadV7, MAX_AGG_CHUNKS};
-
+pub use payload::{MAX_AGG_CHUNKS, PayloadV3, PayloadV7};
