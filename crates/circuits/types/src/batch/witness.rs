@@ -7,7 +7,7 @@ use crate::{
 use super::ReferenceHeader;
 
 /// Simply rewrap byte48 to avoid unnecessary dep
-pub type Byte48 = [u8; 48];
+pub type Bytes48 = [u8; 48];
 
 /// Witness required by applying point evaluation
 #[derive(Clone, Debug, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
@@ -15,10 +15,10 @@ pub type Byte48 = [u8; 48];
 pub struct PointEvalWitness {
     /// kzg commitment
     #[rkyv()]
-    pub kzg_commitment: Byte48,
+    pub kzg_commitment: Bytes48,
     /// kzg proof
     #[rkyv()]
-    pub kzg_proof: Byte48,
+    pub kzg_proof: Bytes48,
 }
 
 /// Witness to the batch circuit.
