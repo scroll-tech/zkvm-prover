@@ -120,6 +120,9 @@ pub struct ChunkInfo {
     /// The length of rlp encoded L2 tx bytes flattened over all L2 txs in the chunk.
     #[rkyv()]
     pub tx_data_length: u64,
+    /// The block number of the first block in the chunk.
+    #[rkyv()]
+    pub initial_block_number: u64,
     /// The block contexts of the blocks in the chunk.
     #[rkyv()]
     pub block_ctxs: Vec<BlockContextV2>,
@@ -136,6 +139,7 @@ impl From<&ArchivedChunkInfo> for ChunkInfo {
             prev_msg_queue_hash: archived.prev_msg_queue_hash.into(),
             post_msg_queue_hash: archived.post_msg_queue_hash.into(),
             tx_data_length: archived.tx_data_length.into(),
+            initial_block_number: archived.initial_block_number.into(),
             block_ctxs: archived
                 .block_ctxs
                 .iter()

@@ -68,6 +68,7 @@ impl ProverType for ChunkProverType {
             .map(|s| s.build_reth_block())
             .collect::<Result<Vec<RecoveredBlock<Block>>, _>>()
             .map_err(|e| Error::GenProof(e.to_string()))?;
+        let initial_block_number = blocks[0].header().number;
 
         let chain_id = first_block.chain_id;
         let chain_spec = get_chain_spec(Chain::from_id(chain_id)).ok_or(Error::GenProof(
@@ -138,6 +139,7 @@ impl ProverType for ChunkProverType {
             withdraw_root,
             tx_data_digest,
             tx_data_length: u64::try_from(tx_data_length).expect("tx_data_length: u64"),
+            initial_block_number,
             prev_msg_queue_hash: task.prev_msg_queue_hash,
             post_msg_queue_hash: sbv_chunk_info.post_msg_queue_hash,
             block_ctxs,

@@ -103,7 +103,6 @@ pub struct PayloadV7 {
     /// Message queue hash at the end of the current batch.
     pub post_msg_queue_hash: B256,
     /// The block number of the first block in the batch.
-    #[allow(dead_code)]
     pub initial_block_number: u64,
     /// The number of blocks in the batch.
     pub num_blocks: u16,
@@ -190,7 +189,7 @@ impl PayloadV7 {
         chunk_infos: &'a [ChunkInfo],
     ) -> (&'a ChunkInfo, &'a ChunkInfo) {
         // Get the first and last chunks' info, to construct the batch info.
-        let (first, last) = (
+        let (first_chunk, last_chunk) = (
             chunk_infos.first().expect("at least one chunk in batch"),
             chunk_infos.last().expect("at least one chunk in batch"),
         );
@@ -208,11 +207,14 @@ impl PayloadV7 {
         );
         assert_eq!(usize::from(self.num_blocks), self.block_contexts.len());
 
+        // the block number of the first block in the batch
+        assert_eq!(self.initial_block_number, first_chunk.initial_block_number);
+
         // prev message queue hash
-        assert_eq!(self.prev_msg_queue_hash, first.prev_msg_queue_hash);
+        assert_eq!(self.prev_msg_queue_hash, first_chunk.prev_msg_queue_hash);
 
         // post message queue hash
-        assert_eq!(self.post_msg_queue_hash, last.post_msg_queue_hash);
+        assert_eq!(self.post_msg_queue_hash, last_chunk.post_msg_queue_hash);
 
         // for each chunk, the tx_data_digest, i.e. keccak digest of the rlp-encoded L2 tx bytes
         // flattened over every tx in the chunk, should be re-computed and matched against the
@@ -250,6 +252,6 @@ impl PayloadV7 {
             assert_eq!(block_ctx.num_l1_msgs, witness_block_ctx.num_l1_msgs);
         }
 
-        (first, last)
+        (first_chunk, last_chunk)
     }
 }

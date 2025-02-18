@@ -34,6 +34,7 @@ pub fn execute(witness: &ArchivedChunkWitness) -> ChunkInfo {
         .collect::<Result<Vec<_>, _>>()
         .expect("failed to build reth block")
         .leak() as &'static [RecoveredBlock<Block>];
+    let initial_block_number = blocks[0].header().number;
 
     let chain_spec = get_chain_spec(Chain::from_id(witness.blocks[0].chain_id()))
         .expect("failed to get chain spec");
@@ -96,6 +97,7 @@ pub fn execute(witness: &ArchivedChunkWitness) -> ChunkInfo {
         prev_msg_queue_hash,
         post_msg_queue_hash,
         tx_data_length: u64::try_from(tx_data_length).expect("tx_data_length: u64"),
+        initial_block_number,
         block_ctxs,
     }
 }
