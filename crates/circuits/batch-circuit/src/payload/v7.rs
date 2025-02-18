@@ -184,7 +184,11 @@ impl From<&EnvelopeV7> for PayloadV7 {
 
 impl PayloadV7 {
     /// Validate the payload contents.
-    pub fn validate(&self, header: &BatchHeaderV7, chunk_infos: &[ChunkInfo]) {
+    pub fn validate<'a>(
+        &self,
+        header: &BatchHeaderV7,
+        chunk_infos: &'a [ChunkInfo],
+    ) -> (&'a ChunkInfo, &'a ChunkInfo) {
         // Get the first and last chunks' info, to construct the batch info.
         let (first, last) = (
             chunk_infos.first().expect("at least one chunk in batch"),
@@ -245,5 +249,7 @@ impl PayloadV7 {
             assert_eq!(block_ctx.num_txs, witness_block_ctx.num_txs);
             assert_eq!(block_ctx.num_l1_msgs, witness_block_ctx.num_l1_msgs);
         }
+
+        (first, last)
     }
 }

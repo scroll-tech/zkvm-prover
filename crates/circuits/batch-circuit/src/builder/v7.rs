@@ -40,9 +40,6 @@ impl BatchInfoBuilderV7 {
         let envelope = crate::payload::v7::EnvelopeV7::from(envelope_bytes.as_slice());
         let payload = crate::payload::v7::PayloadV7::from(&envelope);
 
-        // Validate payload (batch data).
-        payload.validate(header, chunk_infos);
-
         // Barycentric evaluation of blob polynomial.
         let challenge_digest = envelope.challenge_digest(header.blob_versioned_hash);
         let blob_poly = BlobPolynomial::new(blob_bytes);
@@ -71,21 +68,18 @@ impl BatchInfoBuilderV7 {
             );
         }
 
-        // Get the first and last chunks' info, to construct the batch info.
-        let (first, last) = (
-            chunk_infos.first().expect("at least one chunk in batch"),
-            chunk_infos.last().expect("at least one chunk in batch"),
-        );
+        // Validate payload (batch data).
+        let (first_chunk, last_chunk) = payload.validate(header, chunk_infos);
 
         BatchInfo {
-            parent_state_root: first.prev_state_root,
+            parent_state_root: first_chunk.prev_state_root,
             parent_batch_hash: header.parent_batch_hash,
-            state_root: last.post_state_root,
+            state_root: last_chunk.post_state_root,
             batch_hash: header.batch_hash(),
-            chain_id: last.chain_id,
-            withdraw_root: last.withdraw_root,
-            prev_msg_queue_hash: first.prev_msg_queue_hash,
-            post_msg_queue_hash: last.post_msg_queue_hash,
+            chain_id: last_chunk.chain_id,
+            withdraw_root: last_chunk.withdraw_root,
+            prev_msg_queue_hash: first_chunk.prev_msg_queue_hash,
+            post_msg_queue_hash: last_chunk.post_msg_queue_hash,
         }
     }
 }
