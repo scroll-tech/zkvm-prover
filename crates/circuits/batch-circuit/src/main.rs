@@ -1,7 +1,5 @@
 use scroll_zkvm_circuit_input_types::{AggCircuit, Circuit};
 
-// TODO: remove this flag after refactoring has been done
-#[allow(dead_code)]
 mod blob_consistency;
 
 mod builder;
@@ -10,6 +8,8 @@ mod circuit;
 use circuit::BatchCircuit as C;
 
 mod execute;
+
+mod payload;
 
 openvm::entry!(main);
 

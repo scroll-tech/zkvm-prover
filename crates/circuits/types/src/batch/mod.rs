@@ -9,7 +9,7 @@ mod public_inputs;
 pub use public_inputs::{ArchivedBatchInfo, BatchInfo};
 
 mod witness;
-pub use witness::{ArchivedBatchWitness, BatchWitness, PointEvalWitness};
+pub use witness::{ArchivedBatchWitness, BatchWitness, Bytes48, PointEvalWitness};
 
 mod payload;
 pub use payload::{MAX_AGG_CHUNKS, PayloadV3, PayloadV7};

@@ -1,5 +1,5 @@
 use scroll_zkvm_circuit_input_types::{
-    batch::{BatchHeaderV7, BatchInfo},
+    batch::{BatchHeaderV7, BatchInfo, Bytes48},
     chunk::ChunkInfo,
 };
 
@@ -14,6 +14,8 @@ impl BatchInfoBuilderV7 {
         _header: &BatchHeaderV7,
         _chunks_info: &[ChunkInfo],
         _blob_bytes: &[u8],
+        _kzg_commitment: &Bytes48,
+        _kzg_proof: &Bytes48,
     ) -> BatchInfo {
         unimplemented!()
     }

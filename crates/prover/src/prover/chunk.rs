@@ -62,7 +62,6 @@ impl ProverType for ChunkProverType {
             .expect("at least one block in a chunk");
 
         // Get the blocks to build the basic chunk-info.
-        let chain_id = first_block.chain_id;
         let blocks = task
             .block_witnesses
             .iter()
@@ -70,9 +69,10 @@ impl ProverType for ChunkProverType {
             .collect::<Result<Vec<RecoveredBlock<Block>>, _>>()
             .map_err(|e| Error::GenProof(e.to_string()))?;
 
-        let chain_spec = get_chain_spec(Chain::from_id(task.block_witnesses[0].chain_id())).ok_or(
-            Error::GenProof(format!("{err_prefix}: failed to get chain spec")),
-        )?;
+        let chain_id = first_block.chain_id;
+        let chain_spec = get_chain_spec(Chain::from_id(chain_id)).ok_or(Error::GenProof(
+            format!("{err_prefix}: failed to get chain spec"),
+        ))?;
 
         let (code_db, nodes_provider, block_hashes) = make_providers(&task.block_witnesses);
 
