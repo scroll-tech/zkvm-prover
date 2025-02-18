@@ -30,6 +30,4 @@ default = ["scroll"]
 scroll = ["scroll-zkvm-circuit-input-types/scroll"]
 
 [dev-dependencies]
-bls12_381 = { version = "0.8" }
-ff = { version = "0.13" }
 c-kzg = "1.0"

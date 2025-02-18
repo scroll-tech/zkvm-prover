@@ -5912,9 +5912,7 @@ version = "0.1.0-rc.3"
 dependencies = [
  "alloy-primitives",
  "bitcode",
- "bls12_381 0.8.0",
  "c-kzg",
- "ff 0.13.0",
  "itertools 0.14.0",
  "openvm",
  "openvm-algebra-complex-macros",

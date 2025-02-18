@@ -10,14 +10,14 @@ use scroll_zkvm_circuit_input_types::{
 use crate::child_commitments::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT};
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use {
-    openvm_algebra_guest::{field::FieldExtension, IntMod},
+    openvm_algebra_guest::{IntMod, field::FieldExtension},
     openvm_ecc_guest::AffinePoint,
+    openvm_keccak256_guest, // trigger extern native-keccak256
     openvm_pairing_guest::{
-        bls12_381::{Bls12_381, Fp, Fp2, Bls12_381G1Affine},
+        bls12_381::{Bls12_381, Bls12_381G1Affine, Fp, Fp2},
         pairing::PairingCheck,
     },
     openvm_sha256_guest,
-    openvm_keccak256_guest, // trigger extern native-keccak256
 };
 
 openvm_algebra_guest::moduli_macros::moduli_init! {
