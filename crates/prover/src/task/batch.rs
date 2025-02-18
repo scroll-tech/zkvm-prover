@@ -33,15 +33,15 @@ impl ProvingTask for BatchProvingTask {
 
     fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error> {
         let canonical_blob = point_eval::to_blob_bytes(&self.blob_bytes);
-        let kzg_commitment = point_eval::bytes_to_kzg_commitment(canonical_blob);
+        let kzg_commitment = point_eval::blob_to_kzg_commitment(&canonical_blob);
         let versioned_hash = point_eval::get_versioned_hash(&kzg_commitment);
 
-        let data_chg = PayloadV7::challenge(&self.blob_bytes, versioned_hash);
-        let (kzg_proof, _) = point_eval::get_kzg_proof(canonical_blob, data_chg);
+        let data_chg = PayloadV7::challenge_digest(&self.blob_bytes, versioned_hash);
+        let (kzg_proof, _) = point_eval::get_kzg_proof(&canonical_blob, data_chg);
 
         let point_eval_witness = PointEvalWitness {
-            kzg_commitment: *kzg_commitment.as_ref(),
-            kzg_proof: *kzg_proof.as_ref(),
+            kzg_commitment: *kzg_commitment.to_bytes().as_ref(),
+            kzg_proof: *kzg_proof.to_bytes().as_ref(),
         };
 
         let witness = BatchWitness {

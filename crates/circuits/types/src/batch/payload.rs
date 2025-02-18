@@ -93,7 +93,7 @@ pub struct PayloadV7 {}
 
 impl PayloadV7 {
     /// use payload_data and calculate the challenge under v7 protocol
-    pub fn challenge(
+    pub fn challenge_digest(
         payload_data: &[u8],
         versioned_hash: B256,
     ) -> B256 {
