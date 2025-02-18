@@ -45,7 +45,7 @@ fn convert_bls12381_halo2_fq_to_fp(x: HL2Fp) -> Fp {
     Fp::from_le_bytes(&bytes)
 }
 
-fn convert_bls12381_halo2_g1_to_g1(p: Halo2G1Affine) -> G1Affine {
+pub fn convert_bls12381_halo2_g1_to_g1(p: Halo2G1Affine) -> G1Affine {
     G1Affine::from_xy_unchecked(
         convert_bls12381_halo2_fq_to_fp(p.x),
         convert_bls12381_halo2_fq_to_fp(p.y),
@@ -158,7 +158,7 @@ fn interpolate(z: Scalar, coefficients: &[Scalar; BLOB_WIDTH]) -> Scalar {
         * Scalar::from_u64(blob_width).invert()
 }
 
-pub fn verify_kzg(z: Scalar, y: Scalar, commitment: (Fp, Fp), proof: (Fp, Fp)) -> bool {
+pub fn verify_kzg_proof(z: Scalar, y: Scalar, commitment: (Fp, Fp), proof: (Fp, Fp)) -> bool {
     let proof_q = G1Affine::from_xy_nonidentity(proof.0, proof.1).unwrap();
     let p_minus_y = G1Affine::from_xy_nonidentity(commitment.0, commitment.1).unwrap()
         - msm(&[y], &[G1Affine::GENERATOR.clone()]);
@@ -173,7 +173,10 @@ pub fn verify_kzg(z: Scalar, y: Scalar, commitment: (Fp, Fp), proof: (Fp, Fp)) -
     Bls12_381::pairing_check(&[q0, p0_proof], &[q1, p1]).is_ok()
 }
 
-pub fn point_evaluation(coefficients: &[U256; BLOB_WIDTH], challenge_digest: U256) -> (U256, U256) {
+pub fn point_evaluation(
+    coefficients: &[U256; BLOB_WIDTH],
+    challenge_digest: U256,
+) -> (Scalar, Scalar) {
     // blob polynomial in evaluation form.
     //
     // also termed P(x)
@@ -181,17 +184,20 @@ pub fn point_evaluation(coefficients: &[U256; BLOB_WIDTH], challenge_digest: U25
         coefficients.map(|coeff| Scalar::from_le_bytes(coeff.as_le_slice()));
 
     let challenge = challenge_digest % *BLS_MODULUS;
+    let challenge = Scalar::from_le_bytes(challenge.as_le_slice());
 
     // y = P(z)
-    let y = U256::from_le_slice(
-        interpolate(
-            Scalar::from_le_bytes(challenge.as_le_slice()),
-            &coefficients_as_scalars,
-        )
-        .as_le_bytes(),
-    );
+    let evaluation = interpolate(challenge.clone(), &coefficients_as_scalars);
 
-    (challenge, y)
+    (challenge, evaluation)
+}
+
+const VERSIONED_HASH_VERSION_KZG: u8 = 1;
+
+pub fn kzg_to_versioned_hash(kzg_commitment: &[u8]) -> [u8; 32] {
+    let mut hash = openvm_sha256_guest::sha256(kzg_commitment);
+    hash[0] = VERSIONED_HASH_VERSION_KZG;
+    hash
 }
 
 #[cfg(test)]
@@ -244,7 +250,7 @@ mod test {
         let proof = convert_bls12381_halo2_g1_to_g1(
             Halo2G1Affine::from_compressed_be(proof.to_bytes().as_ref()).unwrap(),
         );
-        let ret = verify_kzg(
+        let ret = verify_kzg_proof(
             z,
             y,
             (commitment.x().clone(), commitment.y().clone()),

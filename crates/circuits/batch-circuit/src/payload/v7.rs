@@ -1,5 +1,8 @@
 use alloy_primitives::B256;
-use scroll_zkvm_circuit_input_types::chunk::{BlockContextV2, SIZE_BLOCK_CTX};
+use scroll_zkvm_circuit_input_types::{
+    chunk::{BlockContextV2, SIZE_BLOCK_CTX},
+    utils::keccak256,
+};
 
 use crate::blob_consistency::N_BLOB_BYTES;
 
@@ -12,7 +15,12 @@ const DA_CODEC_VERSION: u8 = 7;
 /// indicated as `is_encoded == true`.
 #[derive(Debug, Clone)]
 pub struct EnvelopeV7 {
+    /// The original envelope bytes supplied.
+    ///
+    /// Caching just for re-use later in challenge digest computation.
+    pub envelope_bytes: Vec<u8>,
     /// The version from da-codec, i.e. v7 in this case.
+    #[allow(dead_code)]
     pub version: u8,
     /// A single byte boolean flag (value is 0 or 1) to denote whether or not the following blob
     /// bytes represent a batch in its zstd-encoded or raw form.
@@ -21,27 +29,8 @@ pub struct EnvelopeV7 {
     pub unpadded_bytes: Vec<u8>,
 }
 
-/// Represents the batch data, eventually encoded into an [`EnvelopeV7`].
-#[derive(Debug, Clone)]
-pub struct PayloadV7 {
-    /// The L1 msg queue index of the first L1 msg in the block.
-    pub initial_msg_index: u64,
-    /// Message queue hash at the end of the previous batch.
-    pub prev_msg_queue_hash: B256,
-    /// Message queue hash at the end of the current batch.
-    pub post_msg_queue_hash: B256,
-    /// The block number of the first block in the batch.
-    pub initial_block_number: u64,
-    /// The number of blocks in the batch.
-    pub num_blocks: u16,
-    /// The block contexts of each block in the batch.
-    pub block_contexts: Vec<BlockContextV2>,
-    /// The L2 tx data flattened over every tx in every block in the batch.
-    pub tx_data: Vec<u8>,
-}
-
-impl From<Vec<u8>> for EnvelopeV7 {
-    fn from(blob_bytes: Vec<u8>) -> Self {
+impl From<&[u8]> for EnvelopeV7 {
+    fn from(blob_bytes: &[u8]) -> Self {
         // The number of bytes is as expected.
         assert_eq!(blob_bytes.len(), N_BLOB_BYTES);
 
@@ -72,8 +61,50 @@ impl From<Vec<u8>> for EnvelopeV7 {
             version,
             is_encoded,
             unpadded_bytes: blob_bytes[5..(5 + unpadded_size)].to_vec(),
+            envelope_bytes: blob_bytes.to_vec(),
         }
     }
+}
+
+impl EnvelopeV7 {
+    /// The verification of the EIP-4844 blob is done via point-evaluation precompile
+    /// implemented in-circuit.
+    ///
+    /// We require a random challenge point for this, and using Fiat-Shamir we compute it with
+    /// every byte in the blob along with the blob's versioned hash, i.e. an identifier for its KZG
+    /// commitment.
+    ///
+    /// keccak256(
+    ///     keccak256(envelope) ||
+    ///     versioned hash
+    /// )
+    pub fn challenge_digest(&self, versioned_hash: B256) -> B256 {
+        keccak256(
+            std::iter::empty()
+                .chain(keccak256(&self.envelope_bytes))
+                .chain(versioned_hash.0)
+                .collect::<Vec<u8>>(),
+        )
+    }
+}
+
+/// Represents the batch data, eventually encoded into an [`EnvelopeV7`].
+#[derive(Debug, Clone)]
+pub struct PayloadV7 {
+    /// The L1 msg queue index of the first L1 msg in the block.
+    pub initial_msg_index: u64,
+    /// Message queue hash at the end of the previous batch.
+    pub prev_msg_queue_hash: B256,
+    /// Message queue hash at the end of the current batch.
+    pub post_msg_queue_hash: B256,
+    /// The block number of the first block in the batch.
+    pub initial_block_number: u64,
+    /// The number of blocks in the batch.
+    pub num_blocks: u16,
+    /// The block contexts of each block in the batch.
+    pub block_contexts: Vec<BlockContextV2>,
+    /// The L2 tx data flattened over every tx in every block in the batch.
+    pub tx_data: Vec<u8>,
 }
 
 const INDEX_L1_MSG_INDEX: usize = 0;

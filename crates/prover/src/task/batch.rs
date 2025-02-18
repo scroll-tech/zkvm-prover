@@ -1,15 +1,16 @@
+use alloy_primitives::U256;
+use c_kzg::Bytes48;
 use openvm_native_recursion::hints::Hintable;
 use openvm_sdk::StdIn;
 use scroll_zkvm_circuit_input_types::batch::{
-    BatchHeader, BatchHeaderV7, BatchInfo, BatchWitness, PayloadV7, PointEvalWitness,
-    ReferenceHeader,
+    BatchHeader, BatchHeaderV7, BatchInfo, BatchWitness, PointEvalWitness, ReferenceHeader,
 };
 use serde::{Deserialize, Serialize};
 
 use crate::{
     ChunkProof,
     task::{ProvingTask, flatten_wrapped_proof},
-    utils::{base64, point_eval},
+    utils::base64,
 };
 
 /// Defines a proving task for batch proof generation.
@@ -23,6 +24,12 @@ pub struct BatchProvingTask {
     /// EIP-4844 blob.
     #[serde(with = "base64")]
     pub blob_bytes: Vec<u8>,
+    /// Challenge digest computed using the blob's bytes and versioned hash.
+    pub challenge_digest: U256,
+    /// KZG commitment for the blob.
+    pub kzg_commitment: Bytes48,
+    /// KZG proof.
+    pub kzg_proof: Bytes48,
 }
 
 impl ProvingTask for BatchProvingTask {
@@ -31,16 +38,9 @@ impl ProvingTask for BatchProvingTask {
     }
 
     fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error> {
-        let canonical_blob = point_eval::to_blob(&self.blob_bytes);
-        let kzg_commitment = point_eval::blob_to_kzg_commitment(&canonical_blob);
-        let versioned_hash = point_eval::get_versioned_hash(&kzg_commitment);
-
-        let challenge_digest = PayloadV7::challenge_digest(&self.blob_bytes, versioned_hash);
-        let (kzg_proof, _) = point_eval::get_kzg_proof(&canonical_blob, challenge_digest);
-
         let point_eval_witness = PointEvalWitness {
-            kzg_commitment: *kzg_commitment.to_bytes().as_ref(),
-            kzg_proof: *kzg_proof.to_bytes().as_ref(),
+            kzg_commitment: *self.kzg_commitment,
+            kzg_proof: *self.kzg_proof,
         };
 
         let witness = BatchWitness {
