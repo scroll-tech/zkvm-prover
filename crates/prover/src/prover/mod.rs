@@ -371,8 +371,9 @@ impl<Type: ProverType> Prover<Type> {
             .build_guest_input()
             .map_err(|e| Error::GenProof(e.to_string()))?;
 
-        let (_cycle_count, executor_result) = self.execute_guest(&stdin)?;
-        self.mock_prove_if_needed(executor_result)?;
+        if let Some((_cycle_count, executor_result)) = self.execute_guest(&stdin)? {
+            self.mock_prove_if_needed(executor_result)?;
+        }
 
         let task_id = task.identifier();
 
@@ -387,9 +388,15 @@ impl<Type: ProverType> Prover<Type> {
     }
 
     /// Execute the guest program to get the cycle count.
-    fn execute_guest(&self, stdin: &StdIn) -> Result<(u64, VmExecutorResult<SC>), Error> {
+    ///
+    /// Runs only if the GUEST_PROFILING environment variable has been set to "true".
+    fn execute_guest(&self, stdin: &StdIn) -> Result<Option<(u64, VmExecutorResult<SC>)>, Error> {
         use openvm_circuit::arch::VmConfig;
         use openvm_stark_sdk::openvm_stark_backend::p3_field::Field;
+
+        if std::env::var("GUEST_PROFILING").as_deref() != Ok("true") {
+            return Ok(None);
+        }
 
         let config = self.app_pk.app_vm_pk.vm_config.clone();
         let system_config = <SdkVmConfig as VmConfig<F>>::system(&config);
@@ -463,7 +470,7 @@ impl<Type: ProverType> Prover<Type> {
         }
 
         let total_cycle = counter_sum.get("total_cycles").cloned().unwrap_or(0);
-        Ok((total_cycle, executor_result))
+        Ok(Some((total_cycle, executor_result)))
     }
 
     /// Runs only if the MOCK_PROVE environment variable has been set to "true".
