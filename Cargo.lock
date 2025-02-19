@@ -3087,6 +3087,7 @@ dependencies = [
  "p3-baby-bear",
  "p3-symmetric",
  "rand",
+ "rayon",
  "rustc-hash 2.1.1",
  "serde",
  "serde-big-array",
@@ -3721,7 +3722,6 @@ dependencies = [
  "derive-new 0.7.0",
  "itertools 0.13.0",
  "metrics 0.23.0",
- "mimalloc",
  "p3-air",
  "p3-challenger",
  "p3-commit",
@@ -3730,6 +3730,7 @@ dependencies = [
  "p3-maybe-rayon",
  "p3-uni-stark",
  "p3-util",
+ "rayon",
  "rustc-hash 2.1.1",
  "serde",
  "thiserror 1.0.69",
@@ -4017,6 +4018,9 @@ dependencies = [
 name = "p3-maybe-rayon"
 version = "0.1.0"
 source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+dependencies = [
+ "rayon",
+]
 
 [[package]]
 name = "p3-mds"
@@ -5824,7 +5828,7 @@ dependencies = [
  "eyre",
  "ff 0.13.0",
  "glob",
- "halo2curves-axiom 0.5.3",
+ "halo2curves-axiom 0.7.0",
  "once_cell",
  "openvm-build",
  "openvm-circuit",
