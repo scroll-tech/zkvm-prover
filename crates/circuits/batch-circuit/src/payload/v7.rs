@@ -89,15 +89,24 @@ impl EnvelopeV7 {
 }
 
 /// Represents the batch data, eventually encoded into an [`EnvelopeV7`].
+///
+/// | Field                  | # Bytes | Type           | Index         |
+/// |------------------------|---------|----------------|---------------|
+/// | prevL1MessageQueueHash | 32      | bytes32        | 0             |
+/// | postL1MessageQueueHash | 32      | bytes32        | 32            |
+/// | initialL2BlockNumber   | 8       | u64            | 64            |
+/// | numBlocks              | 2       | u16            | 72            |
+/// | blockCtxs[0]           | 52      | BlockContextV2 | 74            |
+/// | ... blockCtxs[i] ...   | 52      | BlockContextV2 | 74 + 52*i     |
+/// | blockCtxs[n-1]         | 52      | BlockContextV2 | 74 + 52*(n-1) |
+/// | l2TxsData              | dynamic | bytes          | 74 + 52*n     |
 #[derive(Debug, Clone)]
 pub struct PayloadV7 {
     /// The version from da-codec, i.e. v7 in this case.
     ///
-    /// Copied from the envelope.
+    /// Note: This is not really a part of payload, simply coopied from the envelope for
+    /// convenience.
     pub version: u8,
-    /// The L1 msg queue index of the first L1 msg in the block.
-    #[allow(dead_code)]
-    pub initial_msg_index: u64,
     /// Message queue hash at the end of the previous batch.
     pub prev_msg_queue_hash: B256,
     /// Message queue hash at the end of the current batch.
@@ -112,10 +121,9 @@ pub struct PayloadV7 {
     pub tx_data: Vec<u8>,
 }
 
-const INDEX_L1_MSG_INDEX: usize = 0;
-const INDEX_L1_MSG_QUEUE_HASH: usize = INDEX_L1_MSG_INDEX + 8;
-const INDEX_LAST_L1_MSG_QUEUE_HASH: usize = INDEX_L1_MSG_QUEUE_HASH + 32;
-const INDEX_L2_BLOCK_NUM: usize = INDEX_LAST_L1_MSG_QUEUE_HASH + 32;
+const INDEX_PREV_MSG_QUEUE_HASH: usize = 0;
+const INDEX_POST_MSG_QUEUE_HASH: usize = INDEX_PREV_MSG_QUEUE_HASH + 32;
+const INDEX_L2_BLOCK_NUM: usize = INDEX_POST_MSG_QUEUE_HASH + 32;
 const INDEX_NUM_BLOCKS: usize = INDEX_L2_BLOCK_NUM + 8;
 const INDEX_BLOCK_CTX: usize = INDEX_NUM_BLOCKS + 2;
 
@@ -140,15 +148,10 @@ impl From<&EnvelopeV7> for PayloadV7 {
         assert!(payload_bytes.len() >= INDEX_BLOCK_CTX + ((num_blocks as usize) * SIZE_BLOCK_CTX));
 
         // Deserialize the other fields.
-        let initial_msg_index = u64::from_be_bytes(
-            payload_bytes[INDEX_L1_MSG_INDEX..INDEX_L1_MSG_QUEUE_HASH]
-                .try_into()
-                .expect("should not fail"),
-        );
         let prev_msg_queue_hash =
-            B256::from_slice(&payload_bytes[INDEX_L1_MSG_QUEUE_HASH..INDEX_LAST_L1_MSG_QUEUE_HASH]);
+            B256::from_slice(&payload_bytes[INDEX_PREV_MSG_QUEUE_HASH..INDEX_POST_MSG_QUEUE_HASH]);
         let post_msg_queue_hash =
-            B256::from_slice(&payload_bytes[INDEX_LAST_L1_MSG_QUEUE_HASH..INDEX_L2_BLOCK_NUM]);
+            B256::from_slice(&payload_bytes[INDEX_POST_MSG_QUEUE_HASH..INDEX_L2_BLOCK_NUM]);
         let initial_block_number = u64::from_be_bytes(
             payload_bytes[INDEX_L2_BLOCK_NUM..INDEX_NUM_BLOCKS]
                 .try_into()
@@ -170,7 +173,6 @@ impl From<&EnvelopeV7> for PayloadV7 {
 
         Self {
             version: envelope.version,
-            initial_msg_index,
             prev_msg_queue_hash,
             post_msg_queue_hash,
             initial_block_number,
