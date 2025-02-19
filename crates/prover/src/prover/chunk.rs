@@ -137,16 +137,14 @@ impl ProverType for ChunkProverType {
             data_hash: sbv_chunk_info.data_hash(),
             tx_data_digest,
         };
-        let num_block = blocks.len();
-        let num_tx = blocks
+
+        let num_txs = blocks
             .iter()
             .map(|b| b.body().transactions.len())
             .sum::<usize>();
         let total_gas_used = blocks.iter().map(|b| b.header().gas_used).sum::<u64>();
-        println!(
-            "num_block: {}, num_tx: {}, total_gas_used: {}",
-            num_block, num_tx, total_gas_used
-        );
+
+        tracing::debug!(name: "chunk details", num_blocks = ?blocks.len(), ?num_txs, ?total_gas_used);
 
         Ok(ChunkProofMetadata { chunk_info })
     }

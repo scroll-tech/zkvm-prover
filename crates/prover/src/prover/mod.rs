@@ -171,7 +171,6 @@ impl<Type: ProverType> Prover<Type> {
             .map_err(|e| Error::Commit(e.to_string()))?;
 
         // print the 2 exe commitments
-
         use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
         let commits = AppExecutionCommit::compute(
             &app_pk.app_vm_pk.vm_config,
@@ -179,13 +178,11 @@ impl<Type: ProverType> Prover<Type> {
             &app_pk.leaf_committed_exe,
         );
         let exe_commit = commits.exe_commit.map(|x| x.as_canonical_u32());
-        println!("raw exe commit: {:?}", exe_commit);
-        println!("exe commit: {:?}", commits.exe_commit_to_bn254());
         let leaf_commit = commits
             .leaf_vm_verifier_commit
             .map(|x| x.as_canonical_u32());
-        println!("raw leaf commit: {:?}", leaf_commit);
-        println!("leaf commit: {:?}", commits.app_config_commit_to_bn254());
+        debug!(name: "exe-commitment", prover_name = Type::NAME, raw = ?exe_commit, as_bn254 = ?commits.exe_commit_to_bn254());
+        debug!(name: "leaf-commitment", prover_name = Type::NAME, raw = ?leaf_commit, as_bn254 = ?commits.app_config_commit_to_bn254());
 
         let _agg_stark_pk = AGG_STARK_PROVING_KEY
             .get_or_init(|| AggStarkProvingKey::keygen(AggStarkConfig::default()));
@@ -389,6 +386,7 @@ impl<Type: ProverType> Prover<Type> {
         .map_err(|e| Error::GenProof(e.to_string()))
     }
 
+    /// Execute the guest program to get the cycle count.
     fn execute_guest(&self, stdin: &StdIn) -> Result<(u64, VmExecutorResult<SC>), Error> {
         use openvm_circuit::arch::VmConfig;
         use openvm_stark_sdk::openvm_stark_backend::p3_field::Field;
@@ -467,6 +465,8 @@ impl<Type: ProverType> Prover<Type> {
         let total_cycle = counter_sum.get("total_cycles").cloned().unwrap_or(0);
         Ok((total_cycle, executor_result))
     }
+
+    /// Runs only if the MOCK_PROVE environment variable has been set to "true".
     fn mock_prove_if_needed(&self, result: VmExecutorResult<SC>) -> Result<(), Error> {
         use openvm_circuit::arch::VmConfig;
         use openvm_stark_sdk::{
