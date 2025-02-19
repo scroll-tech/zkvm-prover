@@ -68,6 +68,8 @@ impl Circuit for BundleCircuit {
             post_state_root,
             batch_hash,
             withdraw_root,
+            //TODO: just made compilation pass
+            msg_queue_hash: Default::default(),
         }
     }
 }
