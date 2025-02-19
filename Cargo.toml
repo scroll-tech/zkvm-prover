@@ -20,7 +20,7 @@ repository = "https://github.com/scroll-tech/zkvm-prover"
 version = "0.1.0-rc.3"
 
 [workspace.dependencies]
-openvm = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1" }
+openvm = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1"}
 openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1" }
 openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1" }
 openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1" }
@@ -37,7 +37,7 @@ openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", tag =
 openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1" }
 openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1" }
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1" }
-openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false}
+openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", features = ["bench-metrics"]}
 
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.0.0-rc.0" }
 
@@ -47,6 +47,8 @@ halo2curves-axiom = { version = "0.5.3" }
 p3-field = { git = "https://github.com/Plonky3/Plonky3.git", rev = "b0591e9" }
 rkyv = "0.8"
 tiny-keccak = "2.0"
+metrics = "0.23.0"
+metrics-util = "0.17"
 itertools = "0.14"
 serde = { version = "1", default-features = false, features = ["derive"] }
 alloy-primitives = "0.8"

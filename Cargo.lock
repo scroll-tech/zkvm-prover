@@ -1242,7 +1242,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "117725a109d387c937a1533ce01b450cbde6b88abceea8473c4d7a85853cda3c"
 dependencies = [
  "lazy_static",
- "windows-sys 0.48.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -3228,6 +3228,8 @@ dependencies = [
  "eyre",
  "getset",
  "itertools 0.13.0",
+ "metrics 0.23.0",
+ "metrics-derive",
  "once_cell",
  "openvm-circuit-derive",
  "openvm-circuit-primitives",
@@ -3235,7 +3237,6 @@ dependencies = [
  "openvm-instructions",
  "openvm-poseidon2-air",
  "openvm-stark-backend",
- "openvm-stark-sdk",
  "p3-baby-bear",
  "p3-symmetric",
  "rand",
@@ -3522,6 +3523,7 @@ source = "git+https://github.com/openvm-org/openvm.git?tag=v1.0.0-rc.1#30576cc6c
 dependencies = [
  "backtrace",
  "itertools 0.13.0",
+ "metrics 0.23.0",
  "num-bigint 0.4.6",
  "num-integer",
  "openvm-circuit",
@@ -3556,6 +3558,7 @@ dependencies = [
  "cfg-if",
  "itertools 0.13.0",
  "lazy_static",
+ "metrics 0.23.0",
  "once_cell",
  "openvm-circuit",
  "openvm-native-circuit",
@@ -3871,6 +3874,7 @@ dependencies = [
  "derivative",
  "derive-new 0.7.0",
  "itertools 0.13.0",
+ "metrics 0.23.0",
  "mimalloc",
  "p3-air",
  "p3-challenger",
@@ -6033,6 +6037,8 @@ dependencies = [
  "base64",
  "git-version",
  "hex",
+ "metrics 0.23.0",
+ "metrics-util",
  "once_cell",
  "openvm-circuit",
  "openvm-native-circuit",

@@ -4,8 +4,15 @@ use std::{
     sync::Arc,
 };
 
+use metrics_util::{
+    MetricKind,
+    debugging::{DebugValue, Snapshot},
+};
 use once_cell::sync::OnceCell;
-use openvm_circuit::{arch::SingleSegmentVmExecutor, system::program::trace::VmCommittedExe};
+use openvm_circuit::{
+    arch::{SingleSegmentVmExecutor, VmExecutor, VmExecutorResult},
+    system::{memory::tree::public_values::extract_public_values, program::trace::VmCommittedExe},
+};
 use openvm_native_recursion::{
     halo2::{
         EvmProof,
@@ -15,13 +22,14 @@ use openvm_native_recursion::{
     hints::Hintable,
 };
 use openvm_sdk::{
-    NonRootCommittedExe, Sdk, StdIn,
+    F, NonRootCommittedExe, Sdk, StdIn,
     commit::AppExecutionCommit,
     config::{AggConfig, AggStarkConfig, AppConfig, SdkVmConfig},
     keygen::{AggStarkProvingKey, AppProvingKey, RootVerifierProvingKey},
     prover::ContinuationProver,
 };
 use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Config;
+use revm::handler::execution;
 use serde::{Serialize, de::DeserializeOwned};
 use tracing::{debug, instrument};
 
@@ -370,7 +378,8 @@ impl<Type: ProverType> Prover<Type> {
             .build_guest_input()
             .map_err(|e| Error::GenProof(e.to_string()))?;
 
-        self.mock_prove_if_needed(&stdin)?;
+        let (_cycle_count, executor_result) = self.execute_guest(&stdin)?;
+        self.mock_prove_if_needed(executor_result)?;
 
         let task_id = task.identifier();
 
@@ -384,48 +393,104 @@ impl<Type: ProverType> Prover<Type> {
         .map_err(|e| Error::GenProof(e.to_string()))
     }
 
-    fn mock_prove_if_needed(&self, stdin: &StdIn) -> Result<(), Error> {
-        // if env var MOCK_PROVE is not "true", return Ok(())
+    fn execute_guest(&self, stdin: &StdIn) -> Result<(u64, VmExecutorResult<SC>), Error> {
+        use openvm_circuit::arch::VmConfig;
+        use openvm_stark_sdk::openvm_stark_backend::p3_field::Field;
+
+        let config = self.app_pk.app_vm_pk.vm_config.clone();
+        let system_config = <SdkVmConfig as VmConfig<F>>::system(&config);
+        let vm = VmExecutor::new(config.clone());
+
+        let mut segments = vm
+            .execute_segments(self.app_committed_exe.exe.clone(), stdin.clone())
+            .map_err(|e| Error::GenProof(e.to_string()))?;
+        let final_memory = std::mem::take(&mut segments.last_mut().unwrap().final_memory);
+        let mut metric_snapshots = vec![];
+        let executor_result = VmExecutorResult {
+            per_segment: segments
+                .into_iter()
+                .map(|seg| {
+                    let recorder = metrics_util::debugging::DebuggingRecorder::new();
+                    let snapshotter = recorder.snapshotter();
+                    let seg_proof_input = metrics::with_local_recorder(&recorder, || {
+                        seg.generate_proof_input(Some(
+                            self.app_committed_exe.committed_program.clone(),
+                        ))
+                    });
+                    metric_snapshots.push(snapshotter.snapshot());
+                    seg_proof_input
+                })
+                .collect(),
+            final_memory,
+        };
+
+        tracing::debug!(name: "segment length", segment_len = executor_result.per_segment.len());
+
+        // extract and check public values
+        let final_memory = executor_result.final_memory.as_ref().unwrap();
+        let public_values: Vec<F> = extract_public_values(
+            &system_config.memory_config.memory_dimensions(),
+            system_config.num_public_values,
+            final_memory,
+        );
+        tracing::debug!(name: "public_values after guest execution", ?public_values);
+        if public_values.iter().all(|x| x.is_zero()) {
+            return Err(Error::GenProof("public_values are all 0s".to_string()));
+        }
+
+        let mut counter_sum = std::collections::HashMap::<String, u64>::new();
+        for (idx,metric_snapshot) in metric_snapshots.into_iter().enumerate() {
+            let metrics = metric_snapshot.into_vec();
+            for (ckey, _, _, value) in metrics {
+                match ckey.kind() {
+                    MetricKind::Gauge => {}
+                    MetricKind::Counter => {
+                        let value = match value {
+                            DebugValue::Counter(v) => v,
+                            _ => panic!("unexpected value type"),
+                        };
+                        tracing::debug!("metric of segment {}: {}=>{}", idx, ckey.key().name(), value);
+                        // add to `counter_sum`
+                        let counter_name = ckey.key().name().to_string();
+                        let counter_value = counter_sum.entry(counter_name).or_insert(0);
+                        *counter_value += value;
+                    }
+                    MetricKind::Histogram => {}
+                }
+            }
+        }
+        for (name, value) in counter_sum.iter() {
+            tracing::debug!("metric of all segments: {}=>{}", name, value);
+        }
+
+        let total_cycle = counter_sum.get("total_cycles").cloned().unwrap_or(0);
+        Ok((total_cycle, executor_result))
+    }
+    fn mock_prove_if_needed(&self, result: VmExecutorResult<SC>) -> Result<(), Error> {
+        use openvm_circuit::arch::VmConfig;
+        use openvm_stark_sdk::{
+            config::baby_bear_poseidon2::BabyBearPoseidon2Engine, engine::StarkFriEngine,
+        };
+
         if std::env::var("MOCK_PROVE").as_deref() != Ok("true") {
             return Ok(());
         }
 
-        let pi = Sdk
-            .execute(
-                self.app_committed_exe.exe.clone(),
-                self.app_pk.app_vm_pk.vm_config.clone(),
-                stdin.clone(),
-            )
-            .map_err(|e| Error::GenProof(e.to_string()))?;
-        tracing::debug!(name: "pi", ?pi);
+        let engine = BabyBearPoseidon2Engine::new(self.app_pk.app_vm_pk.fri_params);
+        let airs = self
+            .app_pk
+            .app_vm_pk
+            .vm_config
+            .create_chip_complex()
+            .unwrap()
+            .airs();
 
-        let (airs, result) = {
-            use openvm_circuit::arch::{VmConfig, VmExecutor};
-            let mut config = self.app_pk.app_vm_pk.vm_config.clone();
-            config.system.config = config.system.config.with_max_segment_len(1 << 25);
-            let airs = config.create_chip_complex().unwrap().airs();
-            let executor = VmExecutor::new(config);
-            (
-                airs,
-                executor
-                    .execute_and_generate(self.app_committed_exe.exe.clone(), stdin.clone())
-                    .unwrap(),
-            )
-        };
-        tracing::debug!(name: "segment length", segment_len = result.per_segment.len());
-
-        use openvm_stark_sdk::engine::StarkFriEngine;
         for result in result.per_segment {
             let (used_airs, per_air) = result
                 .per_air
                 .into_iter()
                 .map(|(air_id, x)| (airs[air_id].clone(), x))
                 .unzip();
-
-            let engine =
-                openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Engine::new(
-                    self.app_pk.app_vm_pk.fri_params,
-                );
             engine.run_test(used_airs, per_air).unwrap();
         }
 

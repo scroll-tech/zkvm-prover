@@ -41,7 +41,13 @@ impl ProverType for ChunkProverType {
     fn read_app_config<P: AsRef<std::path::Path>>(
         path_app_config: P,
     ) -> Result<openvm_sdk::config::AppConfig<openvm_sdk::config::SdkVmConfig>, Error> {
-        read_app_config(path_app_config)
+        let mut config = read_app_config(path_app_config)?;
+        config.app_vm_config.system.config = config
+            .app_vm_config
+            .system
+            .config
+            .with_max_segment_len(8388508);
+        Ok(config)
     }
 
     fn metadata_with_prechecks(task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error> {
@@ -131,6 +137,16 @@ impl ProverType for ChunkProverType {
             data_hash: sbv_chunk_info.data_hash(),
             tx_data_digest,
         };
+        let num_block = blocks.len();
+        let num_tx = blocks
+            .iter()
+            .map(|b| b.body().transactions.len())
+            .sum::<usize>();
+        let total_gas_used = blocks.iter().map(|b| b.header().gas_used).sum::<u64>();
+        println!(
+            "num_block: {}, num_tx: {}, total_gas_used: {}",
+            num_block, num_tx, total_gas_used
+        );
 
         Ok(ChunkProofMetadata { chunk_info })
     }
