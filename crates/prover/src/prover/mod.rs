@@ -4,10 +4,7 @@ use std::{
     sync::Arc,
 };
 
-use metrics_util::{
-    MetricKind,
-    debugging::{DebugValue, Snapshot},
-};
+use metrics_util::{MetricKind, debugging::DebugValue};
 use once_cell::sync::OnceCell;
 use openvm_circuit::{
     arch::{SingleSegmentVmExecutor, VmExecutor, VmExecutorResult},
@@ -29,7 +26,6 @@ use openvm_sdk::{
     prover::ContinuationProver,
 };
 use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Config;
-use revm::handler::execution;
 use serde::{Serialize, de::DeserializeOwned};
 use tracing::{debug, instrument};
 
@@ -439,7 +435,7 @@ impl<Type: ProverType> Prover<Type> {
         }
 
         let mut counter_sum = std::collections::HashMap::<String, u64>::new();
-        for (idx,metric_snapshot) in metric_snapshots.into_iter().enumerate() {
+        for (idx, metric_snapshot) in metric_snapshots.into_iter().enumerate() {
             let metrics = metric_snapshot.into_vec();
             for (ckey, _, _, value) in metrics {
                 match ckey.kind() {
@@ -449,7 +445,12 @@ impl<Type: ProverType> Prover<Type> {
                             DebugValue::Counter(v) => v,
                             _ => panic!("unexpected value type"),
                         };
-                        tracing::debug!("metric of segment {}: {}=>{}", idx, ckey.key().name(), value);
+                        tracing::debug!(
+                            "metric of segment {}: {}=>{}",
+                            idx,
+                            ckey.key().name(),
+                            value
+                        );
                         // add to `counter_sum`
                         let counter_name = ckey.key().name().to_string();
                         let counter_value = counter_sum.entry(counter_name).or_insert(0);
