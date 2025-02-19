@@ -25,11 +25,11 @@ openvm-algebra-complex-macros = { git = "ssh://git@github.com/scroll-tech/openvm
 openvm-algebra-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
 openvm-bigint-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
 openvm-build ={ git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
-openvm-circuit ={ git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
+openvm-circuit ={ git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218", features = ["bench-metrics"] }
 openvm-native-circuit = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
 openvm-native-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
-openvm-native-compiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
-openvm-native-recursion = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
+openvm-native-compiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218", features = ["bench-metrics"] }
+openvm-native-recursion = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218", features = ["bench-metrics"] }
 openvm-ecc-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
 openvm-instructions ={ git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
 openvm-keccak256-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
@@ -37,7 +37,7 @@ openvm-pairing-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git"
 openvm-rv32im-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
 openvm-rv32im-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
 openvm-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
-openvm-sdk = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218" }
+openvm-sdk = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "bench-0218", features = ["bench-metrics"] }
 
 openvm-stark-sdk = { git = "ssh://git@github.com/scroll-tech/openvm-stark-gpu.git", branch = "process-single-rap", features = ["gpu"] }
 
