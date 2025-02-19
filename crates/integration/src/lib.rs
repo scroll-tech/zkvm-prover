@@ -5,10 +5,9 @@ use std::{
 
 use once_cell::sync::OnceCell;
 use openvm_build::GuestOptions;
-use openvm_circuit::openvm_stark_sdk::p3_baby_bear::BabyBear;
 use openvm_native_recursion::halo2::EvmProof;
 use openvm_sdk::{
-    Sdk,
+    F, Sdk,
     config::{AppConfig, SdkVmConfig},
     fs::write_exe_to_file,
     verifier::root::types::RootVmVerifierInput,
@@ -175,7 +174,7 @@ pub trait ProverTester {
         app_config: AppConfig<SdkVmConfig>,
         task: &<Self::Prover as ProverType>::ProvingTask,
         exe_path: impl AsRef<Path>,
-    ) -> eyre::Result<Vec<BabyBear>> {
+    ) -> eyre::Result<Vec<F>> {
         let stdin = task.build_guest_input()?;
 
         Ok(Sdk.execute(read_app_exe(exe_path)?, app_config.app_vm_config, stdin)?)
@@ -184,7 +183,7 @@ pub trait ProverTester {
     fn execute_with_proving_task(
         app_config: AppConfig<SdkVmConfig>,
         exe_path: impl AsRef<Path>,
-    ) -> eyre::Result<Vec<BabyBear>> {
+    ) -> eyre::Result<Vec<F>> {
         Self::execute(app_config, &Self::gen_proving_task()?, exe_path)
     }
 }

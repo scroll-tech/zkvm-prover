@@ -1,7 +1,7 @@
 use sbv::primitives::{
-    B256, TransactionSigned, U256,
+    B256, U256,
     eips::Encodable2718,
-    types::{BlockWitness, Transaction},
+    types::{BlockWitness, Transaction, reth::TransactionSigned},
 };
 use scroll_zkvm_circuit_input_types::{
     batch::{BatchHeader, BatchHeaderV3},

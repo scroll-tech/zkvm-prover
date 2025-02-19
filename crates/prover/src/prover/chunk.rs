@@ -10,7 +10,7 @@ use scroll_zkvm_circuit_input_types::chunk::{ChunkInfo, make_providers};
 #[cfg(feature = "scroll")]
 use sbv::{
     core::ChunkInfo as SbvChunkInfo,
-    primitives::{Block, BlockWitness, RecoveredBlock},
+    primitives::{BlockWitness, RecoveredBlock, types::reth::Block},
 };
 
 use crate::{
@@ -41,7 +41,13 @@ impl ProverType for ChunkProverType {
     fn read_app_config<P: AsRef<std::path::Path>>(
         path_app_config: P,
     ) -> Result<openvm_sdk::config::AppConfig<openvm_sdk::config::SdkVmConfig>, Error> {
-        read_app_config(path_app_config)
+        let mut config = read_app_config(path_app_config)?;
+        config.app_vm_config.system.config = config
+            .app_vm_config
+            .system
+            .config
+            .with_max_segment_len(8388508);
+        Ok(config)
     }
 
     fn metadata_with_prechecks(task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error> {
@@ -131,6 +137,14 @@ impl ProverType for ChunkProverType {
             data_hash: sbv_chunk_info.data_hash(),
             tx_data_digest,
         };
+
+        let num_txs = blocks
+            .iter()
+            .map(|b| b.body().transactions.len())
+            .sum::<usize>();
+        let total_gas_used = blocks.iter().map(|b| b.header().gas_used).sum::<u64>();
+
+        tracing::debug!(name: "chunk details", num_blocks = ?blocks.len(), ?num_txs, ?total_gas_used);
 
         Ok(ChunkProofMetadata { chunk_info })
     }

@@ -3,9 +3,10 @@ use std::mem::ManuallyDrop;
 use sbv::{
     core::{ChunkInfo as SbvChunkInfo, EvmDatabase, EvmExecutor},
     primitives::{
-        Block, BlockWitness, RecoveredBlock,
+        BlockWitness, RecoveredBlock,
         chainspec::{Chain, get_chain_spec},
         ext::{BlockWitnessChunkExt, TxBytesHashExt},
+        types::reth::Block,
     },
 };
 use scroll_zkvm_circuit_input_types::chunk::{ChunkInfo, make_providers};
