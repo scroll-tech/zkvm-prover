@@ -1,25 +1,25 @@
 use sbv::primitives::{
-    B256, TransactionSigned, U256,
+    B256, U256,
     eips::Encodable2718,
-    types::{BlockWitness, Transaction},
+    types::{BlockWitness, Transaction, reth::TransactionSigned},
 };
 use scroll_zkvm_circuit_input_types::{
-    batch::{BatchHeader, BatchHeaderV3},
+    batch::{BatchHeader, BatchHeaderV7},
     utils::keccak256,
 };
 use scroll_zkvm_prover::{
     ChunkProof,
     task::{batch::BatchProvingTask, chunk::ChunkProvingTask},
+    utils::point_eval,
 };
 use vm_zstd::zstd_encode;
-
-mod blob;
 
 fn is_l1_tx(tx: &Transaction) -> bool {
     // 0x7e is l1 tx
     tx.transaction_type == 0x7e
 }
 
+#[allow(dead_code)]
 #[cfg(feature = "scroll")]
 fn final_l1_index(blk: &BlockWitness) -> u64 {
     // Get number of l1 txs. L1 txs can be skipped, so just counting is not enough
@@ -51,7 +51,6 @@ fn blks_tx_bytes<'a>(blks: impl Iterator<Item = &'a BlockWitness>) -> Vec<u8> {
 #[derive(Debug)]
 pub struct LastHeader {
     pub batch_index: u64,
-    pub l1_message_index: u64,
     pub batch_hash: B256,
     pub version: u8,
 }
@@ -69,18 +68,16 @@ impl Default for LastHeader {
                 0xab, 0xac, 0xad, 0xae, 0xaf, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0, 0,
             ]),
-            l1_message_index: 0,
         }
     }
 }
 
-impl From<&BatchHeaderV3> for LastHeader {
-    fn from(h: &BatchHeaderV3) -> Self {
+impl From<&BatchHeaderV7> for LastHeader {
+    fn from(h: &BatchHeaderV7) -> Self {
         Self {
             batch_index: h.batch_index,
             version: h.version,
             batch_hash: h.batch_hash(),
-            l1_message_index: h.total_l1_message_popped,
         }
     }
 }
@@ -88,33 +85,37 @@ impl From<&BatchHeaderV3> for LastHeader {
 pub fn build_batch_task(
     chunk_tasks: &[ChunkProvingTask],
     chunk_proofs: &[ChunkProof],
-    max_chunks: usize,
     last_header: LastHeader,
 ) -> BatchProvingTask {
     // Sanity check.
     assert_eq!(chunk_tasks.len(), chunk_proofs.len());
 
-    // collect required fields for batch header
-    let last_l1_message_index: u64 = chunk_tasks
+    let num_blocks = chunk_tasks
         .iter()
-        .flat_map(|t| &t.block_witnesses)
-        .map(final_l1_index)
-        .reduce(|last, cur| if cur == 0 { last } else { cur })
-        .expect("at least one chunk");
-    let last_l1_message_index = if last_l1_message_index == 0 {
-        last_header.l1_message_index
-    } else {
-        last_l1_message_index
+        .map(|t| t.block_witnesses.len())
+        .sum::<usize>() as u16;
+
+    let (prev_msg_queue_hash, initial_block_number) = {
+        let first_chunk = &chunk_proofs
+            .first()
+            .expect("at least one chunk")
+            .metadata
+            .chunk_info;
+        (
+            first_chunk.prev_msg_queue_hash,
+            first_chunk.initial_block_number,
+        )
     };
 
-    let last_block_timestamp = chunk_tasks.last().map_or(0u64, |t| {
-        t.block_witnesses
-            .last()
-            .map_or(0, |trace| trace.header.timestamp)
-    });
+    let post_msg_queue_hash = chunk_proofs
+        .last()
+        .expect("at least one chunk")
+        .metadata
+        .chunk_info
+        .post_msg_queue_hash;
 
     // collect tx bytes from chunk tasks
-    let (meta_chunk_sizes, chunk_digests, chunk_tx_bytes) = chunk_tasks.iter().fold(
+    let (_, chunk_digests, chunk_tx_bytes) = chunk_tasks.iter().fold(
         (Vec::new(), Vec::new(), Vec::new()),
         |(mut meta_chunk_sizes, mut chunk_digests, mut payload_bytes), task| {
             let tx_bytes = blks_tx_bytes(task.block_witnesses.iter());
@@ -130,80 +131,57 @@ pub fn build_batch_task(
         assert_eq!(digest, &proof.metadata.chunk_info.tx_data_digest);
     }
 
-    let valid_chunk_size = chunk_proofs.len() as u16;
-    let mut payload = meta_chunk_sizes
-        .into_iter()
-        .chain(std::iter::repeat(0))
-        .take(max_chunks)
-        .fold(
-            Vec::from(valid_chunk_size.to_be_bytes()),
-            |mut bytes, len| {
-                bytes.extend_from_slice(&(len as u32).to_be_bytes());
-                bytes
-            },
-        );
-
-    let mut payload_for_challenge = Vec::from(keccak256(&payload).0);
-
-    let data_hash = keccak256(
-        chunk_proofs
-            .iter()
-            .map(|proof| &proof.metadata.chunk_info.data_hash)
-            .fold(Vec::new(), |mut bytes, h| {
-                bytes.extend_from_slice(&h.0);
-                bytes
-            }),
-    );
-
-    // payload can setup
+    // collect all data together for payload
+    let mut payload = Vec::new();
+    payload.extend_from_slice(prev_msg_queue_hash.as_slice());
+    payload.extend_from_slice(post_msg_queue_hash.as_slice());
+    payload.extend(initial_block_number.to_be_bytes());
+    payload.extend(num_blocks.to_be_bytes());
+    let mut payload = chunk_proofs
+        .iter()
+        .flat_map(|proof| &proof.metadata.chunk_info.block_ctxs)
+        .fold(payload, |mut pl, ctx| {
+            pl.extend(ctx.to_bytes());
+            pl
+        });
     payload.extend(chunk_tx_bytes);
+
+    let version = 7u32;
+    let heading = payload.len() as u32 + (version << 23);
+
+    let mut blob_bytes = Vec::from(heading.to_be_bytes());
+    blob_bytes.push(1u8); // compressed flag
 
     // compress ...
     let compressed_payload = zstd_encode(&payload);
-    let mut blob_bytes = vec![1];
     blob_bytes.extend(compressed_payload);
+    blob_bytes.resize(4096 * 31, 0);
 
-    // generate versioned hash
-    let coefficients = blob::get_coefficients(&blob_bytes);
-    let blob_versioned_hash = blob::get_versioned_hash(&coefficients);
+    let kzg_blob = point_eval::to_blob(&blob_bytes);
+    let kzg_commitment = point_eval::blob_to_kzg_commitment(&kzg_blob);
+    let blob_versioned_hash = point_eval::get_versioned_hash(&kzg_commitment);
 
-    // calc blob_data_proof ...
-    let last_digest = chunk_digests.last().expect("at least we have one");
+    // primage = keccak(payload) + blob_versioned_hash
+    let mut chg_preimage = keccak256(&blob_bytes).to_vec();
+    chg_preimage.extend(blob_versioned_hash.0);
+    let challenge_digest = keccak256(&chg_preimage);
 
-    payload_for_challenge.extend(
-        chunk_digests
-            .iter()
-            .chain(std::iter::repeat(last_digest))
-            .take(max_chunks)
-            .fold(Vec::new(), |mut ret, digest| {
-                ret.extend_from_slice(&digest.0);
-                ret
-            }),
-    );
-    payload_for_challenge.extend_from_slice(blob_versioned_hash.as_slice());
-    let point_evaluations = blob::point_evaluation(
-        &coefficients,
-        U256::from_be_bytes(keccak256(payload_for_challenge).0),
-    );
+    let (kzg_proof, _) = point_eval::get_kzg_proof(&kzg_blob, challenge_digest);
 
-    let point_evaluations = [point_evaluations.0, point_evaluations.1];
-
-    let batch_header = BatchHeaderV3 {
+    let batch_header = BatchHeaderV7 {
         version: last_header.version,
         batch_index: last_header.batch_index + 1,
-        l1_message_popped: last_l1_message_index - last_header.l1_message_index,
-        last_block_timestamp,
-        total_l1_message_popped: last_l1_message_index,
         parent_batch_hash: last_header.batch_hash,
-        data_hash,
         blob_versioned_hash,
-        blob_data_proof: point_evaluations.map(|u| B256::new(u.to_be_bytes())),
     };
 
     BatchProvingTask {
         chunk_proofs: Vec::from(chunk_proofs),
         batch_header,
         blob_bytes,
+        challenge_digest: U256::from_be_bytes(challenge_digest.0),
+        kzg_commitment: kzg_commitment.to_bytes(),
+        kzg_proof: kzg_proof.to_bytes(),
     }
 }
 
@@ -236,12 +214,7 @@ fn test_build_batch_task() -> eyre::Result<()> {
         .join("chunk-12508460-12508463.json");
     let chunk_proof = read_json_deep::<_, ChunkProof>(&path_chunk_proof)?;
 
-    build_batch_task(
-        &[chunk_task],
-        &[chunk_proof],
-        scroll_zkvm_circuit_input_types::batch::MAX_AGG_CHUNKS,
-        Default::default(),
-    );
+    build_batch_task(&[chunk_task], &[chunk_proof], Default::default());
 
     Ok(())
 }

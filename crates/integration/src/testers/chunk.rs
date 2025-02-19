@@ -1,6 +1,6 @@
 use std::{fs::File, path::Path};
 
-use sbv::primitives::types::BlockWitness;
+use sbv::primitives::{B256, types::BlockWitness};
 use scroll_zkvm_prover::{ChunkProverType, ProverType, task::chunk::ChunkProvingTask};
 
 use crate::{ProverTester, testers::PATH_TESTDATA};
@@ -29,6 +29,7 @@ impl ProverTester for ChunkProverTester {
             block_witnesses: (12508460usize..=12508463)
                 .map(read_block_witness)
                 .collect::<eyre::Result<Vec<BlockWitness>>>()?,
+            prev_msg_queue_hash: Default::default(),
         })
     }
 }
@@ -55,16 +56,19 @@ impl ProverTester for MultiChunkProverTester {
                 block_witnesses: (12508460usize..=12508460)
                     .map(read_block_witness)
                     .collect::<eyre::Result<Vec<BlockWitness>>>()?,
+                prev_msg_queue_hash: Default::default(),
             },
             ChunkProvingTask {
                 block_witnesses: (12508461usize..=12508461)
                     .map(read_block_witness)
                     .collect::<eyre::Result<Vec<BlockWitness>>>()?,
+                prev_msg_queue_hash: B256::repeat_byte(1u8),
             },
             ChunkProvingTask {
                 block_witnesses: (12508462usize..=12508463)
                     .map(read_block_witness)
                     .collect::<eyre::Result<Vec<BlockWitness>>>()?,
+                prev_msg_queue_hash: B256::repeat_byte(2u8),
             },
         ])
     }
