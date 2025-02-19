@@ -21,6 +21,7 @@ use openvm_sdk::{
     keygen::{AggStarkProvingKey, AppProvingKey, RootVerifierProvingKey},
     prover::ContinuationProver,
 };
+use openvm_stark_sdk::config::FriParameters;
 use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Config;
 use serde::{Serialize, de::DeserializeOwned};
 use tracing::{debug, instrument};
@@ -183,8 +184,10 @@ impl<Type: ProverType> Prover<Type> {
         println!("raw leaf commit: {:?}", leaf_commit);
         println!("leaf commit: {:?}", commits.app_config_commit_to_bn254());
 
+        let mut agg_stark_config = AggStarkConfig::default();
+        agg_stark_config.leaf_fri_params = FriParameters::standard_with_100_bits_conjectured_security(1);
         let _agg_stark_pk = AGG_STARK_PROVING_KEY
-            .get_or_init(|| AggStarkProvingKey::keygen(AggStarkConfig::default()));
+            .get_or_init(|| AggStarkProvingKey::keygen(agg_stark_config));
 
         Ok((app_committed_exe, Arc::new(app_pk), [
             exe_commit,
