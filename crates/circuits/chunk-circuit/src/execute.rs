@@ -3,7 +3,7 @@ use std::mem::ManuallyDrop;
 use sbv::{
     core::{ChunkInfo as SbvChunkInfo, EvmDatabase, EvmExecutor},
     primitives::{
-        Block, BlockWitness, RecoveredBlock,
+        types::reth::Block, BlockWitness, RecoveredBlock,
         chainspec::{Chain, get_chain_spec},
         ext::{BlockWitnessChunkExt, TxBytesHashExt},
     },

@@ -10,7 +10,7 @@ use scroll_zkvm_circuit_input_types::chunk::{ChunkInfo, make_providers};
 #[cfg(feature = "scroll")]
 use sbv::{
     core::ChunkInfo as SbvChunkInfo,
-    primitives::{Block, BlockWitness, RecoveredBlock},
+    primitives::{BlockWitness, RecoveredBlock, types::reth::Block},
 };
 
 use crate::{
