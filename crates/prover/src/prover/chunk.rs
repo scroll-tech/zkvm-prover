@@ -1,7 +1,7 @@
 use sbv::{
     core::{EvmDatabase, EvmExecutor},
     primitives::{
-        chainspec::{Chain, get_chain_spec},
+        chainspec::{Chain, get_chain_spec_or_build},
         ext::TxBytesHashExt,
     },
 };
@@ -71,9 +71,18 @@ impl ProverType for ChunkProverType {
         let initial_block_number = blocks[0].header().number;
 
         let chain_id = first_block.chain_id;
-        let chain_spec = get_chain_spec(Chain::from_id(chain_id)).ok_or(Error::GenProof(
-            format!("{err_prefix}: failed to get chain spec"),
-        ))?;
+        // use the same code from sbv
+        let chain_spec = get_chain_spec_or_build(Chain::from_id(chain_id), |_spec| {
+            #[cfg(feature = "scroll")]
+            {
+                use sbv::primitives::chainspec::ForkCondition;
+                use sbv::primitives::hardforks::ScrollHardfork;
+                _spec
+                    .inner
+                    .hardforks
+                    .insert(ScrollHardfork::EuclidV2, ForkCondition::Timestamp(0));
+            }
+        });
 
         let (code_db, nodes_provider, block_hashes) = make_providers(&task.block_witnesses);
 
