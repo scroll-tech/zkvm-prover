@@ -1,4 +1,5 @@
 use std::{
+    collections::BTreeMap,
     marker::PhantomData,
     path::{Path, PathBuf},
     sync::Arc,
@@ -431,37 +432,55 @@ impl<Type: ProverType> Prover<Type> {
             return Err(Error::GenProof("public_values are all 0s".to_string()));
         }
 
-        let mut counter_sum = std::collections::HashMap::<String, u64>::new();
+        let mut counter_sum = BTreeMap::<String, BTreeMap<String, u64>>::new();
         for (idx, metric_snapshot) in metric_snapshots.into_iter().enumerate() {
             let metrics = metric_snapshot.into_vec();
             for (ckey, _, _, value) in metrics {
                 match ckey.kind() {
-                    MetricKind::Gauge => {}
                     MetricKind::Counter => {
                         let value = match value {
                             DebugValue::Counter(v) => v,
                             _ => panic!("unexpected value type"),
                         };
                         tracing::debug!(
-                            "metric of segment {}: {}=>{}",
+                            "metric of segment {}: {}=>{}, {ckey:?}",
                             idx,
                             ckey.key().name(),
                             value
                         );
-                        // add to `counter_sum`
+                        let label = ckey
+                            .key()
+                            .labels()
+                            .map(|l| l.value())
+                            .collect::<Vec<_>>()
+                            .join("|");
                         let counter_name = ckey.key().name().to_string();
-                        let counter_value = counter_sum.entry(counter_name).or_insert(0);
+                        let counter_map =
+                            counter_sum.entry(counter_name).or_insert(BTreeMap::new());
+                        let counter_value = counter_map.entry(label).or_insert(0);
                         *counter_value += value;
                     }
+                    MetricKind::Gauge => {}
                     MetricKind::Histogram => {}
                 }
             }
         }
-        for (name, value) in counter_sum.iter() {
-            tracing::debug!("metric of all segments: {}=>{}", name, value);
-        }
 
-        let total_cycle = counter_sum.get("total_cycles").cloned().unwrap_or(0);
+        let mut bench_report = String::new();
+        use std::fmt::Write;
+        writeln!(&mut bench_report, "guest profiling:").unwrap();
+        for (counter_name, values) in counter_sum.iter() {
+            writeln!(&mut bench_report, "{counter_name}:").unwrap();
+            let mut sorted_values: Vec<_> = values.iter().collect();
+            sorted_values.sort_by(|a, b| b.1.cmp(a.1));
+            for (label, value) in sorted_values {
+                writeln!(&mut bench_report, "  {label}\t{value}").unwrap();
+            }
+            writeln!(&mut bench_report).unwrap();
+        }
+        println!("{}", bench_report);
+
+        let total_cycle = *counter_sum.get("total_cycles").unwrap().get("").unwrap();
         Ok((total_cycle, executor_result))
     }
 
