@@ -23,10 +23,10 @@ impl ProverTester for ChunkProverTester {
 
     const DIR_ASSETS: &str = "chunk";
 
-    /// [block-12508460, block-12508461, block-12508462, block-12508463]
+    /// [block-1, block-2, block-3, block-4]
     fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask> {
         Ok(ChunkProvingTask {
-            block_witnesses: (12508460usize..=12508463)
+            block_witnesses: (1usize..=4usize)
                 .map(read_block_witness)
                 .collect::<eyre::Result<Vec<BlockWitness>>>()?,
             prev_msg_queue_hash: Default::default(),
@@ -47,25 +47,25 @@ impl ProverTester for MultiChunkProverTester {
         unreachable!("Use gen_multi_proving_tasks");
     }
 
-    /// [block-12508460]
-    /// [block-12508461]
-    /// [block-12508462, block-12508463]
+    /// [block-1]
+    /// [block-2]
+    /// [block-3, block-4]
     fn gen_multi_proving_tasks() -> eyre::Result<Vec<<Self::Prover as ProverType>::ProvingTask>> {
         Ok(vec![
             ChunkProvingTask {
-                block_witnesses: (12508460usize..=12508460)
+                block_witnesses: (1..=1)
                     .map(read_block_witness)
                     .collect::<eyre::Result<Vec<BlockWitness>>>()?,
                 prev_msg_queue_hash: Default::default(),
             },
             ChunkProvingTask {
-                block_witnesses: (12508461usize..=12508461)
+                block_witnesses: (2..=2)
                     .map(read_block_witness)
                     .collect::<eyre::Result<Vec<BlockWitness>>>()?,
                 prev_msg_queue_hash: B256::repeat_byte(1u8),
             },
             ChunkProvingTask {
-                block_witnesses: (12508462usize..=12508463)
+                block_witnesses: (3..=4)
                     .map(read_block_witness)
                     .collect::<eyre::Result<Vec<BlockWitness>>>()?,
                 prev_msg_queue_hash: B256::repeat_byte(2u8),
