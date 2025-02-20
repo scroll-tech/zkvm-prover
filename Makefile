@@ -15,6 +15,7 @@ clippy:
 	@cargo clippy --manifest-path crates/integration/Cargo.toml
 	@cargo clippy --manifest-path crates/prover/Cargo.toml
 	@cargo clippy --manifest-path crates/verifier/Cargo.toml
+	@cargo clippy --manifest-path crates/build-guest/Cargo.toml
 	sh openvm-clippy
 
 build-guest:
