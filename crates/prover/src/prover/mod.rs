@@ -193,6 +193,30 @@ impl<Type: ProverType> Prover<Type> {
         ]))
     }
 
+    /// Dump assets required to setup verifier-only mode.
+    pub fn dump_verifier<P: AsRef<Path>>(&self, dir: P) -> Result<(), Error> {
+        if !Type::EVM {
+            return Err(Error::Custom(
+                "dump_verifier only at bundle-prover".to_string(),
+            ));
+        };
+
+        let agg_stark_pk = AGG_STARK_PROVING_KEY.get().ok_or(Error::Custom(
+            "AGG_STARK_PROVING_KEY is not setup".to_string(),
+        ))?;
+        let root_verifier_pk = &agg_stark_pk.root_verifier_pk;
+        let vm_config = root_verifier_pk.vm_pk.vm_config.clone();
+        let root_committed_exe: &VmCommittedExe<_> = &root_verifier_pk.root_committed_exe;
+
+        let path_vm_config = dir.as_ref().join("root-verifier-vm-config");
+        let path_root_committed_exe = dir.as_ref().join("root-verifier-committed-exe");
+
+        crate::utils::write_bin(path_vm_config, &vm_config)?;
+        crate::utils::write_bin(path_root_committed_exe, &root_committed_exe)?;
+
+        Ok(())
+    }
+
     /// Pick up app commit as "vk" in proof, to distinguish from which circuit the proof comes
     pub fn get_app_vk(&self) -> Vec<u8> {
         use openvm_sdk::commit::AppExecutionCommit;

@@ -40,4 +40,7 @@ pub enum Error {
     /// An error encountered during proof verification.
     #[error("failed to verify proof: {0}")]
     VerifyProof(String),
+    /// A custom error not covered by above variants.
+    #[error("custom error: {0}")]
+    Custom(String),
 }

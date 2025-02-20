@@ -5855,6 +5855,7 @@ version = "0.1.0-rc.4"
 dependencies = [
  "alloy-primitives",
  "base64",
+ "bincode",
  "git-version",
  "hex",
  "metrics 0.23.0",
@@ -5882,11 +5883,16 @@ dependencies = [
 name = "scroll-zkvm-verifier"
 version = "0.1.0-rc.4"
 dependencies = [
+ "bincode",
  "eyre",
+ "openvm-circuit",
+ "openvm-native-circuit",
  "openvm-native-recursion",
+ "openvm-sdk",
  "revm 19.4.0",
  "scroll-zkvm-circuit-input-types",
  "scroll-zkvm-prover",
+ "serde",
  "snark-verifier-sdk",
 ]
 
