@@ -536,9 +536,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.95"
+version = "1.0.96"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34ac096ce696dc2fcabef30516bb13c0a68a11d30131d3df6f04711467681b04"
+checksum = "6b964d184e89d9b6b67dd2715bc8e74cf3107fb2b529990c90cf517326150bf4"
 
 [[package]]
 name = "ark-ff"
@@ -2885,9 +2885,9 @@ dependencies = [
 
 [[package]]
 name = "op-alloy-consensus"
-version = "0.10.3"
+version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23f7ff02e5f3ba62c8dd5d9a630c818f50147bca7b0d78e89de59ed46b5d02e1"
+checksum = "621e69964165285ce750bf7ba961707e26c31df9f0b25652d6219dcee1f7f5b5"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5590,7 +5590,7 @@ checksum = "6ea1a2d0a644769cc99faa24c3ad26b379b786fe7c36fd3c546254801650e6dd"
 [[package]]
 name = "sbv"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Frevm-v55-upgrade#41fb0bf849ac554aab8cbd0873c96a64ac46e2db"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Frevm-v55-upgrade#17c32b05e4cd7e9eaf01bb00ff4389b026c52d0e"
 dependencies = [
  "sbv-core",
  "sbv-helpers",
@@ -5602,7 +5602,7 @@ dependencies = [
 [[package]]
 name = "sbv-core"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Frevm-v55-upgrade#41fb0bf849ac554aab8cbd0873c96a64ac46e2db"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Frevm-v55-upgrade#17c32b05e4cd7e9eaf01bb00ff4389b026c52d0e"
 dependencies = [
  "reth-evm",
  "reth-evm-ethereum",
@@ -5622,7 +5622,7 @@ dependencies = [
 [[package]]
 name = "sbv-helpers"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Frevm-v55-upgrade#41fb0bf849ac554aab8cbd0873c96a64ac46e2db"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Frevm-v55-upgrade#17c32b05e4cd7e9eaf01bb00ff4389b026c52d0e"
 dependencies = [
  "revm 19.4.0",
 ]
@@ -5630,7 +5630,7 @@ dependencies = [
 [[package]]
 name = "sbv-kv"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Frevm-v55-upgrade#41fb0bf849ac554aab8cbd0873c96a64ac46e2db"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Frevm-v55-upgrade#17c32b05e4cd7e9eaf01bb00ff4389b026c52d0e"
 dependencies = [
  "auto_impl",
  "hashbrown 0.15.2",
@@ -5640,7 +5640,7 @@ dependencies = [
 [[package]]
 name = "sbv-primitives"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Frevm-v55-upgrade#41fb0bf849ac554aab8cbd0873c96a64ac46e2db"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Frevm-v55-upgrade#17c32b05e4cd7e9eaf01bb00ff4389b026c52d0e"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5669,7 +5669,7 @@ dependencies = [
 [[package]]
 name = "sbv-trie"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Frevm-v55-upgrade#41fb0bf849ac554aab8cbd0873c96a64ac46e2db"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Frevm-v55-upgrade#17c32b05e4cd7e9eaf01bb00ff4389b026c52d0e"
 dependencies = [
  "alloy-rlp",
  "alloy-trie",
@@ -5702,7 +5702,7 @@ dependencies = [
 [[package]]
 name = "scroll-alloy-network"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#a337c9777863e3da3ffe9460ab3f0c2fdefc41c7"
+source = "git+https://github.com/scroll-tech//reth?branch=fix%2Fscroll-zkvm#b2c7c70779050226ac44fddc5b38bafc819be2af"
 dependencies = [
  "alloy-consensus",
  "alloy-network",
@@ -5716,7 +5716,7 @@ dependencies = [
 [[package]]
 name = "scroll-alloy-rpc-types"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#a337c9777863e3da3ffe9460ab3f0c2fdefc41c7"
+source = "git+https://github.com/scroll-tech//reth?branch=fix%2Fscroll-zkvm#b2c7c70779050226ac44fddc5b38bafc819be2af"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5954,9 +5954,9 @@ dependencies = [
 
 [[package]]
 name = "serde"
-version = "1.0.217"
+version = "1.0.218"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02fc4265df13d6fa1d00ecff087228cc0a2b5f3c0e87e258d8b94a156e984c70"
+checksum = "e8dfc9d19bdbf6d17e22319da49161d5d0108e4188e8b680aef6299eed22df60"
 dependencies = [
  "serde_derive",
 ]
@@ -5981,9 +5981,9 @@ dependencies = [
 
 [[package]]
 name = "serde_derive"
-version = "1.0.217"
+version = "1.0.218"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a9bf7cf98d04a2b28aead066b7496853d4779c9cc183c440dbac457641e19a0"
+checksum = "f09503e191f4e797cb8aac08e9a4a4695c5edf6a2e70e376d961ddd5c969f82b"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5992,9 +5992,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.138"
+version = "1.0.139"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d434192e7da787e94a6ea7e9670b26a036d0ca41e0b7efb2676dd32bae872949"
+checksum = "44f86c3acccc9c65b153fe1b85a3be07fe5515274ec9f0653b4a0875731c72a6"
 dependencies = [
  "indexmap 2.7.1",
  "itoa",
@@ -7195,9 +7195,9 @@ checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
 
 [[package]]
 name = "winnow"
-version = "0.7.2"
+version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59690dea168f2198d1a3b0cac23b8063efcd11012f10ae4698f284808c8ef603"
+checksum = "0e7f4ea97f6f78012141bcdb6a216b2609f0979ada50b20ca5b52dde2eac2bb1"
 dependencies = [
  "memchr",
 ]
