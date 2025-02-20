@@ -4,7 +4,7 @@ use sbv::{
     core::{EvmDatabase, EvmExecutor},
     primitives::{
         BlockWitness, RecoveredBlock,
-        chainspec::{Chain, get_chain_spec},
+        chainspec::{Chain, get_chain_spec_or_build},
         ext::{BlockWitnessChunkExt, TxBytesHashExt},
         types::{ChunkInfoBuilder, reth::Block},
     },
@@ -36,8 +36,23 @@ pub fn execute(witness: &ArchivedChunkWitness) -> ChunkInfo {
         .leak() as &'static [RecoveredBlock<Block>];
     let initial_block_number = blocks[0].header().number;
 
-    let chain_spec = get_chain_spec(Chain::from_id(witness.blocks[0].chain_id()))
-        .expect("failed to get chain spec");
+
+    //let chain_spec = get_chain_spec(Chain::from_id(witness.blocks[0].chain_id()))
+    //    .expect("failed to get chain spec");
+
+    // TODO: should not allow such a short cut?
+    // use the same code from sbv
+    let chain_spec = get_chain_spec_or_build(Chain::from_id(witness.blocks[0].chain_id()), |_spec| {
+        #[cfg(feature = "scroll")]
+        {
+            use sbv::primitives::chainspec::ForkCondition;
+            use sbv::primitives::hardforks::ScrollHardfork;
+            _spec
+                .inner
+                .hardforks
+                .insert(ScrollHardfork::EuclidV2, ForkCondition::Timestamp(0));
+        }
+    });
 
     let (code_db, nodes_provider, block_hashes) = make_providers(&witness.blocks);
     let nodes_provider = ManuallyDrop::new(nodes_provider);
