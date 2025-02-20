@@ -5819,7 +5819,7 @@ dependencies = [
  "eyre",
  "ff 0.13.0",
  "glob",
- "halo2curves-axiom 0.5.3",
+ "halo2curves-axiom 0.7.0",
  "once_cell",
  "openvm-build",
  "openvm-circuit",

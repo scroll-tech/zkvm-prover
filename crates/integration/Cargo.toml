@@ -31,7 +31,7 @@ serde_json = "1.0"
 sha2 = "0.10"
 
 [dev-dependencies]
-halo2curves-axiom = "0.5.3"
+halo2curves-axiom = "0.7"
 glob = "0.3"
 
 [features]
