@@ -180,9 +180,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-json-abi"
-version = "0.8.18"
+version = "0.8.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "731ea743b3d843bc657e120fb1d1e9cc94f5dab8107e35a82125a63e6420a102"
+checksum = "4012581681b186ba0882007ed873987cc37f86b1b488fe6b91d5efd0b585dc41"
 dependencies = [
  "alloy-primitives",
  "alloy-sol-type-parser",
@@ -244,8 +244,8 @@ dependencies = [
 
 [[package]]
 name = "alloy-primitives"
-version = "0.8.18"
-source = "git+https://github.com/scroll-tech/alloy-core?branch=v0.8.18#aab106b9b7ca2e76a7b073064f86a04adb3122fe"
+version = "0.8.21"
+source = "git+https://github.com/scroll-tech/alloy-core?branch=v0.8.21#6d28bdb643f36da7b580ed0f252df6d8117f2fdd"
 dependencies = [
  "alloy-rlp",
  "bytes",
@@ -433,9 +433,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-sol-types"
-version = "0.8.18"
+version = "0.8.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3b478bc9c0c4737a04cd976accde4df7eba0bdc0d90ad6ff43d58bc93cf79c1"
+checksum = "6044800da35c38118fd4b98e18306bd3b91af5dedeb54c1b768cf1b4fb68f549"
 dependencies = [
  "alloy-json-abi",
  "alloy-primitives",
@@ -536,9 +536,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.95"
+version = "1.0.96"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34ac096ce696dc2fcabef30516bb13c0a68a11d30131d3df6f04711467681b04"
+checksum = "6b964d184e89d9b6b67dd2715bc8e74cf3107fb2b529990c90cf517326150bf4"
 
 [[package]]
 name = "ark-ff"
@@ -2885,9 +2885,9 @@ dependencies = [
 
 [[package]]
 name = "op-alloy-consensus"
-version = "0.10.3"
+version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23f7ff02e5f3ba62c8dd5d9a630c818f50147bca7b0d78e89de59ed46b5d02e1"
+checksum = "621e69964165285ce750bf7ba961707e26c31df9f0b25652d6219dcee1f7f5b5"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5701,8 +5701,8 @@ dependencies = [
 
 [[package]]
 name = "scroll-alloy-network"
-version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#a337c9777863e3da3ffe9460ab3f0c2fdefc41c7"
+version = "1.2.0"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#1764d96f32cdf51779e876d895abb35c4a6ea780"
 dependencies = [
  "alloy-consensus",
  "alloy-network",
@@ -5715,8 +5715,8 @@ dependencies = [
 
 [[package]]
 name = "scroll-alloy-rpc-types"
-version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#a337c9777863e3da3ffe9460ab3f0c2fdefc41c7"
+version = "1.2.0"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#1764d96f32cdf51779e876d895abb35c4a6ea780"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5992,9 +5992,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.138"
+version = "1.0.139"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d434192e7da787e94a6ea7e9670b26a036d0ca41e0b7efb2676dd32bae872949"
+checksum = "44f86c3acccc9c65b153fe1b85a3be07fe5515274ec9f0653b4a0875731c72a6"
 dependencies = [
  "indexmap 2.7.1",
  "itoa",
@@ -7195,9 +7195,9 @@ checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
 
 [[package]]
 name = "winnow"
-version = "0.7.2"
+version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59690dea168f2198d1a3b0cac23b8063efcd11012f10ae4698f284808c8ef603"
+checksum = "0e7f4ea97f6f78012141bcdb6a216b2609f0979ada50b20ca5b52dde2eac2bb1"
 dependencies = [
  "memchr",
 ]
