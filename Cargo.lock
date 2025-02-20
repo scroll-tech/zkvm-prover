@@ -5841,6 +5841,7 @@ dependencies = [
  "sbv",
  "scroll-zkvm-circuit-input-types",
  "scroll-zkvm-prover",
+ "scroll-zkvm-verifier",
  "serde_json",
  "sha2",
  "tiny-keccak",

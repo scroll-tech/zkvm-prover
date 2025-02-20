@@ -45,7 +45,7 @@ impl Verifier {
 }
 
 impl Verifier {
-    pub fn verify_proof(&self, root_proof: RootVmVerifierInput<SC>) -> bool {
+    pub fn verify_proof(&self, root_proof: &RootVmVerifierInput<SC>) -> bool {
         self.vm_executor
             .execute_and_compute_heights(self.root_committed_exe.exe.clone(), root_proof.write())
             .is_ok()

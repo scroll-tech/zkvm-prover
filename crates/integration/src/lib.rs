@@ -253,12 +253,13 @@ type ProveVerifyRes<T> = eyre::Result<
 >;
 
 /// Alias for convenience.
-type ProveVerifyEvmRes<T> = eyre::Result<
+type ProveVerifyEvmRes<T> = eyre::Result<(
     ProveVerifyOutcome<
         <<T as ProverTester>::Prover as ProverType>::ProvingTask,
         WrappedProof<<<T as ProverTester>::Prover as ProverType>::ProofMetadata, EvmProof>,
     >,
->;
+    scroll_zkvm_verifier::verifier::Verifier,
+)>;
 
 /// End-to-end test for a single proving task.
 #[instrument(name = "prove_verify_single", skip_all)]
@@ -369,7 +370,13 @@ where
     )?;
 
     // Dump verifier-only assets to disk.
-    prover.dump_verifier(&path_assets)?;
+    let (path_vm_config, path_root_committed_exe) = prover.dump_verifier(&path_assets)?;
+    let path_verifier_code = path_assets.join("verifier.bin");
+    let verifier = scroll_zkvm_verifier::verifier::Verifier::setup(
+        &path_vm_config,
+        &path_root_committed_exe,
+        &path_verifier_code,
+    )?;
 
     // Generate proving task for the circuit.
     let task = task.unwrap_or(T::gen_proving_task()?);
@@ -397,5 +404,5 @@ where
         &digest_2.to_bytes().into_iter().rev().collect::<Vec<u8>>(),
     )?;
 
-    Ok(ProveVerifyOutcome::single(task, proof))
+    Ok((ProveVerifyOutcome::single(task, proof), verifier))
 }
