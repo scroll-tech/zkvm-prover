@@ -5,7 +5,7 @@ use std::{
 };
 
 use metrics_util::{MetricKind, debugging::DebugValue};
-use once_cell::sync::OnceCell;
+use once_cell::sync::Lazy;
 use openvm_circuit::{
     arch::{SingleSegmentVmExecutor, VmExecutor, VmExecutorResult},
     system::{memory::tree::public_values::extract_public_values, program::trace::VmCommittedExe},
@@ -39,10 +39,10 @@ pub use bundle::{BundleProver, BundleProverType};
 
 mod chunk;
 pub use chunk::{ChunkProver, ChunkProverType};
-
 /// Proving key for STARK aggregation. Primarily used to aggregate
 /// [continuation proofs][openvm_sdk::prover::vm::ContinuationVmProof].
-static AGG_STARK_PROVING_KEY: OnceCell<AggStarkProvingKey> = OnceCell::new();
+static AGG_STARK_PROVING_KEY: Lazy<AggStarkProvingKey> =
+    Lazy::new(|| AggStarkProvingKey::keygen(AggStarkConfig::default()));
 
 /// The default directory to locate openvm's halo2 SRS parameters.
 const DEFAULT_PARAMS_DIR: &str = concat!(env!("HOME"), "/.openvm/params/");
@@ -184,9 +184,6 @@ impl<Type: ProverType> Prover<Type> {
         debug!(name: "exe-commitment", prover_name = Type::NAME, raw = ?exe_commit, as_bn254 = ?commits.exe_commit_to_bn254());
         debug!(name: "leaf-commitment", prover_name = Type::NAME, raw = ?leaf_commit, as_bn254 = ?commits.app_config_commit_to_bn254());
 
-        let _agg_stark_pk = AGG_STARK_PROVING_KEY
-            .get_or_init(|| AggStarkProvingKey::keygen(AggStarkConfig::default()));
-
         Ok((app_committed_exe, Arc::new(app_pk), [
             exe_commit,
             leaf_commit,
@@ -314,11 +311,7 @@ impl<Type: ProverType> Prover<Type> {
         &self,
         proof: &WrappedProof<Type::ProofMetadata, RootProof>,
     ) -> Result<(), Error> {
-        let agg_stark_pk = AGG_STARK_PROVING_KEY
-            .get()
-            .ok_or(Error::VerifyProof(String::from(
-                "agg stark pk not initialized! Prover::setup",
-            )))?;
+        let agg_stark_pk = &AGG_STARK_PROVING_KEY;
 
         let root_verifier_pk = &agg_stark_pk.root_verifier_pk;
         let vm = SingleSegmentVmExecutor::new(root_verifier_pk.vm_pk.vm_config.clone());
@@ -340,7 +333,11 @@ impl<Type: ProverType> Prover<Type> {
         proof: &WrappedProof<Type::ProofMetadata, EvmProof>,
     ) -> Result<(), Error> {
         let gas_cost = scroll_zkvm_verifier::evm::verify_evm_proof(
-            &self.evm_prover.as_ref().expect("").verifier_contract,
+            &self
+                .evm_prover
+                .as_ref()
+                .expect("uninited")
+                .verifier_contract,
             &proof.proof,
         )
         .map_err(|e| Error::VerifyProof(format!("EVM-proof verification failed: {e}")))?;
@@ -361,18 +358,17 @@ impl<Type: ProverType> Prover<Type> {
     ///
     /// [root_proof][openvm_sdk::verifier::root::types::RootVmVerifierInput]
     fn gen_proof_stark(&self, task: &Type::ProvingTask) -> Result<RootProof, Error> {
-        let agg_stark_pk = AGG_STARK_PROVING_KEY
-            .get()
-            .ok_or(Error::GenProof(String::from(
-                "agg stark pk not initialized! Prover::setup",
-            )))?;
-
         let stdin = task
             .build_guest_input()
             .map_err(|e| Error::GenProof(e.to_string()))?;
 
-        if let Some((_cycle_count, executor_result)) = self.execute_guest(&stdin)? {
-            self.mock_prove_if_needed(executor_result)?;
+        let mock_prove = std::env::var("MOCK_PROVE").as_deref() == Ok("true");
+        let guest_profiling = std::env::var("GUEST_PROFILING").as_deref() == Ok("true");
+        if mock_prove || guest_profiling {
+            let (_cycle_count, executor_result) = self.execute_guest(&stdin)?;
+            if mock_prove {
+                self.mock_prove(executor_result)?;
+            }
         }
 
         let task_id = task.identifier();
@@ -381,7 +377,7 @@ impl<Type: ProverType> Prover<Type> {
         Sdk.generate_root_verifier_input(
             Arc::clone(&self.app_pk),
             Arc::clone(&self.app_committed_exe),
-            agg_stark_pk.clone(),
+            AGG_STARK_PROVING_KEY.clone(),
             stdin,
         )
         .map_err(|e| Error::GenProof(e.to_string()))
@@ -390,13 +386,9 @@ impl<Type: ProverType> Prover<Type> {
     /// Execute the guest program to get the cycle count.
     ///
     /// Runs only if the GUEST_PROFILING environment variable has been set to "true".
-    fn execute_guest(&self, stdin: &StdIn) -> Result<Option<(u64, VmExecutorResult<SC>)>, Error> {
+    pub fn execute_guest(&self, stdin: &StdIn) -> Result<(u64, VmExecutorResult<SC>), Error> {
         use openvm_circuit::arch::VmConfig;
         use openvm_stark_sdk::openvm_stark_backend::p3_field::Field;
-
-        if std::env::var("GUEST_PROFILING").as_deref() != Ok("true") {
-            return Ok(None);
-        }
 
         let config = self.app_pk.app_vm_pk.vm_config.clone();
         let system_config = <SdkVmConfig as VmConfig<F>>::system(&config);
@@ -405,6 +397,8 @@ impl<Type: ProverType> Prover<Type> {
         let mut segments = vm
             .execute_segments(self.app_committed_exe.exe.clone(), stdin.clone())
             .map_err(|e| Error::GenProof(e.to_string()))?;
+        tracing::debug!(name: "segment length", segment_len = segments.len());
+
         let final_memory = std::mem::take(&mut segments.last_mut().unwrap().final_memory);
         let mut metric_snapshots = vec![];
         let executor_result = VmExecutorResult {
@@ -424,8 +418,6 @@ impl<Type: ProverType> Prover<Type> {
                 .collect(),
             final_memory,
         };
-
-        tracing::debug!(name: "segment length", segment_len = executor_result.per_segment.len());
 
         // extract and check public values
         let final_memory = executor_result.final_memory.as_ref().unwrap();
@@ -470,19 +462,15 @@ impl<Type: ProverType> Prover<Type> {
         }
 
         let total_cycle = counter_sum.get("total_cycles").cloned().unwrap_or(0);
-        Ok(Some((total_cycle, executor_result)))
+        Ok((total_cycle, executor_result))
     }
 
     /// Runs only if the MOCK_PROVE environment variable has been set to "true".
-    fn mock_prove_if_needed(&self, result: VmExecutorResult<SC>) -> Result<(), Error> {
+    fn mock_prove(&self, result: VmExecutorResult<SC>) -> Result<(), Error> {
         use openvm_circuit::arch::VmConfig;
         use openvm_stark_sdk::{
             config::baby_bear_poseidon2::BabyBearPoseidon2Engine, engine::StarkFriEngine,
         };
-
-        if std::env::var("MOCK_PROVE").as_deref() != Ok("true") {
-            return Ok(());
-        }
 
         let engine = BabyBearPoseidon2Engine::new(self.app_pk.app_vm_pk.fri_params);
         let airs = self

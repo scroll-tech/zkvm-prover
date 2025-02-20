@@ -273,21 +273,22 @@ where
 {
     let (path_app_config, _, path_exe) = T::load()?;
 
-    // Setup prover.
     let cache_dir = DIR_TESTRUN
         .get()
         .ok_or(eyre::eyre!("missing assets dir"))?
         .join(T::DIR_ASSETS)
         .join(DIR_PROOFS);
     std::fs::create_dir_all(&cache_dir)?;
+
+    // Generate proving task for the circuit.
+    let task = task.unwrap_or(T::gen_proving_task()?);
+
+    // Setup prover.
     let prover = scroll_zkvm_prover::Prover::<T::Prover>::setup(
         &path_exe,
         &path_app_config,
         Some(&cache_dir),
     )?;
-
-    // Generate proving task for the circuit.
-    let task = task.unwrap_or(T::gen_proving_task()?);
 
     // Construct root proof for the circuit.
     let proof = prover.gen_proof(&task)?;
