@@ -368,6 +368,9 @@ where
         Some(&cache_dir),
     )?;
 
+    // Dump verifier-only assets to disk.
+    prover.dump_verifier(&path_assets)?;
+
     // Generate proving task for the circuit.
     let task = task.unwrap_or(T::gen_proving_task()?);
 
