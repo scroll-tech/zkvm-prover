@@ -366,7 +366,7 @@ impl<Type: ProverType> Prover<Type> {
         let mock_prove = std::env::var("MOCK_PROVE").as_deref() == Ok("true");
         let guest_profiling = std::env::var("GUEST_PROFILING").as_deref() == Ok("true");
         if mock_prove || guest_profiling {
-            let (_cycle_count, executor_result) = self.execute_guest(&stdin)?;
+            let (_cycle_count, executor_result) = self.execute_guest(&stdin, guest_profiling)?;
             if mock_prove {
                 self.mock_prove(executor_result)?;
             }
@@ -386,13 +386,20 @@ impl<Type: ProverType> Prover<Type> {
 
     /// Execute the guest program to get the cycle count.
     ///
-    /// Runs only if the GUEST_PROFILING environment variable has been set to "true".
-    pub fn execute_guest(&self, stdin: &StdIn) -> Result<(u64, VmExecutorResult<SC>), Error> {
+    /// If the GUEST_PROFILING environment variable has been set to "true",
+    /// row_usage/cell_usage/counter_per_op metrics are also collected.
+    pub fn execute_guest(
+        &self,
+        stdin: &StdIn,
+        profile: bool,
+    ) -> Result<(u64, VmExecutorResult<SC>), Error> {
         use openvm_circuit::arch::VmConfig;
         use openvm_stark_sdk::openvm_stark_backend::p3_field::Field;
 
-        let config = self.app_pk.app_vm_pk.vm_config.clone();
-        let system_config = <SdkVmConfig as VmConfig<F>>::system(&config);
+        let mut config = self.app_pk.app_vm_pk.vm_config.clone();
+        if profile {
+            config.system.config = config.system.config.with_profiling();
+        }
         let vm = VmExecutor::new(config.clone());
 
         let mut segments = vm
@@ -422,6 +429,7 @@ impl<Type: ProverType> Prover<Type> {
 
         // extract and check public values
         let final_memory = executor_result.final_memory.as_ref().unwrap();
+        let system_config = <SdkVmConfig as VmConfig<F>>::system(&config);
         let public_values: Vec<F> = extract_public_values(
             &system_config.memory_config.memory_dimensions(),
             system_config.num_public_values,
@@ -466,19 +474,21 @@ impl<Type: ProverType> Prover<Type> {
             }
         }
 
-        let mut bench_report = String::new();
-        use std::fmt::Write;
-        writeln!(&mut bench_report, "guest profiling:").unwrap();
-        for (counter_name, values) in counter_sum.iter() {
-            writeln!(&mut bench_report, "{counter_name}:").unwrap();
-            let mut sorted_values: Vec<_> = values.iter().collect();
-            sorted_values.sort_by(|a, b| b.1.cmp(a.1));
-            for (label, value) in sorted_values {
-                writeln!(&mut bench_report, "  {label}\t{value}").unwrap();
+        if profile {
+            let mut bench_report = String::new();
+            use std::fmt::Write;
+            writeln!(&mut bench_report, "guest profiling:").unwrap();
+            for (counter_name, values) in counter_sum.iter() {
+                writeln!(&mut bench_report, "{counter_name}:").unwrap();
+                let mut sorted_values: Vec<_> = values.iter().collect();
+                sorted_values.sort_by(|a, b| b.1.cmp(a.1));
+                for (label, value) in sorted_values {
+                    writeln!(&mut bench_report, "  {label}\t{value}").unwrap();
+                }
+                writeln!(&mut bench_report).unwrap();
             }
-            writeln!(&mut bench_report).unwrap();
+            println!("{}", bench_report);
         }
-        println!("{}", bench_report);
 
         let total_cycle = *counter_sum.get("total_cycles").unwrap().get("").unwrap();
         Ok((total_cycle, executor_result))
