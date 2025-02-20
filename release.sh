@@ -18,6 +18,7 @@ fi
 mkdir -p $DIR_OUTPUT/chunk
 mkdir -p $DIR_OUTPUT/batch
 mkdir -p $DIR_OUTPUT/bundle
+mkdir -p $DIR_OUTPUT/verifier
 
 # copy chunk-program related assets
 cp ./crates/circuits/chunk-circuit/openvm/app.vmexe $DIR_OUTPUT/chunk/app.vmexe
@@ -34,6 +35,11 @@ cp ./crates/circuits/bundle-circuit/openvm/verifier.bin $DIR_OUTPUT/bundle/verif
 cp ./crates/circuits/bundle-circuit/openvm/verifier.sol $DIR_OUTPUT/bundle/verifier.sol
 xxd -l 32 -p $DIR_INPUT/bundle/digest_1 | tr -d '\n' | awk '{gsub("%", ""); print}' > $DIR_OUTPUT/bundle/digest_1.hex
 xxd -l 32 -p $DIR_INPUT/bundle/digest_2 | tr -d '\n' | awk '{gsub("%", ""); print}' > $DIR_OUTPUT/bundle/digest_2.hex
+
+# copy verifier-only assets
+cp $DIR_INPUT/bundle/root-verifier-vm-config $DIR_OUTPUT/verifier/root-verifier-vm-config
+cp $DIR_INPUT/bundle/root-verifier-committed-exe $DIR_OUTPUT/verifier/root-verifier-committed-exe
+cp ./crates/circuits/bundle-circuit/openvm/verifier.bin $DIR_OUTPUT/verifier/verifier.bin
 
 # upload to s3
 aws --profile default s3 cp $DIR_OUTPUT s3://circuit-release/scroll-zkvm/$DIR_OUTPUT --recursive
