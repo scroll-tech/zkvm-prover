@@ -187,7 +187,7 @@ pub fn build_batch_task(
 
 #[test]
 fn test_build_batch_task() -> eyre::Result<()> {
-    use scroll_zkvm_prover::utils::{read_json, read_json_deep};
+    use scroll_zkvm_prover::utils::{read_json, read_json_deep, write_json};
 
     // ./testdata/
     let path_testdata = std::path::Path::new("testdata");
@@ -214,7 +214,8 @@ fn test_build_batch_task() -> eyre::Result<()> {
         .join("chunk-12508460-12508463.json");
     let chunk_proof = read_json_deep::<_, ChunkProof>(&path_chunk_proof)?;
 
-    build_batch_task(&[chunk_task], &[chunk_proof], Default::default());
+    let task = build_batch_task(&[chunk_task], &[chunk_proof], Default::default());
 
+    write_json(path_testdata.join("batch-task-test-out.json"), &task).unwrap();
     Ok(())
 }

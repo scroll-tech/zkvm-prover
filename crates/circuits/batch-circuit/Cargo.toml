@@ -6,7 +6,7 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
-scroll-zkvm-circuit-input-types.workspace = true
+scroll-zkvm-circuit-input-types = {workspace = true, default-features = false, features = ["batch-v7"]}
 
 openvm = { workspace = true, features = ["std"] }
 openvm-algebra-guest.workspace = true
@@ -23,7 +23,6 @@ itertools.workspace = true
 rkyv.workspace = true
 serde.workspace = true
 tiny-keccak.workspace = true
-vm-zstd.workspace = true
 
 [features]
 default = ["scroll"]

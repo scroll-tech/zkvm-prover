@@ -6,7 +6,7 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
-scroll-zkvm-circuit-input-types.workspace = true
+scroll-zkvm-circuit-input-types = {workspace = true, default-features = false}
 
 openvm = { workspace = true, features = ["std"] }
 openvm-algebra-guest.workspace = true

@@ -5,6 +5,13 @@ pub use header::{
     v7::{ArchivedBatchHeaderV7, BatchHeaderV7},
 };
 
+mod payload;
+#[cfg(feature = "batch-v3")]
+pub use payload::v3::Payload as PayloadV3;
+#[cfg(feature = "batch-v7")]
+pub use payload::v7::{EnvelopeV7, PayloadV7};
+pub use payload::*;
+
 mod public_inputs;
 pub use public_inputs::{ArchivedBatchInfo, BatchInfo};
 

@@ -1,5 +1,5 @@
 use scroll_zkvm_circuit_input_types::{
-    batch::{BatchHeader, BatchHeaderV7, BatchInfo, Bytes48},
+    batch::{BatchHeader, BatchHeaderV7, BatchInfo, Bytes48, EnvelopeV7, PayloadV7},
     chunk::ChunkInfo,
 };
 
@@ -37,8 +37,8 @@ impl BatchInfoBuilderV7 {
             padded.resize(N_BLOB_BYTES, 0);
             padded
         };
-        let envelope = crate::payload::v7::EnvelopeV7::from(envelope_bytes.as_slice());
-        let payload = crate::payload::v7::PayloadV7::from(&envelope);
+        let envelope = EnvelopeV7::from(envelope_bytes.as_slice());
+        let payload = PayloadV7::from(&envelope);
 
         // Barycentric evaluation of blob polynomial.
         let challenge_digest = envelope.challenge_digest(header.blob_versioned_hash);

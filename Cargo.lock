@@ -5740,7 +5740,6 @@ dependencies = [
  "scroll-zkvm-circuit-input-types",
  "serde",
  "tiny-keccak",
- "vm-zstd",
 ]
 
 [[package]]
@@ -5808,6 +5807,7 @@ dependencies = [
  "sbv",
  "serde",
  "tiny-keccak",
+ "vm-zstd",
 ]
 
 [[package]]

@@ -97,7 +97,7 @@ pub mod point_eval {
         );
 
         for (i, &byte) in envelope_bytes.iter().enumerate() {
-            blob_bytes[(i / 31) * 32 + (i % 31)] = byte;
+            blob_bytes[(i / 31) * 32 + 1 + (i % 31)] = byte;
         }
 
         c_kzg::Blob::new(blob_bytes)

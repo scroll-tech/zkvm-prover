@@ -3,7 +3,7 @@ use std::sync::LazyLock;
 use algebra::{Field, IntMod};
 use alloy_primitives::U256;
 use itertools::Itertools;
-use openvm_ecc_guest::{AffinePoint, CyclicGroup, Group, msm, weierstrass::WeierstrassPoint};
+use openvm_ecc_guest::{AffinePoint, CyclicGroup, msm, weierstrass::WeierstrassPoint};
 use openvm_pairing_guest::{
     algebra,
     bls12_381::{Bls12_381, Fp, Fp2, G1Affine, G2Affine, Scalar},
@@ -97,31 +97,6 @@ static KZG_G2_SETUP: LazyLock<G2Affine> = LazyLock::new(|| {
 
     convert_bls12381_halo2_g2_to_g2(Halo2G2Affine::from_compressed_be(&KZG_G2_SETUP_BYTES).unwrap())
 });
-
-// for scalar, use `as_le_bytes` in IntMod for mul by_le argument
-fn group_mul<C: Group>(point: C, by_le: &[u8]) -> C {
-    let mut acc = C::IDENTITY.clone();
-
-    // This is a simple double-and-add implementation of point
-    // multiplication, moving from most significant to least
-    // significant bit of the scalar.
-    //
-    // We skip the leading bit because it's always unset for Fq
-    // elements.
-    for bit in by_le
-        .iter()
-        .rev()
-        .flat_map(|byte| (0..8).rev().map(move |i| (byte >> i) & 1u8))
-        .skip(1)
-    {
-        acc = acc.double();
-        if bit == 1u8 {
-            acc.add_assign(point.clone());
-        }
-    }
-
-    acc
-}
 
 // picked from ExpBytes trait, some compilation issue (infinity recursion) raised
 // from the exp_bytes entry and can not resolved it currently

@@ -75,8 +75,7 @@ impl ProverType for ChunkProverType {
         let chain_spec = get_chain_spec_or_build(Chain::from_id(chain_id), |_spec| {
             #[cfg(feature = "scroll")]
             {
-                use sbv::primitives::chainspec::ForkCondition;
-                use sbv::primitives::hardforks::ScrollHardfork;
+                use sbv::primitives::{chainspec::ForkCondition, hardforks::ScrollHardfork};
                 _spec
                     .inner
                     .hardforks
