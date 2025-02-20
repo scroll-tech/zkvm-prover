@@ -460,6 +460,7 @@ impl<Type: ProverType> Prover<Type> {
                             .key()
                             .labels()
                             .map(|l| l.value())
+                            .filter(|l| !l.is_empty())
                             .collect::<Vec<_>>()
                             .join("|");
                         let counter_name = ckey.key().name().to_string();
