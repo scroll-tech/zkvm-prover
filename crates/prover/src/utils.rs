@@ -56,6 +56,12 @@ pub fn write_json<P: AsRef<Path>, T: Serialize>(path: P, value: &T) -> Result<()
     Ok(serde_json::to_writer(&mut writer, value)?)
 }
 
+/// Serialize the provided type with bincode and write to the given path.
+pub fn write_bin<P: AsRef<Path>, T: Serialize>(path: P, value: &T) -> Result<(), Error> {
+    let data = bincode::serialize(value).map_err(|e| Error::Custom(e.to_string()))?;
+    write(path, &data)
+}
+
 /// Wrapper functionality to write bytes to a file.
 pub fn write<P: AsRef<Path>>(path: P, data: &[u8]) -> Result<(), Error> {
     let path = path.as_ref();

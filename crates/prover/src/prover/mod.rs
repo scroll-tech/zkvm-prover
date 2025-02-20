@@ -47,6 +47,12 @@ static AGG_STARK_PROVING_KEY: OnceCell<AggStarkProvingKey> = OnceCell::new();
 /// The default directory to locate openvm's halo2 SRS parameters.
 const DEFAULT_PARAMS_DIR: &str = concat!(env!("HOME"), "/.openvm/params/");
 
+/// File descriptor for the root verifier's VM config.
+const FD_ROOT_VERIFIER_VM_CONFIG: &str = "root-verifier-vm-config";
+
+/// File descriptor for the root verifier's committed exe.
+const FD_ROOT_VERIFIER_COMMITTED_EXE: &str = "root-verifier-committed-exe";
+
 /// Types used in the outermost proof construction and verification, i.e. the EVM-compatible layer.
 pub struct EvmProverVerifier {
     /// This is required only for [BundleProver].
@@ -191,6 +197,30 @@ impl<Type: ProverType> Prover<Type> {
             exe_commit,
             leaf_commit,
         ]))
+    }
+
+    /// Dump assets required to setup verifier-only mode.
+    pub fn dump_verifier<P: AsRef<Path>>(&self, dir: P) -> Result<(PathBuf, PathBuf), Error> {
+        if !Type::EVM {
+            return Err(Error::Custom(
+                "dump_verifier only at bundle-prover".to_string(),
+            ));
+        };
+
+        let agg_stark_pk = AGG_STARK_PROVING_KEY.get().ok_or(Error::Custom(
+            "AGG_STARK_PROVING_KEY is not setup".to_string(),
+        ))?;
+        let root_verifier_pk = &agg_stark_pk.root_verifier_pk;
+        let vm_config = root_verifier_pk.vm_pk.vm_config.clone();
+        let root_committed_exe: &VmCommittedExe<_> = &root_verifier_pk.root_committed_exe;
+
+        let path_vm_config = dir.as_ref().join(FD_ROOT_VERIFIER_VM_CONFIG);
+        let path_root_committed_exe = dir.as_ref().join(FD_ROOT_VERIFIER_COMMITTED_EXE);
+
+        crate::utils::write_bin(&path_vm_config, &vm_config)?;
+        crate::utils::write_bin(&path_root_committed_exe, &root_committed_exe)?;
+
+        Ok((path_vm_config, path_root_committed_exe))
     }
 
     /// Pick up app commit as "vk" in proof, to distinguish from which circuit the proof comes

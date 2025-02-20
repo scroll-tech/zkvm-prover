@@ -60,9 +60,19 @@ fn e2e() -> eyre::Result<()> {
     let bundle_task = BundleProvingTask {
         batch_proofs: outcome.proofs,
     };
-    let outcome = prove_verify_single_evm::<BundleProverTester>(Some(bundle_task))?;
+    let (outcome, verifier) =
+        prove_verify_single_evm::<BundleProverTester>(Some(bundle_task.clone()))?;
 
     assert_eq!(outcome.proofs.len(), 1, "single bundle proof");
+
+    // Verifier all above proofs with the verifier-only mode.
+    for proof in chunk_proofs.iter() {
+        assert!(verifier.verify_proof(&proof.proof));
+    }
+    for proof in bundle_task.batch_proofs.iter() {
+        assert!(verifier.verify_proof(&proof.proof));
+    }
+    assert!(verifier.verify_proof_evm(&outcome.proofs[0].proof));
 
     let expected_pi_hash = &outcome.proofs[0].metadata.bundle_pi_hash;
     let observed_instances = &outcome.proofs[0].proof.instances[0];
