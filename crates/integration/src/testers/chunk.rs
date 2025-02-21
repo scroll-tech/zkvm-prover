@@ -25,8 +25,12 @@ impl ProverTester for ChunkProverTester {
 
     /// [block-1, block-2, block-3, block-4]
     fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask> {
+        #[cfg(not(feature = "euclidv2"))]
+        let blocks = (12508460usize..=12508463usize);
+        #[cfg(feature = "euclidv2")]
+        let blocks = (1usize..=4usize);
         Ok(ChunkProvingTask {
-            block_witnesses: (12508460usize..=12508463usize)
+            block_witnesses: blocks
                 .map(read_block_witness)
                 .collect::<eyre::Result<Vec<BlockWitness>>>()?,
             prev_msg_queue_hash: Default::default(),
