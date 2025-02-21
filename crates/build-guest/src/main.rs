@@ -39,6 +39,14 @@ pub fn main() {
         chunk_commitments,
         format!("{workspace_dir}/crates/circuits/batch-circuit/src/child_commitments.rs").as_str(),
     );
+    write_commitments(
+        chunk_commitments,
+        format!("{workspace_dir}/crates/prover/src/commitments/chunk.rs").as_str(),
+    );
+    write_commitments(
+        chunk_commitments,
+        format!("{workspace_dir}/crates/verifier/src/commitments/chunk.rs").as_str(),
+    );
 
     // batch-circuit
     let batch_elf = BatchProverTester::build().unwrap();
@@ -52,13 +60,29 @@ pub fn main() {
         batch_commitments,
         format!("{workspace_dir}/crates/circuits/bundle-circuit/src/child_commitments.rs").as_str(),
     );
+    write_commitments(
+        batch_commitments,
+        format!("{workspace_dir}/crates/prover/src/commitments/batch.rs").as_str(),
+    );
+    write_commitments(
+        batch_commitments,
+        format!("{workspace_dir}/crates/verifier/src/commitments/batch.rs").as_str(),
+    );
 
     // bundle-circuit
     let bundle_elf = BundleProverTester::build().unwrap();
     let output_path = format!("{workspace_dir}/crates/circuits/bundle-circuit/openvm");
     let (bundle_config_path, _, bundle_exe_path) =
         BundleProverTester::transpile(bundle_elf, Some(output_path.into())).unwrap();
-    let (_, _, _bundle_commitments) =
+    let (_, _, bundle_commitments) =
         scroll_zkvm_prover::Prover::<BundleProverType>::init(bundle_exe_path, bundle_config_path)
             .unwrap();
+    write_commitments(
+        bundle_commitments,
+        format!("{workspace_dir}/crates/prover/src/commitments/bundle.rs").as_str(),
+    );
+    write_commitments(
+        bundle_commitments,
+        format!("{workspace_dir}/crates/verifier/src/commitments/bundle.rs").as_str(),
+    );
 }

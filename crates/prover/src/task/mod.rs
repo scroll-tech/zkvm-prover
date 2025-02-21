@@ -12,7 +12,7 @@ pub mod bundle;
 
 /// Every proving task must have an identifier. The identifier will be appended to a prefix while
 /// storing/reading proof to/from disc.
-pub trait ProvingTask {
+pub trait ProvingTask: serde::de::DeserializeOwned {
     fn identifier(&self) -> String;
 
     fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error>;

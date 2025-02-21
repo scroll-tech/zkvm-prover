@@ -2,6 +2,7 @@ use scroll_zkvm_circuit_input_types::batch::BatchHeader;
 
 use crate::{
     Error, Prover, ProverType,
+    commitments::batch::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT},
     proof::{BatchProofMetadata, RootProof},
     setup::read_app_config,
     task::batch::BatchProvingTask,
@@ -16,6 +17,10 @@ impl ProverType for BatchProverType {
     const NAME: &'static str = "batch";
 
     const EVM: bool = false;
+
+    const EXE_COMMIT: [u32; 8] = BATCH_EXE_COMMIT;
+
+    const LEAF_COMMIT: [u32; 8] = BATCH_LEAF_COMMIT;
 
     type ProvingTask = BatchProvingTask;
 

@@ -15,6 +15,7 @@ use sbv::{
 
 use crate::{
     Error,
+    commitments::chunk::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT},
     proof::{ChunkProofMetadata, RootProof},
     setup::read_app_config,
     task::{ProvingTask, chunk::ChunkProvingTask},
@@ -31,6 +32,10 @@ impl ProverType for ChunkProverType {
     const NAME: &'static str = "chunk";
 
     const EVM: bool = false;
+
+    const EXE_COMMIT: [u32; 8] = CHUNK_EXE_COMMIT;
+
+    const LEAF_COMMIT: [u32; 8] = CHUNK_LEAF_COMMIT;
 
     type ProvingTask = ChunkProvingTask;
 

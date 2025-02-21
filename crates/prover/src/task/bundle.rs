@@ -9,7 +9,7 @@ use scroll_zkvm_circuit_input_types::bundle::BundleWitness;
 /// Message indicating a sanity check failure.
 const BUNDLE_SANITY_MSG: &str = "bundle must have at least one batch";
 
-#[derive(Clone)]
+#[derive(Clone, serde::Deserialize, serde::Serialize)]
 pub struct BundleProvingTask {
     pub batch_proofs: Vec<BatchProof>,
 }
