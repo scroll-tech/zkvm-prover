@@ -9,7 +9,7 @@ use scroll_zkvm_integration::{
 use scroll_zkvm_prover::{ChunkProof, task::batch::BatchProvingTask, utils::read_json_deep};
 
 fn load_recent_chunk_proofs() -> eyre::Result<BatchProvingTask> {
-    let proof_path = glob::glob("../../.output/chunk-tests-*/chunk/proofs/chunk-*.json")?
+    let proof_path = glob::glob("testdata/proofs/chunk-1-4.json")?
         .next()
         .unwrap()?;
     println!("proof_path: {:?}", proof_path);

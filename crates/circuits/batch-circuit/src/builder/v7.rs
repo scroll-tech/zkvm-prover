@@ -28,8 +28,8 @@ impl BatchInfoBuilderV7 {
     ) -> BatchInfo {
         // Sanity check on the length of unpadded blob bytes.
         assert!(
-            blob_bytes.len() < N_BLOB_BYTES,
-            "blob-envelope bigger than allowed"
+            blob_bytes.len() <= N_BLOB_BYTES,
+            "blob-envelope bigger than allowed",
         );
 
         let envelope_bytes = {

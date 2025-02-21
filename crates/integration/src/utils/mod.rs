@@ -145,7 +145,7 @@ pub fn build_batch_task(
             pl.extend(ctx.to_bytes());
             pl
         });
-    assert_eq!(payload.len(), 74 + 52*num_blocks as usize);
+    assert_eq!(payload.len(), 74 + 52 * num_blocks as usize);
     payload.extend(chunk_tx_bytes);
     // compress ...
     let compressed_payload = zstd_encode(&payload);
@@ -186,10 +186,10 @@ pub fn build_batch_task(
     }
 }
 
-#[ignore = "only for generating new test sample data"]
 #[test]
-fn test_build_batch_task() -> eyre::Result<()> {
-    use scroll_zkvm_prover::utils::{read_json, read_json_deep, write_json};
+fn test_build_and_parse_batch_task() -> eyre::Result<()> {
+    use scroll_zkvm_circuit_input_types::batch::{EnvelopeV7, PayloadV7};
+    use scroll_zkvm_prover::utils::{read_json, read_json_deep};
 
     // ./testdata/
     let path_testdata = std::path::Path::new("testdata");
@@ -211,39 +211,19 @@ fn test_build_batch_task() -> eyre::Result<()> {
     };
 
     // read chunk proof.
-    let path_chunk_proof = path_testdata
-        .join("proofs")
-        .join("chunk-1-4.json");
+    let path_chunk_proof = path_testdata.join("proofs").join("chunk-1-4.json");
     let chunk_proof = read_json_deep::<_, ChunkProof>(&path_chunk_proof)?;
 
     let task = build_batch_task(&[chunk_task], &[chunk_proof], Default::default());
 
-    write_json(path_testdata.join("batch-task-test-out.json"), &task).unwrap();
-    Ok(())
-}
-
-#[test]
-fn test_batch_task_payload() -> eyre::Result<()> {
-    use scroll_zkvm_prover::utils::read_json_deep;
-    use scroll_zkvm_circuit_input_types::batch::{PayloadV7, EnvelopeV7};
-
-    // ./testdata/
-    let path_testdata = std::path::Path::new("testdata");
-
-    let task = read_json_deep::<_, BatchProvingTask>(path_testdata.join("batch-task-test-out.json")).unwrap();
-
-    println!("blob {:?}", &task.blob_bytes[..32]);
     let enveloped = EnvelopeV7::from(task.blob_bytes.as_slice());
 
-    let chunk_infos = task.chunk_proofs.iter()
-        .map(|proof|proof.metadata.chunk_info.clone())
+    let chunk_infos = task
+        .chunk_proofs
+        .iter()
+        .map(|proof| proof.metadata.chunk_info.clone())
         .collect::<Vec<_>>();
 
-    PayloadV7::from(&enveloped).validate(
-        &task.batch_header,
-        &chunk_infos,
-    );
-    
-
+    PayloadV7::from(&enveloped).validate(&task.batch_header, &chunk_infos);
     Ok(())
 }
