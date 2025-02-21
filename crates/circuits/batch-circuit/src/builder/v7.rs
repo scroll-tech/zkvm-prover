@@ -53,7 +53,7 @@ impl BatchInfoBuilderV7 {
         );
 
         // Verify KZG proof.
-        {
+        let proof_verified = {
             let commitment = convert_bls12381_halo2_g1_to_g1(
                 Halo2G1Affine::from_compressed_be(kzg_commitment).unwrap(),
             );
@@ -65,8 +65,9 @@ impl BatchInfoBuilderV7 {
                 evaluation,
                 (commitment.x().clone(), commitment.y().clone()),
                 (proof.x().clone(), proof.y().clone()),
-            );
-        }
+            )
+        };
+        assert!(proof_verified, "pairing fail!");
 
         // Validate payload (batch data).
         let (first_chunk, last_chunk) = payload.validate(header, chunk_infos);
