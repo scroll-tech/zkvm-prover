@@ -87,6 +87,8 @@ revm-precompile = { git = "https://github.com/scroll-tech//revm", branch = "scro
 revm-primitives = { git = "https://github.com/scroll-tech//revm", branch = "scroll-evm-executor/v55" }
 
 [patch."https://github.com/scroll-tech/reth.git"]
+scroll-alloy-network = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm" }
+scroll-alloy-rpc-types = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm" }
 reth-chainspec = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm" }
 reth-evm = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm" }
 reth-evm-ethereum = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm" }
