@@ -185,10 +185,10 @@ pub fn build_batch_task(
     }
 }
 
-#[ignore = "only for generating new test sample data"]
 #[test]
-fn test_build_batch_task() -> eyre::Result<()> {
-    use scroll_zkvm_prover::utils::{read_json, read_json_deep, write_json};
+fn test_build_and_parse_batch_task() -> eyre::Result<()> {
+    use scroll_zkvm_circuit_input_types::batch::{EnvelopeV7, PayloadV7};
+    use scroll_zkvm_prover::utils::{read_json, read_json_deep};
 
     // ./testdata/
     let path_testdata = std::path::Path::new("testdata");
