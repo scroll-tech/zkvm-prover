@@ -74,18 +74,35 @@ pub struct Prover<Type> {
 }
 
 /// Alias for convenience.
-pub type ProgramCommitments = [[u32; 8]; 2];
-type InitRes = Result<
-    (
-        Arc<VmCommittedExe<SC>>,
-        Arc<AppProvingKey<SdkVmConfig>>,
-        ProgramCommitments,
-    ),
-    Error,
->;
+type InitRes = (
+    Arc<VmCommittedExe<SC>>,
+    Arc<AppProvingKey<SdkVmConfig>>,
+    AppExecutionCommit<F>,
+);
 
 /// Alias for convenience.
 pub type SC = BabyBearPoseidon2Config;
+
+/// Load config and exe, and also return pk and commits.
+pub fn init_exe<P: AsRef<Path>>(
+    path_exe: P,
+    app_config: AppConfig<SdkVmConfig>,
+) -> Result<InitRes, Error> {
+    let app_exe = read_app_exe(path_exe)?;
+    let app_pk = Sdk
+        .app_keygen(app_config)
+        .map_err(|e| Error::Keygen(e.to_string()))?;
+    let app_committed_exe = Sdk
+        .commit_app_exe(app_pk.app_fri_params(), app_exe)
+        .map_err(|e| Error::Commit(e.to_string()))?;
+
+    let commits = AppExecutionCommit::compute(
+        &app_pk.app_vm_pk.vm_config,
+        &app_committed_exe,
+        &app_pk.leaf_committed_exe,
+    );
+    Ok((app_committed_exe, Arc::new(app_pk), commits))
+}
 
 impl<Type: ProverType> Prover<Type> {
     /// Setup the [`Prover`] given paths to the application's exe and proving key.
@@ -95,7 +112,8 @@ impl<Type: ProverType> Prover<Type> {
         path_app_config: P,
         cache_dir: Option<P>,
     ) -> Result<Self, Error> {
-        let (app_committed_exe, app_pk, _) = Self::init(&path_exe, &path_app_config)?;
+        let app_config = Type::read_app_config(path_app_config)?;
+        let (app_committed_exe, app_pk, _) = Self::init(&path_exe, app_config)?;
 
         let evm_prover = Type::EVM
             .then(|| {
@@ -160,35 +178,22 @@ impl<Type: ProverType> Prover<Type> {
     }
 
     /// Read app exe, proving key and return committed data.
-    #[instrument("Prover::init", fields(path_exe, path_app_config))]
-    pub fn init<P: AsRef<Path>>(path_exe: P, path_app_config: P) -> InitRes {
-        let app_exe = read_app_exe(path_exe)?;
-        let app_config = Type::read_app_config(path_app_config)?;
-        let app_pk = Sdk
-            .app_keygen(app_config)
-            .map_err(|e| Error::Keygen(e.to_string()))?;
-        let app_committed_exe = Sdk
-            .commit_app_exe(app_pk.app_fri_params(), app_exe)
-            .map_err(|e| Error::Commit(e.to_string()))?;
+    #[instrument("Prover::init", fields(path_exe))]
+    pub fn init<P: AsRef<Path>>(
+        path_exe: P,
+        app_config: AppConfig<SdkVmConfig>,
+    ) -> Result<InitRes, Error> {
+        let (app_committed_exe, app_pk, commits) = init_exe(path_exe, app_config)?;
 
         // print the 2 exe commitments
         use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
-        let commits = AppExecutionCommit::compute(
-            &app_pk.app_vm_pk.vm_config,
-            &app_committed_exe,
-            &app_pk.leaf_committed_exe,
-        );
         let exe_commit = commits.exe_commit.map(|x| x.as_canonical_u32());
         let leaf_commit = commits
             .leaf_vm_verifier_commit
             .map(|x| x.as_canonical_u32());
         debug!(name: "exe-commitment", prover_name = Type::NAME, raw = ?exe_commit, as_bn254 = ?commits.exe_commit_to_bn254());
         debug!(name: "leaf-commitment", prover_name = Type::NAME, raw = ?leaf_commit, as_bn254 = ?commits.app_config_commit_to_bn254());
-
-        Ok((app_committed_exe, Arc::new(app_pk), [
-            exe_commit,
-            leaf_commit,
-        ]))
+        Ok((app_committed_exe, app_pk, commits))
     }
 
     /// Pick up app commit as "vk" in proof, to distinguish from which circuit the proof comes

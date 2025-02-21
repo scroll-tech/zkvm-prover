@@ -19,3 +19,4 @@ rkyv.workspace = true
 [features]
 default = ["scroll"]
 scroll = ["scroll-zkvm-circuit-input-types/scroll"]
+euclidv2 = ["scroll-zkvm-circuit-input-types/euclidv2"]

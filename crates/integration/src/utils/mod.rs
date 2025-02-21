@@ -185,10 +185,11 @@ pub fn build_batch_task(
     }
 }
 
+#[cfg(feature = "euclidv2")]
 #[test]
 fn test_build_and_parse_batch_task() -> eyre::Result<()> {
     use scroll_zkvm_circuit_input_types::batch::{EnvelopeV7, PayloadV7};
-    use scroll_zkvm_prover::utils::{read_json, read_json_deep};
+    use scroll_zkvm_prover::utils::{read_json, read_json_deep, write_json};
 
     // ./testdata/
     let path_testdata = std::path::Path::new("testdata");
@@ -219,6 +220,7 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
     Ok(())
 }
 
+#[cfg(feature = "euclidv2")]
 #[test]
 fn test_batch_task_payload() -> eyre::Result<()> {
     use scroll_zkvm_circuit_input_types::batch::{EnvelopeV7, PayloadV7};

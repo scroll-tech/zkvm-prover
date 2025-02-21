@@ -50,12 +50,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "allocator-api2"
-version = "0.2.21"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
-
-[[package]]
 name = "alloy-chains"
 version = "0.1.62"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1125,7 +1119,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "117725a109d387c937a1533ce01b450cbde6b88abceea8473c4d7a85853cda3c"
 dependencies = [
  "lazy_static",
- "windows-sys 0.59.0",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
@@ -4614,7 +4608,7 @@ dependencies = [
  "alloy-trie",
  "auto_impl",
  "derive_more 1.0.0",
- "reth-ethereum-forks 1.1.5 (git+https://github.com/scroll-tech//reth?branch=fix%2Fscroll-zkvm-euclid-v2)",
+ "reth-ethereum-forks",
  "reth-network-peers",
  "reth-primitives-traits",
  "serde_json",
@@ -4756,19 +4750,6 @@ dependencies = [
 [[package]]
 name = "reth-ethereum-forks"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=feat%2Feuclid-v2#3f742033376c3b2ec8f30d3d24a8912d25ffb7cc"
-dependencies = [
- "alloy-chains",
- "alloy-eip2124",
- "alloy-primitives",
- "auto_impl",
- "dyn-clone",
- "once_cell",
-]
-
-[[package]]
-name = "reth-ethereum-forks"
-version = "1.1.5"
 source = "git+https://github.com/scroll-tech//reth?branch=fix%2Fscroll-zkvm-euclid-v2#57c1bd1ecbe7f1a29375b5ce1757eb291e541034"
 dependencies = [
  "alloy-chains",
@@ -4839,7 +4820,7 @@ dependencies = [
  "reth-chainspec",
  "reth-consensus",
  "reth-ethereum-consensus",
- "reth-ethereum-forks 1.1.5 (git+https://github.com/scroll-tech//reth?branch=fix%2Fscroll-zkvm-euclid-v2)",
+ "reth-ethereum-forks",
  "reth-evm",
  "reth-primitives",
  "reth-primitives-traits",
@@ -4935,7 +4916,7 @@ source = "git+https://github.com/scroll-tech//reth?branch=fix%2Fscroll-zkvm-eucl
 dependencies = [
  "alloy-consensus",
  "once_cell",
- "reth-ethereum-forks 1.1.5 (git+https://github.com/scroll-tech//reth?branch=fix%2Fscroll-zkvm-euclid-v2)",
+ "reth-ethereum-forks",
  "reth-ethereum-primitives",
  "reth-primitives-traits",
  "reth-static-file-types",
@@ -5012,7 +4993,7 @@ dependencies = [
  "derive_more 1.0.0",
  "once_cell",
  "reth-chainspec",
- "reth-ethereum-forks 1.1.5 (git+https://github.com/scroll-tech//reth?branch=fix%2Fscroll-zkvm-euclid-v2)",
+ "reth-ethereum-forks",
  "reth-network-peers",
  "reth-primitives-traits",
  "reth-scroll-forks",
@@ -5063,7 +5044,7 @@ dependencies = [
  "alloy-chains",
  "alloy-primitives",
  "once_cell",
- "reth-ethereum-forks 1.1.5 (git+https://github.com/scroll-tech//reth?branch=fix%2Fscroll-zkvm-euclid-v2)",
+ "reth-ethereum-forks",
  "serde",
 ]
 
@@ -5584,7 +5565,7 @@ checksum = "6ea1a2d0a644769cc99faa24c3ad26b379b786fe7c36fd3c546254801650e6dd"
 [[package]]
 name = "sbv"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Feuclid-v2#35221cc7cff8f319304dcfe8aa495c8688c13afd"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Feuclid-v2#261f52eb93dd7e877fe4c209dae2fd295ce623fc"
 dependencies = [
  "sbv-core",
  "sbv-helpers",
@@ -5596,7 +5577,7 @@ dependencies = [
 [[package]]
 name = "sbv-core"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Feuclid-v2#35221cc7cff8f319304dcfe8aa495c8688c13afd"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Feuclid-v2#261f52eb93dd7e877fe4c209dae2fd295ce623fc"
 dependencies = [
  "reth-evm",
  "reth-evm-ethereum",
@@ -5613,7 +5594,7 @@ dependencies = [
 [[package]]
 name = "sbv-helpers"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Feuclid-v2#35221cc7cff8f319304dcfe8aa495c8688c13afd"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Feuclid-v2#261f52eb93dd7e877fe4c209dae2fd295ce623fc"
 dependencies = [
  "revm 19.4.0",
 ]
@@ -5621,7 +5602,7 @@ dependencies = [
 [[package]]
 name = "sbv-kv"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Feuclid-v2#35221cc7cff8f319304dcfe8aa495c8688c13afd"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Feuclid-v2#261f52eb93dd7e877fe4c209dae2fd295ce623fc"
 dependencies = [
  "auto_impl",
  "hashbrown 0.15.2",
@@ -5631,7 +5612,7 @@ dependencies = [
 [[package]]
 name = "sbv-primitives"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Feuclid-v2#35221cc7cff8f319304dcfe8aa495c8688c13afd"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Feuclid-v2#261f52eb93dd7e877fe4c209dae2fd295ce623fc"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5642,7 +5623,7 @@ dependencies = [
  "auto_impl",
  "itertools 0.14.0",
  "reth-chainspec",
- "reth-ethereum-forks 1.1.5 (git+https://github.com/scroll-tech/reth?branch=feat%2Feuclid-v2)",
+ "reth-ethereum-forks",
  "reth-primitives",
  "reth-primitives-traits",
  "reth-scroll-chainspec",
@@ -5662,7 +5643,7 @@ dependencies = [
 [[package]]
 name = "sbv-trie"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Feuclid-v2#35221cc7cff8f319304dcfe8aa495c8688c13afd"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Feuclid-v2#261f52eb93dd7e877fe4c209dae2fd295ce623fc"
 dependencies = [
  "alloy-rlp",
  "alloy-trie",
@@ -5709,7 +5690,7 @@ dependencies = [
 [[package]]
 name = "scroll-alloy-rpc-types"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=feat%2Feuclid-v2#3f742033376c3b2ec8f30d3d24a8912d25ffb7cc"
+source = "git+https://github.com/scroll-tech//reth?branch=fix%2Fscroll-zkvm-euclid-v2#57c1bd1ecbe7f1a29375b5ce1757eb291e541034"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5743,6 +5724,7 @@ dependencies = [
  "scroll-zkvm-circuit-input-types",
  "serde",
  "tiny-keccak",
+ "vm-zstd",
 ]
 
 [[package]]
@@ -5751,20 +5733,26 @@ version = "0.1.0-rc.3"
 dependencies = [
  "bitcode",
  "cargo_metadata 0.19.1",
+ "eyre",
  "halo2curves-axiom 0.5.3",
+ "openvm-build",
  "openvm-instructions",
+ "openvm-native-circuit",
  "openvm-native-compiler",
  "openvm-native-recursion",
+ "openvm-native-transpiler",
  "openvm-rv32im-transpiler",
  "openvm-sdk",
  "openvm-stark-sdk",
+ "openvm-transpiler",
  "p3-field",
- "scroll-zkvm-integration",
- "scroll-zkvm-prover",
  "serde",
  "serde_json",
  "serde_with",
  "snark-verifier-sdk",
+ "toml",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

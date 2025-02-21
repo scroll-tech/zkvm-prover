@@ -84,7 +84,7 @@ pub fn execute(witness: &ArchivedChunkWitness) -> Result<ChunkInfo, String> {
         #[allow(unused_mut)]
         let mut builder = ChunkInfoBuilder::new(&chain_spec, pre_state_root.into(), &blocks);
         #[cfg(feature = "euclidv2")]
-        builder.prev_msg_queue_hash(witness.prev_msg_queue_hash);
+        builder.set_prev_msg_queue_hash(witness.prev_msg_queue_hash.into());
         builder.build(withdraw_root)
     };
     if post_state_root != sbv_chunk_info.post_state_root() {
@@ -96,7 +96,6 @@ pub fn execute(witness: &ArchivedChunkWitness) -> Result<ChunkInfo, String> {
     }
 
     // TODO: unify this inside sbv
-
     #[cfg(feature = "euclidv2")]
     let chunk_info = ChunkInfo {
         chain_id: sbv_chunk_info.chain_id(),
@@ -106,7 +105,7 @@ pub fn execute(witness: &ArchivedChunkWitness) -> Result<ChunkInfo, String> {
         tx_data_digest,
         tx_data_length: u64::try_from(tx_data_length).expect("tx_data_length: u64"),
         initial_block_number: blocks[0].header().number,
-        prev_msg_queue_hash: witness.prev_msg_queue_hash,
+        prev_msg_queue_hash: witness.prev_msg_queue_hash.into(),
         post_msg_queue_hash: sbv_chunk_info
             .into_euclid_v2()
             .expect("euclid-v2")
