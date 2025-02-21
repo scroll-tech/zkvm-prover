@@ -258,7 +258,7 @@ type ProveVerifyEvmRes<T> = eyre::Result<(
         <<T as ProverTester>::Prover as ProverType>::ProvingTask,
         WrappedProof<<<T as ProverTester>::Prover as ProverType>::ProofMetadata, EvmProof>,
     >,
-    scroll_zkvm_verifier::verifier::Verifier,
+    scroll_zkvm_verifier::verifier::Verifier<scroll_zkvm_verifier::verifier::BundleVerifierType>,
 )>;
 
 /// End-to-end test for a single proving task.
