@@ -63,7 +63,7 @@ impl Default for LastHeader {
 
         Self {
             batch_index: 123,
-            version: 4,
+            version: 7,
             batch_hash: B256::new([
                 0xab, 0xac, 0xad, 0xae, 0xaf, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -137,22 +137,23 @@ pub fn build_batch_task(
         payload.extend_from_slice(post_msg_queue_hash.as_slice());
         payload.extend(initial_block_number.to_be_bytes());
         payload.extend(num_blocks.to_be_bytes());
+        assert_eq!(payload.len(), 74 + 52*num_blocks as usize);
         for proof in chunk_proofs {
             for ctx in &proof.metadata.chunk_info.block_ctxs {
                 payload.extend(ctx.to_bytes());
             }
         }
+        assert_eq!(payload.len(), 74 + 52*num_blocks as usize);
     }
     payload.extend(chunk_tx_bytes);
+    // compress ...
+    let compressed_payload = zstd_encode(&payload);
 
     let version = 7u32;
-    let heading = payload.len() as u32 + (version << 23);
+    let heading = compressed_payload.len() as u32 + (version << 24);
 
     let mut blob_bytes = Vec::from(heading.to_be_bytes());
     blob_bytes.push(1u8); // compressed flag
-
-    // compress ...
-    let compressed_payload = zstd_encode(&payload);
     blob_bytes.extend(compressed_payload);
     blob_bytes.resize(4096 * 31, 0);
 
@@ -184,6 +185,7 @@ pub fn build_batch_task(
     }
 }
 
+#[ignore = "only for generating new test sample data"]
 #[test]
 fn test_build_batch_task() -> eyre::Result<()> {
     use scroll_zkvm_prover::utils::{read_json, read_json_deep, write_json};
@@ -193,10 +195,10 @@ fn test_build_batch_task() -> eyre::Result<()> {
 
     // read block witnesses.
     let paths_block_witnesses = [
-        path_testdata.join("12508460.json"),
-        path_testdata.join("12508461.json"),
-        path_testdata.join("12508462.json"),
-        path_testdata.join("12508463.json"),
+        path_testdata.join("1.json"),
+        path_testdata.join("2.json"),
+        path_testdata.join("3.json"),
+        path_testdata.join("4.json"),
     ];
     let read_block_witness = |path| Ok(read_json::<_, BlockWitness>(path)?);
     let chunk_task = ChunkProvingTask {
@@ -210,11 +212,37 @@ fn test_build_batch_task() -> eyre::Result<()> {
     // read chunk proof.
     let path_chunk_proof = path_testdata
         .join("proofs")
-        .join("chunk-12508460-12508463.json");
+        .join("chunk-1-4.json");
     let chunk_proof = read_json_deep::<_, ChunkProof>(&path_chunk_proof)?;
 
     let task = build_batch_task(&[chunk_task], &[chunk_proof], Default::default());
 
     write_json(path_testdata.join("batch-task-test-out.json"), &task).unwrap();
+    Ok(())
+}
+
+#[test]
+fn test_batch_task_payload() -> eyre::Result<()> {
+    use scroll_zkvm_prover::utils::read_json_deep;
+    use scroll_zkvm_circuit_input_types::batch::{PayloadV7, EnvelopeV7};
+
+    // ./testdata/
+    let path_testdata = std::path::Path::new("testdata");
+
+    let task = read_json_deep::<_, BatchProvingTask>(path_testdata.join("batch-task-test-out.json")).unwrap();
+
+    println!("blob {:?}", &task.blob_bytes[..32]);
+    let enveloped = EnvelopeV7::from(task.blob_bytes.as_slice());
+
+    let chunk_infos = task.chunk_proofs.iter()
+        .map(|proof|proof.metadata.chunk_info.clone())
+        .collect::<Vec<_>>();
+
+    PayloadV7::from(&enveloped).validate(
+        &task.batch_header,
+        &chunk_infos,
+    );
+    
+
     Ok(())
 }

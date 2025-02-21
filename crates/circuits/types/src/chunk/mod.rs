@@ -8,12 +8,12 @@ pub mod public_inputs_euclidv2;
 #[cfg(feature = "euclidv2")]
 pub use public_inputs_euclidv2::{ArchivedChunkInfo, BlockContextV2, ChunkInfo, SIZE_BLOCK_CTX};
 
-#[cfg(feature = "scroll")]
+#[cfg(feature = "sbv")]
 mod utils;
 
-#[cfg(feature = "scroll")]
+#[cfg(feature = "sbv")]
 mod witness;
-#[cfg(feature = "scroll")]
+#[cfg(feature = "sbv")]
 pub use {
     utils::make_providers,
     witness::{ArchivedChunkWitness, ChunkWitness},
