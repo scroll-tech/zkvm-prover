@@ -1,4 +1,3 @@
-#![feature(stmt_expr_attributes)]
 use scroll_zkvm_circuit_input_types::Circuit;
 
 mod circuit;

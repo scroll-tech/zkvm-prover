@@ -1,8 +1,7 @@
-// TODO: should we rename as "public_inputs_legacy"?
 //#[cfg(not(feature = "euclidv2"))]
-pub mod public_inputs;
+pub mod public_inputs_legacy;
 #[cfg(not(feature = "euclidv2"))]
-pub use public_inputs::{ArchivedChunkInfo, ChunkInfo};
+pub use public_inputs_legacy::{ArchivedChunkInfo, ChunkInfo};
 //#[cfg(feature = "euclidv2")]
 pub mod public_inputs_euclidv2;
 #[cfg(feature = "euclidv2")]

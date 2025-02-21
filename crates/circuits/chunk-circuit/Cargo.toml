@@ -9,7 +9,6 @@ version.workspace = true
 scroll-zkvm-circuit-input-types.workspace = true
 
 rkyv.workspace = true
-#reth_scroll_forks.workspace = true
 sbv = { workspace = true, features = ["openvm"] }
 
 openvm = { workspace = true, features = ["std"] }
@@ -23,5 +22,5 @@ openvm-rv32im-guest= {  workspace = true }
 
 [features]
 default = ["scroll"]
-euclidv2 = []
+euclidv2 = ["scroll-zkvm-circuit-input-types/euclidv2"]
 scroll = ["sbv/scroll"]
