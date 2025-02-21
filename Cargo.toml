@@ -38,16 +38,19 @@ openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", tag =
 openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false }
 openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false }
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false }
-openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false}
+openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false, features = ["parallel", "bench-metrics"]}
 
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.0.0-rc.0", default-features = false }
 
 bitcode = { version = "0.6.3", default-features = false, features = ["serde", "derive"] }
+#bincode = { version = "2.0.0-rc.3", features = ["serde"]}
 derivative = "2.2.0"
 halo2curves-axiom = { version = "0.5.3" }
 p3-field = { git = "https://github.com/Plonky3/Plonky3.git", rev = "b0591e9" }
 rkyv = "0.8"
 tiny-keccak = "2.0"
+metrics = "0.23.0"
+metrics-util = "0.17"
 itertools = "0.14"
 serde = { version = "1", default-features = false, features = ["derive"] }
 alloy-primitives = { version = "0.8", default-features = false }

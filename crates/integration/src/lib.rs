@@ -5,10 +5,9 @@ use std::{
 
 use once_cell::sync::OnceCell;
 use openvm_build::GuestOptions;
-use openvm_circuit::openvm_stark_sdk::p3_baby_bear::BabyBear;
 use openvm_native_recursion::halo2::EvmProof;
 use openvm_sdk::{
-    Sdk,
+    F, Sdk,
     config::{AppConfig, SdkVmConfig},
     fs::write_exe_to_file,
     verifier::root::types::RootVmVerifierInput,
@@ -175,7 +174,7 @@ pub trait ProverTester {
         app_config: AppConfig<SdkVmConfig>,
         task: &<Self::Prover as ProverType>::ProvingTask,
         exe_path: impl AsRef<Path>,
-    ) -> eyre::Result<Vec<BabyBear>> {
+    ) -> eyre::Result<Vec<F>> {
         let stdin = task.build_guest_input()?;
 
         Ok(Sdk.execute(read_app_exe(exe_path)?, app_config.app_vm_config, stdin)?)
@@ -184,7 +183,7 @@ pub trait ProverTester {
     fn execute_with_proving_task(
         app_config: AppConfig<SdkVmConfig>,
         exe_path: impl AsRef<Path>,
-    ) -> eyre::Result<Vec<BabyBear>> {
+    ) -> eyre::Result<Vec<F>> {
         Self::execute(app_config, &Self::gen_proving_task()?, exe_path)
     }
 }
@@ -274,21 +273,22 @@ where
 {
     let (path_app_config, _, path_exe) = T::load()?;
 
-    // Setup prover.
     let cache_dir = DIR_TESTRUN
         .get()
         .ok_or(eyre::eyre!("missing assets dir"))?
         .join(T::DIR_ASSETS)
         .join(DIR_PROOFS);
     std::fs::create_dir_all(&cache_dir)?;
+
+    // Generate proving task for the circuit.
+    let task = task.unwrap_or(T::gen_proving_task()?);
+
+    // Setup prover.
     let prover = scroll_zkvm_prover::Prover::<T::Prover>::setup(
         &path_exe,
         &path_app_config,
         Some(&cache_dir),
     )?;
-
-    // Generate proving task for the circuit.
-    let task = task.unwrap_or(T::gen_proving_task()?);
 
     // Construct root proof for the circuit.
     let proof = prover.gen_proof(&task)?;

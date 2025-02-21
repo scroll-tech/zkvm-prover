@@ -41,7 +41,13 @@ impl ProverType for ChunkProverType {
     fn read_app_config<P: AsRef<std::path::Path>>(
         path_app_config: P,
     ) -> Result<openvm_sdk::config::AppConfig<openvm_sdk::config::SdkVmConfig>, Error> {
-        read_app_config(path_app_config)
+        let mut config = read_app_config(path_app_config)?;
+        config.app_vm_config.system.config = config
+            .app_vm_config
+            .system
+            .config
+            .with_max_segment_len(8388508);
+        Ok(config)
     }
 
     fn metadata_with_prechecks(task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error> {

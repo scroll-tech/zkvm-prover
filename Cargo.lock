@@ -50,6 +50,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "allocator-api2"
+version = "0.2.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
+
+[[package]]
 name = "alloy-chains"
 version = "0.1.62"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -257,7 +263,6 @@ dependencies = [
  "indexmap 2.7.1",
  "itoa",
  "k256",
- "keccak-asm",
  "paste",
  "proptest",
  "rand",
@@ -265,7 +270,6 @@ dependencies = [
  "ruint",
  "rustc-hash 2.1.1",
  "serde",
- "sha3",
  "tiny-keccak",
 ]
 
@@ -778,9 +782,9 @@ checksum = "5e764a1d40d510daf35e07be9eb06e75770908c27d411ee6c92109c9840eaaf7"
 
 [[package]]
 name = "bitcode"
-version = "0.6.4"
+version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2ae9f4d868fa036ee7517b997dc2b6efd383a8b2efdcb4b07058260de060d3ef"
+checksum = "ee1bce7608560cd4bf0296a4262d0dbf13e6bcec5ff2105724c8ab88cc7fc784"
 dependencies = [
  "bitcode_derive",
  "bytemuck",
@@ -789,9 +793,9 @@ dependencies = [
 
 [[package]]
 name = "bitcode_derive"
-version = "0.6.4"
+version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7d0b1506d8de85c2198149fb9f6285e6b662a867f84579af2b3ef067a8842d35"
+checksum = "a539389a13af092cd345a2b47ae7dec12deb306d660b2223d25cd3419b253ebe"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1121,7 +1125,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "117725a109d387c937a1533ce01b450cbde6b88abceea8473c4d7a85853cda3c"
 dependencies = [
  "lazy_static",
- "windows-sys 0.48.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -2448,16 +2452,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "keccak-asm"
-version = "0.1.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "505d1856a39b200489082f90d897c3f07c455563880bc5952e38eabf731c83b6"
-dependencies = [
- "digest 0.10.7",
- "sha3-asm",
-]
-
-[[package]]
 name = "lazy_static"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3062,6 +3056,8 @@ dependencies = [
  "eyre",
  "getset",
  "itertools 0.13.0",
+ "metrics 0.23.0",
+ "metrics-derive",
  "once_cell",
  "openvm-circuit-derive",
  "openvm-circuit-primitives",
@@ -3069,10 +3065,10 @@ dependencies = [
  "openvm-instructions",
  "openvm-poseidon2-air",
  "openvm-stark-backend",
- "openvm-stark-sdk",
  "p3-baby-bear",
  "p3-symmetric",
  "rand",
+ "rayon",
  "rustc-hash 2.1.1",
  "serde",
  "serde-big-array",
@@ -3355,6 +3351,7 @@ source = "git+https://github.com/openvm-org/openvm.git?tag=v1.0.0-rc.1#30576cc6c
 dependencies = [
  "backtrace",
  "itertools 0.13.0",
+ "metrics 0.23.0",
  "num-bigint 0.4.6",
  "num-integer",
  "openvm-circuit",
@@ -3389,6 +3386,7 @@ dependencies = [
  "cfg-if",
  "itertools 0.13.0",
  "lazy_static",
+ "metrics 0.23.0",
  "once_cell",
  "openvm-circuit",
  "openvm-native-circuit",
@@ -3704,6 +3702,7 @@ dependencies = [
  "derivative",
  "derive-new 0.7.0",
  "itertools 0.13.0",
+ "metrics 0.23.0",
  "p3-air",
  "p3-challenger",
  "p3-commit",
@@ -3712,6 +3711,7 @@ dependencies = [
  "p3-maybe-rayon",
  "p3-uni-stark",
  "p3-util",
+ "rayon",
  "rustc-hash 2.1.1",
  "serde",
  "thiserror 1.0.69",
@@ -3999,6 +3999,9 @@ dependencies = [
 name = "p3-maybe-rayon"
 version = "0.1.0"
 source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+dependencies = [
+ "rayon",
+]
 
 [[package]]
 name = "p3-mds"
@@ -5849,6 +5852,8 @@ dependencies = [
  "c-kzg",
  "git-version",
  "hex",
+ "metrics 0.23.0",
+ "metrics-util",
  "once_cell",
  "openvm-circuit",
  "openvm-native-circuit",
@@ -6071,16 +6076,6 @@ checksum = "75872d278a8f37ef87fa0ddbda7802605cb18344497949862c0d4dcb291eba60"
 dependencies = [
  "digest 0.10.7",
  "keccak",
-]
-
-[[package]]
-name = "sha3-asm"
-version = "0.1.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c28efc5e327c837aa837c59eae585fc250715ef939ac32881bcc11677cd02d46"
-dependencies = [
- "cc",
- "cfg-if",
 ]
 
 [[package]]
@@ -6838,9 +6833,9 @@ checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
 
 [[package]]
 name = "uuid"
-version = "1.13.2"
+version = "1.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8c1f41ffb7cf259f1ecc2876861a17e7142e63ead296f671f81f6ae85903e0d6"
+checksum = "b3758f5e68192bb96cc8f9b7e2c2cfdabb435499a28499a42f8f984092adad4b"
 
 [[package]]
 name = "valuable"

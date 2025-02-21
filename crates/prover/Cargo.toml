@@ -13,11 +13,13 @@ alloy-primitives = { workspace = true, default-features = false, features = ["st
 rkyv.workspace = true
 sbv.workspace = true
 tracing.workspace = true
+metrics.workspace = true
+metrics-util.workspace = true
 
-openvm-circuit = { workspace = true, features = ["test-utils"] }
+openvm-circuit = { workspace = true }
 openvm-native-circuit = { workspace = true, default-features = false }
 openvm-native-recursion = { workspace = true }
-openvm-sdk = { workspace = true, default-features = false }
+openvm-sdk = { workspace = true }
 openvm-stark-sdk = { workspace = true, default-features = false }
 
 base64 = "0.22"
