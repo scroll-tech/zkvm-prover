@@ -1,3 +1,4 @@
+#[rustfmt::skip]
 pub mod commitments;
 
 pub mod evm;

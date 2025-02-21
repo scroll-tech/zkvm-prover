@@ -1,3 +1,4 @@
+#[rustfmt::skip]
 mod commitments;
 
 mod error;
