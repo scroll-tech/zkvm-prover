@@ -52,6 +52,10 @@ pub struct Verifier<Type> {
     _type: PhantomData<Type>,
 }
 
+pub type ChunkVerifier = Verifier<ChunkVerifierType>;
+pub type BatchVerifier = Verifier<BatchVerifierType>;
+pub type BundleVerifier = Verifier<BundleVerifierType>;
+
 impl<Type> Verifier<Type> {
     pub fn setup<P: AsRef<Path>>(
         path_vm_config: P,
