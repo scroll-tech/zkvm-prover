@@ -10,7 +10,7 @@ const CHUNK_SANITY_MSG: &str = "chunk must have at least one block";
 ///
 /// The identifier for a chunk proving task is:
 /// - {first_block_number}-{last_block_number}
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct ChunkProvingTask {
     /// Witnesses for every block in the chunk.
     pub block_witnesses: Vec<BlockWitness>,

@@ -29,7 +29,12 @@ use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Config;
 use serde::{Serialize, de::DeserializeOwned};
 use tracing::{debug, instrument};
 
-use crate::{Error, WrappedProof, proof::RootProof, setup::read_app_exe, task::ProvingTask};
+use crate::{
+    Error, WrappedProof,
+    proof::RootProof,
+    setup::read_app_exe,
+    task::{ProvingTask, flatten_wrapped_proof},
+};
 
 mod batch;
 pub use batch::{BatchProver, BatchProverType};
@@ -351,12 +356,28 @@ impl<Type: ProverType> Prover<Type> {
             )))?;
 
         let root_verifier_pk = &agg_stark_pk.root_verifier_pk;
-        let vm = SingleSegmentVmExecutor::new(root_verifier_pk.vm_pk.vm_config.clone());
+        let vm_executor = SingleSegmentVmExecutor::new(root_verifier_pk.vm_pk.vm_config.clone());
         let exe: &VmCommittedExe<_> = &root_verifier_pk.root_committed_exe;
 
-        let _ = vm
+        vm_executor
             .execute_and_compute_heights(exe.exe.clone(), proof.proof.write())
             .map_err(|e| Error::VerifyProof(e.to_string()))?;
+
+        let aggregation_input = flatten_wrapped_proof(proof);
+        if aggregation_input.commitment.exe != Type::EXE_COMMIT {
+            return Err(Error::VerifyProof(format!(
+                "EXE_COMMIT mismatch: expected={:?}, got={:?}",
+                Type::EXE_COMMIT,
+                aggregation_input.commitment.exe,
+            )));
+        }
+        if aggregation_input.commitment.leaf != Type::LEAF_COMMIT {
+            return Err(Error::VerifyProof(format!(
+                "LEAF_COMMIT mismatch: expected={:?}, got={:?}",
+                Type::LEAF_COMMIT,
+                aggregation_input.commitment.leaf,
+            )));
+        }
 
         Ok(())
     }
@@ -560,6 +581,12 @@ pub trait ProverType {
     /// Whether this prover generates SNARKs that are EVM-verifiable. In our context, only the
     /// [`BundleProver`] has the EVM set to `true`.
     const EVM: bool;
+
+    /// The app program's exe commitment.
+    const EXE_COMMIT: [u32; 8];
+
+    /// The app program's leaf commitment.
+    const LEAF_COMMIT: [u32; 8];
 
     /// The task provided as argument during proof generation process.
     type ProvingTask: ProvingTask;
