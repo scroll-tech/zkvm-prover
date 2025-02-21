@@ -1,3 +1,5 @@
+mod commitments;
+
 mod error;
 pub use error::Error;
 
