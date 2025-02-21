@@ -11,7 +11,8 @@ fn test_execute() -> eyre::Result<()> {
     let (path_app_config, _app_config, path_exe) = ChunkProverTester::load()?;
     let task = ChunkProverTester::gen_proving_task()?;
     let prover = ChunkProver::setup(&path_exe, &path_app_config, None)?;
-    prover.execute_guest(&task.build_guest_input()?, true)?;
+    let profile = true;
+    prover.execute_guest(&task.build_guest_input()?, profile)?;
 
     Ok(())
 }
