@@ -18,7 +18,7 @@ use crate::commitments::{
 pub trait VerifierType {
     const EXE_COMMIT: [u32; 8];
     const LEAF_COMMIT: [u32; 8];
-    fn get_app_vk(&self) -> Vec<u8> {
+    fn get_app_vk() -> Vec<u8> {
         ProgramCommitment {
             exe: Self::EXE_COMMIT,
             leaf: Self::LEAF_COMMIT,
@@ -84,6 +84,10 @@ impl<Type> Verifier<Type> {
 }
 
 impl<Type: VerifierType> Verifier<Type> {
+    pub fn get_app_vk(&self) -> Vec<u8> {
+        Type::get_app_vk()
+    }
+
     pub fn verify_proof(&self, root_proof: &RootVmVerifierInput<SC>) -> bool {
         self.vm_executor
             .execute_and_compute_heights(self.root_committed_exe.exe.clone(), root_proof.write())
