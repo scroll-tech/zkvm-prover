@@ -36,4 +36,5 @@ c-kzg = "1.0"
 
 [features]
 default = ["scroll"]
+euclidv2 = []
 scroll = ["sbv/scroll"]

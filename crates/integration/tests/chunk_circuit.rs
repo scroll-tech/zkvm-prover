@@ -2,7 +2,7 @@ use scroll_zkvm_integration::{
     ProverTester, prove_verify_multi, prove_verify_single,
     testers::chunk::{ChunkProverTester, MultiChunkProverTester},
 };
-use scroll_zkvm_prover::{ChunkProver, task::ProvingTask};
+use scroll_zkvm_prover::{ChunkProver, ChunkProverType, ProverType, task::ProvingTask};
 
 #[test]
 fn test_execute() -> eyre::Result<()> {
@@ -10,9 +10,15 @@ fn test_execute() -> eyre::Result<()> {
 
     let (path_app_config, _app_config, path_exe) = ChunkProverTester::load()?;
     let task = ChunkProverTester::gen_proving_task()?;
+    let stats = task.stats();
+    ChunkProverType::metadata_with_prechecks(&task)?;
     let prover = ChunkProver::setup(&path_exe, &path_app_config, None)?;
-    prover.execute_guest(&task.build_guest_input()?, true)?;
-
+    let profile = false;
+    let (cycle_count, _) = prover.execute_guest(&task.build_guest_input()?, profile)?;
+    let cycle_per_gas = cycle_count / stats.total_gas_used;
+    println!("chunk stats {:#?}", stats);
+    println!("total cycle count {}", cycle_count);
+    println!("cycle count per gas {}", cycle_per_gas);
     Ok(())
 }
 

@@ -75,14 +75,7 @@ impl ProvingTask for BatchProvingTask {
 
 impl From<&BatchProvingTask> for BatchInfo {
     fn from(task: &BatchProvingTask) -> Self {
-        let (
-            parent_state_root,
-            state_root,
-            chain_id,
-            withdraw_root,
-            prev_msg_queue_hash,
-            post_msg_queue_hash,
-        ) = (
+        let (parent_state_root, state_root, chain_id, withdraw_root) = (
             task.chunk_proofs
                 .first()
                 .expect("at least one chunk in batch")
@@ -107,6 +100,12 @@ impl From<&BatchProvingTask> for BatchInfo {
                 .metadata
                 .chunk_info
                 .withdraw_root,
+        );
+        // FIXME
+        #[cfg(not(feature = "euclidv2"))]
+        let (prev_msg_queue_hash, post_msg_queue_hash) = (Default::default(), Default::default());
+        #[cfg(feature = "euclidv2")]
+        let (prev_msg_queue_hash, post_msg_queue_hash) = (
             task.chunk_proofs
                 .first()
                 .expect("at least one chunk in batch")

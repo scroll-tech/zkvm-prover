@@ -20,6 +20,35 @@ pub struct ChunkProvingTask {
     pub prev_msg_queue_hash: B256,
 }
 
+#[derive(Clone, Debug)]
+pub struct ChunkDetails {
+    pub num_blocks: usize,
+    pub num_txs: usize,
+    pub total_gas_used: u64,
+}
+
+impl ChunkProvingTask {
+    pub fn stats(&self) -> ChunkDetails {
+        let num_blocks = self.block_witnesses.len();
+        let num_txs = self
+            .block_witnesses
+            .iter()
+            .map(|b| b.transaction.len())
+            .sum::<usize>();
+        let total_gas_used = self
+            .block_witnesses
+            .iter()
+            .map(|b| b.header.gas_used)
+            .sum::<u64>();
+
+        ChunkDetails {
+            num_blocks,
+            num_txs,
+            total_gas_used,
+        }
+    }
+}
+
 impl ProvingTask for ChunkProvingTask {
     fn identifier(&self) -> String {
         assert!(!self.block_witnesses.is_empty(), "{CHUNK_SANITY_MSG}",);

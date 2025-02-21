@@ -73,6 +73,8 @@ scroll-zkvm-verifier = { path = "crates/verifier" }
 scroll-zkvm-circuit-input-types = { path = "crates/circuits/types" }
 scroll-zkvm-integration = { path = "crates/integration" }
 
+#reth_scroll_forks = { git = "https://github.com/scroll-tech/reth", branch = "fix/scroll-zkvm-euclid-v2" }
+
 [patch.crates-io]
 alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.18" }
 revm = { git = "https://github.com/scroll-tech//revm", branch = "scroll-evm-executor/feat/v55/euclid-v2" }
@@ -98,10 +100,11 @@ reth-primitives-traits = { git = "https://github.com/scroll-tech//reth", branch 
 reth-storage-errors = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm-euclid-v2" }
 reth-trie = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm-euclid-v2" }
 reth-trie-sparse = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm-euclid-v2" }
-
+reth-ethereum-forks  = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm-euclid-v2" }
 reth-scroll-chainspec = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm-euclid-v2" }
 reth-scroll-evm = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm-euclid-v2" }
 reth-scroll-forks = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm-euclid-v2" }
 reth-scroll-primitives = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm-euclid-v2" }
 
 scroll-alloy-consensus = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm-euclid-v2" }
+scroll-alloy-rpc-types = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm-euclid-v2" }

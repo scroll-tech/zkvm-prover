@@ -6,9 +6,9 @@ pub use header::{
 };
 
 mod payload;
-#[cfg(feature = "batch-v3")]
+#[cfg(not(feature = "euclidv2"))]
 pub use payload::v3::Payload as PayloadV3;
-#[cfg(feature = "batch-v7")]
+#[cfg(feature = "euclidv2")]
 pub use payload::v7::{EnvelopeV7, PayloadV7};
 pub use payload::*;
 

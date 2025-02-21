@@ -1,10 +1,6 @@
-use crate::chunk::BlockContextV2;
 use sbv::{
     kv::nohash::NoHashMap,
-    primitives::{
-        B256, BlockWitness, Bytes, RecoveredBlock, U256, alloy_consensus::BlockHeader,
-        ext::BlockWitnessExt, types::reth::Block,
-    },
+    primitives::{B256, BlockWitness, Bytes, ext::BlockWitnessExt},
     trie::{BlockWitnessTrieExt, TrieNode},
 };
 
@@ -48,24 +44,4 @@ pub fn make_providers<W: BlockWitness>(
     let block_hashes = sbv::kv::null::NullProvider;
 
     (code_db, nodes_provider, block_hashes)
-}
-
-impl From<&RecoveredBlock<Block>> for BlockContextV2 {
-    fn from(value: &RecoveredBlock<Block>) -> Self {
-        Self {
-            timestamp: value.timestamp,
-            gas_limit: value.gas_limit,
-            base_fee: U256::from(value.base_fee_per_gas().expect("base_fee_expected")),
-            num_txs: u16::try_from(value.body().transactions.len()).expect("num txs u16"),
-            num_l1_msgs: u16::try_from(
-                value
-                    .body()
-                    .transactions
-                    .iter()
-                    .filter(|tx| tx.is_l1_message())
-                    .count(),
-            )
-            .expect("num l1 msgs u16"),
-        }
-    }
 }

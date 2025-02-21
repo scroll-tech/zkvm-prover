@@ -366,7 +366,8 @@ impl<Type: ProverType> Prover<Type> {
         let mock_prove = std::env::var("MOCK_PROVE").as_deref() == Ok("true");
         let guest_profiling = std::env::var("GUEST_PROFILING").as_deref() == Ok("true");
         if mock_prove || guest_profiling {
-            let (_cycle_count, executor_result) = self.execute_guest(&stdin, guest_profiling)?;
+            let (cycle_count, executor_result) = self.execute_guest(&stdin, guest_profiling)?;
+            tracing::info!(name: "total cycle count", ?cycle_count);
             if mock_prove {
                 self.mock_prove(executor_result)?;
             }
@@ -405,7 +406,7 @@ impl<Type: ProverType> Prover<Type> {
         let mut segments = vm
             .execute_segments(self.app_committed_exe.exe.clone(), stdin.clone())
             .map_err(|e| Error::GenProof(e.to_string()))?;
-        tracing::debug!(name: "segment length", segment_len = segments.len());
+        tracing::info!(name: "segment length", segment_len = segments.len());
 
         let final_memory = std::mem::take(&mut segments.last_mut().unwrap().final_memory);
         let mut metric_snapshots = vec![];
