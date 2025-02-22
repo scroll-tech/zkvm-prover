@@ -53,6 +53,11 @@ pub fn transpile(
     let mut app_config: AppConfig<SdkVmConfig> =
         toml::from_str(&read_to_string(&path_app_config).unwrap()).unwrap();
 
+    println!(
+        "{project_root} app config: {}",
+        toml::to_string_pretty(&app_config).unwrap()
+    );
+
     // FIXME: additional app config for batch and bundle guest program.
     if !is_chunk {
         app_config.app_vm_config.castf = Some(openvm_native_circuit::CastFExtension);

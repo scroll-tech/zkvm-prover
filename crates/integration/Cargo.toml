@@ -9,6 +9,7 @@ scroll-zkvm-circuit-input-types.workspace = true
 sbv.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+metrics-tracing-context.workspace = true
 
 openvm-build = { workspace = true, default-features = false }
 openvm-circuit.workspace = true

@@ -419,8 +419,13 @@ impl<Type: ProverType> Prover<Type> {
             per_segment: segments
                 .into_iter()
                 .map(|seg| {
+                    use metrics_tracing_context::TracingContextLayer;
+                    use metrics_util::layers::Layer;
                     let recorder = metrics_util::debugging::DebuggingRecorder::new();
                     let snapshotter = recorder.snapshotter();
+                    // zzhang: i don't know why this TracingContextLayer is needed, but i copied it from
+                    // "stark-backend" repo.
+                    let recorder = TracingContextLayer::all().layer(recorder);
                     let seg_proof_input = metrics::with_local_recorder(&recorder, || {
                         seg.generate_proof_input(Some(
                             self.app_committed_exe.committed_program.clone(),

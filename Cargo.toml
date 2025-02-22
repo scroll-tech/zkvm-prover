@@ -51,6 +51,7 @@ rkyv = "0.8"
 tiny-keccak = "2.0"
 metrics = "0.23.0"
 metrics-util = "0.17"
+metrics-tracing-context = "0.16.0"
 itertools = "0.14"
 serde = { version = "1", default-features = false, features = ["derive"] }
 alloy-primitives = { version = "0.8", default-features = false }

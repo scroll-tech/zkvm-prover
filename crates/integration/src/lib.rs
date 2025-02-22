@@ -3,6 +3,7 @@ use std::{
     process,
 };
 
+use metrics_tracing_context::MetricsLayer;
 use once_cell::sync::OnceCell;
 use openvm_native_recursion::halo2::EvmProof;
 use openvm_sdk::{
@@ -171,6 +172,7 @@ fn setup_logger() -> eyre::Result<()> {
         tracing_subscriber::registry()
             .with(tracing_subscriber::EnvFilter::from_default_env())
             .with(fmt_layer)
+            .with(MetricsLayer::new())
             .try_init()?;
     }
 
