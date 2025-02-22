@@ -1,6 +1,6 @@
-#[cfg(feature = "batch-v3")]
+#[cfg(not(feature = "euclidv2"))]
 pub mod v3;
-#[cfg(feature = "batch-v7")]
+#[cfg(feature = "euclidv2")]
 pub mod v7;
 
 /// The number data bytes we pack each BLS12-381 scalar into. The most-significant byte is 0.

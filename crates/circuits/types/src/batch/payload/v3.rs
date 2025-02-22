@@ -2,7 +2,8 @@ use core::iter::Iterator;
 
 use alloy_primitives::B256;
 use itertools::Itertools;
-use scroll_zkvm_circuit_input_types::utils::keccak256;
+
+use crate::utils::keccak256;
 
 /// The number of bytes to encode number of chunks in a batch.
 const N_BYTES_NUM_CHUNKS: usize = 2;
@@ -73,6 +74,7 @@ impl<const N_MAX_CHUNKS: usize> Payload<N_MAX_CHUNKS> {
     }
 
     /// Get the preimage of the challenge digest.
+    #[allow(dead_code)]
     pub(crate) fn get_challenge_digest_preimage(&self, versioned_hash: B256) -> Vec<u8> {
         // preimage =
         //     metadata_digest ||
@@ -101,7 +103,7 @@ impl<const N_MAX_CHUNKS: usize> Payload<N_MAX_CHUNKS> {
 
     /// Compute the challenge digest from blob bytes. which is the combination of
     /// digest for bytes in each chunk
-    pub(crate) fn get_challenge_digest(&self, versioned_hash: B256) -> B256 {
+    pub fn get_challenge_digest(&self, versioned_hash: B256) -> B256 {
         keccak256(self.get_challenge_digest_preimage(versioned_hash))
     }
 

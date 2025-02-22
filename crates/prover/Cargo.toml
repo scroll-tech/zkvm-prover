@@ -11,13 +11,17 @@ scroll-zkvm-verifier.workspace = true
 
 alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
 rkyv.workspace = true
+bincode.workspace = true
 sbv.workspace = true
 tracing.workspace = true
+metrics.workspace = true
+metrics-util.workspace = true
+metrics-tracing-context.workspace = true
 
-openvm-circuit = { workspace = true, features = ["test-utils"] }
+openvm-circuit = { workspace = true }
 openvm-native-circuit = { workspace = true, default-features = false }
 openvm-native-recursion = { workspace = true }
-openvm-sdk = { workspace = true, default-features = false }
+openvm-sdk = { workspace = true }
 openvm-stark-sdk = { workspace = true, default-features = false }
 
 base64 = "0.22"
@@ -30,8 +34,10 @@ serde_stacker = "0.1"
 thiserror = "2.0"
 toml = "0.8"
 revm = "19.0"
-c-kzg = "1.0"
+c-kzg = {version = "1.0", features = ["serde"]}
 
 [features]
 default = ["scroll"]
+bincode = ["scroll-zkvm-circuit-input-types/bincode"]
+euclidv2 = []
 scroll = ["sbv/scroll"]

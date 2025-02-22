@@ -1,13 +1,14 @@
 use core::iter::Iterator;
 
+use alloy_primitives::B256;
 use scroll_zkvm_circuit_input_types::{
-    batch::{BatchHeader, BatchHeaderV3, BatchInfo},
+    batch::{BatchHeader, BatchHeaderV3, BatchInfo, PayloadV3},
     chunk::ChunkInfo,
     utils::keccak256,
 };
 use vm_zstd::process;
 
-use crate::{blob_consistency::BlobConsistency, payload::v3::Payload};
+use crate::blob_consistency::BlobPolynomial;
 
 /// Builder that consumes DA-codec@v3 [`BatchHeader`][BatchHeaderV3] and builds the public-input
 /// values [`BatchInfo`] for the batch-circuit.
@@ -24,9 +25,9 @@ impl BatchInfoBuilderV3 {
         // Construct the batch payload using blob bytes.
         let payload = if blob_bytes[0] & 1 == 1 {
             let enveloped_bytes = process(&blob_bytes[1..]).unwrap().decoded_data;
-            Payload::<N_MAX_CHUNKS>::from_payload(&enveloped_bytes)
+            PayloadV3::<N_MAX_CHUNKS>::from_payload(&enveloped_bytes)
         } else {
-            Payload::<N_MAX_CHUNKS>::from_payload(&blob_bytes[1..])
+            PayloadV3::<N_MAX_CHUNKS>::from_payload(&blob_bytes[1..])
         };
 
         // Validate the tx data is match with fields in chunk info
@@ -48,11 +49,18 @@ impl BatchInfoBuilderV3 {
         //
         // - The challenge (z) MUST match.
         // - The evaluation (y) MUST match.
-        let blob_consistency = BlobConsistency::new(blob_bytes);
+        let blob_consistency = BlobPolynomial::new(blob_bytes);
         let challenge_digest = payload.get_challenge_digest(batch_header.blob_versioned_hash);
-        let blob_data_proof = blob_consistency.blob_data_proof(challenge_digest);
-        assert_eq!(blob_data_proof[0], batch_header.blob_data_proof[0]);
-        assert_eq!(blob_data_proof[1], batch_header.blob_data_proof[1]);
+        let blob_data_proof = blob_consistency.evaluate(challenge_digest);
+        use openvm_algebra_guest::IntMod;
+        assert_eq!(
+            B256::new(blob_data_proof.0.to_be_bytes()),
+            batch_header.blob_data_proof[0]
+        );
+        assert_eq!(
+            B256::new(blob_data_proof.1.to_be_bytes()),
+            batch_header.blob_data_proof[1]
+        );
 
         // Get the first and last chunks' info, to construct the batch info.
         let (first, last) = (
@@ -67,6 +75,8 @@ impl BatchInfoBuilderV3 {
             batch_hash: batch_header.batch_hash(),
             chain_id: last.chain_id,
             withdraw_root: last.withdraw_root,
+            prev_msg_queue_hash: Default::default(), // FIXME
+            post_msg_queue_hash: Default::default(), // FIXME
         }
     }
 }

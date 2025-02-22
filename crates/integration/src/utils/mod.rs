@@ -90,30 +90,6 @@ pub fn build_batch_task(
     // Sanity check.
     assert_eq!(chunk_tasks.len(), chunk_proofs.len());
 
-    let num_blocks = chunk_tasks
-        .iter()
-        .map(|t| t.block_witnesses.len())
-        .sum::<usize>() as u16;
-
-    let (prev_msg_queue_hash, initial_block_number) = {
-        let first_chunk = &chunk_proofs
-            .first()
-            .expect("at least one chunk")
-            .metadata
-            .chunk_info;
-        (
-            first_chunk.prev_msg_queue_hash,
-            first_chunk.initial_block_number,
-        )
-    };
-
-    let post_msg_queue_hash = chunk_proofs
-        .last()
-        .expect("at least one chunk")
-        .metadata
-        .chunk_info
-        .post_msg_queue_hash;
-
     // collect tx bytes from chunk tasks
     let (_, chunk_digests, chunk_tx_bytes) = chunk_tasks.iter().fold(
         (Vec::new(), Vec::new(), Vec::new()),
@@ -133,19 +109,42 @@ pub fn build_batch_task(
 
     // collect all data together for payload
     let mut payload = Vec::new();
-    payload.extend_from_slice(prev_msg_queue_hash.as_slice());
-    payload.extend_from_slice(post_msg_queue_hash.as_slice());
-    payload.extend(initial_block_number.to_be_bytes());
-    payload.extend(num_blocks.to_be_bytes());
-    assert_eq!(payload.len(), 74);
-    let mut payload = chunk_proofs
-        .iter()
-        .flat_map(|proof| &proof.metadata.chunk_info.block_ctxs)
-        .fold(payload, |mut pl, ctx| {
-            pl.extend(ctx.to_bytes());
-            pl
-        });
-    assert_eq!(payload.len(), 74 + 52 * num_blocks as usize);
+    #[cfg(feature = "euclidv2")]
+    {
+        let num_blocks = chunk_tasks
+            .iter()
+            .map(|t| t.block_witnesses.len())
+            .sum::<usize>() as u16;
+        let (prev_msg_queue_hash, initial_block_number) = {
+            let first_chunk = &chunk_proofs
+                .first()
+                .expect("at least one chunk")
+                .metadata
+                .chunk_info;
+            (
+                first_chunk.prev_msg_queue_hash,
+                first_chunk.initial_block_number,
+            )
+        };
+
+        let post_msg_queue_hash = chunk_proofs
+            .last()
+            .expect("at least one chunk")
+            .metadata
+            .chunk_info
+            .post_msg_queue_hash;
+        payload.extend_from_slice(prev_msg_queue_hash.as_slice());
+        payload.extend_from_slice(post_msg_queue_hash.as_slice());
+        payload.extend(initial_block_number.to_be_bytes());
+        payload.extend(num_blocks.to_be_bytes());
+        assert_eq!(payload.len(), 74);
+        for proof in chunk_proofs {
+            for ctx in &proof.metadata.chunk_info.block_ctxs {
+                payload.extend(ctx.to_bytes());
+            }
+        }
+        assert_eq!(payload.len(), 74 + 52 * num_blocks as usize);
+    }
     payload.extend(chunk_tx_bytes);
     // compress ...
     let compressed_payload = zstd_encode(&payload);
@@ -186,10 +185,11 @@ pub fn build_batch_task(
     }
 }
 
+#[cfg(feature = "euclidv2")]
 #[test]
 fn test_build_and_parse_batch_task() -> eyre::Result<()> {
     use scroll_zkvm_circuit_input_types::batch::{EnvelopeV7, PayloadV7};
-    use scroll_zkvm_prover::utils::{read_json, read_json_deep};
+    use scroll_zkvm_prover::utils::{read_json, read_json_deep, write_json};
 
     // ./testdata/
     let path_testdata = std::path::Path::new("testdata");
@@ -216,6 +216,24 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
 
     let task = build_batch_task(&[chunk_task], &[chunk_proof], Default::default());
 
+    write_json(path_testdata.join("batch-task-test-out.json"), &task).unwrap();
+    Ok(())
+}
+
+#[cfg(feature = "euclidv2")]
+#[test]
+fn test_batch_task_payload() -> eyre::Result<()> {
+    use scroll_zkvm_circuit_input_types::batch::{EnvelopeV7, PayloadV7};
+    use scroll_zkvm_prover::utils::read_json_deep;
+
+    // ./testdata/
+    let path_testdata = std::path::Path::new("testdata");
+
+    let task =
+        read_json_deep::<_, BatchProvingTask>(path_testdata.join("batch-task-test-out.json"))
+            .unwrap();
+
+    println!("blob {:?}", &task.blob_bytes[..32]);
     let enveloped = EnvelopeV7::from(task.blob_bytes.as_slice());
 
     let chunk_infos = task
@@ -225,5 +243,6 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
         .collect::<Vec<_>>();
 
     PayloadV7::from(&enveloped).validate(&task.batch_header, &chunk_infos);
+
     Ok(())
 }
