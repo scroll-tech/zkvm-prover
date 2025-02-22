@@ -85,14 +85,19 @@ pub fn execute(witness: &ArchivedChunkWitness) -> ChunkInfo {
 
     let prev_msg_queue_hash = witness.prev_msg_queue_hash.into();
     let sbv_chunk_info = {
-        let mut builder = ChunkInfoBuilder::new(&chain_spec, blocks);
-        builder.prev_msg_queue_hash(prev_msg_queue_hash);
+        let mut builder = ChunkInfoBuilder::new(&chain_spec, prev_state_root, blocks);
+        builder.set_prev_msg_queue_hash(prev_msg_queue_hash);
         builder
             .build(withdraw_root)
             .into_euclid_v2()
             .expect("euclid-v2")
     };
     let post_msg_queue_hash = sbv_chunk_info.post_msg_queue_hash;
+
+    assert_eq!(
+        sbv_chunk_info.prev_state_root, prev_state_root,
+        "prev state root mismatch"
+    );
 
     assert_eq!(
         sbv_chunk_info.post_state_root, post_state_root,

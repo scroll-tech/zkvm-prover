@@ -108,6 +108,7 @@ impl ProverType for ChunkProverType {
                 })?;
         }
 
+        let prev_state_root = task.block_witnesses[0].pre_state_root;
         let post_state_root = db.commit_changes();
 
         let withdraw_root = db.withdraw_root().map_err(|e| {
@@ -126,13 +127,14 @@ impl ProverType for ChunkProverType {
         let block_ctxs = blocks.iter().map(BlockContextV2::from).collect();
 
         let sbv_chunk_info = {
-            let mut builder = ChunkInfoBuilder::new(&chain_spec, &blocks);
-            builder.prev_msg_queue_hash(task.prev_msg_queue_hash);
+            let mut builder = ChunkInfoBuilder::new(&chain_spec, prev_state_root, &blocks);
+            builder.set_prev_msg_queue_hash(task.prev_msg_queue_hash);
             builder
                 .build(withdraw_root)
                 .into_euclid_v2()
                 .expect("euclid-v2")
         };
+        assert_eq!(prev_state_root, sbv_chunk_info.prev_state_root);
         if post_state_root != sbv_chunk_info.post_state_root {
             return Err(Error::GenProof(format!(
                 "{err_prefix}: state root mismatch: expected={}, found={}",
