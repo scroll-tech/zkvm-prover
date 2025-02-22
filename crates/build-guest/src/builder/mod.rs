@@ -1,4 +1,7 @@
-use std::{fs::read_to_string, path::{Path, PathBuf}};
+use std::{
+    fs::read_to_string,
+    path::{Path, PathBuf},
+};
 
 use openvm_build::GuestOptions;
 use openvm_instructions::exe::VmExe;
@@ -47,7 +50,8 @@ pub fn transpile(
 
     // First read the app config specified in the project's root directory.
     let path_app_config = Path::new(project_root).join(FD_APP_CONFIG);
-    let mut app_config: AppConfig<SdkVmConfig> = toml::from_str(&read_to_string(&path_app_config).unwrap()).unwrap();
+    let mut app_config: AppConfig<SdkVmConfig> =
+        toml::from_str(&read_to_string(&path_app_config).unwrap()).unwrap();
 
     // FIXME: additional app config for batch and bundle guest program.
     if !is_chunk {

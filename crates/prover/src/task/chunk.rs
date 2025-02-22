@@ -74,7 +74,14 @@ impl ProvingTask for ChunkProvingTask {
             blocks: self.block_witnesses.to_vec(),
             prev_msg_queue_hash: self.prev_msg_queue_hash,
         };
+
+        #[cfg(not(feature = "bincode"))]
         let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&witness)?;
+        // TODO: better err handling
+        #[cfg(feature = "bincode")]
+        let serialized = bincode::serde::encode_to_vec(&witness, bincode::config::standard())
+            .expect("failed to serialize chunk witness");
+
         let mut stdin = StdIn::default();
         stdin.write_bytes(&serialized);
         Ok(stdin)

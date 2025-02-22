@@ -52,6 +52,9 @@ impl ProverType for ChunkProverType {
             blocks: task.block_witnesses.to_vec(),
             prev_msg_queue_hash: task.prev_msg_queue_hash,
         };
+        #[cfg(feature = "bincode")]
+        let chunk_witness = &chunk_witness;
+        #[cfg(not(feature = "bincode"))]
         // We want to reuse codes as much as possible, so we serialize the chunk witness
         // and execute it with "ArchivedChunkWitness".
         let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&chunk_witness).map_err(|e| {
@@ -60,6 +63,7 @@ impl ProverType for ChunkProverType {
                 err_prefix, e
             ))
         })?;
+        #[cfg(not(feature = "bincode"))]
         let chunk_witness = rkyv::access::<ArchivedChunkWitness, rkyv::rancor::BoxedError>(
             &serialized,
         )
@@ -69,6 +73,7 @@ impl ProverType for ChunkProverType {
                 err_prefix, e
             ))
         })?;
+
         let chunk_info = execute(chunk_witness)
             .map_err(|e| Error::GenProof(format!("{}: {}", err_prefix, e)))?;
 

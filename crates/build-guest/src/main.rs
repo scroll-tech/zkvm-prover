@@ -20,11 +20,14 @@ pub fn main() {
     let metadata = cargo_metadata::MetadataCommand::new().exec().unwrap();
     let workspace_dir = metadata.workspace_root;
 
-    dump_verifier(&format!(
-        "{workspace_dir}/crates/build-guest/root_verifier.asm"
-    ));
+    let project_names = &["chunk", "batch", "bundle"];
 
-    let project_names = ["chunk", "batch", "bundle"];
+    if project_names.len() > 1 {
+        dump_verifier(&format!(
+            "{workspace_dir}/crates/build-guest/root_verifier.asm"
+        ));
+    }
+
     for (idx, project_name) in project_names.into_iter().enumerate() {
         let project_dir = format!("{workspace_dir}/crates/circuits/{project_name}-circuit");
         let elf = builder::build(&project_dir).unwrap();
@@ -51,11 +54,11 @@ pub fn main() {
         tracing::debug!(name: "leaf-commitment", raw = ?leaf_commit, as_bn254 = ?commits.app_config_commit_to_bn254());
 
         let commitments = [exe_commit, leaf_commit];
-        //write_commitments(
+        // write_commitments(
         //    commitments,
         //    format!("{workspace_dir}/crates/prover/src/commitments/{project_name}.rs").as_str(),
         //);
-        //write_commitments(
+        // write_commitments(
         //    commitments,
         //    format!("{workspace_dir}/crates/verifier/src/commitments/{project_name}.rs").as_str(),
         //);

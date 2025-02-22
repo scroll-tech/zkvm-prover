@@ -1,6 +1,6 @@
 use scroll_zkvm_circuit_input_types::{
     Circuit,
-    chunk::{ArchivedChunkWitness, ChunkInfo, execute},
+    chunk::{ArchivedChunkWitness, ChunkInfo, ChunkWitness, execute},
     utils::read_witnesses,
 };
 
@@ -31,7 +31,10 @@ openvm_algebra_complex_macros::complex_init! {
 pub struct ChunkCircuit;
 
 impl Circuit for ChunkCircuit {
+    #[cfg(not(feature = "bincode"))]
     type Witness = ArchivedChunkWitness;
+    #[cfg(feature = "bincode")]
+    type Witness = ChunkWitness;
 
     type PublicInputs = ChunkInfo;
 
@@ -46,8 +49,18 @@ impl Circuit for ChunkCircuit {
     }
 
     fn deserialize_witness(witness_bytes: &[u8]) -> &Self::Witness {
-        rkyv::access::<ArchivedChunkWitness, rkyv::rancor::BoxedError>(witness_bytes)
-            .expect("ChunkCircuit: rkyc deserialisation of witness bytes failed")
+        #[cfg(not(feature = "bincode"))]
+        return rkyv::access::<ArchivedChunkWitness, rkyv::rancor::BoxedError>(witness_bytes)
+            .expect("ChunkCircuit: rkyv deserialisation of witness bytes failed");
+        #[cfg(feature = "bincode")]
+        return Box::leak(Box::new(
+            bincode::serde::decode_from_slice::<Self::Witness, _>(
+                witness_bytes,
+                bincode::config::standard(),
+            )
+            .expect("ChunkCircuit: bincode deserialisation of witness bytes failed")
+            .0,
+        ));
     }
 
     fn validate(witness: &Self::Witness) -> Self::PublicInputs {

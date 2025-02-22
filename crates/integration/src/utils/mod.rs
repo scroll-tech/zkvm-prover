@@ -137,7 +137,7 @@ pub fn build_batch_task(
         payload.extend_from_slice(post_msg_queue_hash.as_slice());
         payload.extend(initial_block_number.to_be_bytes());
         payload.extend(num_blocks.to_be_bytes());
-        assert_eq!(payload.len(), 74 + 52 * num_blocks as usize);
+        assert_eq!(payload.len(), 74);
         for proof in chunk_proofs {
             for ctx in &proof.metadata.chunk_info.block_ctxs {
                 payload.extend(ctx.to_bytes());

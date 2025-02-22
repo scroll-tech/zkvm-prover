@@ -11,6 +11,7 @@ scroll-zkvm-verifier.workspace = true
 
 alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
 rkyv.workspace = true
+bincode.workspace = true
 sbv.workspace = true
 tracing.workspace = true
 metrics.workspace = true
@@ -36,5 +37,6 @@ c-kzg = "1.0"
 
 [features]
 default = ["scroll"]
+bincode = ["scroll-zkvm-circuit-input-types/bincode"]
 euclidv2 = []
 scroll = ["sbv/scroll"]

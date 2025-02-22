@@ -1,6 +1,6 @@
 use std::mem::ManuallyDrop;
 
-use crate::chunk::{ArchivedChunkWitness, ChunkInfo, make_providers};
+use crate::chunk::{ArchivedChunkWitness, ChunkInfo, ChunkWitness, make_providers};
 use sbv::{
     core::{EvmDatabase, EvmExecutor},
     primitives::{
@@ -15,7 +15,12 @@ use sbv::{
 #[cfg(feature = "euclidv2")]
 use crate::chunk::public_inputs_euclidv2::BlockContextV2;
 
-pub fn execute(witness: &ArchivedChunkWitness) -> Result<ChunkInfo, String> {
+#[cfg(feature = "bincode")]
+type Witness = ChunkWitness;
+#[cfg(not(feature = "bincode"))]
+type Witness = ArchivedChunkWitness;
+
+pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     if witness.blocks.is_empty() {
         return Err("At least one witness must be provided in chunk mode".into());
     }
@@ -32,7 +37,7 @@ pub fn execute(witness: &ArchivedChunkWitness) -> Result<ChunkInfo, String> {
         .map(|w| w.build_reth_block())
         .collect::<Result<Vec<RecoveredBlock<Block>>, _>>()
         .map_err(|e| e.to_string())?;
-    #[cfg(target_os = "zkvm")]
+    //#[cfg(target_os = "zkvm")]
     let blocks = blocks.leak() as &'static [RecoveredBlock<Block>];
     let pre_state_root = witness.blocks[0].pre_state_root;
 

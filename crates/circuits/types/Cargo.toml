@@ -22,6 +22,7 @@ openvm-rv32im-guest= {  workspace = true }
 
 [features]
 default = ["scroll","sbv"]
+bincode = []
 euclidv2 = []
 sbv = ["dep:sbv"]
 scroll = ["sbv?/scroll"]
