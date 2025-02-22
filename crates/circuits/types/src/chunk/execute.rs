@@ -1,6 +1,9 @@
 use std::mem::ManuallyDrop;
 
-use crate::chunk::{ArchivedChunkWitness, ChunkInfo, ChunkWitness, make_providers};
+use crate::{
+    Circuit,
+    chunk::{ArchivedChunkWitness, ChunkInfo, ChunkWitness, make_providers},
+};
 use sbv::{
     core::{EvmDatabase, EvmExecutor},
     primitives::{

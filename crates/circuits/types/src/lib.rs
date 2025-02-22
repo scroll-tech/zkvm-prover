@@ -46,11 +46,15 @@ pub trait Circuit {
 
     /// Reveal the public inputs.
     fn reveal_pi(pi: &Self::PublicInputs) {
-        for (i, part) in pi.pi_hash().chunks_exact(CHUNK_SIZE).enumerate() {
-            let value = u32::from_le_bytes(part.try_into().unwrap());
-            openvm::io::println(format!("pi[{i}] = {value:?}"));
-            openvm::io::reveal(value, i)
-        }
+        reveal_pi(pi)
+    }
+}
+
+pub(crate) fn reveal_pi<T: PublicInputs>(pi: &T) {
+    for (i, part) in pi.pi_hash().chunks_exact(CHUNK_SIZE).enumerate() {
+        let value = u32::from_le_bytes(part.try_into().unwrap());
+        openvm::io::println(format!("pi[{i}] = {value:?}"));
+        openvm::io::reveal(value, i)
     }
 }
 
