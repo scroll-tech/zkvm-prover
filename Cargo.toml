@@ -56,7 +56,7 @@ serde = { version = "1", default-features = false, features = ["derive"] }
 alloy-primitives = { version = "0.8", default-features = false }
 alloy-serde = { version = "0.8", default-features = false }
 eyre = "0.6"
-sbv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "feat/euclid-v2" }
+sbv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "zkvm/euclid-v2" }
 vm-zstd = { git = "https://github.com/scroll-tech/rust-zstd-decompressor.git", tag = "v0.1.1" }
 tracing = "0.1"
 tracing-subscriber = "0.3"
@@ -76,35 +76,5 @@ scroll-zkvm-integration = { path = "crates/integration" }
 
 [patch.crates-io]
 alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.18" }
-revm = { git = "https://github.com/scroll-tech//revm", branch = "scroll-evm-executor/feat/v55/euclid-v2" }
-revm-interpreter = { git = "https://github.com/scroll-tech//revm", branch = "scroll-evm-executor/feat/v55/euclid-v2" }
-revm-precompile = { git = "https://github.com/scroll-tech//revm", branch = "scroll-evm-executor/feat/v55/euclid-v2" }
-revm-primitives = { git = "https://github.com/scroll-tech//revm", branch = "scroll-evm-executor/feat/v55/euclid-v2" }
 ruint = { git = "https://github.com/scroll-tech/uint.git", branch = "v1.12.3" }
 tiny-keccak = { git = "https://github.com/scroll-tech/tiny-keccak", branch = "scroll-patch-v2.0.2-openvm-v1.0.0-rc.1" }
-
-[patch."https://github.com/scroll-tech/revm.git"]
-revm = { git = "https://github.com/scroll-tech//revm", branch = "scroll-evm-executor/feat/v55/euclid-v2" }
-revm-interpreter = { git = "https://github.com/scroll-tech//revm", branch = "scroll-evm-executor/feat/v55/euclid-v2" }
-revm-precompile = { git = "https://github.com/scroll-tech//revm", branch = "scroll-evm-executor/feat/v55/euclid-v2" }
-revm-primitives = { git = "https://github.com/scroll-tech//revm", branch = "scroll-evm-executor/feat/v55/euclid-v2" }
-
-[patch."https://github.com/scroll-tech/reth.git"]
-reth-chainspec = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm-euclid-v2" }
-reth-evm = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm-euclid-v2" }
-reth-evm-ethereum = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm-euclid-v2" }
-reth-execution-types = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm-euclid-v2" }
-reth-primitives = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm-euclid-v2" }
-reth-primitives-traits = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm-euclid-v2" }
-reth-storage-errors = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm-euclid-v2" }
-reth-trie = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm-euclid-v2" }
-reth-trie-sparse = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm-euclid-v2" }
-reth-ethereum-forks  = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm-euclid-v2" }
-
-reth-scroll-chainspec = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm-euclid-v2" }
-reth-scroll-evm = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm-euclid-v2" }
-reth-scroll-forks = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm-euclid-v2" }
-reth-scroll-primitives = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm-euclid-v2" }
-
-scroll-alloy-consensus = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm-euclid-v2" }
-scroll-alloy-rpc-types = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm-euclid-v2" }
