@@ -8,15 +8,16 @@ use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use crate::{
     Error, SC,
-    utils::{base64, short_git_version},
+    utils::{base64, proof_as_base64, short_git_version},
 };
 
 /// A wrapper around the actual inner proof.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct WrappedProof<Metadata, Proof> {
+pub struct WrappedProof<Metadata, Proof: Serialize + DeserializeOwned> {
     /// Generic metadata carried by a proof.
     pub metadata: Metadata,
     /// The inner proof, either a [`RootProof`] or [`EvmProof`] depending on the [`crate::ProverType`].
+    #[serde(with = "proof_as_base64")]
     pub proof: Proof,
     /// Represents the verifying key in serialized form. The purpose of including the verifying key
     /// along with the proof is to allow a verifier-only mode to identify the source of proof
