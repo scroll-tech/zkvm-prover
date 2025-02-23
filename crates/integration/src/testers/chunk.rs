@@ -56,7 +56,7 @@ impl ProverTester for MultiChunkProverTester {
                 block_witnesses: (1..=1)
                     .map(read_block_witness)
                     .collect::<eyre::Result<Vec<BlockWitness>>>()?,
-                prev_msg_queue_hash: Default::default(),
+                prev_msg_queue_hash: B256::repeat_byte(1u8),
             },
             ChunkProvingTask {
                 block_witnesses: (2..=2)
@@ -68,7 +68,7 @@ impl ProverTester for MultiChunkProverTester {
                 block_witnesses: (3..=4)
                     .map(read_block_witness)
                     .collect::<eyre::Result<Vec<BlockWitness>>>()?,
-                prev_msg_queue_hash: B256::repeat_byte(2u8),
+                prev_msg_queue_hash: B256::repeat_byte(1u8),
             },
         ])
     }
