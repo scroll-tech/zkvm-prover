@@ -4,7 +4,7 @@ use sbv::{
     core::{EvmDatabase, EvmExecutor},
     primitives::{
         BlockWitness, RecoveredBlock,
-        chainspec::{Chain, get_chain_spec},
+        chainspec::{Chain, get_chain_spec_or_build},
         ext::{BlockWitnessChunkExt, TxBytesHashExt},
         types::{ChunkInfoBuilder, reth::Block},
     },
@@ -34,9 +34,24 @@ pub fn execute(witness: &ArchivedChunkWitness) -> ChunkInfo {
         .collect::<Result<Vec<_>, _>>()
         .expect("failed to build reth block")
         .leak() as &'static [RecoveredBlock<Block>];
+    let initial_block_number = blocks[0].header().number;
 
-    let chain_spec = get_chain_spec(Chain::from_id(witness.blocks[0].chain_id()))
-        .expect("failed to get chain spec");
+    // let chain_spec = get_chain_spec(Chain::from_id(witness.blocks[0].chain_id()))
+    //    .expect("failed to get chain spec");
+
+    // TODO: should not allow such a short cut?
+    // use the same code from sbv
+    let chain_spec =
+        get_chain_spec_or_build(Chain::from_id(witness.blocks[0].chain_id()), |_spec| {
+            #[cfg(feature = "scroll")]
+            {
+                use sbv::primitives::{chainspec::ForkCondition, hardforks::ScrollHardfork};
+                _spec
+                    .inner
+                    .hardforks
+                    .insert(ScrollHardfork::EuclidV2, ForkCondition::Timestamp(0));
+            }
+        });
 
     let (code_db, nodes_provider, block_hashes) = make_providers(&witness.blocks);
     let nodes_provider = ManuallyDrop::new(nodes_provider);
@@ -70,14 +85,19 @@ pub fn execute(witness: &ArchivedChunkWitness) -> ChunkInfo {
 
     let prev_msg_queue_hash = witness.prev_msg_queue_hash.into();
     let sbv_chunk_info = {
-        let mut builder = ChunkInfoBuilder::new(&chain_spec, blocks);
-        builder.prev_msg_queue_hash(prev_msg_queue_hash);
+        let mut builder = ChunkInfoBuilder::new(&chain_spec, prev_state_root, blocks);
+        builder.set_prev_msg_queue_hash(prev_msg_queue_hash);
         builder
             .build(withdraw_root)
             .into_euclid_v2()
             .expect("euclid-v2")
     };
     let post_msg_queue_hash = sbv_chunk_info.post_msg_queue_hash;
+
+    assert_eq!(
+        sbv_chunk_info.prev_state_root, prev_state_root,
+        "prev state root mismatch"
+    );
 
     assert_eq!(
         sbv_chunk_info.post_state_root, post_state_root,
@@ -96,6 +116,7 @@ pub fn execute(witness: &ArchivedChunkWitness) -> ChunkInfo {
         prev_msg_queue_hash,
         post_msg_queue_hash,
         tx_data_length: u64::try_from(tx_data_length).expect("tx_data_length: u64"),
+        initial_block_number,
         block_ctxs,
     }
 }

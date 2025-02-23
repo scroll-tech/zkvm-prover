@@ -23,8 +23,6 @@ alloy-primitives.workspace = true
 tiny-keccak.workspace = true
 vm-zstd = { workspace = true, features = ["zstd"] }
 
-bls12_381 = "0.8"
-c-kzg = "1.0"
 chrono = "0.4"
 eyre = "0.6"
 ff = "0.13"
@@ -33,7 +31,7 @@ serde_json = "1.0"
 sha2 = "0.10"
 
 [dev-dependencies]
-halo2curves-axiom = "0.5.3"
+halo2curves-axiom = "0.7"
 glob = "0.3"
 
 [features]

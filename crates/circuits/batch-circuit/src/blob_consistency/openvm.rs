@@ -3,7 +3,12 @@ use std::sync::LazyLock;
 use algebra::{Field, IntMod};
 use alloy_primitives::U256;
 use itertools::Itertools;
-use openvm_pairing_guest::{algebra, bls12_381::Scalar};
+use openvm_ecc_guest::{AffinePoint, CyclicGroup, msm, weierstrass::WeierstrassPoint};
+use openvm_pairing_guest::{
+    algebra,
+    bls12_381::{Bls12_381, Fp, Fp2, G1Affine, G2Affine, Scalar},
+    pairing::PairingCheck,
+};
 
 use super::{BLOB_WIDTH, LOG_BLOB_WIDTH};
 
@@ -29,6 +34,68 @@ static ROOTS_OF_UNITY: LazyLock<Vec<Scalar>> = LazyLock::new(|| {
             ascending_order[usize::from(j)].clone()
         })
         .collect()
+});
+
+use openvm_ecc_guest::halo2curves::bls12_381::{
+    Fq as HL2Fp, G1Affine as Halo2G1Affine, G2Affine as Halo2G2Affine,
+};
+
+fn convert_bls12381_halo2_fq_to_fp(x: HL2Fp) -> Fp {
+    let bytes = x.to_bytes();
+    Fp::from_le_bytes(&bytes)
+}
+
+pub fn convert_bls12381_halo2_g1_to_g1(p: Halo2G1Affine) -> G1Affine {
+    G1Affine::from_xy_unchecked(
+        convert_bls12381_halo2_fq_to_fp(p.x),
+        convert_bls12381_halo2_fq_to_fp(p.y),
+    )
+}
+
+fn convert_bls12381_halo2_g2_to_g2(p: Halo2G2Affine) -> G2Affine {
+    let halo2_x = p.x;
+    let halo2_y = p.y;
+
+    let x = Fp2::new(
+        convert_bls12381_halo2_fq_to_fp(halo2_x.c0),
+        convert_bls12381_halo2_fq_to_fp(halo2_x.c1),
+    );
+
+    let y = Fp2::new(
+        convert_bls12381_halo2_fq_to_fp(halo2_y.c0),
+        convert_bls12381_halo2_fq_to_fp(halo2_y.c1),
+    );
+
+    G2Affine::from_xy_unchecked(x, y)
+}
+
+static G2_GENERATOR: LazyLock<G2Affine> =
+    LazyLock::new(|| convert_bls12381_halo2_g2_to_g2(Halo2G2Affine::generator()));
+
+static KZG_G2_SETUP: LazyLock<G2Affine> = LazyLock::new(|| {
+    // b5bfd7dd8cdeb128
+    // 843bc287230af389
+    // 26187075cbfbefa8
+    // 1009a2ce615ac53d
+    // 2914e5870cb452d2
+    // afaaab24f3499f72
+    // 185cbfee53492714
+    // 734429b7b38608e2
+    // 3926c911cceceac9
+    // a36851477ba4c60b
+    // 087041de621000ed
+    // c98edada20c1def2
+    const KZG_G2_SETUP_BYTES: [u8; 96] = [
+        0xb5, 0xbf, 0xd7, 0xdd, 0x8c, 0xde, 0xb1, 0x28, 0x84, 0x3b, 0xc2, 0x87, 0x23, 0x0a, 0xf3,
+        0x89, 0x26, 0x18, 0x70, 0x75, 0xcb, 0xfb, 0xef, 0xa8, 0x10, 0x09, 0xa2, 0xce, 0x61, 0x5a,
+        0xc5, 0x3d, 0x29, 0x14, 0xe5, 0x87, 0x0c, 0xb4, 0x52, 0xd2, 0xaf, 0xaa, 0xab, 0x24, 0xf3,
+        0x49, 0x9f, 0x72, 0x18, 0x5c, 0xbf, 0xee, 0x53, 0x49, 0x27, 0x14, 0x73, 0x44, 0x29, 0xb7,
+        0xb3, 0x86, 0x08, 0xe2, 0x39, 0x26, 0xc9, 0x11, 0xcc, 0xec, 0xea, 0xc9, 0xa3, 0x68, 0x51,
+        0x47, 0x7b, 0xa4, 0xc6, 0x0b, 0x08, 0x70, 0x41, 0xde, 0x62, 0x10, 0x00, 0xed, 0xc9, 0x8e,
+        0xda, 0xda, 0x20, 0xc1, 0xde, 0xf2,
+    ];
+
+    convert_bls12381_halo2_g2_to_g2(Halo2G2Affine::from_compressed_be(&KZG_G2_SETUP_BYTES).unwrap())
 });
 
 // picked from ExpBytes trait, some compilation issue (infinity recursion) raised
@@ -66,7 +133,25 @@ fn interpolate(z: Scalar, coefficients: &[Scalar; BLOB_WIDTH]) -> Scalar {
         * Scalar::from_u64(blob_width).invert()
 }
 
-pub fn point_evaluation(coefficients: &[U256; BLOB_WIDTH], challenge_digest: U256) -> (U256, U256) {
+pub fn verify_kzg_proof(z: Scalar, y: Scalar, commitment: (Fp, Fp), proof: (Fp, Fp)) -> bool {
+    let proof_q = G1Affine::from_xy_nonidentity(proof.0, proof.1).unwrap();
+    let p_minus_y = G1Affine::from_xy_nonidentity(commitment.0, commitment.1).unwrap()
+        - msm(&[y], &[G1Affine::GENERATOR.clone()]);
+    let x_minus_z = msm(&[z], &[G2_GENERATOR.clone()]) - KZG_G2_SETUP.clone();
+
+    let p0_proof = AffinePoint::new(proof_q.x().clone(), proof_q.y().clone());
+    let q0 = AffinePoint::new(p_minus_y.x().clone(), p_minus_y.y().clone());
+    let p1 = AffinePoint::new(x_minus_z.x().clone(), x_minus_z.y().clone());
+    // use c_kzg impl (positive G2(), not neg)
+    let q1 = AffinePoint::new(G2_GENERATOR.x().clone(), G2_GENERATOR.y().clone());
+
+    Bls12_381::pairing_check(&[q0, p0_proof], &[q1, p1]).is_ok()
+}
+
+pub fn point_evaluation(
+    coefficients: &[U256; BLOB_WIDTH],
+    challenge_digest: U256,
+) -> (Scalar, Scalar) {
     // blob polynomial in evaluation form.
     //
     // also termed P(x)
@@ -74,15 +159,78 @@ pub fn point_evaluation(coefficients: &[U256; BLOB_WIDTH], challenge_digest: U25
         coefficients.map(|coeff| Scalar::from_le_bytes(coeff.as_le_slice()));
 
     let challenge = challenge_digest % *BLS_MODULUS;
+    let challenge = Scalar::from_le_bytes(challenge.as_le_slice());
 
     // y = P(z)
-    let y = U256::from_le_slice(
-        interpolate(
-            Scalar::from_le_bytes(challenge.as_le_slice()),
-            &coefficients_as_scalars,
-        )
-        .as_le_bytes(),
-    );
+    let evaluation = interpolate(challenge.clone(), &coefficients_as_scalars);
 
-    (challenge, y)
+    (challenge, evaluation)
+}
+
+const VERSIONED_HASH_VERSION_KZG: u8 = 1;
+
+pub fn kzg_to_versioned_hash(kzg_commitment: &[u8]) -> [u8; 32] {
+    let mut hash = openvm_sha256_guest::sha256(kzg_commitment);
+    hash[0] = VERSIONED_HASH_VERSION_KZG;
+    hash
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_kzg_compute_proof_verify() {
+        use c_kzg::{Blob, Bytes32, Bytes48};
+        // Initialize the blob with a single field element
+        let field_elem =
+            Bytes32::from_hex("69386e69dbae0357b399b8d645a57a3062dfbe00bd8e97170b9bdd6bc6168a13")
+                .unwrap();
+        let blob = Blob::new({
+            let mut bt = [0u8; 131072];
+            bt[..32].copy_from_slice(field_elem.as_ref());
+            bt
+        });
+        let commitment =
+            c_kzg::KzgCommitment::blob_to_kzg_commitment(&blob, c_kzg::ethereum_kzg_settings())
+                .unwrap();
+
+        let input_val =
+            Bytes32::from_hex("03ea4fb841b4f9e01aa917c5e40dbd67efb4b8d4d9052069595f0647feba320d")
+                .unwrap();
+
+        let expected_proof_byte48 = Bytes48::from_hex("b21f8f9b85e52fd9c4a6d4fb4e9a27ebdc5a09c3f5ca17f6bcd85c26f04953b0e6925607aaebed1087e5cc2fe4b2b356").unwrap();
+        let (proof, y) =
+            c_kzg::KzgProof::compute_kzg_proof(&blob, &input_val, c_kzg::ethereum_kzg_settings())
+                .unwrap();
+
+        // assert_eq!(Bytes32::from_hex("69386e69dbae0357b399b8d645a57a3062dfbe00bd8e97170b9bdd6bc6168a13").unwrap(), y);
+        assert_eq!(expected_proof_byte48, proof.to_bytes());
+
+        let ret = c_kzg::KzgProof::verify_kzg_proof(
+            &commitment.to_bytes(),
+            &input_val,
+            &y,
+            &proof.to_bytes(),
+            c_kzg::ethereum_kzg_settings(),
+        )
+        .unwrap();
+        assert!(ret, "failed at sanity check verify");
+
+        let z = Scalar::from_be_bytes(input_val.as_ref());
+        let y = Scalar::from_be_bytes(y.as_ref());
+        let commitment = convert_bls12381_halo2_g1_to_g1(
+            Halo2G1Affine::from_compressed_be(commitment.to_bytes().as_ref()).unwrap(),
+        );
+        let proof = convert_bls12381_halo2_g1_to_g1(
+            Halo2G1Affine::from_compressed_be(proof.to_bytes().as_ref()).unwrap(),
+        );
+        let ret = verify_kzg_proof(
+            z,
+            y,
+            (commitment.x().clone(), commitment.y().clone()),
+            (proof.x().clone(), proof.y().clone()),
+        );
+        assert!(ret, "verify failed");
+    }
 }

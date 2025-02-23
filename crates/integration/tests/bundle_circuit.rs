@@ -40,16 +40,11 @@ fn e2e() -> eyre::Result<()> {
     assert_eq!(chunk_tasks.len(), 3);
 
     // Construct batch tasks using chunk tasks and chunk proofs.
-    let batch_task_1 = build_batch_task(
-        &chunk_tasks[0..1],
-        &chunk_proofs[0..1],
-        scroll_zkvm_circuit_input_types::batch::MAX_AGG_CHUNKS,
-        Default::default(),
-    );
+    let batch_task_1 =
+        build_batch_task(&chunk_tasks[0..1], &chunk_proofs[0..1], Default::default());
     let batch_task_2 = build_batch_task(
         &chunk_tasks[1..],
         &chunk_proofs[1..],
-        scroll_zkvm_circuit_input_types::batch::MAX_AGG_CHUNKS,
         LastHeader::from(&batch_task_1.batch_header),
     );
 

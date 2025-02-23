@@ -1,11 +1,11 @@
-use alloy_primitives::B256;
-use scroll_zkvm_circuit_input_types::{
+use crate::{
     batch::BatchHeaderV7,
     chunk::{BlockContextV2, ChunkInfo, SIZE_BLOCK_CTX},
     utils::keccak256,
 };
+use alloy_primitives::B256;
 
-use crate::blob_consistency::N_BLOB_BYTES;
+use super::N_BLOB_BYTES;
 
 /// da-codec@v7
 const DA_CODEC_VERSION: u8 = 7;
@@ -161,7 +161,7 @@ impl From<&EnvelopeV7> for PayloadV7 {
         // Deserialize block contexts depending on the number of blocks in the batch.
         let mut block_contexts = Vec::with_capacity(num_blocks as usize);
         for i in 0..num_blocks {
-            let start = (i as usize) * SIZE_BLOCK_CTX + INDEX_NUM_BLOCKS;
+            let start = (i as usize) * SIZE_BLOCK_CTX + INDEX_BLOCK_CTX;
             block_contexts.push(BlockContextV2::from(
                 &payload_bytes[start..(start + SIZE_BLOCK_CTX)],
             ));

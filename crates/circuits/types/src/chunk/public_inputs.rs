@@ -1,7 +1,5 @@
-use alloy_primitives::{B256, U256};
-use sbv::primitives::{RecoveredBlock, alloy_consensus::BlockHeader, types::reth::Block};
-
 use crate::{PublicInputs, utils::keccak256};
+use alloy_primitives::{B256, U256};
 
 /// Number of bytes used to serialise [`BlockContextV2`].
 pub const SIZE_BLOCK_CTX: usize = 52;
@@ -12,6 +10,7 @@ pub const SIZE_BLOCK_CTX: usize = 52;
 #[derive(
     Debug,
     Clone,
+    PartialEq,
     rkyv::Archive,
     rkyv::Deserialize,
     rkyv::Serialize,
@@ -64,23 +63,16 @@ impl From<&[u8]> for BlockContextV2 {
     }
 }
 
-impl From<&RecoveredBlock<Block>> for BlockContextV2 {
-    fn from(value: &RecoveredBlock<Block>) -> Self {
-        Self {
-            timestamp: value.timestamp,
-            gas_limit: value.gas_limit,
-            base_fee: U256::from(value.base_fee_per_gas().expect("base_fee_expected")),
-            num_txs: u16::try_from(value.body().transactions.len()).expect("num txs u16"),
-            num_l1_msgs: u16::try_from(
-                value
-                    .body()
-                    .transactions
-                    .iter()
-                    .filter(|tx| tx.is_l1_message())
-                    .count(),
-            )
-            .expect("num l1 msgs u16"),
-        }
+impl BlockContextV2 {
+    /// Serialize the block context in packed form.
+    pub fn to_bytes(&self) -> Vec<u8> {
+        std::iter::empty()
+            .chain(self.timestamp.to_be_bytes())
+            .chain(self.base_fee.to_be_bytes::<32>())
+            .chain(self.gas_limit.to_be_bytes())
+            .chain(self.num_txs.to_be_bytes())
+            .chain(self.num_l1_msgs.to_be_bytes())
+            .collect()
     }
 }
 
@@ -120,6 +112,9 @@ pub struct ChunkInfo {
     /// The length of rlp encoded L2 tx bytes flattened over all L2 txs in the chunk.
     #[rkyv()]
     pub tx_data_length: u64,
+    /// The block number of the first block in the chunk.
+    #[rkyv()]
+    pub initial_block_number: u64,
     /// The block contexts of the blocks in the chunk.
     #[rkyv()]
     pub block_ctxs: Vec<BlockContextV2>,
@@ -136,6 +131,7 @@ impl From<&ArchivedChunkInfo> for ChunkInfo {
             prev_msg_queue_hash: archived.prev_msg_queue_hash.into(),
             post_msg_queue_hash: archived.post_msg_queue_hash.into(),
             tx_data_length: archived.tx_data_length.into(),
+            initial_block_number: archived.initial_block_number.into(),
             block_ctxs: archived
                 .block_ctxs
                 .iter()
@@ -153,9 +149,11 @@ impl PublicInputs for ChunkInfo {
     ///     prev state root ||
     ///     post state root ||
     ///     withdraw root ||
-    ///     tx data hash ||
+    ///     tx data digest ||
     ///     prev msg queue hash ||
-    ///     post msg queue hash
+    ///     post msg queue hash ||
+    ///     initial block number ||
+    ///     block_ctx for block_ctx in block_ctxs
     /// )
     fn pi_hash(&self) -> B256 {
         keccak256(
@@ -167,6 +165,14 @@ impl PublicInputs for ChunkInfo {
                 .chain(self.tx_data_digest.as_slice())
                 .chain(self.prev_msg_queue_hash.as_slice())
                 .chain(self.post_msg_queue_hash.as_slice())
+                .chain(&self.initial_block_number.to_be_bytes())
+                .chain(
+                    self.block_ctxs
+                        .iter()
+                        .flat_map(|block_ctx| block_ctx.to_bytes())
+                        .collect::<Vec<u8>>()
+                        .as_slice(),
+                )
                 .cloned()
                 .collect::<Vec<u8>>(),
         )
