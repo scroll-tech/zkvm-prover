@@ -15,6 +15,7 @@ sbv.workspace = true
 tracing.workspace = true
 metrics.workspace = true
 metrics-util.workspace = true
+snark-verifier-sdk.workspace = true
 
 openvm-circuit = { workspace = true }
 openvm-native-circuit = { workspace = true, default-features = false }

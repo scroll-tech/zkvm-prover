@@ -84,24 +84,3 @@ pub mod base64 {
             .map_err(serde::de::Error::custom)
     }
 }
-
-pub mod proof_as_base64 {
-    use base64::prelude::*;
-    use serde::{Deserialize, Deserializer, Serialize, Serializer, de::DeserializeOwned};
-
-    pub fn serialize<S: Serializer, V: Serialize>(v: &V, s: S) -> Result<S::Ok, S::Error> {
-        let bytes = bincode::serialize(v).map_err(serde::ser::Error::custom)?;
-        let base64 = BASE64_STANDARD.encode(bytes);
-        String::serialize(&base64, s)
-    }
-
-    pub fn deserialize<'de, D: Deserializer<'de>, V: DeserializeOwned>(
-        d: D,
-    ) -> Result<V, D::Error> {
-        let base64 = String::deserialize(d)?;
-        let bytes = BASE64_STANDARD
-            .decode(base64.as_bytes())
-            .map_err(serde::de::Error::custom)?;
-        bincode::deserialize(&bytes).map_err(serde::de::Error::custom)
-    }
-}
