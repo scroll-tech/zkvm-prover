@@ -72,11 +72,13 @@ impl LegacyProofFormat for EvmProof {
             instances
                 .chunks_exact(32)
                 .map(|fr_be| {
-                    Fr::from_repr(
-                        fr_be
+                    Fr::from_repr({
+                        let mut fr_le: [u8; 32] = fr_be
                             .try_into()
-                            .expect("instances.len() % 32 == 0 has already been asserted"),
-                    )
+                            .expect("instances.len() % 32 == 0 has already been asserted");
+                        fr_le.reverse();
+                        fr_le
+                    })
                     .expect("Fr::from_repr failed")
                 })
                 .collect(),

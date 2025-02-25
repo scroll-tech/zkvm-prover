@@ -200,6 +200,15 @@ mod tests {
             &serde_json::Value::String(vk_base64),
         );
 
+        let bundle_proof_de = serde_json::from_value::<BundleProof>(bundle_proof_json)?;
+
+        assert_eq!(bundle_proof_de.proof.proof, bundle_proof.proof.proof);
+        assert_eq!(
+            bundle_proof_de.proof.instances,
+            bundle_proof.proof.instances
+        );
+        assert_eq!(bundle_proof_de.vk, bundle_proof.vk);
+
         Ok(())
     }
 }
