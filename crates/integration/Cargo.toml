@@ -23,6 +23,7 @@ openvm-transpiler = { workspace = true, default-features = false }
 alloy-primitives.workspace = true
 eyre.workspace = true
 tiny-keccak.workspace = true
+rayon.workspace = true
 vm-zstd = { workspace = true, features = ["zstd"] }
 
 chrono = "0.4"

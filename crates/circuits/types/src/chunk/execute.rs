@@ -8,7 +8,11 @@ use sbv::{
     core::{EvmDatabase, EvmExecutor},
     primitives::{
         BlockWitness, RecoveredBlock,
-        chainspec::{Chain, ForkCondition, get_chain_spec_or_build, scroll::ScrollChainSpec},
+        chainspec::{
+            Chain, ForkCondition, NamedChain,
+            reth_chainspec::ChainSpec,
+            scroll::{ScrollChainConfig, ScrollChainSpec},
+        },
         ext::{BlockWitnessChunkExt, TxBytesHashExt},
         hardforks::{SCROLL_DEV_HARDFORKS, ScrollHardfork},
         types::{ChunkInfoBuilder, reth::Block},
@@ -44,16 +48,23 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     let blocks = blocks.leak() as &'static [RecoveredBlock<Block>];
     let pre_state_root = witness.blocks[0].pre_state_root;
 
-    let mut chain_spec: ScrollChainSpec =
-        (*get_chain_spec_or_build(Chain::from_id(witness.blocks[0].chain_id()), |_| {})).clone();
+    let chain = Chain::from_id(witness.blocks[0].chain_id());
+
     // enable all forks
-    chain_spec.inner.hardforks = (*SCROLL_DEV_HARDFORKS).clone();
+    #[allow(unused_mut)]
+    let mut hardforks = (*SCROLL_DEV_HARDFORKS).clone();
     // disable EuclidV2 if not configured
     #[cfg(not(feature = "euclidv2"))]
-    chain_spec
-        .inner
-        .hardforks
-        .insert(ScrollHardfork::EuclidV2, ForkCondition::Never);
+    hardforks.insert(ScrollHardfork::EuclidV2, ForkCondition::Never);
+
+    let chain_spec: ScrollChainSpec = ScrollChainSpec {
+        inner: ChainSpec {
+            chain,
+            hardforks,
+            ..Default::default()
+        },
+        config: ScrollChainConfig::mainnet(),
+    };
 
     let (code_db, nodes_provider, block_hashes) = make_providers(&witness.blocks);
     let mut nodes_provider = ManuallyDrop::new(nodes_provider);

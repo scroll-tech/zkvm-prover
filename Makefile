@@ -23,6 +23,9 @@ build-guest:
 test-execute-chunk:
 	@cargo test --release -p scroll-zkvm-integration --features scroll --test chunk_circuit test_execute -- --exact --nocapture
 
+test-cycle:
+	@cargo test --release -p scroll-zkvm-integration --features scroll --test chunk_circuit test_cycle -- --exact --nocapture
+
 test-execute-batch:
 	@cargo test --release -p scroll-zkvm-integration --features scroll --test batch_circuit test_execute -- --exact --nocapture
 

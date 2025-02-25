@@ -22,5 +22,5 @@ for f in sys.argv[1:]:
 
 
     with open(f, 'w') as file:
-        json.dump(data, file)
+        json.dump(data, file, indent=2)
 
