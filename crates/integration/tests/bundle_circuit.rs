@@ -60,22 +60,40 @@ fn e2e() -> eyre::Result<()> {
     let bundle_task = BundleProvingTask {
         batch_proofs: outcome.proofs,
     };
-    let (outcome, verifier) =
+    let (outcome, verifier, path_assets) =
         prove_verify_single_evm::<BundleProverTester>(Some(bundle_task.clone()))?;
 
     assert_eq!(outcome.proofs.len(), 1, "single bundle proof");
 
+    // The structure of the halo2-proof's instances is:
+    // - 12 instances for accumulator
+    // - 2 instances for digests (MUST be checked on-chain)
+    // - 32 instances for pi_hash (bundle_pi_hash)
+    //
+    // We write the 2 digests to disc.
+    let evm_proof = outcome.proofs[0].as_proof();
+    let digest_1 = evm_proof.instances[0][12];
+    let digest_2 = evm_proof.instances[0][13];
+    scroll_zkvm_prover::utils::write(
+        path_assets.join("digest_1"),
+        &digest_1.to_bytes().into_iter().rev().collect::<Vec<u8>>(),
+    )?;
+    scroll_zkvm_prover::utils::write(
+        path_assets.join("digest_2"),
+        &digest_2.to_bytes().into_iter().rev().collect::<Vec<u8>>(),
+    )?;
+
     // Verifier all above proofs with the verifier-only mode.
     for proof in chunk_proofs.iter() {
-        assert!(verifier.verify_proof(&proof.proof));
+        assert!(verifier.verify_proof(proof.as_proof()));
     }
     for proof in bundle_task.batch_proofs.iter() {
-        assert!(verifier.verify_proof(&proof.proof));
+        assert!(verifier.verify_proof(proof.as_proof()));
     }
-    assert!(verifier.verify_proof_evm(&outcome.proofs[0].proof));
+    assert!(verifier.verify_proof_evm(outcome.proofs[0].as_proof()));
 
     let expected_pi_hash = &outcome.proofs[0].metadata.bundle_pi_hash;
-    let observed_instances = &outcome.proofs[0].proof.instances[0];
+    let observed_instances = &outcome.proofs[0].as_proof().instances[0];
 
     for (i, (&expected, &observed)) in expected_pi_hash
         .iter()

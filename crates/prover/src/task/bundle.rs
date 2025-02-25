@@ -51,7 +51,7 @@ impl ProvingTask for BundleProvingTask {
         let mut stdin = StdIn::default();
         stdin.write_bytes(&serialized);
         for batch_proof in &self.batch_proofs {
-            let root_input = &batch_proof.proof;
+            let root_input = &batch_proof.as_proof();
             let streams = root_input.write();
             for s in &streams {
                 stdin.write_field(s);

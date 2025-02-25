@@ -5,16 +5,14 @@ use std::{
 
 use once_cell::sync::OnceCell;
 use openvm_build::GuestOptions;
-use openvm_native_recursion::halo2::EvmProof;
 use openvm_sdk::{
     F, Sdk,
     config::{AppConfig, SdkVmConfig},
     fs::write_exe_to_file,
-    verifier::root::types::RootVmVerifierInput,
 };
 use openvm_transpiler::elf::Elf;
 use scroll_zkvm_prover::{
-    ProverType, SC, WrappedProof,
+    ProverType, WrappedProof,
     setup::{read_app_config, read_app_exe},
     task::ProvingTask,
 };
@@ -245,10 +243,7 @@ fn setup_logger() -> eyre::Result<()> {
 type ProveVerifyRes<T> = eyre::Result<
     ProveVerifyOutcome<
         <<T as ProverTester>::Prover as ProverType>::ProvingTask,
-        WrappedProof<
-            <<T as ProverTester>::Prover as ProverType>::ProofMetadata,
-            RootVmVerifierInput<SC>,
-        >,
+        WrappedProof<<<T as ProverTester>::Prover as ProverType>::ProofMetadata>,
     >,
 >;
 
@@ -256,9 +251,10 @@ type ProveVerifyRes<T> = eyre::Result<
 type ProveVerifyEvmRes<T> = eyre::Result<(
     ProveVerifyOutcome<
         <<T as ProverTester>::Prover as ProverType>::ProvingTask,
-        WrappedProof<<<T as ProverTester>::Prover as ProverType>::ProofMetadata, EvmProof>,
+        WrappedProof<<<T as ProverTester>::Prover as ProverType>::ProofMetadata>,
     >,
     scroll_zkvm_verifier::verifier::Verifier<scroll_zkvm_verifier::verifier::BundleVerifierType>,
+    PathBuf,
 )>;
 
 /// End-to-end test for a single proving task.
@@ -336,9 +332,7 @@ where
             prover.verify_proof(&proof)?;
             Ok(proof)
         })
-        .collect::<eyre::Result<
-            Vec<WrappedProof<<T::Prover as ProverType>::ProofMetadata, RootVmVerifierInput<SC>>>,
-        >>()?;
+        .collect::<eyre::Result<Vec<WrappedProof<<T::Prover as ProverType>::ProofMetadata>>>>()?;
 
     Ok(ProveVerifyOutcome::multi(&tasks, &proofs))
 }
@@ -389,22 +383,9 @@ where
     // Verify proof.
     prover.verify_proof_evm(&proof)?;
 
-    // The structure of the halo2-proof's instances is:
-    // - 12 instances for accumulator
-    // - 2 instances for digests (MUST be checked on-chain)
-    // - 32 instances for pi_hash (bundle_pi_hash)
-    //
-    // We write the 2 digests to disc.
-    let digest_1 = proof.proof.instances[0][12];
-    let digest_2 = proof.proof.instances[0][13];
-    scroll_zkvm_prover::utils::write(
-        path_assets.join("digest_1"),
-        &digest_1.to_bytes().into_iter().rev().collect::<Vec<u8>>(),
-    )?;
-    scroll_zkvm_prover::utils::write(
-        path_assets.join("digest_2"),
-        &digest_2.to_bytes().into_iter().rev().collect::<Vec<u8>>(),
-    )?;
-
-    Ok((ProveVerifyOutcome::single(task, proof), verifier))
+    Ok((
+        ProveVerifyOutcome::single(task, proof),
+        verifier,
+        path_assets,
+    ))
 }
