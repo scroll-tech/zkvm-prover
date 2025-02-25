@@ -269,15 +269,23 @@ mod tests {
     use scroll_zkvm_circuit_input_types::{PublicInputs, bundle::BundleInfo};
     use snark_verifier_sdk::snark_verifier::halo2_base::halo2_proofs::halo2curves::bn256::Fr;
 
-    use super::{BundleProof, BundleProofMetadata, ChunkProof};
+    use super::{BatchProof, BundleProof, BundleProofMetadata, ChunkProof};
 
     #[test]
-    fn test_serde_roundtrip() -> eyre::Result<()> {
-        let proof_str_expected = std::fs::read_to_string("./testdata/chunk-proof.json")?;
-        let proof = serde_json::from_str::<ChunkProof>(&proof_str_expected)?;
-        let proof_str_got = serde_json::to_string(&proof)?;
+    fn test_roundtrip() -> eyre::Result<()> {
+        macro_rules! assert_roundtrip {
+            ($fd:expr, $proof:ident) => {
+                let proof_str_expected =
+                    std::fs::read_to_string(std::path::Path::new("./testdata").join($fd))?;
+                let proof = serde_json::from_str::<$proof>(&proof_str_expected)?;
+                let proof_str_got = serde_json::to_string(&proof)?;
+                assert_eq!(proof_str_got, proof_str_expected);
+            };
+        }
 
-        assert_eq!(proof_str_got, proof_str_expected);
+        assert_roundtrip!("chunk-proof.json", ChunkProof);
+        assert_roundtrip!("batch-proof.json", BatchProof);
+        // assert_roundtrip!("bundle-proof.json", BundleProof);
 
         Ok(())
     }

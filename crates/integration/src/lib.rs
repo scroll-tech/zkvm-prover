@@ -375,7 +375,7 @@ where
     )?;
 
     // Generate proving task for the circuit.
-    let task = task.unwrap_or(T::gen_proving_task()?);
+    let task = task.map_or_else(|| T::gen_proving_task(), Ok)?;
 
     // Construct root proof for the circuit.
     let proof = prover.gen_proof_evm(&task)?;
