@@ -273,8 +273,7 @@ mod tests {
 
     #[test]
     fn test_serde_roundtrip() -> eyre::Result<()> {
-        let proof_str_expected =
-            std::fs::read_to_string("./testdata/chunk-12508460-12508463.json")?;
+        let proof_str_expected = std::fs::read_to_string("./testdata/chunk-proof.json")?;
         let proof = serde_json::from_str::<ChunkProof>(&proof_str_expected)?;
         let proof_str_got = serde_json::to_string(&proof)?;
 
@@ -364,11 +363,10 @@ mod tests {
 
         assert_eq!(
             bundle_proof_json.get("proof").unwrap(),
-            &serde_json::Value::String(proof_base64),
-        );
-        assert_eq!(
-            bundle_proof_json.get("instances").unwrap(),
-            &serde_json::Value::String(instances_base64),
+            &serde_json::json!({
+                "proof": proof_base64,
+                "instances": instances_base64,
+            }),
         );
         assert_eq!(
             bundle_proof_json.get("vk").unwrap(),
