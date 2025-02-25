@@ -90,7 +90,7 @@ fn e2e() -> eyre::Result<()> {
     for proof in bundle_task.batch_proofs.iter() {
         assert!(verifier.verify_proof(proof.as_proof()));
     }
-    assert!(verifier.verify_proof_evm(outcome.proofs[0].as_proof()));
+    assert!(verifier.verify_proof_evm(&outcome.proofs[0].as_proof()));
 
     let expected_pi_hash = &outcome.proofs[0].metadata.bundle_pi_hash;
     let observed_instances = &outcome.proofs[0].as_proof().instances[0];
