@@ -35,6 +35,9 @@ thiserror = "2.0"
 toml = "0.8"
 revm = "19.0"
 
+[dev-dependencies]
+eyre = "0.6"
+
 [features]
 default = ["scroll"]
 scroll = ["sbv/scroll"]

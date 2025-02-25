@@ -5857,6 +5857,7 @@ dependencies = [
  "alloy-primitives",
  "base64",
  "bincode",
+ "eyre",
  "git-version",
  "hex",
  "metrics 0.23.0",
