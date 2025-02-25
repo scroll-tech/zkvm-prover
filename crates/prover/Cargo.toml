@@ -30,7 +30,7 @@ serde_stacker = "0.1"
 thiserror = "2.0"
 toml = "0.8"
 revm = "19.0"
-c-kzg = "1.0"
+c-kzg = { version = "1.0", features = ["serde"] }
 
 [features]
 default = ["scroll"]
