@@ -36,3 +36,49 @@ pub fn flatten_wrapped_proof<Metadata>(wrapped_proof: &WrappedProof<Metadata>) -
         commitment,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::ChunkProof;
+
+    use super::{batch::BatchProvingTask, flatten_wrapped_proof};
+
+    #[test]
+    fn read_proof_and_dbg_commitment() -> eyre::Result<()> {
+        let proof_str =
+            std::fs::read_to_string(std::path::Path::new("./testdata").join("chunk-proof.json"))?;
+        let proof = serde_json::from_str::<ChunkProof>(&proof_str)?;
+        let aggr_input = flatten_wrapped_proof(&proof);
+        assert_eq!(
+            aggr_input.commitment.exe,
+            crate::commitments::chunk::EXE_COMMIT
+        );
+        assert_eq!(
+            aggr_input.commitment.leaf,
+            crate::commitments::chunk::LEAF_COMMIT
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn read_task_and_dbg_commitment() -> eyre::Result<()> {
+        let task_str = std::fs::read_to_string(
+            std::path::Path::new("./testdata").join("batch-task-panic.json"),
+        )?;
+        let task = serde_json::from_str::<BatchProvingTask>(&task_str)?;
+        for chunk_proof in task.chunk_proofs.iter() {
+            let aggr_input = flatten_wrapped_proof(chunk_proof);
+            assert_eq!(
+                aggr_input.commitment.exe,
+                crate::commitments::chunk::EXE_COMMIT
+            );
+            assert_eq!(
+                aggr_input.commitment.leaf,
+                crate::commitments::chunk::LEAF_COMMIT
+            );
+        }
+
+        Ok(())
+    }
+}
