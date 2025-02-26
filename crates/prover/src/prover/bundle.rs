@@ -70,7 +70,7 @@ impl ProverType for BundleProverType {
 
         let chain_id = first_batch.chain_id;
         let num_batches = u32::try_from(task.batch_proofs.len()).expect("num_batches: u32");
-        let prev_state_root = first_batch.parent_batch_hash;
+        let prev_state_root = first_batch.parent_state_root;
         let prev_batch_hash = first_batch.parent_batch_hash;
         let post_state_root = last_batch.state_root;
         let batch_hash = last_batch.batch_hash;
