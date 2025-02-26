@@ -15,10 +15,16 @@ use crate::{
     utils::{as_base64, base64 as vec_as_base64, short_git_version},
 };
 
+/// Helper type for convenience that implements [`From`] and [`Into`] traits between
+/// [`OpenVmEvmProof`]. The difference is that the instances in [`EvmProof`] are the byte-encoding
+/// of the flattened [`Fr`] elements.
 #[derive(Clone, Serialize, Deserialize)]
 pub struct EvmProof {
+    /// The proof bytes.
     #[serde(with = "vec_as_base64")]
     pub proof: Vec<u8>,
+    /// Byte-encoding of the flattened scalar fields representing the public inputs of the SNARK
+    /// proof.
     #[serde(with = "vec_as_base64")]
     pub instances: Vec<u8>,
 }
@@ -79,20 +85,26 @@ impl From<&EvmProof> for OpenVmEvmProof {
     }
 }
 
+/// Helper to modify serde implementations on the remote [`RootProof`] type.
 #[derive(Serialize, Deserialize)]
 #[serde(remote = "RootProof")]
 struct RootProofDef {
+    /// The proofs.
     #[serde(with = "as_base64")]
     proofs: Vec<Proof<SC>>,
+    /// The public values for the proof.
     #[serde(with = "as_base64")]
     public_values: Vec<BabyBear>,
 }
 
+/// Lists the proof variants possible in Scroll's proving architecture.
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ProofEnum {
+    /// Represents a STARK proof used for intermediary layers, i.e. chunk and batch.
     #[serde(with = "RootProofDef")]
     Root(RootProof),
+    /// Represents a SNARK proof used for the final layer to be verified on-chain, i.e. bundle.
     Evm(EvmProof),
 }
 
@@ -115,6 +127,7 @@ impl From<OpenVmEvmProof> for ProofEnum {
 }
 
 impl ProofEnum {
+    /// Get the root proof as reference.
     pub fn as_root_proof(&self) -> Option<&RootProof> {
         match self {
             Self::Root(proof) => Some(proof),
@@ -122,6 +135,9 @@ impl ProofEnum {
         }
     }
 
+    /// Get the EVM proof as defined in [`openvm_native_recursion`].
+    ///
+    /// Essentially construct a [`OpenVmEvmProof`] from the inner contained [`EvmProof`].
     pub fn as_evm_proof(&self) -> Option<OpenVmEvmProof> {
         match self {
             Self::Evm(proof) => Some(OpenVmEvmProof::from(proof)),
@@ -129,6 +145,7 @@ impl ProofEnum {
         }
     }
 
+    /// Consumes the proof enum and returns the contained root proof.
     pub fn into_root_proof(self) -> Option<RootProof> {
         match self {
             Self::Root(proof) => Some(proof),
@@ -136,6 +153,7 @@ impl ProofEnum {
         }
     }
 
+    /// Consumes the proof enum and returns the [`OpenVmEvmProof`].
     pub fn into_evm_proof(self) -> Option<OpenVmEvmProof> {
         match self {
             Self::Evm(ref proof) => Some(OpenVmEvmProof::from(proof)),
@@ -180,20 +198,28 @@ pub type BatchProof = WrappedProof<BatchProofMetadata>;
 /// Alias for convenience.
 pub type BundleProof = WrappedProof<BundleProofMetadata>;
 
+/// Metadata attached to [`ChunkProof`].
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ChunkProofMetadata {
+    /// The chunk information describing the list of blocks contained within the chunk.
     pub chunk_info: ChunkInfo,
 }
 
+/// Metadata attached to [`BatchProof`].
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BatchProofMetadata {
+    /// The batch information describing the list of chunks.
     pub batch_info: BatchInfo,
+    /// The [`scroll_zkvm_circuit_input_types::batch::BatchHeader`]'s digest.
     pub batch_hash: B256,
 }
 
+/// Metadata attached to [`BundleProof`].
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BundleProofMetadata {
+    /// The bundle information describing the list of batches to be finalised on-chain.
     pub bundle_info: BundleInfo,
+    /// The public-input digest for the bundle.
     pub bundle_pi_hash: B256,
 }
 
@@ -223,11 +249,14 @@ where
 }
 
 impl ChunkProof {
+    /// Get the contained root proof as reference.
     pub fn as_proof(&self) -> &RootProof {
         self.proof
             .as_root_proof()
             .expect("ChunkProof contains RootProof")
     }
+
+    /// Consume self and return the contained root proof.
     pub fn into_proof(self) -> RootProof {
         self.proof
             .into_root_proof()
@@ -236,11 +265,14 @@ impl ChunkProof {
 }
 
 impl BatchProof {
+    /// Get the contained root proof as reference.
     pub fn as_proof(&self) -> &RootProof {
         self.proof
             .as_root_proof()
             .expect("BatchProof contains RootProof")
     }
+
+    /// Consume self and return the contained root proof.
     pub fn into_proof(self) -> RootProof {
         self.proof
             .into_root_proof()
@@ -249,11 +281,14 @@ impl BatchProof {
 }
 
 impl BundleProof {
+    /// Get the contained evm proof (as [`OpenVmEvmProof`]).
     pub fn as_proof(&self) -> OpenVmEvmProof {
         self.proof
             .as_evm_proof()
             .expect("BundleProof contains EvmProof")
     }
+
+    /// Consume self and return the contained evm proof (as [`OpenVmEvmProof`]).
     pub fn into_proof(self) -> OpenVmEvmProof {
         self.proof
             .into_evm_proof()
