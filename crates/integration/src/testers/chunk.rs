@@ -58,69 +58,69 @@ impl ProverTester for MultiChunkProverTester {
     fn gen_multi_proving_tasks() -> eyre::Result<Vec<<Self::Prover as ProverType>::ProvingTask>> {
         Ok(vec![
             ChunkProvingTask {
-                block_witnesses: vec![read_block_witness_str("0x2.json")?],
+                block_witnesses: vec![read_block_witness_str("2.json")?],
             },
             ChunkProvingTask {
-                block_witnesses: vec![read_block_witness_str("0x3.json")?],
+                block_witnesses: vec![read_block_witness_str("3.json")?],
             },
             ChunkProvingTask {
-                block_witnesses: vec![read_block_witness_str("0x4.json")?],
+                block_witnesses: vec![read_block_witness_str("4.json")?],
             },
             ChunkProvingTask {
-                block_witnesses: vec![read_block_witness_str("0x5.json")?],
+                block_witnesses: vec![read_block_witness_str("5.json")?],
             },
             ChunkProvingTask {
-                block_witnesses: vec![read_block_witness_str("0x6.json")?],
+                block_witnesses: vec![read_block_witness_str("6.json")?],
             },
             ChunkProvingTask {
                 block_witnesses: vec![
-                    read_block_witness_str("0x7.json")?,
-                    read_block_witness_str("0x8.json")?,
+                    read_block_witness_str("7.json")?,
+                    read_block_witness_str("8.json")?,
                 ],
             },
             ChunkProvingTask {
-                block_witnesses: vec![read_block_witness_str("0x9.json")?],
+                block_witnesses: vec![read_block_witness_str("9.json")?],
             },
             ChunkProvingTask {
-                block_witnesses: vec![read_block_witness_str("0xA.json")?],
+                block_witnesses: vec![read_block_witness_str("10.json")?],
             },
             ChunkProvingTask {
-                block_witnesses: vec![read_block_witness_str("0xB.json")?],
+                block_witnesses: vec![read_block_witness_str("11.json")?],
             },
             ChunkProvingTask {
-                block_witnesses: vec![read_block_witness_str("0xC.json")?],
-            },
-            ChunkProvingTask {
-                block_witnesses: vec![
-                    read_block_witness_str("0xD.json")?,
-                    read_block_witness_str("0xE.json")?,
-                ],
+                block_witnesses: vec![read_block_witness_str("12.json")?],
             },
             ChunkProvingTask {
                 block_witnesses: vec![
-                    read_block_witness_str("0xF.json")?,
-                    read_block_witness_str("0x10.json")?,
-                    read_block_witness_str("0x11.json")?,
-                    read_block_witness_str("0x12.json")?,
-                    read_block_witness_str("0x13.json")?,
+                    read_block_witness_str("13.json")?,
+                    read_block_witness_str("14.json")?,
                 ],
             },
             ChunkProvingTask {
                 block_witnesses: vec![
-                    read_block_witness_str("0x14.json")?,
-                    read_block_witness_str("0x15.json")?,
-                    read_block_witness_str("0x16.json")?,
-                    read_block_witness_str("0x17.json")?,
-                    read_block_witness_str("0x18.json")?,
+                    read_block_witness_str("15.json")?,
+                    read_block_witness_str("16.json")?,
+                    read_block_witness_str("17.json")?,
+                    read_block_witness_str("18.json")?,
+                    read_block_witness_str("19.json")?,
                 ],
             },
             ChunkProvingTask {
                 block_witnesses: vec![
-                    read_block_witness_str("0x19.json")?,
-                    read_block_witness_str("0x1A.json")?,
-                    read_block_witness_str("0x1B.json")?,
-                    read_block_witness_str("0x1C.json")?,
-                    read_block_witness_str("0x1D.json")?,
+                    read_block_witness_str("20.json")?,
+                    read_block_witness_str("21.json")?,
+                    read_block_witness_str("22.json")?,
+                    read_block_witness_str("23.json")?,
+                    read_block_witness_str("24.json")?,
+                ],
+            },
+            ChunkProvingTask {
+                block_witnesses: vec![
+                    read_block_witness_str("25.json")?,
+                    read_block_witness_str("26.json")?,
+                    read_block_witness_str("27.json")?,
+                    read_block_witness_str("28.json")?,
+                    read_block_witness_str("29.json")?,
                 ],
             },
         ])

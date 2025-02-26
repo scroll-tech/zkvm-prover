@@ -1,5 +1,5 @@
 use scroll_zkvm_integration::{
-    ProverTester, prove_verify_multi, prove_verify_single,
+    ProverTester, get_chunk_prover, prove_verify_multi, prove_verify_single,
     testers::{
         batch::{BatchProverTester, MultiBatchProverTester},
         chunk::{ChunkProverTester, MultiChunkProverTester},
@@ -79,6 +79,18 @@ fn e2e() -> eyre::Result<()> {
     let batch_task_de = serde_json::from_str::<BatchProvingTask>(&batch_task_ser)?;
 
     prove_verify_single::<BatchProverTester>(Some(batch_task_de))?;
+
+    Ok(())
+}
+
+#[test]
+fn verify_proofs() -> eyre::Result<()> {
+    let task = BatchProverTester::gen_proving_task()?;
+    let chunk_prover = get_chunk_prover()?;
+
+    for chunk_proof in task.chunk_proofs.iter() {
+        chunk_prover.verify_proof(chunk_proof)?;
+    }
 
     Ok(())
 }

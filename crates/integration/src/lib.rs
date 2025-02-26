@@ -12,10 +12,11 @@ use openvm_sdk::{
 };
 use openvm_transpiler::elf::Elf;
 use scroll_zkvm_prover::{
-    ProverType, WrappedProof,
+    ChunkProver, ProverType, WrappedProof,
     setup::{read_app_config, read_app_exe},
     task::ProvingTask,
 };
+use testers::chunk::ChunkProverTester;
 use tracing::instrument;
 use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -256,6 +257,15 @@ type ProveVerifyEvmRes<T> = eyre::Result<(
     scroll_zkvm_verifier::verifier::Verifier<scroll_zkvm_verifier::verifier::BundleVerifierType>,
     PathBuf,
 )>;
+
+pub fn get_chunk_prover() -> eyre::Result<ChunkProver> {
+    let (path_app_config, _, path_exe) = ChunkProverTester::load()?;
+    Ok(scroll_zkvm_prover::ChunkProver::setup(
+        &path_exe,
+        &path_app_config,
+        None,
+    )?)
+}
 
 /// End-to-end test for a single proving task.
 #[instrument(name = "prove_verify_single", skip_all)]
