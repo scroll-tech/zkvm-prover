@@ -66,7 +66,7 @@ fn setup_prove_verify_multi() -> eyre::Result<()> {
 fn e2e() -> eyre::Result<()> {
     BatchProverTester::setup()?;
 
-    let outcome = prove_verify_multi::<MultiChunkProverTester>(None)?;
+    let outcome = prove_verify_single::<ChunkProverTester>(None)?;
 
     let batch_task = build_batch_task(
         &outcome.tasks,
@@ -74,7 +74,11 @@ fn e2e() -> eyre::Result<()> {
         scroll_zkvm_circuit_input_types::batch::MAX_AGG_CHUNKS,
         Default::default(),
     );
-    prove_verify_single::<BatchProverTester>(Some(batch_task))?;
+
+    let batch_task_ser = serde_json::to_string(&batch_task)?;
+    let batch_task_de = serde_json::from_str::<BatchProvingTask>(&batch_task_ser)?;
+
+    prove_verify_single::<BatchProverTester>(Some(batch_task_de))?;
 
     Ok(())
 }
