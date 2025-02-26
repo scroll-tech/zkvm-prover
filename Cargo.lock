@@ -267,6 +267,7 @@ dependencies = [
  "ruint",
  "rustc-hash 2.1.1",
  "serde",
+ "sha3",
  "tiny-keccak",
 ]
 
@@ -1141,7 +1142,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "117725a109d387c937a1533ce01b450cbde6b88abceea8473c4d7a85853cda3c"
 dependencies = [
  "lazy_static",
- "windows-sys 0.59.0",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
@@ -2465,6 +2466,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ecc2af9a1119c51f12a14607e783cb977bde58bc069ff0c3da1095e635d70654"
 dependencies = [
  "cpufeatures",
+]
+
+[[package]]
+name = "keccak-asm"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "505d1856a39b200489082f90d897c3f07c455563880bc5952e38eabf731c83b6"
+dependencies = [
+ "digest 0.10.7",
+ "sha3-asm",
 ]
 
 [[package]]
@@ -5650,7 +5661,7 @@ checksum = "6ea1a2d0a644769cc99faa24c3ad26b379b786fe7c36fd3c546254801650e6dd"
 [[package]]
 name = "sbv"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-v2#0577bdde19598ed935bc1d5c743c10aaea37d1da"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-v2#9399bc3303853c05c159eff8297b3a674483c8db"
 dependencies = [
  "sbv-core",
  "sbv-helpers",
@@ -5662,7 +5673,7 @@ dependencies = [
 [[package]]
 name = "sbv-core"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-v2#0577bdde19598ed935bc1d5c743c10aaea37d1da"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-v2#9399bc3303853c05c159eff8297b3a674483c8db"
 dependencies = [
  "reth-evm",
  "reth-evm-ethereum",
@@ -5679,7 +5690,7 @@ dependencies = [
 [[package]]
 name = "sbv-helpers"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-v2#0577bdde19598ed935bc1d5c743c10aaea37d1da"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-v2#9399bc3303853c05c159eff8297b3a674483c8db"
 dependencies = [
  "revm 19.4.0",
 ]
@@ -5687,7 +5698,7 @@ dependencies = [
 [[package]]
 name = "sbv-kv"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-v2#0577bdde19598ed935bc1d5c743c10aaea37d1da"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-v2#9399bc3303853c05c159eff8297b3a674483c8db"
 dependencies = [
  "auto_impl",
  "hashbrown 0.15.2",
@@ -5697,7 +5708,7 @@ dependencies = [
 [[package]]
 name = "sbv-primitives"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-v2#0577bdde19598ed935bc1d5c743c10aaea37d1da"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-v2#9399bc3303853c05c159eff8297b3a674483c8db"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5728,7 +5739,7 @@ dependencies = [
 [[package]]
 name = "sbv-trie"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-v2#0577bdde19598ed935bc1d5c743c10aaea37d1da"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-v2#9399bc3303853c05c159eff8297b3a674483c8db"
 dependencies = [
  "alloy-rlp",
  "alloy-trie",
@@ -5907,6 +5918,7 @@ dependencies = [
  "openvm-native-transpiler",
  "openvm-sdk",
  "openvm-transpiler",
+ "rayon",
  "sbv",
  "scroll-zkvm-circuit-input-types",
  "scroll-zkvm-prover",
@@ -6154,6 +6166,16 @@ checksum = "75872d278a8f37ef87fa0ddbda7802605cb18344497949862c0d4dcb291eba60"
 dependencies = [
  "digest 0.10.7",
  "keccak",
+]
+
+[[package]]
+name = "sha3-asm"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c28efc5e327c837aa837c59eae585fc250715ef939ac32881bcc11677cd02d46"
+dependencies = [
+ "cc",
+ "cfg-if",
 ]
 
 [[package]]
