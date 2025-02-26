@@ -87,7 +87,7 @@ mod tests {
     #[test]
     fn read_block_witness() -> eyre::Result<()> {
         let witness_str =
-            std::fs::read_to_string(std::path::Path::new("./testdata").join("0x2.json"))?;
+            std::fs::read_to_string(std::path::Path::new("./testdata").join("2.json"))?;
         let witness = serde_json::from_str::<BlockWitness>(&witness_str)?;
         Ok(())
     }
