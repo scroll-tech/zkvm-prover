@@ -285,7 +285,7 @@ mod tests {
 
         assert_roundtrip!("chunk-proof.json", ChunkProof);
         assert_roundtrip!("batch-proof.json", BatchProof);
-        // assert_roundtrip!("bundle-proof.json", BundleProof);
+        assert_roundtrip!("bundle-proof.json", BundleProof);
 
         Ok(())
     }
