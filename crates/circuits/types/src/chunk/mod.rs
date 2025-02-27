@@ -1,5 +1,14 @@
 mod public_inputs;
-pub use public_inputs::{ArchivedChunkInfo, ChunkInfo};
+pub use public_inputs::{ArchivedChunkInfo, BlockContextV2, ChunkInfo, SIZE_BLOCK_CTX};
 
+#[cfg(feature = "sbv")]
 mod utils;
-pub use utils::make_providers;
+
+#[cfg(feature = "sbv")]
+mod witness;
+
+#[cfg(feature = "sbv")]
+pub use {
+    utils::make_providers,
+    witness::{ArchivedChunkWitness, ChunkWitness},
+};

@@ -1,14 +1,9 @@
 use alloy_primitives::{B256 as H256, U256};
 
-#[cfg(feature = "common_curve")]
-mod general;
-#[cfg(feature = "common_curve")]
-use general::point_evaluation;
+use openvm_pairing_guest::bls12_381::Scalar;
 
-#[cfg(not(feature = "common_curve"))]
 mod openvm;
-#[cfg(not(feature = "common_curve"))]
-use openvm::point_evaluation;
+pub use openvm::{EccToPairing, kzg_to_versioned_hash, point_evaluation, verify_kzg_proof};
 
 // Number of bytes in a u256.
 pub const N_BYTES_U256: usize = 32;
@@ -29,11 +24,11 @@ pub const LOG_BLOB_WIDTH: usize = 12;
 /// This allows us to use only up to 31 bytes in each such chunk, hence the reduced capacity.
 pub const N_BLOB_BYTES: usize = BLOB_WIDTH * N_DATA_BYTES_PER_COEFFICIENT;
 
-/// Helper structures to verify blob data, basically it is just the coefficients parsed from blob data
+/// Represents the EIP-4844 blob in its polynomial form, i.e. 4096 BLS12-381 scalar fields.
 #[derive(Debug, Clone, Copy)]
-pub struct BlobConsistency([U256; BLOB_WIDTH]);
+pub struct BlobPolynomial([U256; BLOB_WIDTH]);
 
-impl BlobConsistency {
+impl BlobPolynomial {
     pub fn new(blob_bytes: &[u8]) -> Self {
         let mut coefficients = [[0u8; N_BYTES_U256]; BLOB_WIDTH];
 
@@ -49,16 +44,10 @@ impl BlobConsistency {
         Self(coefficients.map(|coeff| U256::from_be_bytes(coeff)))
     }
 
-    pub fn blob_data_proof(&self, challenge_digest: H256) -> [H256; 2] {
+    pub fn evaluate(&self, challenge_digest: H256) -> (Scalar, Scalar) {
         // blob data proof is [challenge, point_evaluation] mapped into H256
         let challenge_digest = U256::from_be_bytes(challenge_digest.0);
 
-        #[cfg(feature = "common_curve")]
-        let (challenge, evaluation) = point_evaluation(&self.0, challenge_digest);
-
-        #[cfg(not(feature = "common_curve"))]
-        let (challenge, evaluation) = point_evaluation(&self.0, challenge_digest);
-
-        [challenge, evaluation].map(|u| H256::new(u.to_be_bytes()))
+        point_evaluation(&self.0, challenge_digest)
     }
 }

@@ -7,7 +7,7 @@ use scroll_zkvm_circuit_input_types::{
 };
 use vm_zstd::process;
 
-use crate::{blob_consistency::BlobConsistency, payload::Payload};
+use crate::{blob_consistency::BlobConsistency, payload::v3::Payload};
 
 /// Builder that consumes DA-codec@v3 [`BatchHeader`][BatchHeaderV3] and builds the public-input
 /// values [`BatchInfo`] for the batch-circuit.
