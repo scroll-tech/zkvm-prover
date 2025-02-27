@@ -1,15 +1,11 @@
+use openvm_ecc_guest::halo2curves::bls12_381::G1Affine as Bls12_381_G1;
 use scroll_zkvm_circuit_input_types::{
     batch::{BatchHeader, BatchHeaderV7, BatchInfo, Bytes48, EnvelopeV7, PayloadV7},
     chunk::ChunkInfo,
 };
 
-use openvm_ecc_guest::{
-    halo2curves::bls12_381::G1Affine as Halo2G1Affine, weierstrass::WeierstrassPoint,
-};
-
 use crate::blob_consistency::{
-    BlobPolynomial, N_BLOB_BYTES, convert_bls12381_halo2_g1_to_g1, kzg_to_versioned_hash,
-    verify_kzg_proof,
+    BlobPolynomial, EccToPairing, N_BLOB_BYTES, kzg_to_versioned_hash, verify_kzg_proof,
 };
 
 /// Builder that consumes DA-codec@v7 [`BatchHeader`][BatchHeaderV7] and builds the public-input
@@ -53,21 +49,16 @@ impl BatchInfoBuilderV7 {
         );
 
         // Verify KZG proof.
-        let proof_verified = {
-            let commitment = convert_bls12381_halo2_g1_to_g1(
-                Halo2G1Affine::from_compressed_be(kzg_commitment).unwrap(),
-            );
-            let proof = convert_bls12381_halo2_g1_to_g1(
-                Halo2G1Affine::from_compressed_be(kzg_proof).unwrap(),
-            );
-            verify_kzg_proof(
-                challenge,
-                evaluation,
-                (commitment.x().clone(), commitment.y().clone()),
-                (proof.x().clone(), proof.y().clone()),
-            )
+        let proof_ok = {
+            let commitment = Bls12_381_G1::from_compressed_be(kzg_commitment)
+                .expect("kzg commitment")
+                .convert();
+            let proof = Bls12_381_G1::from_compressed_be(kzg_proof)
+                .expect("kzg proof")
+                .convert();
+            verify_kzg_proof(challenge, evaluation, commitment, proof)
         };
-        assert!(proof_verified, "pairing fail!");
+        assert!(proof_ok, "pairing fail!");
 
         // Validate payload (batch data).
         let (first_chunk, last_chunk) = payload.validate(header, chunk_infos);
