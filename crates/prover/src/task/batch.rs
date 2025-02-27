@@ -1,7 +1,9 @@
+use alloy_primitives::U256;
+use c_kzg::Bytes48;
 use openvm_native_recursion::hints::Hintable;
 use openvm_sdk::StdIn;
 use scroll_zkvm_circuit_input_types::batch::{
-    BatchHeader, BatchHeaderV7, BatchInfo, BatchWitness, ReferenceHeader,
+    BatchHeader, BatchHeaderV7, BatchInfo, BatchWitness, PointEvalWitness, ReferenceHeader,
 };
 use serde::{Deserialize, Serialize};
 
@@ -22,6 +24,12 @@ pub struct BatchProvingTask {
     /// EIP-4844 blob.
     #[serde(with = "base64")]
     pub blob_bytes: Vec<u8>,
+    /// Challenge digest computed using the blob's bytes and versioned hash.
+    pub challenge_digest: U256,
+    /// KZG commitment for the blob.
+    pub kzg_commitment: Bytes48,
+    /// KZG proof.
+    pub kzg_proof: Bytes48,
 }
 
 impl ProvingTask for BatchProvingTask {
@@ -30,6 +38,11 @@ impl ProvingTask for BatchProvingTask {
     }
 
     fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error> {
+        let point_eval_witness = PointEvalWitness {
+            kzg_commitment: *self.kzg_commitment,
+            kzg_proof: *self.kzg_proof,
+        };
+
         let witness = BatchWitness {
             chunk_proofs: self
                 .chunk_proofs
@@ -43,6 +56,7 @@ impl ProvingTask for BatchProvingTask {
                 .collect(),
             blob_bytes: self.blob_bytes.clone(),
             reference_header: ReferenceHeader::V7(self.batch_header),
+            point_eval_witness,
         };
 
         let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&witness)?;

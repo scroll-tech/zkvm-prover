@@ -5,11 +5,17 @@ pub use header::{
     v7::{ArchivedBatchHeaderV7, BatchHeaderV7},
 };
 
+mod payload;
+pub use payload::*;
+
+#[cfg(feature = "batch-v3")]
+pub use payload::v3::Payload as PayloadV3;
+
+#[cfg(feature = "batch-v7")]
+pub use payload::v7::{EnvelopeV7, PayloadV7};
+
 mod public_inputs;
 pub use public_inputs::{ArchivedBatchInfo, BatchInfo};
 
 mod witness;
-pub use witness::{ArchivedBatchWitness, BatchWitness};
-
-/// The upper bound for the number of chunks that can be aggregated in a single batch.
-pub const MAX_AGG_CHUNKS: usize = 45;
+pub use witness::{ArchivedBatchWitness, BatchWitness, Bytes48, PointEvalWitness};

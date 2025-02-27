@@ -20,41 +20,43 @@ repository = "https://github.com/scroll-tech/zkvm-prover"
 version = "0.1.0-rc.3"
 
 [workspace.dependencies]
-openvm = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1" }
-openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1" }
-openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1" }
-openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1" }
-openvm-build ={ git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1" }
-openvm-circuit ={ git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1" }
-openvm-native-circuit = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1" }
-openvm-native-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1" }
-openvm-native-compiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1" }
-openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1" }
-openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1" }
-openvm-instructions ={ git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1" }
-openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1" }
-openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1" }
-openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1" }
-openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1" }
-openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1" }
-openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false}
+openvm = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false }
+openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false }
+openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false }
+openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false }
+openvm-build ={ git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false }
+openvm-circuit ={ git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false }
+openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false }
+openvm-instructions ={ git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false }
+openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false }
+openvm-native-circuit = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false }
+openvm-native-compiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false }
+openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false }
+openvm-native-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false }
+openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false }
+openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false }
+openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false }
+openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false, features = ["parallel", "bench-metrics"] }
+openvm-sha256-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false }
+openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.0.0-rc.0", default-features = false }
+openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false }
 
-openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.0.0-rc.0" }
-
-bitcode = { version = "0.6.3", default-features = false, features = ["serde", "derive"] }
-derivative = "2.2.0"
-halo2curves-axiom = { version = "0.5.3" }
-p3-field = { git = "https://github.com/Plonky3/Plonky3.git", rev = "b0591e9" }
-rkyv = "0.8"
-tiny-keccak = "2.0"
-itertools = "0.14"
-serde = { version = "1", default-features = false, features = ["derive"] }
-alloy-primitives = "0.8"
+alloy-primitives = { version = "0.8", default-features = false }
 alloy-serde = { version = "0.8", default-features = false }
-sbv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "feat/euclid-v2" }
-vm-zstd = { git = "https://github.com/scroll-tech/rust-zstd-decompressor.git", tag = "v0.1.1" }
-tracing = "0.1"
-tracing-subscriber = "0.3"
+bitcode = { version = "0.6.3", default-features = false, features = ["serde", "derive"] }
+bincode = { version = "2.0.0-rc.3", features = ["serde"]}
+derivative = "2.2.0"
+eyre = "0.6"
+halo2curves-axiom = { version = "0.5.3" }
+itertools = "0.14"
+metrics = "0.23.0"
+metrics-util = "0.17"
+metrics-tracing-context = "0.16.0"
+p3-field = { git = "https://github.com/Plonky3/Plonky3.git", rev = "b0591e9" }
+rayon = "1.10"
+rkyv = "0.8"
+sbv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "zkvm/euclid-v2" }
+serde = { version = "1", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0" }
 serde_with = "3.11.0"
 snark-verifier-sdk = { git = "https://github.com/axiom-crypto/snark-verifier", branch = "zkvm-v0.1", default-features = false, features = [
@@ -62,18 +64,18 @@ snark-verifier-sdk = { git = "https://github.com/axiom-crypto/snark-verifier", b
     "halo2-axiom",
     "display",
 ] }
+tiny-keccak = "2.0"
+tracing = "0.1"
+vm-zstd = { git = "https://github.com/scroll-tech/rust-zstd-decompressor.git", tag = "v0.1.1" }
 toml = "0.8.14"
+tracing-subscriber = "0.3"
 
-scroll-zkvm-prover = { path = "crates/prover" }
-scroll-zkvm-verifier = { path = "crates/verifier" }
 scroll-zkvm-circuit-input-types = { path = "crates/circuits/types" }
 scroll-zkvm-integration = { path = "crates/integration" }
+scroll-zkvm-prover = { path = "crates/prover" }
+scroll-zkvm-verifier = { path = "crates/verifier" }
 
 [patch.crates-io]
 alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.18" }
-revm = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/feat/v55/euclid-v2" }
-revm-interpreter = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/feat/v55/euclid-v2" }
-revm-precompile = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/feat/v55/euclid-v2" }
-revm-primitives = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/feat/v55/euclid-v2" }
 ruint = { git = "https://github.com/scroll-tech/uint.git", branch = "v1.12.3" }
 tiny-keccak = { git = "https://github.com/scroll-tech/tiny-keccak", branch = "scroll-patch-v2.0.2-openvm-v1.0.0-rc.1" }
