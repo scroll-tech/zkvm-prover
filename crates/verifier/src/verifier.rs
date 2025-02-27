@@ -105,6 +105,8 @@ impl<Type: VerifierType> Verifier<Type> {
 
 #[cfg(test)]
 mod tests {
+    use std::time::Instant;
+
     use super::ChunkVerifier;
 
     #[test]
@@ -121,11 +123,26 @@ mod tests {
             &path_verifier_code,
         )?;
 
-        let path_proof = path_testdata.join("chunk-proof.json");
-        let proof_str = std::fs::read_to_string(&path_proof)?;
-        let proof = serde_json::from_str::<scroll_zkvm_prover::ChunkProof>(&proof_str)?;
+        macro_rules! read_proof {
+            ($fd:expr, $proof_type:ident) => {{
+                let path = std::path::Path::new("./testdata").join($fd);
+                let proof_str = std::fs::read_to_string(&path)?;
+                serde_json::from_str::<scroll_zkvm_prover::$proof_type>(&proof_str)?
+            }};
+        }
 
-        assert!(verifier.verify_proof(&proof.into_proof()));
+        let chunk_proof_1 = read_proof!("chunk-proof.json", ChunkProof);
+        let chunk_proof_2 = read_proof!("chunk-proof-2.json", ChunkProof);
+
+        let start = Instant::now();
+        assert!(verifier.verify_proof(&chunk_proof_1.into_proof()));
+        let duration = start.elapsed();
+        println!("took {duration:?} to verify chunk-proof.json");
+
+        let start = Instant::now();
+        assert!(verifier.verify_proof(&chunk_proof_2.into_proof()));
+        let duration = start.elapsed();
+        println!("took {duration:?} to verify chunk-proof-2.json");
 
         Ok(())
     }
