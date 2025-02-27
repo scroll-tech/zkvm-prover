@@ -33,6 +33,11 @@ impl ProverType for BatchProverType {
     ) -> Result<openvm_sdk::config::AppConfig<openvm_sdk::config::SdkVmConfig>, Error> {
         let mut app_config = read_app_config(path_app_config)?;
         app_config.app_vm_config.castf = Some(openvm_native_circuit::CastFExtension);
+        app_config.app_vm_config.system.config = app_config
+            .app_vm_config
+            .system
+            .config
+            .with_max_segment_len(8388508 * 2);
         Ok(app_config)
     }
 
