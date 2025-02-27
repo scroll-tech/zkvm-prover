@@ -102,3 +102,31 @@ impl<Type: VerifierType> Verifier<Type> {
         crate::evm::verify_evm_proof(&self.evm_verifier, evm_proof).is_ok()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::ChunkVerifier;
+
+    #[test]
+    fn test_verify() -> eyre::Result<()> {
+        let path_testdata = std::path::Path::new("./testdata");
+        let (path_vm_config, path_root_committed_exe, path_verifier_code) = (
+            path_testdata.join("root-verifier-vm-config"),
+            path_testdata.join("root-verifier-committed-exe"),
+            path_testdata.join("verifier.bin"),
+        );
+        let verifier = ChunkVerifier::setup(
+            &path_vm_config,
+            &path_root_committed_exe,
+            &path_verifier_code,
+        )?;
+
+        let path_proof = path_testdata.join("chunk-proof.json");
+        let proof_str = std::fs::read_to_string(&path_proof)?;
+        let proof = serde_json::from_str::<scroll_zkvm_prover::ChunkProof>(&proof_str)?;
+
+        assert!(verifier.verify_proof(&proof.into_proof()));
+
+        Ok(())
+    }
+}

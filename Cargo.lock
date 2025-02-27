@@ -5896,6 +5896,7 @@ dependencies = [
  "scroll-zkvm-circuit-input-types",
  "scroll-zkvm-prover",
  "serde",
+ "serde_json",
  "snark-verifier-sdk",
 ]
 
