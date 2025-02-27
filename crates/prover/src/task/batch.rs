@@ -101,8 +101,8 @@ impl From<&BatchProvingTask> for BatchInfo {
                 .chunk_info
                 .withdraw_root,
         );
-        // FIXME
         #[cfg(not(feature = "euclidv2"))]
+        // before euclidv2 there is no msg queue and we simply default the value
         let (prev_msg_queue_hash, post_msg_queue_hash) = (Default::default(), Default::default());
         #[cfg(feature = "euclidv2")]
         let (prev_msg_queue_hash, post_msg_queue_hash) = (
