@@ -81,7 +81,7 @@ pub mod base64 {
 
 pub mod point_eval {
     use c_kzg;
-    use sbv::primitives::{B256 as H256, U256};
+    use sbv::primitives::{B256 as H256, U256, eips::eip4844::BLS_MODULUS};
 
     /// Given the blob-envelope, translate it to a fixed size EIP-4844 blob.
     ///
@@ -118,15 +118,7 @@ pub mod point_eval {
 
     /// Generate KZG proof and evaluation given the blob (polynomial) and a random challenge.
     pub fn get_kzg_proof(blob: &c_kzg::Blob, challenge: H256) -> (c_kzg::KzgProof, U256) {
-        // Notice that U256 use little-endian while c_kzg use big-endian
-        let bls12_381_modulus = U256::from_limbs([
-            0xffff_ffff_0000_0001,
-            0x53bd_a402_fffe_5bfe,
-            0x3339_d808_09a1_d805,
-            0x73ed_a753_299d_7d48,
-        ]);
-
-        let challenge = U256::from_be_bytes(challenge.0) % bls12_381_modulus;
+        let challenge = U256::from_be_bytes(challenge.0) % BLS_MODULUS;
 
         let (proof, y) = c_kzg::KzgProof::compute_kzg_proof(
             blob,
