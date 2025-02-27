@@ -114,7 +114,7 @@ fn test_verify_evm_proof() -> eyre::Result<()> {
             .join("verifier.bin"),
     )?);
 
-    let gas_cost = verify_evm_proof(&evm_verifier, &evm_proof.proof)
+    let gas_cost = verify_evm_proof(&evm_verifier, &evm_proof.as_proof())
         .map_err(|e| eyre::eyre!("evm-proof verification failed: {e}"))?;
 
     println!("evm-verify gas cost = {gas_cost}");
