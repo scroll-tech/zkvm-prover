@@ -5892,6 +5892,7 @@ dependencies = [
  "openvm-native-circuit",
  "openvm-native-recursion",
  "openvm-sdk",
+ "openvm-stark-sdk",
  "revm 19.4.0",
  "scroll-zkvm-circuit-input-types",
  "scroll-zkvm-prover",

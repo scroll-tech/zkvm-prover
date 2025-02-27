@@ -7,6 +7,7 @@ use scroll_zkvm_integration::{
     utils::build_batch_task,
 };
 use scroll_zkvm_prover::{ChunkProof, task::batch::BatchProvingTask, utils::read_json_deep};
+use scroll_zkvm_verifier::verifier::BatchVerifier;
 
 fn load_recent_chunk_proofs() -> eyre::Result<BatchProvingTask> {
     let proof_path = glob::glob("../../.output/chunk-tests-*/chunk/proofs/chunk-*.json")?
@@ -34,6 +35,25 @@ fn test_execute() -> eyre::Result<()> {
 
     let task = BatchProverTester::gen_proving_task()?;
     BatchProverTester::execute(app_config.clone(), &task, path_exe)?;
+
+    Ok(())
+}
+
+#[test]
+fn test_root_verify() -> eyre::Result<()> {
+    BatchProverTester::setup()?;
+
+    let (path_app_config, _, _) = BatchProverTester::load()?;
+
+    let task = BatchProverTester::gen_proving_task()?;
+
+    let verifier = BatchVerifier::root_verifier("root-verifier-vm-config")?;
+
+    for proof in &task.chunk_proofs {
+        let proof = proof.as_proof();
+        let ret = verifier.verify_proof_with_pi(proof)?;
+        println!("verify ret {:?}", ret);
+    }
 
     Ok(())
 }

@@ -6,7 +6,11 @@ use openvm_native_recursion::{
     halo2::{EvmProof, wrapper::EvmVerifier},
     hints::Hintable,
 };
-use openvm_sdk::{F, RootSC, SC, verifier::root::types::RootVmVerifierInput};
+use openvm_sdk::{
+    F, RootSC, SC, verifier::root::types::RootVmVerifierInput,
+    config::AggStarkConfig, keygen::AggStarkProvingKey,
+};
+use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
 use scroll_zkvm_circuit_input_types::proof::ProgramCommitment;
 
 use crate::commitments::{
@@ -47,7 +51,7 @@ impl VerifierType for BundleVerifierType {
 pub struct Verifier<Type> {
     pub vm_executor: SingleSegmentVmExecutor<F, NativeConfig>,
     pub root_committed_exe: VmCommittedExe<RootSC>,
-    pub evm_verifier: EvmVerifier,
+    pub evm_verifier: Option<EvmVerifier>,
 
     _type: PhantomData<Type>,
 }
@@ -75,7 +79,7 @@ impl<Type> Verifier<Type> {
 
         let evm_verifier = {
             let verifier_code = std::fs::read(path_verifier_code.as_ref())?;
-            EvmVerifier(verifier_code)
+            Some(EvmVerifier(verifier_code))
         };
 
         Ok(Self {
@@ -85,6 +89,28 @@ impl<Type> Verifier<Type> {
             _type: PhantomData,
         })
     }
+
+    pub fn root_verifier<P: AsRef<Path>>(
+        path_vm_config: P,
+    ) -> eyre::Result<Self> {
+        let vm_executor = {
+            let bytes = std::fs::read(path_vm_config.as_ref())?;
+            let vm_config: NativeConfig = bincode::deserialize(&bytes)?;
+            SingleSegmentVmExecutor::new(vm_config)
+        };
+
+        let (agg_stark_pk, _) = AggStarkProvingKey::dummy_proof_and_keygen(AggStarkConfig::default());
+
+        let root_committed_exe = agg_stark_pk.root_verifier_pk.root_committed_exe.as_ref().clone();
+
+        Ok(Self {
+            vm_executor,
+            root_committed_exe,
+            evm_verifier: None,
+            _type: PhantomData,
+        })
+    }
+
 }
 
 impl<Type: VerifierType> Verifier<Type> {
@@ -98,7 +124,17 @@ impl<Type: VerifierType> Verifier<Type> {
             .is_ok()
     }
 
+    pub fn verify_proof_with_pi(&self, root_proof: &RootVmVerifierInput<SC>) -> eyre::Result<Vec<Option<u32>>> {
+        let ret = self.vm_executor
+            .execute_and_compute_heights(self.root_committed_exe.exe.clone(), root_proof.write())
+            .map(|r|{
+                println!("proof contain {} PIs", r.public_values.len());
+                r.public_values.iter().map(|op_f|op_f.map(|f|f.as_canonical_u32())).collect::<Vec<_>>()
+            })?;
+        Ok(ret)
+    }
+
     pub fn verify_proof_evm(&self, evm_proof: &EvmProof) -> bool {
-        crate::evm::verify_evm_proof(&self.evm_verifier, evm_proof).is_ok()
+        crate::evm::verify_evm_proof(self.evm_verifier.as_ref().expect("must created evm verifier"), evm_proof).is_ok()
     }
 }
