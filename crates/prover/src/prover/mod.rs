@@ -267,7 +267,7 @@ impl<Type: ProverType> Prover<Type> {
     pub fn gen_proof(
         &self,
         task: &Type::ProvingTask,
-    ) -> Result<WrappedProof<Type::ProofMetadata, RootProof>, Error> {
+    ) -> Result<WrappedProof<Type::ProofMetadata>, Error> {
         let task_id = task.identifier();
 
         // Try reading proof from cache if available, and early return in that case.
@@ -304,7 +304,7 @@ impl<Type: ProverType> Prover<Type> {
     pub fn gen_proof_evm(
         &self,
         task: &Type::ProvingTask,
-    ) -> Result<WrappedProof<Type::ProofMetadata, EvmProof>, Error> {
+    ) -> Result<WrappedProof<Type::ProofMetadata>, Error> {
         let task_id = task.identifier();
 
         // Try reading proof from cache if available, and early return in that case.
@@ -345,10 +345,7 @@ impl<Type: ProverType> Prover<Type> {
     ///
     /// [root_proof][RootProof]
     #[instrument("Prover::verify_proof", skip_all, fields(?metadata = proof.metadata))]
-    pub fn verify_proof(
-        &self,
-        proof: &WrappedProof<Type::ProofMetadata, RootProof>,
-    ) -> Result<(), Error> {
+    pub fn verify_proof(&self, proof: &WrappedProof<Type::ProofMetadata>) -> Result<(), Error> {
         let agg_stark_pk = AGG_STARK_PROVING_KEY
             .get()
             .ok_or(Error::VerifyProof(String::from(
@@ -359,8 +356,11 @@ impl<Type: ProverType> Prover<Type> {
         let vm_executor = SingleSegmentVmExecutor::new(root_verifier_pk.vm_pk.vm_config.clone());
         let exe: &VmCommittedExe<_> = &root_verifier_pk.root_committed_exe;
 
+        let root_proof = proof.proof.as_root_proof().ok_or(Error::VerifyProof(
+            "verify_proof expects RootProof".to_string(),
+        ))?;
         vm_executor
-            .execute_and_compute_heights(exe.exe.clone(), proof.proof.write())
+            .execute_and_compute_heights(exe.exe.clone(), root_proof.write())
             .map_err(|e| Error::VerifyProof(e.to_string()))?;
 
         let aggregation_input = flatten_wrapped_proof(proof);
@@ -386,13 +386,13 @@ impl<Type: ProverType> Prover<Type> {
     ///
     /// [evm_proof][openvm_native_recursion::halo2::EvmProof]
     #[instrument("Prover::verify_proof_evm", skip_all)]
-    pub fn verify_proof_evm(
-        &self,
-        proof: &WrappedProof<Type::ProofMetadata, EvmProof>,
-    ) -> Result<(), Error> {
+    pub fn verify_proof_evm(&self, proof: &WrappedProof<Type::ProofMetadata>) -> Result<(), Error> {
+        let evm_proof = proof.proof.as_evm_proof().ok_or(Error::VerifyProof(
+            "verify_proof_evm expects EvmProof".to_string(),
+        ))?;
         let gas_cost = scroll_zkvm_verifier::evm::verify_evm_proof(
             &self.evm_prover.as_ref().expect("").verifier_contract,
-            &proof.proof,
+            &evm_proof,
         )
         .map_err(|e| Error::VerifyProof(format!("EVM-proof verification failed: {e}")))?;
 

@@ -15,6 +15,7 @@ sbv.workspace = true
 tracing.workspace = true
 metrics.workspace = true
 metrics-util.workspace = true
+snark-verifier-sdk.workspace = true
 
 openvm-circuit = { workspace = true }
 openvm-native-circuit = { workspace = true, default-features = false }
@@ -33,6 +34,9 @@ serde_stacker = "0.1"
 thiserror = "2.0"
 toml = "0.8"
 revm = "19.0"
+
+[dev-dependencies]
+eyre = "0.6"
 
 [features]
 default = ["scroll"]

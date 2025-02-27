@@ -34,6 +34,11 @@ impl ProverType for BundleProverType {
     ) -> Result<openvm_sdk::config::AppConfig<openvm_sdk::config::SdkVmConfig>, Error> {
         let mut app_config = read_app_config(path_app_config)?;
         app_config.app_vm_config.castf = Some(openvm_native_circuit::CastFExtension);
+        app_config.app_vm_config.system.config = app_config
+            .app_vm_config
+            .system
+            .config
+            .with_max_segment_len(8388508 * 2);
         Ok(app_config)
     }
 
@@ -75,7 +80,7 @@ impl ProverType for BundleProverType {
 
         let chain_id = first_batch.chain_id;
         let num_batches = u32::try_from(task.batch_proofs.len()).expect("num_batches: u32");
-        let prev_state_root = first_batch.parent_batch_hash;
+        let prev_state_root = first_batch.parent_state_root;
         let prev_batch_hash = first_batch.parent_batch_hash;
         let post_state_root = last_batch.state_root;
         let batch_hash = last_batch.batch_hash;

@@ -50,7 +50,7 @@ impl ProvingTask for BatchProvingTask {
         let mut stdin = StdIn::default();
         stdin.write_bytes(&serialized);
         for chunk_proof in &self.chunk_proofs {
-            let root_input = &chunk_proof.proof;
+            let root_input = &chunk_proof.as_proof();
             let streams = root_input.write();
             for s in &streams {
                 stdin.write_field(s);

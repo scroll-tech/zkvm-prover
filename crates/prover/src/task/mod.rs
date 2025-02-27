@@ -2,7 +2,7 @@ use openvm_sdk::StdIn;
 use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
 use scroll_zkvm_circuit_input_types::proof::{AggregationInput, ProgramCommitment};
 
-use crate::proof::{RootProof, WrappedProof};
+use crate::proof::WrappedProof;
 
 pub mod batch;
 
@@ -20,11 +20,11 @@ pub trait ProvingTask: serde::de::DeserializeOwned {
 
 /// Flatten a [`WrappedProof`] and split the proof from the public values. We also split out the
 /// program commitments.
-pub fn flatten_wrapped_proof<Metadata>(
-    wrapped_proof: &WrappedProof<Metadata, RootProof>,
-) -> AggregationInput {
+pub fn flatten_wrapped_proof<Metadata>(wrapped_proof: &WrappedProof<Metadata>) -> AggregationInput {
     let public_values = wrapped_proof
         .proof
+        .as_root_proof()
+        .expect("flatten_wrapped_proof expects RootProof")
         .public_values
         .iter()
         .map(|x| x.as_canonical_u32())
