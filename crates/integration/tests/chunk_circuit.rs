@@ -19,14 +19,14 @@ fn test_cycle() -> eyre::Result<()> {
     let (path_app_config, _app_config, path_exe) = ChunkProverTester::load()?;
     use rayon::prelude::*;
 
-    let blocks = 2..=2;
+    let blocks = 12508460..= 12508460;
     blocks
         .into_par_iter()
         .try_for_each(|blk| -> eyre::Result<()> {
             let task = ChunkProvingTask {
                 block_witnesses: vec![read_block_witness(
                     blk,
-                    &Path::new(PATH_TESTDATA).join("euclid_v2"),
+                    &Path::new(PATH_TESTDATA)//.join("euclid_v2"),
                 )?],
                 prev_msg_queue_hash: Default::default(),
             };

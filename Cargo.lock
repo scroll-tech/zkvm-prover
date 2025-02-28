@@ -5881,7 +5881,6 @@ dependencies = [
  "openvm-pairing-guest",
  "openvm-rv32im-guest",
  "rkyv",
- "sbv",
  "scroll-zkvm-circuit-input-types",
 ]
 
