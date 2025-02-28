@@ -76,6 +76,11 @@ impl ProvingTask for BatchProvingTask {
             kzg_proof: *kzg_proof,
         };
 
+        #[cfg(not(feature = "euclidv2"))]
+        let reference_header = ReferenceHeader::V3(self.batch_header);
+        #[cfg(feature = "euclidv2")]
+        let reference_header = ReferenceHeader::V7(self.batch_header);
+
         let witness = BatchWitness {
             chunk_proofs: self
                 .chunk_proofs
@@ -88,7 +93,7 @@ impl ProvingTask for BatchProvingTask {
                 .map(|p| p.metadata.chunk_info.clone())
                 .collect(),
             blob_bytes: self.blob_bytes.clone(),
-            reference_header: ReferenceHeader::V7(self.batch_header),
+            reference_header,
             point_eval_witness,
         };
 

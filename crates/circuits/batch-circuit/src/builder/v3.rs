@@ -10,8 +10,6 @@ use vm_zstd::process;
 
 use crate::blob_consistency::BlobPolynomial;
 
-const N_MAX_CHUNKS: usize = 45;
-
 /// Builder that consumes DA-codec@v3 [`BatchHeader`][BatchHeaderV3] and builds the public-input
 /// values [`BatchInfo`] for the batch-circuit.
 pub struct BatchInfoBuilderV3;
@@ -27,9 +25,9 @@ impl BatchInfoBuilderV3 {
         // Construct the batch payload using blob bytes.
         let payload = if blob_bytes[0] & 1 == 1 {
             let enveloped_bytes = process(&blob_bytes[1..]).unwrap().decoded_data;
-            PayloadV3::<N_MAX_CHUNKS>::from_payload(&enveloped_bytes)
+            PayloadV3::from_payload(&enveloped_bytes)
         } else {
-            PayloadV3::<N_MAX_CHUNKS>::from_payload(&blob_bytes[1..])
+            PayloadV3::from_payload(&blob_bytes[1..])
         };
 
         // Validate the tx data is match with fields in chunk info

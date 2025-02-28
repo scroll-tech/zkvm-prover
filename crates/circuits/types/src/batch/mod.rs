@@ -6,8 +6,13 @@ pub use header::{
 };
 
 mod payload;
+#[cfg(not(feature = "euclidv2"))]
 pub use payload::{
     v3::{EnvelopeV3, PayloadV3},
+    *,
+};
+#[cfg(feature = "euclidv2")]
+pub use payload::{
     v7::{EnvelopeV7, PayloadV7},
     *,
 };
