@@ -12,6 +12,7 @@ mod utils;
 
 #[cfg(feature = "sbv")]
 mod witness;
+
 #[cfg(feature = "sbv")]
 pub use {
     utils::make_providers,

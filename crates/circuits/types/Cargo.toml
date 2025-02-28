@@ -15,7 +15,7 @@ sbv = { workspace = true }
 vm-zstd = { workspace = true }
 serde.workspace = true
 itertools.workspace = true
-tiny-keccak = {workspace = true, features = ["openvm"]}
+tiny-keccak = {workspace = true, features = ["openvm"] }
 
 openvm = { workspace = true, features = ["std"] }
 openvm-rv32im-guest= {  workspace = true }
