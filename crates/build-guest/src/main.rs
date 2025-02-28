@@ -20,17 +20,18 @@ pub fn main() {
     let metadata = cargo_metadata::MetadataCommand::new().exec().unwrap();
     let workspace_dir = metadata.workspace_root;
 
+    let root_verifier = format!("{workspace_dir}/crates/build-guest/root_verifier.asm");
+    if !std::path::Path::new(&root_verifier).exists() {
+        dump_verifier(&root_verifier);
+    } else {
+        println!("root_verifier.asm already exists, skipping");
+    }
+
     let project_name_var = std::env::var("BUILD_PROJECT");
     let project_names = project_name_var
         .as_ref()
         .map(|s| s.split(',').collect::<Vec<_>>())
         .unwrap_or_else(|_| vec!["chunk", "batch", "bundle"]);
-
-    if project_names.len() > 1 {
-        // dump_verifier(&format!(
-        //     "{workspace_dir}/crates/build-guest/root_verifier.asm"
-        // ));
-    }
 
     for (idx, project_name) in project_names.iter().enumerate() {
         let project_dir = format!("{workspace_dir}/crates/circuits/{project_name}-circuit");

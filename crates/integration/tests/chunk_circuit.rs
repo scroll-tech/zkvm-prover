@@ -19,14 +19,14 @@ fn test_cycle() -> eyre::Result<()> {
     let (path_app_config, _app_config, path_exe) = ChunkProverTester::load()?;
     use rayon::prelude::*;
 
-    let blocks = 12508460..= 12508460;
+    let blocks = 1..=8;
     blocks
         .into_par_iter()
         .try_for_each(|blk| -> eyre::Result<()> {
             let task = ChunkProvingTask {
                 block_witnesses: vec![read_block_witness(
                     blk,
-                    &Path::new(PATH_TESTDATA)//.join("euclid_v2"),
+                    &Path::new(PATH_TESTDATA).join("euclid_v2"),
                 )?],
                 prev_msg_queue_hash: Default::default(),
             };
@@ -35,14 +35,17 @@ fn test_cycle() -> eyre::Result<()> {
             ChunkProverType::metadata_with_prechecks(&task)?;
             let prover = ChunkProver::setup(&path_exe, &path_app_config, None)?;
             let profile = true;
-            let (cycle_count, segments) = prover.execute_guest(&task.build_guest_input()?, profile)?;
+            let (cycle_count, segments) =
+                prover.execute_guest(&task.build_guest_input()?, profile)?;
             if profile {
                 prover.build_executor_results(segments, profile);
             }
             let cycle_per_gas = cycle_count / stats.total_gas_used;
             println!("chunk stats {:#?}", stats);
-            println!("total cycle count {}", cycle_count);
-            println!("cycle count per gas {}, blk idx {}", cycle_per_gas, blk);
+            println!(
+                "blk {}: total cycle {}, gas {}, cycle per gas {}",
+                blk, cycle_count, stats.total_gas_used, cycle_per_gas
+            );
             Ok(())
         })?;
     Ok(())

@@ -36,7 +36,7 @@ openvm-native-transpiler = { git = "https://github.com/openvm-org/openvm.git", r
 openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "f1b4844", default-features = false }
 openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "f1b4844", default-features = false }
 openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "f1b4844", default-features = false }
-openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", rev = "f1b4844", default-features = false, features = ["parallel", "bench-metrics"]}
+openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", rev = "f1b4844", default-features = false, features = ["parallel", "bench-metrics"] }
 openvm-sha256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "f1b4844", default-features = false }
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "f1b4844", default-features = false }
 

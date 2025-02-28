@@ -75,6 +75,7 @@ fn binary_patch(elf_bin: &[u8]) -> Vec<u8> {
         for i in 0..new_elf_bin.len().saturating_sub(31) {
             let end = i + 32;
             if &new_elf_bin[i..end] == old_hex {
+                println!("replace at {i}");
                 new_elf_bin[i..end].copy_from_slice(&new_hex);
             }
         }
