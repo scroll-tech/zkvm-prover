@@ -34,7 +34,6 @@ fn test_execute() -> eyre::Result<()> {
     Ok(())
 }
 
-
 #[test]
 fn test_e2e_execute() -> eyre::Result<()> {
     MultiBatchProverTester::setup()?;
