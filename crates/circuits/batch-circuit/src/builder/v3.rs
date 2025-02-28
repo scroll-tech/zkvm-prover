@@ -10,6 +10,8 @@ use vm_zstd::process;
 
 use crate::blob_consistency::BlobPolynomial;
 
+const N_MAX_CHUNKS: usize = 45;
+
 /// Builder that consumes DA-codec@v3 [`BatchHeader`][BatchHeaderV3] and builds the public-input
 /// values [`BatchInfo`] for the batch-circuit.
 pub struct BatchInfoBuilderV3;
@@ -17,7 +19,7 @@ pub struct BatchInfoBuilderV3;
 impl BatchInfoBuilderV3 {
     /// Build the public-input values [`BatchInfo`] for the [`BatchCircuit`][crate::circuit::BatchCircuit]
     /// by processing the witness, while making some validations.
-    pub fn build<const N_MAX_CHUNKS: usize>(
+    pub fn build(
         batch_header: &BatchHeaderV3,
         chunks_info: &[ChunkInfo],
         blob_bytes: &[u8],

@@ -179,9 +179,9 @@ pub fn build_batch_task(
         chunk_proofs: Vec::from(chunk_proofs),
         batch_header,
         blob_bytes,
-        challenge_digest: U256::from_be_bytes(challenge_digest.0),
-        kzg_commitment: kzg_commitment.to_bytes(),
-        kzg_proof: kzg_proof.to_bytes(),
+        challenge_digest: Some(U256::from_be_bytes(challenge_digest.0)),
+        kzg_commitment: Some(kzg_commitment.to_bytes()),
+        kzg_proof: Some(kzg_proof.to_bytes()),
     }
 }
 
