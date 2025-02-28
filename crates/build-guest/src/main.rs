@@ -20,7 +20,11 @@ pub fn main() {
     let metadata = cargo_metadata::MetadataCommand::new().exec().unwrap();
     let workspace_dir = metadata.workspace_root;
 
-    let project_names = &["chunk", "batch", "bundle"];
+    let project_name_var = std::env::var("BUILD_PROJECT");
+    let project_names = project_name_var
+        .as_ref()
+        .map(|s| s.split(',').collect::<Vec<_>>())
+        .unwrap_or_else(|_| vec!["chunk", "batch", "bundle"]);
 
     if project_names.len() > 1 {
         dump_verifier(&format!(
@@ -28,7 +32,7 @@ pub fn main() {
         ));
     }
 
-    for (idx, project_name) in project_names.into_iter().enumerate() {
+    for (idx, project_name) in project_names.iter().enumerate() {
         let project_dir = format!("{workspace_dir}/crates/circuits/{project_name}-circuit");
         let elf = builder::build(&project_dir).unwrap();
         let (_app_config_path, app_config, _app_exe_path, app_exe) =
