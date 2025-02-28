@@ -18,23 +18,13 @@ impl ProverType for ChunkProverType {
 
     const EVM: bool = false;
 
+    const SEGMENT_SIZE: usize = 8388508;
+
     type ProvingTask = ChunkProvingTask;
 
     type ProofType = RootProof;
 
     type ProofMetadata = ChunkProofMetadata;
-
-    fn read_app_config<P: AsRef<std::path::Path>>(
-        path_app_config: P,
-    ) -> Result<openvm_sdk::config::AppConfig<openvm_sdk::config::SdkVmConfig>, Error> {
-        let mut config = read_app_config(path_app_config)?;
-        config.app_vm_config.system.config = config
-            .app_vm_config
-            .system
-            .config
-            .with_max_segment_len(8388508);
-        Ok(config)
-    }
 
     fn metadata_with_prechecks(task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error> {
         let err_prefix = format!(

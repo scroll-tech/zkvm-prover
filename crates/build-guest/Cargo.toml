@@ -14,6 +14,8 @@ openvm-build = { workspace = true, default-features = false }
 openvm-transpiler = { workspace = true, default-features = false }
 openvm-native-circuit = { workspace = true, default-features = false }
 openvm-native-transpiler = { workspace = true, default-features = false }
+openvm-ecc-guest = { workspace = true, features = ["p256", "k256"]}
+openvm-algebra-guest ={ workspace = true, default-features = false }
 
 tracing.workspace = true
 tracing-subscriber.workspace = true
@@ -23,6 +25,7 @@ halo2curves-axiom.workspace = true
 eyre.workspace = true
 p3-field.workspace = true
 serde.workspace = true
+hex-literal.workspace = true
 serde_json.workspace = true
 serde_with.workspace = true
 snark-verifier-sdk.workspace = true

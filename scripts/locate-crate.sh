@@ -1,0 +1,1 @@
+cargo metadata --format-version=1 | jq -r '.packages[] | select(.name == "'$1'") | select(.manifest_path ) | .manifest_path'

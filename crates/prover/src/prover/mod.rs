@@ -8,7 +8,7 @@ use std::{
 use metrics_util::{MetricKind, debugging::DebugValue};
 use once_cell::sync::Lazy;
 use openvm_circuit::{
-    arch::{SingleSegmentVmExecutor, VmExecutor, VmExecutorResult},
+    arch::{ExecutionSegment, SingleSegmentVmExecutor, VmExecutor, VmExecutorResult},
     system::{memory::tree::public_values::extract_public_values, program::trace::VmCommittedExe},
 };
 use openvm_native_recursion::{
@@ -30,7 +30,12 @@ use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Config;
 use serde::{Serialize, de::DeserializeOwned};
 use tracing::{debug, instrument};
 
-use crate::{Error, WrappedProof, proof::RootProof, setup::read_app_exe, task::ProvingTask};
+use crate::{
+    Error, WrappedProof,
+    proof::RootProof,
+    setup::{read_app_config, read_app_exe},
+    task::ProvingTask,
+};
 
 mod batch;
 pub use batch::{BatchProver, BatchProverType};
@@ -370,9 +375,10 @@ impl<Type: ProverType> Prover<Type> {
 
         let mock_prove = std::env::var("MOCK_PROVE").as_deref() == Ok("true");
         let guest_profiling = std::env::var("GUEST_PROFILING").as_deref() == Ok("true");
+        // Here we always do an execution of the guest program to get the cycle count and do precheck before proving.
+        let (_cycle_count, segments) = self.execute_guest(&stdin, guest_profiling)?;
         if mock_prove || guest_profiling {
-            let (cycle_count, executor_result) = self.execute_guest(&stdin, guest_profiling)?;
-            tracing::info!(name: "total cycle count", ?cycle_count);
+            let executor_result = self.build_executor_results(segments, guest_profiling);
             if mock_prove {
                 self.mock_prove(executor_result)?;
             }
@@ -390,31 +396,19 @@ impl<Type: ProverType> Prover<Type> {
         .map_err(|e| Error::GenProof(e.to_string()))
     }
 
-    /// Execute the guest program to get the cycle count.
-    ///
-    /// If the GUEST_PROFILING environment variable has been set to "true",
-    /// row_usage/cell_usage/counter_per_op metrics are also collected.
-    pub fn execute_guest(
+    /// Build the executor results.
+    /// Yes it is a bit wired that it has the "profile" parameter.
+    /// But now `segment.finalize_metric` is not public, so we can only collect
+    /// metrics during `segment.generate_proof_input`.
+    /// TODO: when `segment.finalize_metric` becomes public, refactor here.
+    fn build_executor_results(
         &self,
-        stdin: &StdIn,
+        mut segments: Vec<ExecutionSegment<F, SdkVmConfig>>,
         profile: bool,
-    ) -> Result<(u64, VmExecutorResult<SC>), Error> {
-        use openvm_circuit::arch::VmConfig;
-        use openvm_stark_sdk::openvm_stark_backend::p3_field::Field;
-
-        let mut config = self.app_pk.app_vm_pk.vm_config.clone();
-        if profile {
-            config.system.config = config.system.config.with_profiling();
-        }
-        let vm = VmExecutor::new(config.clone());
-
-        let mut segments = vm
-            .execute_segments(self.app_committed_exe.exe.clone(), stdin.clone())
-            .map_err(|e| Error::GenProof(e.to_string()))?;
-        tracing::info!(name: "segment length", segment_len = segments.len());
-
+    ) -> VmExecutorResult<SC> {
         let final_memory = std::mem::take(&mut segments.last_mut().unwrap().final_memory);
         let mut metric_snapshots = vec![];
+
         let executor_result = VmExecutorResult {
             per_segment: segments
                 .into_iter()
@@ -437,19 +431,6 @@ impl<Type: ProverType> Prover<Type> {
                 .collect(),
             final_memory,
         };
-
-        // extract and check public values
-        let final_memory = executor_result.final_memory.as_ref().unwrap();
-        let system_config = <SdkVmConfig as VmConfig<F>>::system(&config);
-        let public_values: Vec<F> = extract_public_values(
-            &system_config.memory_config.memory_dimensions(),
-            system_config.num_public_values,
-            final_memory,
-        );
-        tracing::debug!(name: "public_values after guest execution", ?public_values);
-        if public_values.iter().all(|x| x.is_zero()) {
-            return Err(Error::GenProof("public_values are all 0s".to_string()));
-        }
 
         let mut counter_sum = BTreeMap::<String, BTreeMap<String, u64>>::new();
         for (idx, metric_snapshot) in metric_snapshots.into_iter().enumerate() {
@@ -502,8 +483,54 @@ impl<Type: ProverType> Prover<Type> {
             println!("{}", bench_report);
         }
 
-        let total_cycle = *counter_sum.get("total_cycles").unwrap().get("").unwrap();
-        Ok((total_cycle, executor_result))
+        executor_result
+    }
+
+    /// Execute the guest program to get the cycle count.
+    ///
+    /// If the GUEST_PROFILING environment variable has been set to "true",
+    /// row_usage/cell_usage/counter_per_op metrics are also collected.
+    pub fn execute_guest(
+        &self,
+        stdin: &StdIn,
+        profile: bool,
+    ) -> Result<(u64, Vec<ExecutionSegment<F, SdkVmConfig>>), Error> {
+        use openvm_circuit::arch::VmConfig;
+        use openvm_stark_sdk::openvm_stark_backend::p3_field::Field;
+
+        let mut config = self.app_pk.app_vm_pk.vm_config.clone();
+        if profile {
+            config.system.config = config.system.config.with_profiling();
+        }
+        let vm = VmExecutor::new(config.clone());
+
+        let segments = vm
+            .execute_segments(self.app_committed_exe.exe.clone(), stdin.clone())
+            .map_err(|e| Error::GenProof(e.to_string()))?;
+        let total_cycle = segments
+            .iter()
+            .map(|seg| seg.metrics.cycle_count)
+            .sum::<usize>() as u64;
+        tracing::info!(name: "segment length", segment_len = segments.len());
+        tracing::info!(name: "total cycle", ?total_cycle);
+
+        // extract and check public values
+        let final_memory = segments
+            .last()
+            .and_then(|x| x.final_memory.as_ref())
+            .unwrap();
+        let system_config = <SdkVmConfig as VmConfig<F>>::system(&config);
+        let public_values: Vec<F> = extract_public_values(
+            &system_config.memory_config.memory_dimensions(),
+            system_config.num_public_values,
+            final_memory,
+        );
+        tracing::debug!(name: "public_values after guest execution", ?public_values);
+        if public_values.iter().all(|x| x.is_zero()) {
+            return Err(Error::GenProof("public_values are all 0s".to_string()));
+        }
+
+        Ok((total_cycle, segments))
     }
 
     /// Runs only if the MOCK_PROVE environment variable has been set to "true".
@@ -560,6 +587,9 @@ pub trait ProverType {
     /// [`BundleProver`] has the EVM set to `true`.
     const EVM: bool;
 
+    /// The size of a segment, i.e. the max height of its chips.
+    const SEGMENT_SIZE: usize;
+
     /// The task provided as argument during proof generation process.
     type ProvingTask: ProvingTask;
 
@@ -573,8 +603,17 @@ pub trait ProverType {
     type ProofMetadata: Serialize + DeserializeOwned + std::fmt::Debug;
 
     /// Read the app config from the given path.
-    fn read_app_config<P: AsRef<Path>>(path_app_config: P)
-    -> Result<AppConfig<SdkVmConfig>, Error>;
+    fn read_app_config<P: AsRef<Path>>(
+        path_app_config: P,
+    ) -> Result<AppConfig<SdkVmConfig>, Error> {
+        let mut config = read_app_config(path_app_config)?;
+        config.app_vm_config.system.config = config
+            .app_vm_config
+            .system
+            .config
+            .with_max_segment_len(Self::SEGMENT_SIZE);
+        Ok(config)
+    }
 
     /// Provided the proving task, computes the proof metadata.
     fn metadata_with_prechecks(task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error>;

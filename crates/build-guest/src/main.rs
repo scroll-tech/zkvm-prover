@@ -23,9 +23,9 @@ pub fn main() {
     let project_names = &["chunk", "batch", "bundle"];
 
     if project_names.len() > 1 {
-        dump_verifier(&format!(
-            "{workspace_dir}/crates/build-guest/root_verifier.asm"
-        ));
+        // dump_verifier(&format!(
+        //     "{workspace_dir}/crates/build-guest/root_verifier.asm"
+        // ));
     }
 
     for (idx, project_name) in project_names.into_iter().enumerate() {
