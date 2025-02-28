@@ -245,7 +245,7 @@ dependencies = [
 [[package]]
 name = "alloy-primitives"
 version = "0.8.18"
-source = "git+https://github.com/scroll-tech/alloy-core?branch=v0.8.18#d840129323c150028492ee712d4ca7622be2cdb3"
+source = "git+https://github.com/scroll-tech/alloy-core?branch=v0.8.18#b3dee66037780a556681e134502ab903363d61ff"
 dependencies = [
  "alloy-rlp",
  "bytes",
@@ -1141,7 +1141,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "117725a109d387c937a1533ce01b450cbde6b88abceea8473c4d7a85853cda3c"
 dependencies = [
  "lazy_static",
- "windows-sys 0.59.0",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
@@ -5288,7 +5288,7 @@ dependencies = [
 [[package]]
 name = "revm"
 version = "19.4.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor%2Ffeat%2Fv55%2Feuclid-v2#1f677dcd24aa56e0654c7152cff32149636d9aea"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor%2Ffeat%2Fv55%2Feuclid-v2#9a4b65222135a88ac939f3b3dea9f5a53df2dcdd"
 dependencies = [
  "auto_impl",
  "cfg-if",
@@ -5327,7 +5327,7 @@ dependencies = [
 [[package]]
 name = "revm-interpreter"
 version = "15.1.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor%2Ffeat%2Fv55%2Feuclid-v2#1f677dcd24aa56e0654c7152cff32149636d9aea"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor%2Ffeat%2Fv55%2Feuclid-v2#9a4b65222135a88ac939f3b3dea9f5a53df2dcdd"
 dependencies = [
  "revm-primitives 15.1.0",
  "serde",
@@ -5365,7 +5365,7 @@ dependencies = [
 [[package]]
 name = "revm-precompile"
 version = "16.0.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor%2Ffeat%2Fv55%2Feuclid-v2#1f677dcd24aa56e0654c7152cff32149636d9aea"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor%2Ffeat%2Fv55%2Feuclid-v2#9a4b65222135a88ac939f3b3dea9f5a53df2dcdd"
 dependencies = [
  "aurora-engine-modexp",
  "c-kzg",
@@ -5426,7 +5426,7 @@ dependencies = [
 [[package]]
 name = "revm-primitives"
 version = "15.1.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor%2Ffeat%2Fv55%2Feuclid-v2#1f677dcd24aa56e0654c7152cff32149636d9aea"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor%2Ffeat%2Fv55%2Feuclid-v2#9a4b65222135a88ac939f3b3dea9f5a53df2dcdd"
 dependencies = [
  "alloy-eip2930",
  "alloy-eip7702 0.5.1",
@@ -6648,7 +6648,7 @@ dependencies = [
 [[package]]
 name = "tiny-keccak"
 version = "2.0.2"
-source = "git+https://github.com/scroll-tech/tiny-keccak?branch=scroll-patch-v2.0.2-openvm-v1.0.0-rc.1#bfab37175b16c645419e77a77ffb796b6e5459be"
+source = "git+https://github.com/scroll-tech/tiny-keccak?branch=scroll-patch-v2.0.2-openvm-v1.0.0-rc.1#4c7c96660cb852b4f8aed2296d30c31f06e103c9"
 dependencies = [
  "cfg-if",
  "crunchy",
