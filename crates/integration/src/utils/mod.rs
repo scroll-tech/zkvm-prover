@@ -168,20 +168,25 @@ pub fn build_batch_task(
 
     let (kzg_proof, _) = point_eval::get_kzg_proof(&kzg_blob, challenge_digest);
 
+    #[cfg(feature = "euclidv2")]
     let batch_header = BatchHeaderV7 {
         version: last_header.version,
         batch_index: last_header.batch_index + 1,
         parent_batch_hash: last_header.batch_hash,
         blob_versioned_hash,
     };
+    #[cfg(not(feature = "euclidv2"))]
+    let batch_header = {
+        unimplemented!("FIX ME");
+    };
 
     BatchProvingTask {
         chunk_proofs: Vec::from(chunk_proofs),
         batch_header,
         blob_bytes,
-        challenge_digest: U256::from_be_bytes(challenge_digest.0),
-        kzg_commitment: kzg_commitment.to_bytes(),
-        kzg_proof: kzg_proof.to_bytes(),
+        challenge_digest: Some(U256::from_be_bytes(challenge_digest.0)),
+        kzg_commitment: Some(kzg_commitment.to_bytes()),
+        kzg_proof: Some(kzg_proof.to_bytes()),
     }
 }
 

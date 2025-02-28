@@ -3,33 +3,42 @@ use c_kzg::Bytes48;
 use openvm_native_recursion::hints::Hintable;
 use openvm_sdk::StdIn;
 use scroll_zkvm_circuit_input_types::batch::{
-    BatchHeader, BatchHeaderV7, BatchInfo, BatchWitness, PointEvalWitness, ReferenceHeader,
+    BatchHeader, BatchInfo, BatchWitness, PointEvalWitness, ReferenceHeader,
+};
+#[cfg(not(feature = "euclidv2"))]
+use scroll_zkvm_circuit_input_types::batch::{
+    BatchHeaderV3 as BatchHeaderT, EnvelopeV3 as Envelope,
+};
+#[cfg(feature = "euclidv2")]
+use scroll_zkvm_circuit_input_types::batch::{
+    BatchHeaderV7 as BatchHeaderT, EnvelopeV7 as Envelope,
 };
 use serde::{Deserialize, Serialize};
 
 use crate::{
     ChunkProof,
     task::{ProvingTask, flatten_wrapped_proof},
-    utils::base64,
+    utils::{base64, point_eval},
 };
 
-/// Defines a proving task for batch proof generation.
+/// Defines a proving task for batch proof generation, the format
+/// is compatible with both pre-euclidv2 and euclidv2
 #[derive(Clone, Deserialize, Serialize)]
 pub struct BatchProvingTask {
     /// Chunk proofs for the contiguous list of chunks within the batch.
     pub chunk_proofs: Vec<ChunkProof>,
-    /// The [`BatchHeaderV7`], as computed on-chain for this batch.
-    pub batch_header: BatchHeaderV7,
+    /// The [`BatchHeaderV3/V7`], as computed on-chain for this batch.
+    pub batch_header: BatchHeaderT,
     /// The bytes encoding the batch data that will finally be published on-chain in the form of an
     /// EIP-4844 blob.
     #[serde(with = "base64")]
     pub blob_bytes: Vec<u8>,
     /// Challenge digest computed using the blob's bytes and versioned hash.
-    pub challenge_digest: U256,
+    pub challenge_digest: Option<U256>,
     /// KZG commitment for the blob.
-    pub kzg_commitment: Bytes48,
+    pub kzg_commitment: Option<Bytes48>,
     /// KZG proof.
-    pub kzg_proof: Bytes48,
+    pub kzg_proof: Option<Bytes48>,
 }
 
 impl ProvingTask for BatchProvingTask {
@@ -38,10 +47,39 @@ impl ProvingTask for BatchProvingTask {
     }
 
     fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error> {
-        let point_eval_witness = PointEvalWitness {
-            kzg_commitment: *self.kzg_commitment,
-            kzg_proof: *self.kzg_proof,
+        // calculate point eval needed and compare with task input
+        let (kzg_commitment, kzg_proof, challenge_digest) = {
+            let blob = point_eval::to_blob(&self.blob_bytes);
+            let commitment = point_eval::blob_to_kzg_commitment(&blob);
+            let challenge_digest = Envelope::from(self.blob_bytes.as_slice())
+                .challenge_digest(point_eval::get_versioned_hash(&commitment));
+
+            let (proof, _) = point_eval::get_kzg_proof(&blob, challenge_digest);
+
+            (commitment.to_bytes(), proof.to_bytes(), challenge_digest)
         };
+
+        if let Some(k) = &self.kzg_commitment {
+            assert_eq!(k, &kzg_commitment);
+        }
+
+        if let Some(p) = &self.kzg_proof {
+            assert_eq!(p, &kzg_proof);
+        }
+
+        if let Some(c) = &self.challenge_digest {
+            assert_eq!(*c, U256::from_be_bytes(challenge_digest.0));
+        }
+
+        let point_eval_witness = PointEvalWitness {
+            kzg_commitment: *kzg_commitment,
+            kzg_proof: *kzg_proof,
+        };
+
+        #[cfg(not(feature = "euclidv2"))]
+        let reference_header = ReferenceHeader::V3(self.batch_header);
+        #[cfg(feature = "euclidv2")]
+        let reference_header = ReferenceHeader::V7(self.batch_header);
 
         let witness = BatchWitness {
             chunk_proofs: self
@@ -55,7 +93,7 @@ impl ProvingTask for BatchProvingTask {
                 .map(|p| p.metadata.chunk_info.clone())
                 .collect(),
             blob_bytes: self.blob_bytes.clone(),
-            reference_header: ReferenceHeader::V7(self.batch_header),
+            reference_header,
             point_eval_witness,
         };
 

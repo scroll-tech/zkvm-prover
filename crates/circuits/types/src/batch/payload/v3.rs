@@ -5,15 +5,56 @@ use itertools::Itertools;
 
 use crate::utils::keccak256;
 
+/// The default max chunks for v3 payload
+pub const N_MAX_CHUNKS: usize = 45;
+
 /// The number of bytes to encode number of chunks in a batch.
 const N_BYTES_NUM_CHUNKS: usize = 2;
 
 /// The number of rows to encode chunk size (u32).
 const N_BYTES_CHUNK_SIZE: usize = 4;
 
+impl From<&[u8]> for EnvelopeV3 {
+    fn from(blob_bytes: &[u8]) -> Self {
+        let is_encoded = blob_bytes[0] & 1 == 1;
+        Self {
+            is_encoded,
+            envelope_bytes: if blob_bytes[0] & 1 == 1 {
+                vm_zstd::process(&blob_bytes[1..]).unwrap().decoded_data
+            } else {
+                Vec::from(&blob_bytes[1..])
+            },
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct EnvelopeV3 {
+    /// The original envelope bytes supplied.
+    ///
+    /// Caching just for re-use later in challenge digest computation.
+    pub envelope_bytes: Vec<u8>,
+    /// If the enveloped bytes is encoded (compressed) in envelop
+    pub is_encoded: bool,
+}
+
+impl EnvelopeV3 {
+    /// Parse payload bytes and obtain challenge digest
+    pub fn challenge_digest(&self, versioned_hash: B256) -> B256 {
+        let payload = Payload::from(self);
+        payload.get_challenge_digest(versioned_hash)
+    }
+}
+
+impl From<&EnvelopeV3> for Payload {
+    fn from(envelope: &EnvelopeV3) -> Self {
+        Self::from_payload(&envelope.envelope_bytes)
+    }
+}
+
 /// Payload that describes a batch.
 #[derive(Clone, Debug, Default)]
-pub struct Payload<const N_MAX_CHUNKS: usize> {
+pub struct Payload {
     /// Metadata that encodes the sizes of every chunk in the batch.
     pub metadata_digest: B256,
     /// The Keccak digests of transaction bytes for every chunk in the batch.
@@ -24,7 +65,9 @@ pub struct Payload<const N_MAX_CHUNKS: usize> {
     pub chunk_data_digests: Vec<B256>,
 }
 
-impl<const N_MAX_CHUNKS: usize> Payload<N_MAX_CHUNKS> {
+pub type PayloadV3 = Payload;
+
+impl Payload {
     /// For raw payload data (read from decompressed enveloped data), which is raw batch bytes with metadata, this function segments
     /// the byte stream into chunk segments.
     /// This method is used INSIDE OF zkvm since we can not generate (compress) batch data within

@@ -28,7 +28,7 @@ serde.workspace = true
 tiny-keccak.workspace = true
 
 [features]
-default = ["scroll", "euclidv2"]
+default = ["scroll"]
 euclidv2 = ["scroll-zkvm-circuit-input-types/euclidv2"]
 scroll = ["scroll-zkvm-circuit-input-types/scroll"]
 

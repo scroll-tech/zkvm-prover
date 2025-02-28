@@ -23,11 +23,23 @@ fn load_recent_chunk_proofs() -> eyre::Result<BatchProvingTask> {
 
 #[test]
 fn test_execute() -> eyre::Result<()> {
+    BatchProverTester::setup()?;
+
+    let (_, app_config, exe_path) = BatchProverTester::load()?;
+
+    let task = BatchProverTester::gen_proving_task()?;
+
+    BatchProverTester::execute(app_config.clone(), &task, exe_path.clone())?;
+
+    Ok(())
+}
+
+#[test]
+fn test_e2e_execute() -> eyre::Result<()> {
     MultiBatchProverTester::setup()?;
 
     let (_, app_config, exe_path) = MultiBatchProverTester::load()?;
 
-    // let tasks = MultiBatchProverTester::gen_multi_proving_tasks()?;
     let tasks = vec![load_recent_chunk_proofs()?];
     for task in tasks {
         MultiBatchProverTester::execute(app_config.clone(), &task, exe_path.clone())?;
