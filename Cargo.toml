@@ -29,15 +29,15 @@ openvm-circuit ={ git = "https://github.com/openvm-org/openvm.git", rev = "f1b48
 openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "f1b4844", default-features = false }
 openvm-instructions ={ git = "https://github.com/openvm-org/openvm.git", rev = "f1b4844", default-features = false }
 openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "f1b4844", default-features = false }
-openvm-native-circuit = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false }
-openvm-native-compiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false }
-openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false }
-openvm-native-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false }
+openvm-native-circuit = { git = "https://github.com/openvm-org/openvm.git", rev = "f1b4844", default-features = false }
+openvm-native-compiler = { git = "https://github.com/openvm-org/openvm.git", rev = "f1b4844", default-features = false }
+openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", rev = "f1b4844", default-features = false }
+openvm-native-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "f1b4844", default-features = false }
 openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", rev = "f1b4844", default-features = false, features = ["parallel", "bench-metrics"]}
-openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false, features = ["parallel", "bench-metrics"] }
-openvm-sha256-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false }
+openvm-sha256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "f1b4844", default-features = false }
+openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "f1b4844", default-features = false }
+
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", rev = "bc364134b8315c27bfd29c6e77ac79fe77090137", default-features = false }
-openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.0.0-rc.1", default-features = false }
 
 alloy-primitives = { version = "0.8", default-features = false }
 alloy-serde = { version = "0.8", default-features = false }
