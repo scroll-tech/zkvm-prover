@@ -19,7 +19,7 @@ fn test_cycle() -> eyre::Result<()> {
     let (path_app_config, _app_config, path_exe) = ChunkProverTester::load()?;
     use rayon::prelude::*;
 
-    let blocks = 1..=8;
+    let blocks = 2..=2;
     blocks
         .into_par_iter()
         .try_for_each(|blk| -> eyre::Result<()> {
@@ -34,8 +34,11 @@ fn test_cycle() -> eyre::Result<()> {
             let stats = task.stats();
             ChunkProverType::metadata_with_prechecks(&task)?;
             let prover = ChunkProver::setup(&path_exe, &path_app_config, None)?;
-            let profile = false;
-            let (cycle_count, _) = prover.execute_guest(&task.build_guest_input()?, profile)?;
+            let profile = true;
+            let (cycle_count, segments) = prover.execute_guest(&task.build_guest_input()?, profile)?;
+            if profile {
+                prover.build_executor_results(segments, profile);
+            }
             let cycle_per_gas = cycle_count / stats.total_gas_used;
             println!("chunk stats {:#?}", stats);
             println!("total cycle count {}", cycle_count);

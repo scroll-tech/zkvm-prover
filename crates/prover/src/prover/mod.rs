@@ -401,7 +401,7 @@ impl<Type: ProverType> Prover<Type> {
     /// But now `segment.finalize_metric` is not public, so we can only collect
     /// metrics during `segment.generate_proof_input`.
     /// TODO: when `segment.finalize_metric` becomes public, refactor here.
-    fn build_executor_results(
+    pub fn build_executor_results(
         &self,
         mut segments: Vec<ExecutionSegment<F, SdkVmConfig>>,
         profile: bool,
