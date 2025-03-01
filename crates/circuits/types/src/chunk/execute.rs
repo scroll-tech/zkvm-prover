@@ -101,7 +101,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
 
     let sbv_chunk_info = {
         #[allow(unused_mut)]
-        let mut builder = ChunkInfoBuilder::new(&chain_spec, pre_state_root.into(), &blocks);
+        let mut builder = ChunkInfoBuilder::new(&chain_spec, pre_state_root.into(), blocks);
         #[cfg(feature = "euclidv2")]
         builder.set_prev_msg_queue_hash(witness.prev_msg_queue_hash.into());
         builder.build(withdraw_root)

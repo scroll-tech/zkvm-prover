@@ -116,9 +116,14 @@ pub mod point_eval {
         )
     }
 
+    /// Get x for kzg proof from challenge hash
+    pub fn get_x_from_challenge(challenge: H256) -> U256 {
+        U256::from_be_bytes(challenge.0) % BLS_MODULUS
+    }
+
     /// Generate KZG proof and evaluation given the blob (polynomial) and a random challenge.
     pub fn get_kzg_proof(blob: &c_kzg::Blob, challenge: H256) -> (c_kzg::KzgProof, U256) {
-        let challenge = U256::from_be_bytes(challenge.0) % BLS_MODULUS;
+        let challenge = get_x_from_challenge(challenge);
 
         let (proof, y) = c_kzg::KzgProof::compute_kzg_proof(
             blob,
