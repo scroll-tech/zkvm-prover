@@ -18,19 +18,13 @@ impl ProverType for BundleProverType {
 
     const EVM: bool = true;
 
+    const SEGMENT_SIZE: usize = 8388508 * 2;
+
     type ProvingTask = BundleProvingTask;
 
     type ProofType = EvmProof;
 
     type ProofMetadata = BundleProofMetadata;
-
-    fn read_app_config<P: AsRef<std::path::Path>>(
-        path_app_config: P,
-    ) -> Result<openvm_sdk::config::AppConfig<openvm_sdk::config::SdkVmConfig>, Error> {
-        let mut app_config = read_app_config(path_app_config)?;
-        app_config.app_vm_config.castf = Some(openvm_native_circuit::CastFExtension);
-        Ok(app_config)
-    }
 
     fn metadata_with_prechecks(task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error> {
         let err_prefix = format!("metadata_with_prechecks for task_id={}", task.identifier());

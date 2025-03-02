@@ -17,19 +17,13 @@ impl ProverType for BatchProverType {
 
     const EVM: bool = false;
 
+    const SEGMENT_SIZE: usize = 8388508 * 2;
+
     type ProvingTask = BatchProvingTask;
 
     type ProofType = RootProof;
 
     type ProofMetadata = BatchProofMetadata;
-
-    fn read_app_config<P: AsRef<std::path::Path>>(
-        path_app_config: P,
-    ) -> Result<openvm_sdk::config::AppConfig<openvm_sdk::config::SdkVmConfig>, Error> {
-        let mut app_config = read_app_config(path_app_config)?;
-        app_config.app_vm_config.castf = Some(openvm_native_circuit::CastFExtension);
-        Ok(app_config)
-    }
 
     fn metadata_with_prechecks(task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error> {
         let batch_info = task.into();
