@@ -24,10 +24,7 @@ fn test_cycle() -> eyre::Result<()> {
         .into_par_iter()
         .try_for_each(|blk| -> eyre::Result<()> {
             let task = ChunkProvingTask {
-                block_witnesses: vec![read_block_witness(
-                    blk,
-                    &Path::new(PATH_TESTDATA).join("euclid_v2"),
-                )?],
+                block_witnesses: vec![read_block_witness(blk, &Path::new(PATH_TESTDATA))?],
                 prev_msg_queue_hash: Default::default(),
             };
 

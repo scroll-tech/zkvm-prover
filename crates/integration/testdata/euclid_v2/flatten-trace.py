@@ -1,1 +1,0 @@
-/home/ubuntu/zzhang/zkvm-prover/crates/integration/testdata/flatten-trace.py
