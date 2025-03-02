@@ -225,8 +225,7 @@ pub fn build_batch_task(
     #[cfg(feature = "euclidv2")]
     let batch_header = {
         // avoid unused variant warning
-        drop(x);
-        drop(z);
+        let _ = x + z;
         BatchHeaderV7 {
             version: last_header.version,
             batch_index: last_header.batch_index + 1,
@@ -291,22 +290,33 @@ pub fn build_batch_task(
     }
 }
 
-#[cfg(feature = "euclidv2")]
 #[test]
 fn test_build_and_parse_batch_task() -> eyre::Result<()> {
-    use scroll_zkvm_circuit_input_types::batch::{EnvelopeV7, PayloadV7};
+    #[cfg(not(feature = "euclidv2"))]
+    use scroll_zkvm_circuit_input_types::batch::{EnvelopeV3 as Envelope, PayloadV3 as Payload};
+    #[cfg(feature = "euclidv2")]
+    use scroll_zkvm_circuit_input_types::batch::{EnvelopeV7 as Envelope, PayloadV7 as Payload};
     use scroll_zkvm_prover::utils::{read_json, read_json_deep, write_json};
 
     // ./testdata/
     let path_testdata = std::path::Path::new("testdata");
 
     // read block witnesses.
-    let paths_block_witnesses = [
-        path_testdata.join("1.json"),
-        path_testdata.join("2.json"),
-        path_testdata.join("3.json"),
-        path_testdata.join("4.json"),
-    ];
+    let paths_block_witnesses = if cfg!(feature = "euclidv2") {
+        [
+            path_testdata.join("1.json"),
+            path_testdata.join("2.json"),
+            path_testdata.join("3.json"),
+            path_testdata.join("4.json"),
+        ]
+    } else {
+        [
+            path_testdata.join("12508460.json"),
+            path_testdata.join("12508461.json"),
+            path_testdata.join("12508462.json"),
+            path_testdata.join("12508463.json"),
+        ]
+    };
     let read_block_witness = |path| Ok(read_json::<_, BlockWitness>(path)?);
     let chunk_task = ChunkProvingTask {
         block_witnesses: paths_block_witnesses
@@ -317,11 +327,29 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
     };
 
     // read chunk proof.
-    let path_chunk_proof = path_testdata.join("proofs").join("chunk-1-4.json");
+    let path_chunk_proof = path_testdata
+        .join("proofs")
+        .join(if cfg!(feature = "euclidv2") {
+            "chunk-1-4.json"
+        } else {
+            "chunk-12508460-12508463.json"
+        });
     let chunk_proof = read_json_deep::<_, ChunkProof>(&path_chunk_proof)?;
 
     let task = build_batch_task(&[chunk_task], &[chunk_proof], Default::default());
 
+    let chunk_infos = task
+        .chunk_proofs
+        .iter()
+        .map(|proof| proof.metadata.chunk_info.clone())
+        .collect::<Vec<_>>();
+
+    let enveloped = Envelope::from(task.blob_bytes.as_slice());
+
+    Payload::from(&enveloped).validate(&task.batch_header, &chunk_infos);
+
+    // depressed task output for pre-v2
+    #[cfg(feature = "euclidv2")]
     write_json(path_testdata.join("batch-task-test-out.json"), &task).unwrap();
     Ok(())
 }
