@@ -1,122 +1,141 @@
 use std::mem::ManuallyDrop;
 
+use crate::{
+    Circuit,
+    chunk::{ArchivedChunkWitness, ChunkInfo, ChunkWitness, make_providers},
+};
 use sbv::{
     core::{EvmDatabase, EvmExecutor},
     primitives::{
         BlockWitness, RecoveredBlock,
-        chainspec::{Chain, get_chain_spec_or_build},
+        chainspec::{
+            Chain, ForkCondition, NamedChain,
+            reth_chainspec::ChainSpec,
+            scroll::{ScrollChainConfig, ScrollChainSpec},
+        },
         ext::{BlockWitnessChunkExt, TxBytesHashExt},
+        hardforks::{SCROLL_DEV_HARDFORKS, ScrollHardfork},
         types::{ChunkInfoBuilder, reth::Block},
     },
 };
-use scroll_zkvm_circuit_input_types::chunk::{
-    ArchivedChunkWitness, BlockContextV2, ChunkInfo, make_providers,
-};
 
-pub fn execute(witness: &ArchivedChunkWitness) -> ChunkInfo {
-    assert!(
-        !witness.blocks.is_empty(),
-        "At least one witness must be provided in chunk mode"
+use crate::chunk::public_inputs::BlockContextV2;
+
+type Witness = ArchivedChunkWitness;
+
+pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
+    if witness.blocks.is_empty() {
+        return Err("At least one witness must be provided in chunk mode".into());
+    }
+    if !witness.blocks.has_same_chain_id() {
+        return Err("All witnesses must have the same chain id in chunk mode".into());
+    }
+    if !witness.blocks.has_seq_block_number() {
+        return Err("All witnesses must have sequential block numbers in chunk mode".into());
+    }
+    // Get the blocks to build the basic chunk-info.
+    let mut blocks = ManuallyDrop::new(
+        witness
+            .blocks
+            .iter()
+            .map(|w| w.build_reth_block())
+            .collect::<Result<Vec<RecoveredBlock<Block>>, _>>()
+            .map_err(|e| e.to_string())?,
     );
-    assert!(
-        witness.blocks.has_same_chain_id(),
-        "All witnesses must have the same chain id in chunk mode"
-    );
-    assert!(
-        witness.blocks.has_seq_block_number(),
-        "All witnesses must have sequential block numbers in chunk mode"
-    );
+    let pre_state_root = witness.blocks[0].pre_state_root;
 
-    let blocks = witness
-        .blocks
-        .iter()
-        .map(|w| w.build_reth_block())
-        .collect::<Result<Vec<_>, _>>()
-        .expect("failed to build reth block")
-        .leak() as &'static [RecoveredBlock<Block>];
-    let initial_block_number = blocks[0].header().number;
+    let chain = Chain::from_id(witness.blocks[0].chain_id());
 
-    // let chain_spec = get_chain_spec(Chain::from_id(witness.blocks[0].chain_id()))
-    //    .expect("failed to get chain spec");
+    // enable all forks
+    #[allow(unused_mut)]
+    let mut hardforks = (*SCROLL_DEV_HARDFORKS).clone();
 
-    // TODO: should not allow such a short cut?
-    // use the same code from sbv
-    let chain_spec =
-        get_chain_spec_or_build(Chain::from_id(witness.blocks[0].chain_id()), |_spec| {
-            #[cfg(feature = "scroll")]
-            {
-                use sbv::primitives::{chainspec::ForkCondition, hardforks::ScrollHardfork};
-                _spec
-                    .inner
-                    .hardforks
-                    .insert(ScrollHardfork::EuclidV2, ForkCondition::Timestamp(0));
-            }
-        });
+    let chain_spec: ScrollChainSpec = ScrollChainSpec {
+        inner: ChainSpec {
+            chain,
+            hardforks,
+            ..Default::default()
+        },
+        config: ScrollChainConfig::mainnet(),
+    };
 
     let (code_db, nodes_provider, block_hashes) = make_providers(&witness.blocks);
-    let nodes_provider = ManuallyDrop::new(nodes_provider);
+    let mut nodes_provider = ManuallyDrop::new(nodes_provider);
 
     let prev_state_root = witness.blocks[0].pre_state_root();
     let mut db = ManuallyDrop::new(
         EvmDatabase::new_from_root(code_db, prev_state_root, &nodes_provider, block_hashes)
-            .expect("failed to create EvmDatabase"),
+            .map_err(|e| format!("failed to create EvmDatabase: {}", e))?,
     );
+    let mut outputs = Vec::new();
     for block in blocks.iter() {
         let output = ManuallyDrop::new(
-            EvmExecutor::new(chain_spec.clone(), &db, block)
+            EvmExecutor::new(std::sync::Arc::new(chain_spec.clone()), &db, block)
                 .execute()
-                .expect("failed to execute block"),
+                .map_err(|e| format!("failed to execute block: {}", e))?,
         );
         db.update(&nodes_provider, output.state.state.iter())
-            .expect("failed to update db");
+            .map_err(|e| format!("failed to update db: {}", e))?;
+        outputs.push(output);
     }
 
     let post_state_root = db.commit_changes();
 
-    let withdraw_root = db.withdraw_root().expect("failed to get withdraw root");
+    let withdraw_root = db
+        .withdraw_root()
+        .map_err(|e| format!("failed to get withdraw root: {}", e))?;
 
     let mut rlp_buffer = ManuallyDrop::new(Vec::with_capacity(2048));
+    #[allow(unused_variables)]
     let (tx_data_length, tx_data_digest) = blocks
         .iter()
         .flat_map(|b| b.body().transactions.iter())
         .tx_bytes_hash_in(rlp_buffer.as_mut());
 
-    let block_ctxs = blocks.iter().map(BlockContextV2::from).collect();
-
-    let prev_msg_queue_hash = witness.prev_msg_queue_hash.into();
     let sbv_chunk_info = {
-        let mut builder = ChunkInfoBuilder::new(&chain_spec, prev_state_root, blocks);
-        builder.set_prev_msg_queue_hash(prev_msg_queue_hash);
-        builder
-            .build(withdraw_root)
+        #[allow(unused_mut)]
+        let mut builder = ChunkInfoBuilder::new(&chain_spec, pre_state_root.into(), &blocks);
+        builder.set_prev_msg_queue_hash(witness.prev_msg_queue_hash.into());
+        builder.build(withdraw_root)
+    };
+    if post_state_root != sbv_chunk_info.post_state_root() {
+        return Err(format!(
+            "state root mismatch: expected={}, found={}",
+            sbv_chunk_info.post_state_root(),
+            post_state_root
+        ));
+    }
+
+    let chunk_info = ChunkInfo {
+        chain_id: sbv_chunk_info.chain_id(),
+        prev_state_root: sbv_chunk_info.prev_state_root(),
+        post_state_root: sbv_chunk_info.post_state_root(),
+        withdraw_root,
+        tx_data_digest,
+        tx_data_length: u64::try_from(tx_data_length).expect("tx_data_length: u64"),
+        initial_block_number: blocks[0].header().number,
+        prev_msg_queue_hash: witness.prev_msg_queue_hash.into(),
+        post_msg_queue_hash: sbv_chunk_info
             .into_euclid_v2()
             .expect("euclid-v2")
+            .post_msg_queue_hash,
+        block_ctxs: blocks.iter().map(BlockContextV2::from).collect(),
     };
-    let post_msg_queue_hash = sbv_chunk_info.post_msg_queue_hash;
-
-    assert_eq!(
-        sbv_chunk_info.prev_state_root, prev_state_root,
-        "prev state root mismatch"
-    );
-
-    assert_eq!(
-        sbv_chunk_info.post_state_root, post_state_root,
-        "state root mismatch"
-    );
 
     openvm::io::println(format!("withdraw_root = {:?}", withdraw_root));
     openvm::io::println(format!("tx_bytes_hash = {:?}", tx_data_digest));
 
-    ChunkInfo {
-        chain_id: sbv_chunk_info.chain_id,
-        prev_state_root: sbv_chunk_info.prev_state_root,
-        post_state_root: sbv_chunk_info.post_state_root,
-        withdraw_root,
-        tx_data_digest,
-        prev_msg_queue_hash,
-        post_msg_queue_hash,
-        tx_data_length: u64::try_from(tx_data_length).expect("tx_data_length: u64"),
-        initial_block_number,
-        block_ctxs,
+    #[cfg(not(target_os = "zkvm"))]
+    {
+        unsafe {
+            ManuallyDrop::drop(&mut rlp_buffer);
+            for mut output in outputs {
+                ManuallyDrop::drop(&mut output);
+            }
+            ManuallyDrop::drop(&mut db);
+            ManuallyDrop::drop(&mut nodes_provider);
+            ManuallyDrop::drop(&mut blocks);
+        }
     }
+    Ok(chunk_info)
 }

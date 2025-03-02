@@ -3,8 +3,6 @@ use scroll_zkvm_circuit_input_types::Circuit;
 mod circuit;
 use circuit::ChunkCircuit as C;
 
-mod execute;
-
 openvm::entry!(main);
 
 fn main() {
