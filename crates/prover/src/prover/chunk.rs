@@ -1,12 +1,10 @@
 use crate::{
-    Error,
+    Error, Prover, ProverType,
     proof::{ChunkProofMetadata, RootProof},
     setup::read_app_config,
     task::{ProvingTask, chunk::ChunkProvingTask},
 };
 use scroll_zkvm_circuit_input_types::chunk::{ArchivedChunkWitness, ChunkWitness, execute};
-
-use crate::{Prover, ProverType};
 
 /// Prover for [`ChunkCircuit`].
 pub type ChunkProver = Prover<ChunkProverType>;

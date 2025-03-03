@@ -3,11 +3,7 @@ use core::iter::Iterator;
 use alloy_primitives::B256;
 use itertools::Itertools;
 
-use crate::{
-    batch::BatchHeaderV3,
-    chunk::ChunkInfo,
-    utils::keccak256,
-};
+use crate::{batch::BatchHeaderV3, chunk::ChunkInfo, utils::keccak256};
 
 /// The default max chunks for v3 payload
 pub const N_MAX_CHUNKS: usize = 45;
@@ -165,7 +161,7 @@ impl Payload {
         &self,
         header: &BatchHeaderV3,
         chunk_infos: &'a [ChunkInfo],
-    ) -> (&'a ChunkInfo, &'a ChunkInfo){
+    ) -> (&'a ChunkInfo, &'a ChunkInfo) {
         // Get the first and last chunks' info, to construct the batch info.
         let (first_chunk, last_chunk) = (
             chunk_infos.first().expect("at least one chunk in batch"),

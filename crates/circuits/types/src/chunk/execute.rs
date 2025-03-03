@@ -1,20 +1,18 @@
-use std::mem::ManuallyDrop;
-
 use crate::{
-    Circuit,
-    chunk::{ArchivedChunkWitness, ChunkInfo, ChunkWitness, make_providers},
+    chunk::{ArchivedChunkWitness, ChunkInfo, make_providers},
+    manually_drop_on_zkvm,
 };
 use sbv::{
     core::{EvmDatabase, EvmExecutor},
     primitives::{
         BlockWitness, RecoveredBlock,
         chainspec::{
-            Chain, ForkCondition, NamedChain,
+            Chain,
             reth_chainspec::ChainSpec,
             scroll::{ScrollChainConfig, ScrollChainSpec},
         },
         ext::{BlockWitnessChunkExt, TxBytesHashExt},
-        hardforks::{SCROLL_DEV_HARDFORKS, ScrollHardfork},
+        hardforks::SCROLL_DEV_HARDFORKS,
         types::{ChunkInfoBuilder, reth::Block},
     },
 };
@@ -38,14 +36,14 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
         return Err("All witnesses must have sequential block numbers in chunk mode".into());
     }
     // Get the blocks to build the basic chunk-info.
-    let blocks = witness
-        .blocks
-        .iter()
-        .map(|w| w.build_reth_block())
-        .collect::<Result<Vec<RecoveredBlock<Block>>, _>>()
-        .map_err(|e| e.to_string())?;
-    //#[cfg(target_os = "zkvm")]
-    let blocks = blocks.leak() as &'static [RecoveredBlock<Block>];
+    let blocks = manually_drop_on_zkvm!(
+        witness
+            .blocks
+            .iter()
+            .map(|w| w.build_reth_block())
+            .collect::<Result<Vec<RecoveredBlock<Block>>, _>>()
+            .map_err(|e| e.to_string())?
+    );
     let pre_state_root = witness.blocks[0].pre_state_root;
 
     let chain = Chain::from_id(witness.blocks[0].chain_id());
@@ -57,6 +55,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     #[cfg(not(feature = "euclidv2"))]
     hardforks.insert(ScrollHardfork::EuclidV2, ForkCondition::Never);
 
+
     let chain_spec: ScrollChainSpec = ScrollChainSpec {
         inner: ChainSpec {
             chain,
@@ -67,23 +66,21 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     };
 
     let (code_db, nodes_provider, block_hashes) = make_providers(&witness.blocks);
-    let mut nodes_provider = ManuallyDrop::new(nodes_provider);
+    let nodes_provider = manually_drop_on_zkvm!(nodes_provider);
 
     let prev_state_root = witness.blocks[0].pre_state_root();
-    let mut db = ManuallyDrop::new(
+    let mut db = manually_drop_on_zkvm!(
         EvmDatabase::new_from_root(code_db, prev_state_root, &nodes_provider, block_hashes)
-            .map_err(|e| format!("failed to create EvmDatabase: {}", e))?,
+            .map_err(|e| format!("failed to create EvmDatabase: {}", e))?
     );
-    let mut outputs = Vec::new();
     for block in blocks.iter() {
-        let output = ManuallyDrop::new(
+        let output = manually_drop_on_zkvm!(
             EvmExecutor::new(std::sync::Arc::new(chain_spec.clone()), &db, block)
                 .execute()
-                .map_err(|e| format!("failed to execute block: {}", e))?,
+                .map_err(|e| format!("failed to execute block: {}", e))?
         );
         db.update(&nodes_provider, output.state.state.iter())
             .map_err(|e| format!("failed to update db: {}", e))?;
-        outputs.push(output);
     }
 
     let post_state_root = db.commit_changes();
@@ -92,8 +89,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
         .withdraw_root()
         .map_err(|e| format!("failed to get withdraw root: {}", e))?;
 
-    let mut rlp_buffer = ManuallyDrop::new(Vec::with_capacity(2048));
-    #[allow(unused_variables)]
+    let mut rlp_buffer = manually_drop_on_zkvm!(Vec::with_capacity(2048));
     let (tx_data_length, tx_data_digest) = blocks
         .iter()
         .flat_map(|b| b.body().transactions.iter())
@@ -114,7 +110,6 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
         ));
     }
 
-    // TODO: unify this inside sbv
     #[cfg(feature = "euclidv2")]
     let chunk_info = ChunkInfo {
         chain_id: sbv_chunk_info.chain_id(),
@@ -131,6 +126,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
             .post_msg_queue_hash,
         block_ctxs: blocks.iter().map(BlockContextV2::from).collect(),
     };
+
     #[cfg(not(feature = "euclidv2"))]
     let chunk_info = ChunkInfo {
         chain_id: sbv_chunk_info.chain_id(),
@@ -143,20 +139,8 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
             .expect("legacy chunk")
             .data_hash,
     };
-
     openvm::io::println(format!("withdraw_root = {:?}", withdraw_root));
     openvm::io::println(format!("tx_bytes_hash = {:?}", tx_data_digest));
 
-    #[cfg(not(target_os = "zkvm"))]
-    {
-        unsafe {
-            ManuallyDrop::drop(&mut rlp_buffer);
-            for mut output in outputs {
-                ManuallyDrop::drop(&mut output);
-            }
-            ManuallyDrop::drop(&mut db);
-            ManuallyDrop::drop(&mut nodes_provider);
-        }
-    }
     Ok(chunk_info)
 }
