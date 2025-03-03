@@ -52,8 +52,13 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     #[allow(unused_mut)]
     let mut hardforks = (*SCROLL_DEV_HARDFORKS).clone();
     // disable EuclidV2 if not configured
-    // #[cfg(not(feature = "euclidv2"))]
-    // hardforks.insert(ScrollHardfork::EuclidV2, ForkCondition::Never);
+    #[cfg(not(feature = "euclidv2"))]{
+        use sbv::primitives::{
+            chainspec::ForkCondition,
+            hardforks::ScrollHardfork,
+        };
+        hardforks.insert(ScrollHardfork::EuclidV2, ForkCondition::Never);
+    }
 
     let chain_spec: ScrollChainSpec = ScrollChainSpec {
         inner: ChainSpec {
