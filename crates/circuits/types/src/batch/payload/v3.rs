@@ -77,7 +77,6 @@ impl Payload {
         let metadata_bytes = &batch_bytes_with_metadata[..n_bytes_metadata];
         let metadata_digest = keccak256(metadata_bytes);
         let batch_bytes = &batch_bytes_with_metadata[n_bytes_metadata..];
-
         // Decoded batch bytes require segmentation based on chunk length
         let valid_chunks = metadata_bytes[..N_BYTES_NUM_CHUNKS]
             .iter()
@@ -168,7 +167,19 @@ impl Payload {
             chunk_infos.last().expect("at least one chunk in batch"),
         );
 
-        // TODO: validations
+        let _ = self
+            .chunk_data_digests
+            .iter()
+            .zip(chunk_infos)
+            .inspect(|(chunk_digest, info)| assert_eq!(*chunk_digest, &info.tx_data_digest));
+
+        // Validate the l1-msg identifier data_hash for the batch.
+        let batch_data_hash_preimage = chunk_infos
+            .iter()
+            .flat_map(|chunk_info| chunk_info.data_hash.0)
+            .collect::<Vec<_>>();
+        let batch_data_hash = keccak256(batch_data_hash_preimage);
+        assert_eq!(batch_data_hash, header.data_hash);
 
         (first_chunk, last_chunk)
     }

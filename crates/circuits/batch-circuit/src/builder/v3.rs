@@ -30,21 +30,6 @@ impl BatchInfoBuilderV3 {
             PayloadV3::from_payload(&blob_bytes[1..])
         };
 
-        // Validate the tx data is match with fields in chunk info
-        for (chunk_info, &tx_data_digest) in
-            chunks_info.iter().zip(payload.chunk_data_digests.iter())
-        {
-            assert_eq!(chunk_info.tx_data_digest, tx_data_digest);
-        }
-
-        // Validate the l1-msg identifier data_hash for the batch.
-        let batch_data_hash_preimage = chunks_info
-            .iter()
-            .flat_map(|chunk_info| chunk_info.data_hash.0)
-            .collect::<Vec<_>>();
-        let batch_data_hash = keccak256(batch_data_hash_preimage);
-        assert_eq!(batch_data_hash, batch_header.data_hash);
-
         // Verify consistency of the EIP-4844 blob.
         //
         // - The challenge (z) MUST match.
@@ -62,11 +47,8 @@ impl BatchInfoBuilderV3 {
             batch_header.blob_data_proof[1]
         );
 
-        // Get the first and last chunks' info, to construct the batch info.
-        let (first, last) = (
-            chunks_info.first().expect("at least one chunk in batch"),
-            chunks_info.last().expect("at least one chunk in batch"),
-        );
+        // Validate payload (batch data).
+        let (first, last) = payload.validate(batch_header, chunks_info);
 
         BatchInfo {
             parent_state_root: first.prev_state_root,

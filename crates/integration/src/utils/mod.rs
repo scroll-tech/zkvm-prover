@@ -120,10 +120,7 @@ pub fn build_batch_task(
 
     const LEGACY_MAX_CHUNKS: usize = 45;
 
-    // collect all data together for payload
-    let mut payload = if cfg!(feature = "euclidv2") {
-        Vec::new()
-    } else {
+    let meta_chunk_bytes = {
         let valid_chunk_size = chunk_proofs.len() as u16;
         meta_chunk_sizes
             .into_iter()
@@ -136,6 +133,13 @@ pub fn build_batch_task(
                     bytes
                 },
             )
+    };
+
+    // collect all data together for payload
+    let mut payload = if cfg!(feature = "euclidv2") {
+        Vec::new()
+    } else {
+        meta_chunk_bytes.clone()
     };
     #[cfg(feature = "euclidv2")]
     {
@@ -202,7 +206,7 @@ pub fn build_batch_task(
         chg_preimage.extend(blob_versioned_hash.0);
         chg_preimage
     } else {
-        let mut chg_preimage = Vec::from(keccak256(&payload).0);
+        let mut chg_preimage = Vec::from(keccak256(&meta_chunk_bytes).0);
         let last_digest = chunk_digests.last().expect("at least we have one");
         chg_preimage.extend(
             chunk_digests
@@ -351,6 +355,8 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
     // depressed task output for pre-v2
     #[cfg(feature = "euclidv2")]
     write_json(path_testdata.join("batch-task-test-out.json"), &task).unwrap();
+    #[cfg(not(feature = "euclidv2"))]
+    write_json(path_testdata.join("batch-task-legacy-test-out.json"), &task).unwrap();
     Ok(())
 }
 

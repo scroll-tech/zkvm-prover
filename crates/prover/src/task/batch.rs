@@ -63,12 +63,12 @@ impl ProvingTask for BatchProvingTask {
             assert_eq!(k, &kzg_commitment);
         }
 
-        if let Some(p) = &self.kzg_proof {
-            assert_eq!(p, &kzg_proof);
-        }
-
         if let Some(c) = &self.challenge_digest {
             assert_eq!(*c, U256::from_be_bytes(challenge_digest.0));
+        }
+
+        if let Some(p) = &self.kzg_proof {
+            assert_eq!(p, &kzg_proof);
         }
 
         let point_eval_witness = PointEvalWitness {
