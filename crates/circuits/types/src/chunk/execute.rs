@@ -78,14 +78,12 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
         .map_err(|e| format!("failed to get withdraw root: {}", e))?;
 
     let mut rlp_buffer = manually_drop_on_zkvm!(Vec::with_capacity(2048));
-    #[allow(unused_variables)]
     let (tx_data_length, tx_data_digest) = blocks
         .iter()
         .flat_map(|b| b.body().transactions.iter())
         .tx_bytes_hash_in(rlp_buffer.as_mut());
 
     let sbv_chunk_info = {
-        #[allow(unused_mut)]
         let mut builder = ChunkInfoBuilder::new(&chain_spec, pre_state_root.into(), &blocks);
         builder.set_prev_msg_queue_hash(witness.prev_msg_queue_hash.into());
         builder.build(withdraw_root)
