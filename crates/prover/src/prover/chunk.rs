@@ -59,8 +59,7 @@ impl ProverType for ChunkProverType {
         // and execute it with "ArchivedChunkWitness".
         let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&chunk_witness).map_err(|e| {
             Error::GenProof(format!(
-                "{}: failed to serialize chunk witness: {}",
-                err_prefix, e
+                "{err_prefix}: failed to serialize chunk witness: {e}"
             ))
         })?;
         let chunk_witness = rkyv::access::<ArchivedChunkWitness, rkyv::rancor::BoxedError>(
@@ -68,13 +67,12 @@ impl ProverType for ChunkProverType {
         )
         .map_err(|e| {
             Error::GenProof(format!(
-                "{}: rkyv deserialisation of chunk witness bytes failed: {}",
-                err_prefix, e
+                "{err_prefix}: rkyv deserialisation of chunk witness bytes failed: {e}",
             ))
         })?;
 
         let chunk_info = execute(chunk_witness)
-            .map_err(|e| Error::GenProof(format!("{}: {}", err_prefix, e)))?;
+            .map_err(|e| Error::GenProof(format!("{err_prefix}: {e}")))?;
 
         Ok(ChunkProofMetadata { chunk_info })
     }
