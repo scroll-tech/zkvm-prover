@@ -7,7 +7,7 @@ use sbv::{
     primitives::{
         BlockWitness, RecoveredBlock,
         chainspec::{
-            Chain,
+            BaseFeeParams, BaseFeeParamsKind, Chain, MAINNET,
             reth_chainspec::ChainSpec,
             scroll::{ScrollChainConfig, ScrollChainSpec},
         },
@@ -52,22 +52,26 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     #[allow(unused_mut)]
     let mut hardforks = (*SCROLL_DEV_HARDFORKS).clone();
     // disable EuclidV2 if not configured
-    #[cfg(not(feature = "euclidv2"))]{
-        use sbv::primitives::{
-            chainspec::ForkCondition,
-            hardforks::ScrollHardfork,
-        };
+    #[cfg(not(feature = "euclidv2"))]
+    {
+        use sbv::primitives::{chainspec::ForkCondition, hardforks::ScrollHardfork};
         hardforks.insert(ScrollHardfork::EuclidV2, ForkCondition::Never);
     }
 
-    let chain_spec: ScrollChainSpec = ScrollChainSpec {
-        inner: ChainSpec {
-            chain,
-            hardforks,
-            ..Default::default()
-        },
-        config: ScrollChainConfig::mainnet(),
+    let inner = ChainSpec {
+        chain,
+        genesis_hash: Default::default(),
+        genesis: Default::default(),
+        genesis_header: Default::default(),
+        paris_block_and_final_difficulty: Default::default(),
+        hardforks,
+        deposit_contract: Default::default(),
+        base_fee_params: BaseFeeParamsKind::Constant(BaseFeeParams::ethereum()),
+        prune_delete_limit: 20000,
+        blob_params: Default::default(),
     };
+    let config = ScrollChainConfig::mainnet();
+    let chain_spec: ScrollChainSpec = ScrollChainSpec { inner, config };
 
     let (code_db, nodes_provider, block_hashes) = make_providers(&witness.blocks);
     let nodes_provider = manually_drop_on_zkvm!(nodes_provider);
@@ -145,6 +149,9 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     };
     openvm::io::println(format!("withdraw_root = {:?}", withdraw_root));
     openvm::io::println(format!("tx_bytes_hash = {:?}", tx_data_digest));
+
+    // We should never touch that lazy lock... Or else we introduce 40M useless cycles.
+    assert!(std::sync::LazyLock::get(&MAINNET).is_none());
 
     Ok(chunk_info)
 }
