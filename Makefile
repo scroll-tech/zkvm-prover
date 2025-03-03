@@ -4,7 +4,7 @@ export RUST_MIN_STACK
 RUST_BACKTRACE ?= 1
 export RUST_BACKTRACE
 
-RUST_LOG ?= off,scroll_zkvm_integration=debug,scroll_zkvm_verifier=debug,scroll_zkvm_prover=debug
+RUST_LOG ?= off,scroll_zkvm_integration=debug,scroll_zkvm_verifier=debug,scroll_zkvm_prover=debug,openvm_circuit=debug
 export RUST_LOG
 
 fmt:
@@ -15,6 +15,7 @@ clippy:
 	@cargo clippy --manifest-path crates/integration/Cargo.toml
 	@cargo clippy --manifest-path crates/prover/Cargo.toml
 	@cargo clippy --manifest-path crates/verifier/Cargo.toml
+	@cargo clippy --manifest-path crates/build-guest/Cargo.toml
 	sh openvm-clippy
 
 build-guest:

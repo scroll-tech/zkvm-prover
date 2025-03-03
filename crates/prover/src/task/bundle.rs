@@ -9,7 +9,7 @@ use scroll_zkvm_circuit_input_types::bundle::BundleWitness;
 /// Message indicating a sanity check failure.
 const BUNDLE_SANITY_MSG: &str = "bundle must have at least one batch";
 
-#[derive(Clone)]
+#[derive(Clone, serde::Deserialize, serde::Serialize)]
 pub struct BundleProvingTask {
     pub batch_proofs: Vec<BatchProof>,
 }
@@ -51,7 +51,7 @@ impl ProvingTask for BundleProvingTask {
         let mut stdin = StdIn::default();
         stdin.write_bytes(&serialized);
         for batch_proof in &self.batch_proofs {
-            let root_input = &batch_proof.proof;
+            let root_input = &batch_proof.as_proof();
             let streams = root_input.write();
             for s in &streams {
                 stdin.write_field(s);

@@ -5,7 +5,6 @@ use openvm_sdk::StdIn;
 use scroll_zkvm_circuit_input_types::batch::{
     BatchHeader, BatchHeaderV7, BatchInfo, BatchWitness, PointEvalWitness, ReferenceHeader,
 };
-use serde::{Deserialize, Serialize};
 
 use crate::{
     ChunkProof,
@@ -14,7 +13,7 @@ use crate::{
 };
 
 /// Defines a proving task for batch proof generation.
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, serde::Deserialize, serde::Serialize)]
 pub struct BatchProvingTask {
     /// Chunk proofs for the contiguous list of chunks within the batch.
     pub chunk_proofs: Vec<ChunkProof>,
@@ -63,7 +62,7 @@ impl ProvingTask for BatchProvingTask {
         let mut stdin = StdIn::default();
         stdin.write_bytes(&serialized);
         for chunk_proof in &self.chunk_proofs {
-            let root_input = &chunk_proof.proof;
+            let root_input = &chunk_proof.as_proof();
             let streams = root_input.write();
             for s in &streams {
                 stdin.write_field(s);
