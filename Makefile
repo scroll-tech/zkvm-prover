@@ -11,12 +11,12 @@ fmt:
 	@cargo fmt --all
 
 clippy:
-	@cargo clippy --manifest-path crates/circuits/types/Cargo.toml
-	@cargo clippy --manifest-path crates/integration/Cargo.toml
-	@cargo clippy --manifest-path crates/prover/Cargo.toml
-	@cargo clippy --manifest-path crates/verifier/Cargo.toml
-	@cargo clippy --manifest-path crates/build-guest/Cargo.toml
+	@cargo clippy --tests --all-features --manifest-path crates/circuits/types/Cargo.toml -- -D warnings
 	sh openvm-clippy
+	@cargo clippy --tests --all-features --manifest-path crates/build-guest/Cargo.toml -- -D warnings
+	@cargo clippy --tests --all-features --manifest-path crates/verifier/Cargo.toml -- -D warnings
+	@cargo clippy --tests --all-features --manifest-path crates/prover/Cargo.toml -- -D warnings
+	@cargo clippy --tests --all-features --manifest-path crates/integration/Cargo.toml -- -D warnings
 
 build-guest:
 	@cargo run --release -p scroll-zkvm-build-guest
