@@ -32,7 +32,7 @@ use tracing::{debug, instrument};
 use crate::{
     Error, WrappedProof,
     proof::RootProof,
-    setup::read_app_exe,
+    setup::{read_app_config, read_app_exe},
     task::{ProvingTask, flatten_wrapped_proof},
 };
 
@@ -582,6 +582,9 @@ pub trait ProverType {
     /// [`BundleProver`] has the EVM set to `true`.
     const EVM: bool;
 
+    /// The size of a segment, i.e. the max height of its chips.
+    const SEGMENT_SIZE: usize;
+
     /// The app program's exe commitment.
     const EXE_COMMIT: [u32; 8];
 
@@ -601,8 +604,17 @@ pub trait ProverType {
     type ProofMetadata: Serialize + DeserializeOwned + std::fmt::Debug;
 
     /// Read the app config from the given path.
-    fn read_app_config<P: AsRef<Path>>(path_app_config: P)
-    -> Result<AppConfig<SdkVmConfig>, Error>;
+    fn read_app_config<P: AsRef<Path>>(
+        path_app_config: P,
+    ) -> Result<AppConfig<SdkVmConfig>, Error> {
+        let mut config = read_app_config(path_app_config)?;
+        config.app_vm_config.system.config = config
+            .app_vm_config
+            .system
+            .config
+            .with_max_segment_len(Self::SEGMENT_SIZE);
+        Ok(config)
+    }
 
     /// Provided the proving task, computes the proof metadata.
     fn metadata_with_prechecks(task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error>;

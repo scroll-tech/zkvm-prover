@@ -337,6 +337,7 @@ mod tests {
                 post_state_root: B256::repeat_byte(3),
                 batch_hash: B256::repeat_byte(4),
                 withdraw_root: B256::repeat_byte(5),
+                msg_queue_hash: B256::repeat_byte(6),
             };
             let bundle_pi_hash = bundle_info.pi_hash();
             BundleProofMetadata {

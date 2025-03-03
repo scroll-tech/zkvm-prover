@@ -59,6 +59,7 @@ impl Circuit for BundleCircuit {
         let post_state_root = last_batch.state_root.into();
         let batch_hash = last_batch.batch_hash.into();
         let withdraw_root = last_batch.withdraw_root.into();
+        let msg_queue_hash = last_batch.post_msg_queue_hash.into();
 
         BundleInfo {
             chain_id,
@@ -68,6 +69,7 @@ impl Circuit for BundleCircuit {
             post_state_root,
             batch_hash,
             withdraw_root,
+            msg_queue_hash,
         }
     }
 }
