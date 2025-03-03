@@ -4,7 +4,6 @@ use scroll_zkvm_circuit_input_types::{PublicInputs, bundle::BundleInfo};
 use crate::{
     Error, Prover, ProverType,
     proof::BundleProofMetadata,
-    setup::read_app_config,
     task::{ProvingTask, bundle::BundleProvingTask},
 };
 

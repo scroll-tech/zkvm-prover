@@ -1,6 +1,6 @@
 use scroll_zkvm_circuit_input_types::{
     Circuit,
-    chunk::{ArchivedChunkWitness, ChunkInfo, ChunkWitness, execute},
+    chunk::{ArchivedChunkWitness, ChunkInfo, execute},
     utils::read_witnesses,
 };
 

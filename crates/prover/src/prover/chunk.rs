@@ -1,22 +1,6 @@
-use sbv::{
-    core::{EvmDatabase, EvmExecutor},
-    primitives::{
-        chainspec::{Chain, get_chain_spec_or_build},
-        ext::TxBytesHashExt,
-    },
-};
-use scroll_zkvm_circuit_input_types::chunk::{BlockContextV2, ChunkInfo, make_providers};
-
-#[cfg(feature = "scroll")]
-use sbv::primitives::{
-    BlockWitness, RecoveredBlock,
-    types::{ChunkInfoBuilder, reth::Block},
-};
-
 use crate::{
     Error, Prover, ProverType,
     proof::{ChunkProofMetadata, RootProof},
-    setup::read_app_config,
     task::{ProvingTask, chunk::ChunkProvingTask},
 };
 use scroll_zkvm_circuit_input_types::chunk::{ArchivedChunkWitness, ChunkWitness, execute};
@@ -71,8 +55,8 @@ impl ProverType for ChunkProverType {
             ))
         })?;
 
-        let chunk_info = execute(chunk_witness)
-            .map_err(|e| Error::GenProof(format!("{err_prefix}: {e}")))?;
+        let chunk_info =
+            execute(chunk_witness).map_err(|e| Error::GenProof(format!("{err_prefix}: {e}")))?;
 
         Ok(ChunkProofMetadata { chunk_info })
     }

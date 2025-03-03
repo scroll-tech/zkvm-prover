@@ -1,4 +1,7 @@
-use crate::{chunk::{ArchivedChunkWitness, ChunkInfo, make_providers}, manually_drop_on_zkvm};
+use crate::{
+    chunk::{ArchivedChunkWitness, ChunkInfo, make_providers},
+    manually_drop_on_zkvm,
+};
 use sbv::{
     core::{EvmDatabase, EvmExecutor},
     primitives::{
@@ -9,7 +12,7 @@ use sbv::{
             scroll::{ScrollChainConfig, ScrollChainSpec},
         },
         ext::{BlockWitnessChunkExt, TxBytesHashExt},
-        hardforks::{SCROLL_DEV_HARDFORKS},
+        hardforks::SCROLL_DEV_HARDFORKS,
         types::{ChunkInfoBuilder, reth::Block},
     },
 };
