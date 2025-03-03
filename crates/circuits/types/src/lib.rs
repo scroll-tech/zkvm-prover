@@ -1,3 +1,4 @@
+#![feature(lazy_get)]
 use alloy_primitives::B256;
 
 pub mod batch;
