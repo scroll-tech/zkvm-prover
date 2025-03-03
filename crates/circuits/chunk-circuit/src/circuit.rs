@@ -1,6 +1,6 @@
 use scroll_zkvm_circuit_input_types::{
     Circuit,
-    chunk::{ArchivedChunkWitness, ChunkInfo},
+    chunk::{ArchivedChunkWitness, ChunkInfo, ChunkWitness, execute},
     utils::read_witnesses,
 };
 
@@ -51,6 +51,6 @@ impl Circuit for ChunkCircuit {
     }
 
     fn validate(witness: &Self::Witness) -> Self::PublicInputs {
-        crate::execute::execute(witness)
+        execute(witness).expect("failed to execute chunk")
     }
 }
