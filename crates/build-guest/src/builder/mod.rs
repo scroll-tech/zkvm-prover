@@ -89,6 +89,7 @@ pub fn build(project_root: &str) -> eyre::Result<Elf> {
     let guest_opts = GuestOptions::default().with_features([FEATURE_SCROLL]);
     #[cfg(feature = "euclidv2")]
     let guest_opts = guest_opts.with_features(["euclidv2"]);
+    let guest_opts = guest_opts.with_profile("maxperf".to_string());
     let elf_path = build_elf(guest_opts, project_root, &Default::default())?;
     let data = std::fs::read(&elf_path)?;
     let new_data = binary_patch(&data);
