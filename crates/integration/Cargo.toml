@@ -39,6 +39,8 @@ halo2curves-axiom = "0.7.0"
 glob = "0.3"
 
 [features]
-default = ["scroll"]
+default = ["scroll", "gpu"]
 limit-logs = []
 scroll = ["sbv/scroll"]
+gpu = ["openvm-sdk/gpu", "scroll-zkvm-prover/gpu"]
+bench-metrics = ["scroll-zkvm-prover/bench-metrics", "openvm-sdk/bench-metrics", "openvm-circuit/bench-metrics"]

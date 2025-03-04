@@ -123,11 +123,11 @@ openvm-rv32im-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.
 openvm-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "rebase/02-19", default-features = false }
 openvm-sdk = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "rebase/02-19", default-features = false, features = ["gpu", "bench-metrics"] }
 openvm-sha256-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "rebase/02-19", default-features = false }
-openvm-platform = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "rebase/02-19", default-features = false, features = ["gpu", "bench-metrics"] }
+openvm-platform = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "rebase/02-19", default-features = false }
 
 [patch."https://github.com/openvm-org/stark-backend.git"]
-openvm-stark-backend = { git = "ssh://git@github.com/scroll-tech/openvm-stark-gpu.git", branch = "main" }
-openvm-stark-sdk = { git = "ssh://git@github.com/scroll-tech/openvm-stark-gpu.git", branch = "main" }
+openvm-stark-backend = { git = "ssh://git@github.com/scroll-tech/openvm-stark-gpu.git", branch = "main", features = ["gpu"] }
+openvm-stark-sdk = { git = "ssh://git@github.com/scroll-tech/openvm-stark-gpu.git", branch = "main", features = ["gpu"] }
 
 [patch."https://github.com/Plonky3/Plonky3.git"]
 p3-air = { git = "ssh://git@github.com/scroll-tech/plonky3-gpu.git", branch = "openvm-v2" }
