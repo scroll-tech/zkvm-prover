@@ -38,8 +38,6 @@ impl ProverType for BatchProverType {
 
         app_config.app_fri_params.fri_params =
             FriParameters::standard_with_100_bits_conjectured_security(1 /* app_log_blowup */);
-        app_config.leaf_fri_params.fri_params =
-            FriParameters::standard_with_100_bits_conjectured_security(1 /* agg_log_blowup */);
         app_config.app_vm_config.system.config = app_config
             .app_vm_config
             .system
