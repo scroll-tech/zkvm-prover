@@ -14,7 +14,7 @@ docs
 *.yml
 
 *.sh
-!build-guest.sh
+!build-guest-actions-entrypoint.sh
 
 *.md
 
