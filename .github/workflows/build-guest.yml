@@ -6,22 +6,22 @@ on:
     branches:
       - master
       - release/*
-      #    paths:
-      #      - 'crates/circuits/types/**/*'
-      #      - 'crates/circuits/chunk-circuit/**/*'
-      #      - 'crates/circuits/batch-circuit/**/*'
-      #      - 'crates/circuits/bundle-circuit/**/*'
-      #      - 'crates/build-guest/**/*'
+    paths:
+      - crates/circuits/types/**/*
+      - crates/circuits/chunk-circuit/**/*
+      - crates/circuits/batch-circuit/**/*
+      - crates/circuits/bundle-circuit/**/*
+      - crates/build-guest/**/*
   push:
     branches:
       - master
       - release/*
-      #    paths:
-      #      - 'crates/circuits/types/**/*'
-      #      - 'crates/circuits/chunk-circuit/**/*'
-      #      - 'crates/circuits/batch-circuit/**/*'
-      #      - 'crates/circuits/bundle-circuit/**/*'
-      #      - 'crates/build-guest/**/*'
+    paths:
+      - crates/circuits/types/**/*
+      - crates/circuits/chunk-circuit/**/*
+      - crates/circuits/batch-circuit/**/*
+      - crates/circuits/bundle-circuit/**/*
+      - crates/build-guest/**/*
 
 jobs:
   docker-build-guest:

@@ -1,8 +1,10 @@
+#!/bin/bash
+
 # build docker image
 docker build --platform linux/amd64 -t build-guest:local .
 
 # run docker image
-docker run --platform linux/amd64 --name build-guest build-guest:local
+docker run --platform linux/amd64 --name build-guest build-guest:local false
 
 # copy commitments from container to local (prover)
 docker cp build-guest:/app/crates/prover/src/commitments/chunk.rs crates/prover/src/commitments/chunk.rs
