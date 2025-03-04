@@ -1,0 +1,14 @@
+name: Build Guest
+description: Build guest programs and get SHA checksum of commitments
+
+outputs:
+  shasum-chunk:
+    description: SHA checksum of the chunk-circuit commitments
+  shasum-batch:
+    description: SHA checksum of the batch-circuit commitments
+  shasum-bundle:
+    description: SHA checksum of the bundle-circuit commitments
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'

@@ -1,0 +1,43 @@
+name: Build Guest
+
+on:
+  pull_request_target:
+    types: [synchronize, opened, reopened, ready_for_review]
+    branches:
+      - 'master'
+      - 'release/*'
+      #    paths:
+      #      - 'crates/circuits/types/**/*'
+      #      - 'crates/circuits/chunk-circuit/**/*'
+      #      - 'crates/circuits/batch-circuit/**/*'
+      #      - 'crates/circuits/bundle-circuit/**/*'
+      #      - 'crates/build-guest/**/*'
+  push:
+    branches:
+      - 'master'
+      - 'release/*'
+      #    paths:
+      #      - 'crates/circuits/types/**/*'
+      #      - 'crates/circuits/chunk-circuit/**/*'
+      #      - 'crates/circuits/batch-circuit/**/*'
+      #      - 'crates/circuits/bundle-circuit/**/*'
+      #      - 'crates/build-guest/**/*'
+
+jobs:
+  docker-build-guest:
+    name: Docker containerized build of guest programs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: docker-build-guest
+        uses: ./build-guest-metadata-action.yml
+
+      - name: Print SHA checksum of chunk-circuit commitments
+        run: echo "chunk-circuit=${{ steps.docker-build-guest.outputs.shasum-chunk }}"
+
+      - name: Print SHA checksum of batch-circuit commitments
+        run: echo "batch-circuit=${{ steps.docker-build-guest.outputs.shasum-batch }}"
+
+      - name: Print SHA checksum of bundle-circuit commitments
+        run: echo "bundle-circuit=${{ steps.docker-build-guest.outputs.shasum-bundle }}"

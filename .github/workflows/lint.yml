@@ -4,7 +4,9 @@ on:
   pull_request:
     types: [synchronize, opened, reopened, ready_for_review]
   push:
-    branches: [master, release/*]
+    branches:
+      - 'master'
+      - 'release/*'
 
 env:
   CARGO_NET_GIT_FETCH_WITH_CLI: true
