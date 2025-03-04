@@ -32,35 +32,75 @@ jobs:
 
       - name: chunk commitments (prover)
         id: commitments-chunk-prover
-        run: echo "commitments=$(cat crates/prover/src/commitments/chunk.rs)" >> $GITHUB_OUTPUT
+        run: |
+          {
+            echo 'commitments<<EOF'
+            cat crates/prover/src/commitments/chunk.rs
+            echo EOF
+          } >> $GITHUB_OUTPUT
 
       - name: batch commitments (prover)
         id: commitments-batch-prover
-        run: echo "commitments=$(cat crates/prover/src/commitments/batch.rs)" >> $GITHUB_OUTPUT
+        run: |
+          {
+            echo 'commitments<<EOF'
+            cat crates/prover/src/commitments/batch.rs
+            echo EOF
+          } >> $GITHUB_OUTPUT
 
       - name: bundle commitments (prover)
         id: commitments-bundle-prover
-        run: echo "commitments=$(cat crates/prover/src/commitments/bundle.rs)" >> $GITHUB_OUTPUT
+        run: |
+          {
+            echo 'commitments<<EOF'
+            cat crates/prover/src/commitments/bundle.rs
+            echo EOF
+          } >> $GITHUB_OUTPUT
 
       - name: chunk commitments (verifier)
         id: commitments-chunk-verifier
-        run: echo "commitments=$(cat crates/verifier/src/commitments/chunk.rs)" >> $GITHUB_OUTPUT
+        run: |
+          {
+            echo 'commitments<<EOF'
+            cat crates/verifier/src/commitments/chunk.rs
+            echo EOF
+          } >> $GITHUB_OUTPUT
 
       - name: batch commitments (verifier)
         id: commitments-batch-verifier
-        run: echo "commitments=$(cat crates/verifier/src/commitments/batch.rs)" >> $GITHUB_OUTPUT
+        run: |
+          {
+            echo 'commitments<<EOF'
+            cat crates/verifier/src/commitments/batch.rs
+            echo EOF
+          } >> $GITHUB_OUTPUT
 
       - name: bundle commitments (verifier)
         id: commitments-bundle-verifier
-        run: echo "commitments=$(cat crates/verifier/src/commitments/bundle.rs)" >> $GITHUB_OUTPUT
+        run: |
+          {
+            echo 'commitments<<EOF'
+            cat crates/verifier/src/commitments/bundle.rs
+            echo EOF
+          } >> $GITHUB_OUTPUT
 
       - name: chunk commitments (circuits)
         id: commitments-chunk-circuits
-        run: echo "commitments=$(cat crates/circuits/batch-circuit/src/child_commitments.rs)" >> $GITHUB_OUTPUT
+        run: |
+          {
+            echo 'commitments<<EOF'
+            cat crates/circuits/batch-circuit/src/child_commitments.rs
+            echo EOF
+          } >> $GITHUB_OUTPUT
 
       - name: batch commitments (circuits)
         id: commitments-batch-circuits
-        run: echo "commitments=$(cat crates/circuits/bundle-circuit/src/child_commitments.rs)" >> $GITHUB_OUTPUT
+        run: |
+          {
+            echo 'commitments<<EOF'
+            cat crates/circuits/bundle-circuit/src/child_commitments.rs
+            echo EOF
+          } >> $GITHUB_OUTPUT
 
       - name: Sanity check for chunk-commitments (prover vs verifier)
         uses: nick-fields/assert-action@v1
