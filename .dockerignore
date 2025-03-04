@@ -5,6 +5,7 @@
 .dockerignore
 
 Dockerfile
+Dockerfile.backup
 
 .output
 
@@ -13,6 +14,7 @@ docs
 *.yml
 
 *.sh
+!build-guest.sh
 
 *.md
 

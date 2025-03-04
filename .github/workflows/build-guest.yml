@@ -31,7 +31,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - id: docker-build-guest
-        uses: ./docker
+        uses: ./
 
       - name: Print SHA checksum of chunk-circuit commitments
         run: echo "chunk-circuit=${{ steps.docker-build-guest.outputs.shasum-chunk }}"
