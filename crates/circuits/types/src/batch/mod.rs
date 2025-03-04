@@ -6,13 +6,16 @@ pub use header::{
 };
 
 mod payload;
-pub use payload::*;
-
-#[cfg(feature = "batch-v3")]
-pub use payload::v3::Payload as PayloadV3;
-
-#[cfg(feature = "batch-v7")]
-pub use payload::v7::{EnvelopeV7, PayloadV7};
+#[cfg(not(feature = "euclidv2"))]
+pub use payload::{
+    v3::{EnvelopeV3, PayloadV3},
+    *,
+};
+#[cfg(feature = "euclidv2")]
+pub use payload::{
+    v7::{EnvelopeV7, PayloadV7},
+    *,
+};
 
 mod public_inputs;
 pub use public_inputs::{ArchivedBatchInfo, BatchInfo};
