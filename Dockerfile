@@ -8,4 +8,4 @@ WORKDIR /app
 
 COPY . .
 
-CMD [ "sh", "build-guest.sh" ]
+CMD [ "sh", "build-guest-actions-entrypoint.sh" ]

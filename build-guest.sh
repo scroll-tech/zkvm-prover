@@ -1,11 +1,19 @@
-git config --global --add safe.directory $PWD
+# build docker image
+docker build --platform linux/amd64 -t build-guest:local .
 
-cargo run --release -p scroll-zkvm-build-guest
+# run docker image
+docker run --platform linux/amd64 --name build-guest build-guest:local
 
-commitments_chunk=$(cat crates/prover/src/commitments/chunk.rs)
-commitments_batch=$(cat crates/prover/src/commitments/batch.rs)
-commitments_bundle=$(cat crates/prover/src/commitments/bundle.rs)
+# copy commitments from container to local (prover)
+docker cp build-guest:/app/crates/prover/src/commitments/chunk.rs crates/prover/src/commitments/chunk.rs
+docker cp build-guest:/app/crates/prover/src/commitments/batch.rs crates/prover/src/commitments/batch.rs
+docker cp build-guest:/app/crates/prover/src/commitments/bundle.rs crates/prover/src/commitments/bundle.rs
 
-echo "commitments-chunk=$commitments_chunk" >> $GITHUB_OUTPUT
-echo "commitments-batch=$commitments_batch" >> $GITHUB_OUTPUT
-echo "commitments-bundle=$commitments_bundle" >> $GITHUB_OUTPUT
+# copy commitments to local (verifier)
+cp crates/prover/src/commitments/chunk.rs crates/verifier/src/commitments/chunk.rs
+cp crates/prover/src/commitments/batch.rs crates/verifier/src/commitments/batch.rs
+cp crates/prover/src/commitments/bundle.rs crates/verifier/src/commitments/bundle.rs
+
+# copy commitments to local (circuits)
+cp crates/prover/src/commitments/chunk.rs crates/circuits/batch-circuit/src/child_commitments.rs
+cp crates/prover/src/commitments/batch.rs crates/circuits/bundle-circuit/src/child_commitments.rs

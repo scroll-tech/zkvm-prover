@@ -30,14 +30,85 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: chunk commitments (prover)
+        id: commitments-chunk-prover
+        run: echo "commitments=$(cat crates/prover/src/commitments/chunk.rs)" >> $GITHUB_OUTPUT
+
+      - name: batch commitments (prover)
+        id: commitments-batch-prover
+        run: echo "commitments=$(cat crates/prover/src/commitments/batch.rs)" >> $GITHUB_OUTPUT
+
+      - name: bundle commitments (prover)
+        id: commitments-bundle-prover
+        run: echo "commitments=$(cat crates/prover/src/commitments/bundle.rs)" >> $GITHUB_OUTPUT
+
+      - name: chunk commitments (verifier)
+        id: commitments-chunk-verifier
+        run: echo "commitments=$(cat crates/verifier/src/commitments/chunk.rs)" >> $GITHUB_OUTPUT
+
+      - name: batch commitments (verifier)
+        id: commitments-batch-verifier
+        run: echo "commitments=$(cat crates/verifier/src/commitments/batch.rs)" >> $GITHUB_OUTPUT
+
+      - name: bundle commitments (verifier)
+        id: commitments-bundle-verifier
+        run: echo "commitments=$(cat crates/verifier/src/commitments/bundle.rs)" >> $GITHUB_OUTPUT
+
+      - name: chunk commitments (circuits)
+        id: commitments-chunk-circuits
+        run: echo "commitments=$(cat crates/circuits/batch-circuit/src/child_commitments.rs)" >> $GITHUB_OUTPUT
+
+      - name: batch commitments (circuits)
+        id: commitments-batch-circuits
+        run: echo "commitments=$(cat crates/circuits/bundle-circuit/src/child_commitments.rs)" >> $GITHUB_OUTPUT
+
+      - name: Sanity check for chunk-commitments (prover vs verifier)
+        uses: nick-fields/assert-action@v1
+        with:
+          expected: ${{ steps.commitments-chunk-prover.outputs.commitments }}
+          actual: ${{ steps.commitments-chunk-verifier.outputs.commitments }}
+
+      - name: Sanity check for chunk-commitments (prover vs circuits)
+        uses: nick-fields/assert-action@v1
+        with:
+          expected: ${{ steps.commitments-chunk-prover.outputs.commitments }}
+          actual: ${{ steps.commitments-chunk-circuits.outputs.commitments }}
+
+      - name: Sanity check for batch-commitments (prover vs verifier)
+        uses: nick-fields/assert-action@v1
+        with:
+          expected: ${{ steps.commitments-batch-prover.outputs.commitments }}
+          actual: ${{ steps.commitments-batch-verifier.outputs.commitments }}
+
+      - name: Sanity check for batch-commitments (prover vs circuits)
+        uses: nick-fields/assert-action@v1
+        with:
+          expected: ${{ steps.commitments-batch-prover.outputs.commitments }}
+          actual: ${{ steps.commitments-batch-circuits.outputs.commitments }}
+
+      - name: Sanity check for bundle-commitments (prover vs verifier)
+        uses: nick-fields/assert-action@v1
+        with:
+          expected: ${{ steps.commitments-bundle-prover.outputs.commitments }}
+          actual: ${{ steps.commitments-bundle-verifier.outputs.commitments }}
+
       - id: docker-build-guest
         uses: ./
 
-      - name: Print chunk-circuit commitments
-        run: echo "chunk-circuit=${{ steps.docker-build-guest.outputs.commitments-chunk }}"
+      - name: Compare chunk-circuit commitments
+        uses: nick-fields/assert-action@v1
+        with:
+          expected: ${{ steps.docker-build-guest.outputs.commitments-chunk }}
+          actual: ${{ steps.commitments-chunk-prover.commitments }}
 
-      - name: Print batch-circuit commitments
-        run: echo "batch-circuit=${{ steps.docker-build-guest.outputs.commitments-batch }}"
+      - name: Compare batch-circuit commitments
+        uses: nick-fields/assert-action@v1
+        with:
+          expected: ${{ steps.docker-build-guest.outputs.commitments-batch }}
+          actual: ${{ steps.commitments-batch-prover.commitments }}
 
-      - name: Print bundle-circuit commitments
-        run: echo "bundle-circuit=${{ steps.docker-build-guest.outputs.commitments-bundle }}"
+      - name: Compare bundle-circuit commitments
+        uses: nick-fields/assert-action@v1
+        with:
+          expected: ${{ steps.docker-build-guest.outputs.commitments-bundle }}
+          actual: ${{ steps.commitments-bundle-prover.commitments }}
