@@ -1,6 +1,6 @@
-FROM rust:1.85 AS build
+FROM rust:1.85
 
-RUN rustup target add x86_64-unknown-linux-musl
+RUN rustup toolchain install nightly-2024-12-06-aarch64-unknown-linux-gnu
 
 WORKDIR /app
 
