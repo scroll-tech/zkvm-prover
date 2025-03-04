@@ -34,7 +34,7 @@ use crate::{
     Error, WrappedProof,
     proof::RootProof,
     setup::{read_app_config, read_app_exe},
-    task::ProvingTask,
+    task::{ProvingTask, flatten_wrapped_proof},
 };
 
 mod batch;
@@ -52,6 +52,12 @@ static AGG_STARK_PROVING_KEY: Lazy<AggStarkProvingKey> =
 
 /// The default directory to locate openvm's halo2 SRS parameters.
 const DEFAULT_PARAMS_DIR: &str = concat!(env!("HOME"), "/.openvm/params/");
+
+/// File descriptor for the root verifier's VM config.
+const FD_ROOT_VERIFIER_VM_CONFIG: &str = "root-verifier-vm-config";
+
+/// File descriptor for the root verifier's committed exe.
+const FD_ROOT_VERIFIER_COMMITTED_EXE: &str = "root-verifier-committed-exe";
 
 /// Types used in the outermost proof construction and verification, i.e. the EVM-compatible layer.
 pub struct EvmProverVerifier {
@@ -201,6 +207,30 @@ impl<Type: ProverType> Prover<Type> {
         Ok((app_committed_exe, app_pk, commits))
     }
 
+    /// Dump assets required to setup verifier-only mode.
+    pub fn dump_verifier<P: AsRef<Path>>(&self, dir: P) -> Result<(PathBuf, PathBuf), Error> {
+        if !Type::EVM {
+            return Err(Error::Custom(
+                "dump_verifier only at bundle-prover".to_string(),
+            ));
+        };
+
+        let agg_stark_pk = AGG_STARK_PROVING_KEY.get().ok_or(Error::Custom(
+            "AGG_STARK_PROVING_KEY is not setup".to_string(),
+        ))?;
+        let root_verifier_pk = &agg_stark_pk.root_verifier_pk;
+        let vm_config = root_verifier_pk.vm_pk.vm_config.clone();
+        let root_committed_exe: &VmCommittedExe<_> = &root_verifier_pk.root_committed_exe;
+
+        let path_vm_config = dir.as_ref().join(FD_ROOT_VERIFIER_VM_CONFIG);
+        let path_root_committed_exe = dir.as_ref().join(FD_ROOT_VERIFIER_COMMITTED_EXE);
+
+        crate::utils::write_bin(&path_vm_config, &vm_config)?;
+        crate::utils::write_bin(&path_root_committed_exe, &root_committed_exe)?;
+
+        Ok((path_vm_config, path_root_committed_exe))
+    }
+
     /// Pick up app commit as "vk" in proof, to distinguish from which circuit the proof comes
     pub fn get_app_vk(&self) -> Vec<u8> {
         use openvm_sdk::commit::AppExecutionCommit;
@@ -240,7 +270,7 @@ impl<Type: ProverType> Prover<Type> {
     pub fn gen_proof(
         &self,
         task: &Type::ProvingTask,
-    ) -> Result<WrappedProof<Type::ProofMetadata, RootProof>, Error> {
+    ) -> Result<WrappedProof<Type::ProofMetadata>, Error> {
         let task_id = task.identifier();
 
         // Try reading proof from cache if available, and early return in that case.
@@ -277,7 +307,7 @@ impl<Type: ProverType> Prover<Type> {
     pub fn gen_proof_evm(
         &self,
         task: &Type::ProvingTask,
-    ) -> Result<WrappedProof<Type::ProofMetadata, EvmProof>, Error> {
+    ) -> Result<WrappedProof<Type::ProofMetadata>, Error> {
         let task_id = task.identifier();
 
         // Try reading proof from cache if available, and early return in that case.
@@ -318,19 +348,35 @@ impl<Type: ProverType> Prover<Type> {
     ///
     /// [root_proof][RootProof]
     #[instrument("Prover::verify_proof", skip_all, fields(?metadata = proof.metadata))]
-    pub fn verify_proof(
-        &self,
-        proof: &WrappedProof<Type::ProofMetadata, RootProof>,
-    ) -> Result<(), Error> {
+    pub fn verify_proof(&self, proof: &WrappedProof<Type::ProofMetadata>) -> Result<(), Error> {
         let agg_stark_pk = &AGG_STARK_PROVING_KEY;
 
         let root_verifier_pk = &agg_stark_pk.root_verifier_pk;
-        let vm = SingleSegmentVmExecutor::new(root_verifier_pk.vm_pk.vm_config.clone());
+        let vm_executor = SingleSegmentVmExecutor::new(root_verifier_pk.vm_pk.vm_config.clone());
         let exe: &VmCommittedExe<_> = &root_verifier_pk.root_committed_exe;
 
-        let _ = vm
-            .execute_and_compute_heights(exe.exe.clone(), proof.proof.write())
+        let root_proof = proof.proof.as_root_proof().ok_or(Error::VerifyProof(
+            "verify_proof expects RootProof".to_string(),
+        ))?;
+        vm_executor
+            .execute_and_compute_heights(exe.exe.clone(), root_proof.write())
             .map_err(|e| Error::VerifyProof(e.to_string()))?;
+
+        let aggregation_input = flatten_wrapped_proof(proof);
+        if aggregation_input.commitment.exe != Type::EXE_COMMIT {
+            return Err(Error::VerifyProof(format!(
+                "EXE_COMMIT mismatch: expected={:?}, got={:?}",
+                Type::EXE_COMMIT,
+                aggregation_input.commitment.exe,
+            )));
+        }
+        if aggregation_input.commitment.leaf != Type::LEAF_COMMIT {
+            return Err(Error::VerifyProof(format!(
+                "LEAF_COMMIT mismatch: expected={:?}, got={:?}",
+                Type::LEAF_COMMIT,
+                aggregation_input.commitment.leaf,
+            )));
+        }
 
         Ok(())
     }
@@ -339,17 +385,16 @@ impl<Type: ProverType> Prover<Type> {
     ///
     /// [evm_proof][openvm_native_recursion::halo2::EvmProof]
     #[instrument("Prover::verify_proof_evm", skip_all)]
-    pub fn verify_proof_evm(
-        &self,
-        proof: &WrappedProof<Type::ProofMetadata, EvmProof>,
-    ) -> Result<(), Error> {
+    pub fn verify_proof_evm(&self, proof: &WrappedProof<Type::ProofMetadata>) -> Result<(), Error> {
+        let evm_proof = proof.proof.as_evm_proof().ok_or(Error::VerifyProof(
+            "verify_proof_evm expects EvmProof".to_string(),
+        ))?;
         let gas_cost = scroll_zkvm_verifier::evm::verify_evm_proof(
             &self
                 .evm_prover
                 .as_ref()
                 .expect("uninited")
                 .verifier_contract,
-            &proof.proof,
         )
         .map_err(|e| Error::VerifyProof(format!("EVM-proof verification failed: {e}")))?;
 
@@ -589,6 +634,12 @@ pub trait ProverType {
 
     /// The size of a segment, i.e. the max height of its chips.
     const SEGMENT_SIZE: usize;
+
+    /// The app program's exe commitment.
+    const EXE_COMMIT: [u32; 8];
+
+    /// The app program's leaf commitment.
+    const LEAF_COMMIT: [u32; 8];
 
     /// The task provided as argument during proof generation process.
     type ProvingTask: ProvingTask;

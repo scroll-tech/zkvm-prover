@@ -4,8 +4,9 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-scroll-zkvm-prover.workspace = true
 scroll-zkvm-circuit-input-types.workspace = true
+scroll-zkvm-prover.workspace = true
+scroll-zkvm-verifier.workspace = true
 sbv.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true

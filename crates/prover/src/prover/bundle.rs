@@ -3,8 +3,8 @@ use scroll_zkvm_circuit_input_types::{PublicInputs, bundle::BundleInfo};
 
 use crate::{
     Error, Prover, ProverType,
+    commitments::bundle::{EXE_COMMIT as BUNDLE_EXE_COMMIT, LEAF_COMMIT as BUNDLE_LEAF_COMMIT},
     proof::BundleProofMetadata,
-    setup::read_app_config,
     task::{ProvingTask, bundle::BundleProvingTask},
 };
 
@@ -19,6 +19,10 @@ impl ProverType for BundleProverType {
     const EVM: bool = true;
 
     const SEGMENT_SIZE: usize = 8388508 * 2;
+
+    const EXE_COMMIT: [u32; 8] = BUNDLE_EXE_COMMIT;
+
+    const LEAF_COMMIT: [u32; 8] = BUNDLE_LEAF_COMMIT;
 
     type ProvingTask = BundleProvingTask;
 

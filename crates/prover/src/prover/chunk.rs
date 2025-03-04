@@ -1,10 +1,9 @@
 use crate::{
     Error, Prover, ProverType,
+    commitments::chunk::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT},
     proof::{ChunkProofMetadata, RootProof},
-    setup::read_app_config,
     task::{ProvingTask, chunk::ChunkProvingTask},
 };
-use scroll_zkvm_circuit_input_types::chunk::{ArchivedChunkWitness, ChunkWitness, execute};
 
 /// Prover for [`ChunkCircuit`].
 pub type ChunkProver = Prover<ChunkProverType>;
@@ -17,6 +16,10 @@ impl ProverType for ChunkProverType {
     const EVM: bool = false;
 
     const SEGMENT_SIZE: usize = 8388508;
+
+    const EXE_COMMIT: [u32; 8] = CHUNK_EXE_COMMIT;
+
+    const LEAF_COMMIT: [u32; 8] = CHUNK_LEAF_COMMIT;
 
     type ProvingTask = ChunkProvingTask;
 

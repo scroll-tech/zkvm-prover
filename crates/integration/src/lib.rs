@@ -5,14 +5,12 @@ use std::{
 
 use metrics_tracing_context::MetricsLayer;
 use once_cell::sync::OnceCell;
-use openvm_native_recursion::halo2::EvmProof;
 use openvm_sdk::{
     F, Sdk,
     config::{AppConfig, SdkVmConfig},
-    verifier::root::types::RootVmVerifierInput,
 };
 use scroll_zkvm_prover::{
-    ProverType, SC, WrappedProof,
+    ProverType, WrappedProof,
     setup::{read_app_config, read_app_exe},
     task::ProvingTask,
 };
@@ -183,20 +181,19 @@ fn setup_logger() -> eyre::Result<()> {
 type ProveVerifyRes<T> = eyre::Result<
     ProveVerifyOutcome<
         <<T as ProverTester>::Prover as ProverType>::ProvingTask,
-        WrappedProof<
-            <<T as ProverTester>::Prover as ProverType>::ProofMetadata,
-            RootVmVerifierInput<SC>,
-        >,
+        WrappedProof<<<T as ProverTester>::Prover as ProverType>::ProofMetadata>,
     >,
 >;
 
 /// Alias for convenience.
-type ProveVerifyEvmRes<T> = eyre::Result<
+type ProveVerifyEvmRes<T> = eyre::Result<(
     ProveVerifyOutcome<
         <<T as ProverTester>::Prover as ProverType>::ProvingTask,
-        WrappedProof<<<T as ProverTester>::Prover as ProverType>::ProofMetadata, EvmProof>,
+        WrappedProof<<<T as ProverTester>::Prover as ProverType>::ProofMetadata>,
     >,
->;
+    scroll_zkvm_verifier::verifier::Verifier<scroll_zkvm_verifier::verifier::BundleVerifierType>,
+    PathBuf,
+)>;
 
 /// End-to-end test for a single proving task.
 #[instrument(name = "prove_verify_single", skip_all)]
@@ -274,9 +271,7 @@ where
             prover.verify_proof(&proof)?;
             Ok(proof)
         })
-        .collect::<eyre::Result<
-            Vec<WrappedProof<<T::Prover as ProverType>::ProofMetadata, RootVmVerifierInput<SC>>>,
-        >>()?;
+        .collect::<eyre::Result<Vec<WrappedProof<<T::Prover as ProverType>::ProofMetadata>>>>()?;
 
     Ok(ProveVerifyOutcome::multi(&tasks, &proofs))
 }
@@ -307,8 +302,19 @@ where
         Some(&cache_dir),
     )?;
 
+    // Dump verifier-only assets to disk.
+    let (path_vm_config, path_root_committed_exe) = prover.dump_verifier(&path_assets)?;
+    let path_verifier_code = Path::new(T::PATH_PROJECT_ROOT)
+        .join("openvm")
+        .join("verifier.bin");
+    let verifier = scroll_zkvm_verifier::verifier::Verifier::setup(
+        &path_vm_config,
+        &path_root_committed_exe,
+        &path_verifier_code,
+    )?;
+
     // Generate proving task for the circuit.
-    let task = task.unwrap_or(T::gen_proving_task()?);
+    let task = task.map_or_else(|| T::gen_proving_task(), Ok)?;
 
     // Construct root proof for the circuit.
     let proof = prover.gen_proof_evm(&task)?;
@@ -316,22 +322,9 @@ where
     // Verify proof.
     prover.verify_proof_evm(&proof)?;
 
-    // The structure of the halo2-proof's instances is:
-    // - 12 instances for accumulator
-    // - 2 instances for digests (MUST be checked on-chain)
-    // - 32 instances for pi_hash (bundle_pi_hash)
-    //
-    // We write the 2 digests to disc.
-    let digest_1 = proof.proof.instances[0][12];
-    let digest_2 = proof.proof.instances[0][13];
-    scroll_zkvm_prover::utils::write(
-        path_assets.join("digest_1"),
-        &digest_1.to_bytes().into_iter().rev().collect::<Vec<u8>>(),
-    )?;
-    scroll_zkvm_prover::utils::write(
-        path_assets.join("digest_2"),
-        &digest_2.to_bytes().into_iter().rev().collect::<Vec<u8>>(),
-    )?;
-
-    Ok(ProveVerifyOutcome::single(task, proof))
+    Ok((
+        ProveVerifyOutcome::single(task, proof),
+        verifier,
+        path_assets,
+    ))
 }
