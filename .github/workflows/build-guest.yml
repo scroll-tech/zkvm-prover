@@ -26,7 +26,7 @@ on:
 jobs:
   docker-build-guest:
     name: Docker containerized build of guest programs
-    runs-on: linux
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
