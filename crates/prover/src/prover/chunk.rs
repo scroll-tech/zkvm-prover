@@ -4,6 +4,7 @@ use crate::{
     proof::{ChunkProofMetadata, RootProof},
     task::{ProvingTask, chunk::ChunkProvingTask},
 };
+use scroll_zkvm_circuit_input_types::chunk::{ArchivedChunkWitness, ChunkWitness, execute};
 
 /// Prover for [`ChunkCircuit`].
 pub type ChunkProver = Prover<ChunkProverType>;

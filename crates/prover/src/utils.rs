@@ -58,7 +58,7 @@ pub fn write_json<P: AsRef<Path>, T: Serialize>(path: P, value: &T) -> Result<()
 
 /// Serialize the provided type with bincode and write to the given path.
 pub fn write_bin<P: AsRef<Path>, T: Serialize>(path: P, value: &T) -> Result<(), Error> {
-    let data = bincode::serialize(value).map_err(|e| Error::Custom(e.to_string()))?;
+    let data = bincode_v1::serialize(value).map_err(|e| Error::Custom(e.to_string()))?;
     write(path, &data)
 }
 
@@ -90,7 +90,7 @@ pub mod as_base64 {
     use serde::{Deserialize, Deserializer, Serialize, Serializer, de::DeserializeOwned};
 
     pub fn serialize<S: Serializer, T: Serialize>(v: &T, s: S) -> Result<S::Ok, S::Error> {
-        let v_bytes = bincode::serialize(v).map_err(serde::ser::Error::custom)?;
+        let v_bytes = bincode_v1::serialize(v).map_err(serde::ser::Error::custom)?;
         let v_base64 = BASE64_STANDARD.encode(&v_bytes);
         String::serialize(&v_base64, s)
     }
@@ -102,7 +102,7 @@ pub mod as_base64 {
         let v_bytes = BASE64_STANDARD
             .decode(v_base64.as_bytes())
             .map_err(serde::de::Error::custom)?;
-        bincode::deserialize(&v_bytes).map_err(serde::de::Error::custom)
+        bincode_v1::deserialize(&v_bytes).map_err(serde::de::Error::custom)
     }
 }
 

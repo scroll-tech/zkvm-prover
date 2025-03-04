@@ -223,6 +223,7 @@ where
         &path_exe,
         &path_app_config,
         Some(&cache_dir),
+        Default::default(),
     )?;
 
     // Construct root proof for the circuit.
@@ -258,6 +259,7 @@ where
         &path_exe,
         &path_app_config,
         Some(&cache_dir),
+        Default::default(),
     )?;
 
     // Generate proving task for the circuit.
@@ -300,6 +302,7 @@ where
         &path_exe,
         &path_app_config,
         Some(&cache_dir),
+        Default::default(),
     )?;
 
     // Dump verifier-only assets to disk.
