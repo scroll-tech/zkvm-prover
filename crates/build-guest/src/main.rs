@@ -1,11 +1,8 @@
-use scroll_zkvm_integration::{
-    ProverTester,
-    testers::{batch::BatchProverTester, bundle::BundleProverTester, chunk::ChunkProverTester},
-};
-use scroll_zkvm_prover::{BatchProverType, BundleProverType, ChunkProverType};
+use openvm_sdk::{Sdk, commit::AppExecutionCommit};
 
 mod verifier;
 use verifier::dump_verifier;
+mod builder;
 
 fn write_commitments(commitments: [[u32; 8]; 2], output: &str) {
     let content = format!(
@@ -23,66 +20,62 @@ pub fn main() {
     let metadata = cargo_metadata::MetadataCommand::new().exec().unwrap();
     let workspace_dir = metadata.workspace_root;
 
-    dump_verifier(&format!(
-        "{workspace_dir}/crates/build-guest/root_verifier.asm"
-    ));
+    let root_verifier = format!("{workspace_dir}/crates/build-guest/root_verifier.asm");
+    if !std::path::Path::new(&root_verifier).exists() {
+        dump_verifier(&root_verifier);
+    } else {
+        println!("root_verifier.asm already exists, skipping");
+    }
 
-    // chunk-circuit
-    let chunk_elf = ChunkProverTester::build().unwrap();
-    let output_path = format!("{workspace_dir}/crates/circuits/chunk-circuit/openvm");
-    let (chunk_config_path, _, chunk_exe_path) =
-        ChunkProverTester::transpile(chunk_elf, Some(output_path.into())).unwrap();
-    let (_, _, chunk_commitments) =
-        scroll_zkvm_prover::Prover::<ChunkProverType>::init(chunk_exe_path, chunk_config_path)
-            .unwrap();
-    write_commitments(
-        chunk_commitments,
-        format!("{workspace_dir}/crates/circuits/batch-circuit/src/child_commitments.rs").as_str(),
-    );
-    write_commitments(
-        chunk_commitments,
-        format!("{workspace_dir}/crates/prover/src/commitments/chunk.rs").as_str(),
-    );
-    write_commitments(
-        chunk_commitments,
-        format!("{workspace_dir}/crates/verifier/src/commitments/chunk.rs").as_str(),
-    );
+    let project_name_var = std::env::var("BUILD_PROJECT");
+    let project_names = project_name_var
+        .as_ref()
+        .map(|s| s.split(',').collect::<Vec<_>>())
+        .unwrap_or_else(|_| vec!["chunk", "batch", "bundle"]);
 
-    // batch-circuit
-    let batch_elf = BatchProverTester::build().unwrap();
-    let output_path = format!("{workspace_dir}/crates/circuits/batch-circuit/openvm");
-    let (batch_config_path, _, batch_exe_path) =
-        BatchProverTester::transpile(batch_elf, Some(output_path.into())).unwrap();
-    let (_, _, batch_commitments) =
-        scroll_zkvm_prover::Prover::<BatchProverType>::init(batch_exe_path, batch_config_path)
-            .unwrap();
-    write_commitments(
-        batch_commitments,
-        format!("{workspace_dir}/crates/circuits/bundle-circuit/src/child_commitments.rs").as_str(),
-    );
-    write_commitments(
-        batch_commitments,
-        format!("{workspace_dir}/crates/prover/src/commitments/batch.rs").as_str(),
-    );
-    write_commitments(
-        batch_commitments,
-        format!("{workspace_dir}/crates/verifier/src/commitments/batch.rs").as_str(),
-    );
+    for (idx, project_name) in project_names.iter().enumerate() {
+        let project_dir = format!("{workspace_dir}/crates/circuits/{project_name}-circuit");
+        let elf = builder::build(&project_dir).unwrap();
+        let (_app_config_path, app_config, _app_exe_path, app_exe) =
+            builder::transpile(&project_dir, elf).unwrap();
 
-    // bundle-circuit
-    let bundle_elf = BundleProverTester::build().unwrap();
-    let output_path = format!("{workspace_dir}/crates/circuits/bundle-circuit/openvm");
-    let (bundle_config_path, _, bundle_exe_path) =
-        BundleProverTester::transpile(bundle_elf, Some(output_path.into())).unwrap();
-    let (_, _, bundle_commitments) =
-        scroll_zkvm_prover::Prover::<BundleProverType>::init(bundle_exe_path, bundle_config_path)
+        let app_pk = Sdk.app_keygen(app_config).unwrap();
+        let app_committed_exe = Sdk
+            .commit_app_exe(app_pk.app_fri_params(), app_exe)
             .unwrap();
-    write_commitments(
-        bundle_commitments,
-        format!("{workspace_dir}/crates/prover/src/commitments/bundle.rs").as_str(),
-    );
-    write_commitments(
-        bundle_commitments,
-        format!("{workspace_dir}/crates/verifier/src/commitments/bundle.rs").as_str(),
-    );
+
+        let commits = AppExecutionCommit::compute(
+            &app_pk.app_vm_pk.vm_config,
+            &app_committed_exe,
+            &app_pk.leaf_committed_exe,
+        );
+
+        use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
+        let exe_commit = commits.exe_commit.map(|x| x.as_canonical_u32());
+        let leaf_commit = commits
+            .leaf_vm_verifier_commit
+            .map(|x| x.as_canonical_u32());
+        tracing::debug!(name: "exe-commitment", raw = ?exe_commit, as_bn254 = ?commits.exe_commit_to_bn254());
+        tracing::debug!(name: "leaf-commitment", raw = ?leaf_commit, as_bn254 = ?commits.app_config_commit_to_bn254());
+
+        let commitments = [exe_commit, leaf_commit];
+        write_commitments(
+            commitments,
+            format!("{workspace_dir}/crates/prover/src/commitments/{project_name}.rs").as_str(),
+        );
+        write_commitments(
+            commitments,
+            format!("{workspace_dir}/crates/verifier/src/commitments/{project_name}.rs").as_str(),
+        );
+
+        if let Some(parent) = project_names.get(idx + 1) {
+            write_commitments(
+                commitments,
+                &format!(
+                    "{workspace_dir}/crates/circuits/{}-circuit/src/child_commitments.rs",
+                    parent
+                ),
+            );
+        }
+    }
 }

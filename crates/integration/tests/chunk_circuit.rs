@@ -7,9 +7,7 @@ use scroll_zkvm_integration::{
 fn test_execute() -> eyre::Result<()> {
     MultiChunkProverTester::setup()?;
 
-    let elf = MultiChunkProverTester::build()?;
-
-    let (_, app_config, exe_path) = MultiChunkProverTester::transpile(elf, None)?;
+    let (_, app_config, exe_path) = MultiChunkProverTester::load()?;
 
     for task in MultiChunkProverTester::gen_multi_proving_tasks()? {
         MultiChunkProverTester::execute(app_config.clone(), &task, exe_path.clone())?;

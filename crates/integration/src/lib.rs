@@ -4,13 +4,10 @@ use std::{
 };
 
 use once_cell::sync::OnceCell;
-use openvm_build::GuestOptions;
 use openvm_sdk::{
     F, Sdk,
     config::{AppConfig, SdkVmConfig},
-    fs::write_exe_to_file,
 };
-use openvm_transpiler::elf::Elf;
 use scroll_zkvm_prover::{
     ProverType, WrappedProof,
     setup::{read_app_config, read_app_exe},
@@ -22,9 +19,6 @@ use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::Subsc
 pub mod testers;
 
 pub mod utils;
-
-/// Feature to enable while building the guest program.
-const FEATURE_SCROLL: &str = "scroll";
 
 /// Path to store release assets, root directory of zkvm-prover repository.
 const DIR_OUTPUT: &str = "./../../.output";
@@ -93,63 +87,10 @@ pub trait ProverTester {
 
     /// Load the app config.
     fn load() -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
-        let path_assets = Path::new(Self::PATH_PROJECT_ROOT).join("openvm");
-        let path_app_config = path_assets.join(FD_APP_CONFIG);
-        let app_config = read_app_config(&path_app_config)?;
-        let path_app_exe = path_assets.join(FD_APP_EXE);
-        Ok((path_app_config, app_config, path_app_exe))
-    }
-
-    /// Build the ELF binary from the circuit program.
-    #[instrument("ProverTester::build", fields(project_root = Self::PATH_PROJECT_ROOT))]
-    fn build() -> eyre::Result<Elf> {
-        let guest_opts = GuestOptions::default().with_features([FEATURE_SCROLL]);
-        let elf = Sdk.build(guest_opts, Self::PATH_PROJECT_ROOT, &Default::default())?;
-        Ok(elf)
-    }
-
-    /// Transpile the ELF into a VmExe.
-    #[instrument(
-        "ProverTester::transpile",
-        skip_all,
-        fields(path_app_config, path_app_exe)
-    )]
-    fn transpile(
-        elf: Elf,
-        path_assets: Option<PathBuf>,
-    ) -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
-        // Create the assets dir if not already present.
-        let path_assets = match path_assets {
-            Some(path_assets) => path_assets,
-            None => DIR_TESTRUN
-                .get()
-                .ok_or(eyre::eyre!("missing assets dir"))?
-                .join(Self::DIR_ASSETS),
-        };
-        std::fs::create_dir_all(&path_assets)?;
-
-        // First read the app config specified in the project's root directory.
         let path_app_config = Path::new(Self::PATH_PROJECT_ROOT).join(FD_APP_CONFIG);
+        let path_assets = Path::new(Self::PATH_PROJECT_ROOT).join("openvm");
         let app_config = read_app_config(&path_app_config)?;
-
-        // Copy the app config to assets directory for convenience of export/release.
-        //
-        // - <openvm-assets>/<assets-dir>/openvm.toml
-        let path_dup_app_config = path_assets.join(FD_APP_CONFIG);
-        std::fs::copy(&path_app_config, &path_dup_app_config)?;
-
-        // Transpile ELF to openvm executable.
-        let mut transpiler = app_config.app_vm_config.transpiler();
-        if Self::DIR_ASSETS != "chunk" {
-            transpiler =
-                transpiler.with_extension(openvm_native_transpiler::LongFormTranspilerExtension);
-        }
-        let app_exe = Sdk.transpile(elf, transpiler)?;
-
-        // Write exe to disc.
         let path_app_exe = path_assets.join(FD_APP_EXE);
-        write_exe_to_file(app_exe, &path_app_exe)?;
-
         Ok((path_app_config, app_config, path_app_exe))
     }
 
@@ -276,6 +217,7 @@ where
         &path_exe,
         &path_app_config,
         Some(&cache_dir),
+        Default::default(),
     )?;
 
     // Generate proving task for the circuit.
@@ -314,6 +256,7 @@ where
         &path_exe,
         &path_app_config,
         Some(&cache_dir),
+        Default::default(),
     )?;
 
     // Generate proving task for the circuit.
@@ -356,6 +299,7 @@ where
         &path_exe,
         &path_app_config,
         Some(&cache_dir),
+        Default::default(),
     )?;
 
     // Dump verifier-only assets to disk.
