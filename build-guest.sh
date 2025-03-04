@@ -1,3 +1,5 @@
+git config --global --add safe.directory $PWD
+
 cargo run --release -p scroll-zkvm-build-guest
 
 shasum_chunk=$(shasum crates/prover/src/commitments/chunk.rs | awk '{ print $1 }')

@@ -6,6 +6,4 @@ WORKDIR /app
 
 COPY . .
 
-RUN git config --add safe.directory .
-
 CMD [ "sh", "build-guest.sh" ]
