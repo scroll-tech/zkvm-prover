@@ -1,6 +1,6 @@
-FROM rust:1.85
+FROM rust:1.85 AS build
 
-Run rustup target add aarch64-unknown-linux-gnu
+RUN rustup target add aarch64-unknown-linux-gnu
 RUN rustup toolchain install nightly-2024-12-06-aarch64-unknown-linux-gnu --target aarch64-unknown-linux-gnu
 
 WORKDIR /app
