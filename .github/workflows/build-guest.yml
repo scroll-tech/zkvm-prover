@@ -4,8 +4,8 @@ on:
   pull_request:
     types: [synchronize, opened, reopened, ready_for_review]
     branches:
-      - 'master'
-      - 'release/*'
+      - master
+      - release/*
       #    paths:
       #      - 'crates/circuits/types/**/*'
       #      - 'crates/circuits/chunk-circuit/**/*'
@@ -14,8 +14,8 @@ on:
       #      - 'crates/build-guest/**/*'
   push:
     branches:
-      - 'master'
-      - 'release/*'
+      - master
+      - release/*
       #    paths:
       #      - 'crates/circuits/types/**/*'
       #      - 'crates/circuits/chunk-circuit/**/*'
@@ -33,11 +33,11 @@ jobs:
       - id: docker-build-guest
         uses: ./
 
-      - name: Print SHA checksum of chunk-circuit commitments
-        run: echo "chunk-circuit=${{ steps.docker-build-guest.outputs.shasum-chunk }}"
+      - name: Print chunk-circuit commitments
+        run: echo "chunk-circuit=${{ steps.docker-build-guest.outputs.commitments-chunk }}"
 
-      - name: Print SHA checksum of batch-circuit commitments
-        run: echo "batch-circuit=${{ steps.docker-build-guest.outputs.shasum-batch }}"
+      - name: Print batch-circuit commitments
+        run: echo "batch-circuit=${{ steps.docker-build-guest.outputs.commitments-batch }}"
 
-      - name: Print SHA checksum of bundle-circuit commitments
-        run: echo "bundle-circuit=${{ steps.docker-build-guest.outputs.shasum-bundle }}"
+      - name: Print bundle-circuit commitments
+        run: echo "bundle-circuit=${{ steps.docker-build-guest.outputs.commitments-bundle }}"

@@ -18,9 +18,6 @@ clippy:
 	@cargo clippy --tests --all-features --manifest-path crates/prover/Cargo.toml -- -D warnings
 	@cargo clippy --tests --all-features --manifest-path crates/integration/Cargo.toml -- -D warnings
 
-build-guest:
-	@cargo run --release -p scroll-zkvm-build-guest
-
 test-execute-chunk:
 	@cargo test --release -p scroll-zkvm-integration --features scroll --test chunk_circuit test_execute -- --exact --nocapture
 
