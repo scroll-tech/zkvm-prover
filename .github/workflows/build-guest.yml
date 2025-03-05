@@ -1,0 +1,139 @@
+name: Build Guest
+
+on:
+  pull_request:
+    types: [synchronize, opened, reopened, ready_for_review]
+    branches:
+      - master
+      - release/*
+    paths:
+      - crates/circuits/types/**/*
+      - crates/circuits/chunk-circuit/**/*
+      - crates/circuits/batch-circuit/**/*
+      - crates/circuits/bundle-circuit/**/*
+      - crates/build-guest/**/*
+  push:
+    branches:
+      - master
+      - release/*
+    paths:
+      - crates/circuits/types/**/*
+      - crates/circuits/chunk-circuit/**/*
+      - crates/circuits/batch-circuit/**/*
+      - crates/circuits/bundle-circuit/**/*
+      - crates/build-guest/**/*
+
+jobs:
+  docker-build-guest:
+    name: Docker containerized build of guest programs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: chunk commitments (prover)
+        id: commitments-chunk-prover
+        run: |
+          {
+            echo 'commitments<<EOF'
+            cat crates/prover/src/commitments/chunk.rs
+            echo EOF
+          } >> $GITHUB_OUTPUT
+
+      - name: batch commitments (prover)
+        id: commitments-batch-prover
+        run: |
+          {
+            echo 'commitments<<EOF'
+            cat crates/prover/src/commitments/batch.rs
+            echo EOF
+          } >> $GITHUB_OUTPUT
+
+      - name: bundle commitments (prover)
+        id: commitments-bundle-prover
+        run: |
+          {
+            echo 'commitments<<EOF'
+            cat crates/prover/src/commitments/bundle.rs
+            echo EOF
+          } >> $GITHUB_OUTPUT
+
+      - name: chunk commitments (verifier)
+        id: commitments-chunk-verifier
+        run: |
+          {
+            echo 'commitments<<EOF'
+            cat crates/verifier/src/commitments/chunk.rs
+            echo EOF
+          } >> $GITHUB_OUTPUT
+
+      - name: batch commitments (verifier)
+        id: commitments-batch-verifier
+        run: |
+          {
+            echo 'commitments<<EOF'
+            cat crates/verifier/src/commitments/batch.rs
+            echo EOF
+          } >> $GITHUB_OUTPUT
+
+      - name: bundle commitments (verifier)
+        id: commitments-bundle-verifier
+        run: |
+          {
+            echo 'commitments<<EOF'
+            cat crates/verifier/src/commitments/bundle.rs
+            echo EOF
+          } >> $GITHUB_OUTPUT
+
+      - name: chunk commitments (circuits)
+        id: commitments-chunk-circuits
+        run: |
+          {
+            echo 'commitments<<EOF'
+            cat crates/circuits/batch-circuit/src/child_commitments.rs
+            echo EOF
+          } >> $GITHUB_OUTPUT
+
+      - name: batch commitments (circuits)
+        id: commitments-batch-circuits
+        run: |
+          {
+            echo 'commitments<<EOF'
+            cat crates/circuits/bundle-circuit/src/child_commitments.rs
+            echo EOF
+          } >> $GITHUB_OUTPUT
+
+      - name: Sanity check for chunk-commitments (prover vs verifier)
+        uses: nick-fields/assert-action@v1
+        with:
+          expected: ${{ steps.commitments-chunk-prover.outputs.commitments }}
+          actual: ${{ steps.commitments-chunk-verifier.outputs.commitments }}
+
+      - name: Sanity check for chunk-commitments (prover vs circuits)
+        uses: nick-fields/assert-action@v1
+        with:
+          expected: ${{ steps.commitments-chunk-prover.outputs.commitments }}
+          actual: ${{ steps.commitments-chunk-circuits.outputs.commitments }}
+
+      - name: Sanity check for batch-commitments (prover vs verifier)
+        uses: nick-fields/assert-action@v1
+        with:
+          expected: ${{ steps.commitments-batch-prover.outputs.commitments }}
+          actual: ${{ steps.commitments-batch-verifier.outputs.commitments }}
+
+      - name: Sanity check for batch-commitments (prover vs circuits)
+        uses: nick-fields/assert-action@v1
+        with:
+          expected: ${{ steps.commitments-batch-prover.outputs.commitments }}
+          actual: ${{ steps.commitments-batch-circuits.outputs.commitments }}
+
+      - name: Sanity check for bundle-commitments (prover vs verifier)
+        uses: nick-fields/assert-action@v1
+        with:
+          expected: ${{ steps.commitments-bundle-prover.outputs.commitments }}
+          actual: ${{ steps.commitments-bundle-verifier.outputs.commitments }}
+
+      - name: Build guest and check diff
+        run: |
+          make build-guest
+          git diff
+          git diff --quiet && echo "no diff" || (echo "diff"; exit 1)

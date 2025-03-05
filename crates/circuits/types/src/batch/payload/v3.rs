@@ -2,7 +2,8 @@ use core::iter::Iterator;
 
 use alloy_primitives::B256;
 use itertools::Itertools;
-use scroll_zkvm_circuit_input_types::utils::keccak256;
+
+use crate::utils::keccak256;
 
 /// The number of bytes to encode number of chunks in a batch.
 const N_BYTES_NUM_CHUNKS: usize = 2;
