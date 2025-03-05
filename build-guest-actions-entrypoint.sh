@@ -11,26 +11,3 @@ fi
 
 # run crates/build-guest
 cargo run --release -p scroll-zkvm-build-guest
-
-# set the github actions outputs for the metadata action.yml
-if [ "$IS_ACTIONS" = "true" ]; then
-  echo "github actions running"
-
-  {
-    echo 'commitments-chunk<<EOF'
-    cat crates/prover/src/commitments/chunk.rs
-    echo EOF
-  } >> $GITHUB_OUTPUT
-
-  {
-    echo 'commitments-batch<<EOF'
-    cat crates/prover/src/commitments/batch.rs
-    echo EOF
-  } >> $GITHUB_OUTPUT
-
-  {
-    echo 'commitments-bundle<<EOF'
-    cat crates/prover/src/commitments/bundle.rs
-    echo EOF
-  } >> $GITHUB_OUTPUT
-fi
