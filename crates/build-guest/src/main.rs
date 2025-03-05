@@ -35,6 +35,7 @@ pub fn main() {
     let (_, _, chunk_commitments) =
         scroll_zkvm_prover::Prover::<ChunkProverType>::init(chunk_exe_path, chunk_config_path)
             .unwrap();
+    println!("chunk_commitments: {:?}", chunk_commitments);
     write_commitments(
         chunk_commitments,
         format!("{workspace_dir}/crates/circuits/batch-circuit/src/child_commitments.rs").as_str(),
