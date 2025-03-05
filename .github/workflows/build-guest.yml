@@ -30,10 +30,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: tmp run
-        run: |
-          make build-guest
-
       - name: chunk commitments (prover)
         id: commitments-chunk-prover
         run: |
@@ -136,23 +132,7 @@ jobs:
           expected: ${{ steps.commitments-bundle-prover.outputs.commitments }}
           actual: ${{ steps.commitments-bundle-verifier.outputs.commitments }}
 
-      - id: docker-build-guest
-        uses: ./
-
-      - name: Compare chunk-circuit commitments
-        uses: nick-fields/assert-action@v1
-        with:
-          expected: ${{ steps.docker-build-guest.outputs.commitments-chunk }}
-          actual: ${{ steps.commitments-chunk-prover.outputs.commitments }}
-
-      - name: Compare batch-circuit commitments
-        uses: nick-fields/assert-action@v1
-        with:
-          expected: ${{ steps.docker-build-guest.outputs.commitments-batch }}
-          actual: ${{ steps.commitments-batch-prover.outputs.commitments }}
-
-      - name: Compare bundle-circuit commitments
-        uses: nick-fields/assert-action@v1
-        with:
-          expected: ${{ steps.docker-build-guest.outputs.commitments-bundle }}
-          actual: ${{ steps.commitments-bundle-prover.outputs.commitments }}
+      - name: Build guest and check diff
+        run: |
+          make build-guest
+          git diff --quiet && echo "no diff" || (echo "diff"; exit 1)
