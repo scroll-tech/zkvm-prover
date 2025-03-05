@@ -22,15 +22,15 @@ mkdir -p $DIR_OUTPUT/verifier
 
 # copy chunk-program related assets
 cp ./crates/circuits/chunk-circuit/openvm/app.vmexe $DIR_OUTPUT/chunk/app.vmexe
-cp ./crates/circuits/chunk-circuit/openvm/openvm.toml $DIR_OUTPUT/chunk/openvm.toml
+cp ./crates/circuits/chunk-circuit/openvm.toml $DIR_OUTPUT/chunk/openvm.toml
 
 # copy batch-program related assets
 cp ./crates/circuits/batch-circuit/openvm/app.vmexe $DIR_OUTPUT/batch/app.vmexe
-cp ./crates/circuits/batch-circuit/openvm/openvm.toml $DIR_OUTPUT/batch/openvm.toml
+cp ./crates/circuits/batch-circuit/openvm.toml $DIR_OUTPUT/batch/openvm.toml
 
 # copy bundle-program related assets
 cp ./crates/circuits/bundle-circuit/openvm/app.vmexe $DIR_OUTPUT/bundle/app.vmexe
-cp ./crates/circuits/bundle-circuit/openvm/openvm.toml $DIR_OUTPUT/bundle/openvm.toml
+cp ./crates/circuits/bundle-circuit/openvm.toml $DIR_OUTPUT/bundle/openvm.toml
 cp ./crates/circuits/bundle-circuit/openvm/verifier.bin $DIR_OUTPUT/bundle/verifier.bin
 cp ./crates/circuits/bundle-circuit/openvm/verifier.sol $DIR_OUTPUT/bundle/verifier.sol
 xxd -l 32 -p $DIR_INPUT/bundle/digest_1 | tr -d '\n' | awk '{gsub("%", ""); print}' > $DIR_OUTPUT/bundle/digest_1.hex
