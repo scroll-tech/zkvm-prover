@@ -24,6 +24,9 @@ cp crates/prover/src/commitments/batch.rs crates/circuits/bundle-circuit/src/chi
 mkdir -p crates/circuits/chunk-circuit/openvm
 mkdir -p crates/circuits/batch-circuit/openvm
 mkdir -p crates/circuits/bundle-circuit/openvm
-docker cp build-guest:/app/crates/circuits/chunk-circuit/openvm/* crates/circuits/chunk-circuit/openvm/
-docker cp build-guest:/app/crates/circuits/batch-circuit/openvm/* crates/circuits/batch-circuit/openvm/
-docker cp build-guest:/app/crates/circuits/bundle-circuit/openvm/* crates/circuits/bundle-circuit/openvm/
+docker cp build-guest:/app/crates/circuits/chunk-circuit/openvm/app.vmexe crates/circuits/chunk-circuit/openvm/app.vmexe
+docker cp build-guest:/app/crates/circuits/batch-circuit/openvm/app.vmexe crates/circuits/batch-circuit/openvm/app.vmexe
+docker cp build-guest:/app/crates/circuits/bundle-circuit/openvm/app.vmexe crates/circuits/bundle-circuit/openvm/app.vmexe
+docker cp build-guest:/app/crates/circuits/chunk-circuit/openvm/openvm.toml crates/circuits/chunk-circuit/openvm/openvm.toml
+docker cp build-guest:/app/crates/circuits/batch-circuit/openvm/openvm.toml crates/circuits/batch-circuit/openvm/openvm.toml
+docker cp build-guest:/app/crates/circuits/bundle-circuit/openvm/openvm.toml crates/circuits/bundle-circuit/openvm/openvm.toml
