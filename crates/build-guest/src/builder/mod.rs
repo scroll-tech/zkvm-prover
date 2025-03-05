@@ -1,4 +1,3 @@
-use hex_literal::hex;
 use openvm_build::{GuestOptions, TargetFilter};
 use std::{
     fs::read_to_string,
@@ -10,12 +9,11 @@ use openvm_ecc_guest::CyclicGroup;
 use openvm_instructions::exe::VmExe;
 use openvm_sdk::{
     F, Sdk,
-    config::{AppConfig, SdkVmConfig, UnitStruct},
+    config::{AppConfig, SdkVmConfig},
     fs::write_exe_to_file,
 };
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE};
 
-// use openvm_transpiler::elf::Elf;
 use tracing::instrument;
 
 /// Feature to enable while building the guest program.
@@ -48,7 +46,7 @@ pub fn build_elf<P: AsRef<Path>>(
     find_unique_executable(pkg_dir, target_dir, target_filter)
 }
 
-/// wtf
+/// TODO: remove this after openvm v1.0
 fn binary_patch(elf_bin: &[u8]) -> Vec<u8> {
     use openvm_algebra_guest::IntMod;
     use openvm_ecc_guest::weierstrass::WeierstrassPoint;
@@ -84,24 +82,20 @@ fn binary_patch(elf_bin: &[u8]) -> Vec<u8> {
 }
 
 /// Build the ELF binary from the circuit program.
-#[instrument("ProverTester::build", fields(project_root))]
+#[instrument("BuildGuest::build", fields(project_root))]
 pub fn build(project_root: &str) -> eyre::Result<Elf> {
     let guest_opts = GuestOptions::default().with_features([FEATURE_SCROLL]);
     #[cfg(feature = "euclidv2")]
     let guest_opts = guest_opts.with_features(["euclidv2"]);
     let guest_opts = guest_opts.with_profile("maxperf".to_string());
     let elf_path = build_elf(guest_opts, project_root, &Default::default())?;
-    let data = std::fs::read(&elf_path)?;
-    let new_data = binary_patch(&data);
-    Elf::decode(&new_data, MEM_SIZE as u32)
+    let bin = std::fs::read(&elf_path)?;
+    let new_bin = binary_patch(&bin);
+    Elf::decode(&new_bin, MEM_SIZE as u32)
 }
 
 /// Transpile the ELF into a VmExe.
-#[instrument(
-    "ProverTester::transpile",
-    skip_all,
-    fields(path_app_config, path_app_exe)
-)]
+#[instrument("BuildGuest::transpile", skip_all, fields(project_root))]
 pub fn transpile(
     project_root: &str,
     elf: Elf,
@@ -130,6 +124,8 @@ pub fn transpile(
     // Write exe to disc.
     let path_app_exe = path_assets.join(FD_APP_EXE);
     write_exe_to_file(app_exe.clone(), &path_app_exe)?;
+
+    println!("exe written to {path_app_exe:?}");
 
     Ok((path_app_config, app_config, path_app_exe, app_exe))
 }

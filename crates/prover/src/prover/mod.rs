@@ -22,7 +22,7 @@ use openvm_native_recursion::{
 use openvm_sdk::{
     F, NonRootCommittedExe, Sdk, StdIn,
     commit::AppExecutionCommit,
-    config::{AggConfig, AggStarkConfig, AppConfig, SdkVmConfig},
+    config::{AggConfig, AggStarkConfig, SdkVmConfig},
     keygen::{AggStarkProvingKey, AppProvingKey, RootVerifierProvingKey},
     prover::ContinuationProver,
 };
@@ -94,27 +94,6 @@ type InitRes = (
 /// Alias for convenience.
 pub type SC = BabyBearPoseidon2Config;
 
-/// Load config and exe, and also return pk and commits.
-pub fn init_exe<P: AsRef<Path>>(
-    path_exe: P,
-    app_config: AppConfig<SdkVmConfig>,
-) -> Result<InitRes, Error> {
-    let app_exe = read_app_exe(path_exe)?;
-    let app_pk = Sdk
-        .app_keygen(app_config)
-        .map_err(|e| Error::Keygen(e.to_string()))?;
-    let app_committed_exe = Sdk
-        .commit_app_exe(app_pk.app_fri_params(), app_exe)
-        .map_err(|e| Error::Commit(e.to_string()))?;
-
-    let commits = AppExecutionCommit::compute(
-        &app_pk.app_vm_pk.vm_config,
-        &app_committed_exe,
-        &app_pk.leaf_committed_exe,
-    );
-    Ok((app_committed_exe, Arc::new(app_pk), commits))
-}
-
 #[derive(Debug, Clone, Default)]
 pub struct ProverConfig {
     pub segment_len: Option<usize>,
@@ -129,15 +108,8 @@ impl<Type: ProverType> Prover<Type> {
         cache_dir: Option<P>,
         prover_config: ProverConfig,
     ) -> Result<Self, Error> {
-        let mut app_config = read_app_config(path_app_config)?;
-        let segment_len = prover_config.segment_len.unwrap_or(Type::SEGMENT_SIZE);
-        app_config.app_vm_config.system.config = app_config
-            .app_vm_config
-            .system
-            .config
-            .with_max_segment_len(segment_len);
-
-        let (app_committed_exe, app_pk, _) = Self::init(&path_exe, app_config)?;
+        let (app_committed_exe, app_pk, _) =
+            Self::init(&path_exe, &path_app_config, prover_config)?;
 
         let evm_prover = Type::EVM
             .then(|| {
@@ -202,22 +174,42 @@ impl<Type: ProverType> Prover<Type> {
     }
 
     /// Read app exe, proving key and return committed data.
-    #[instrument("Prover::init", fields(path_exe))]
+    #[instrument("Prover::init", fields(path_exe, path_app_config))]
     pub fn init<P: AsRef<Path>>(
         path_exe: P,
-        app_config: AppConfig<SdkVmConfig>,
+        path_app_config: P,
+        prover_config: ProverConfig,
     ) -> Result<InitRes, Error> {
-        let (app_committed_exe, app_pk, commits) = init_exe(path_exe, app_config)?;
+        let app_exe = read_app_exe(path_exe)?;
+        let mut app_config = read_app_config(path_app_config)?;
+        let segment_len = prover_config.segment_len.unwrap_or(Type::SEGMENT_SIZE);
+        app_config.app_vm_config.system.config = app_config
+            .app_vm_config
+            .system
+            .config
+            .with_max_segment_len(segment_len);
+
+        let app_pk = Sdk
+            .app_keygen(app_config)
+            .map_err(|e| Error::Keygen(e.to_string()))?;
+        let app_committed_exe = Sdk
+            .commit_app_exe(app_pk.app_fri_params(), app_exe)
+            .map_err(|e| Error::Commit(e.to_string()))?;
 
         // print the 2 exe commitments
         use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
+        let commits = AppExecutionCommit::compute(
+            &app_pk.app_vm_pk.vm_config,
+            &app_committed_exe,
+            &app_pk.leaf_committed_exe,
+        );
         let exe_commit = commits.exe_commit.map(|x| x.as_canonical_u32());
         let leaf_commit = commits
             .leaf_vm_verifier_commit
             .map(|x| x.as_canonical_u32());
         debug!(name: "exe-commitment", prover_name = Type::NAME, raw = ?exe_commit, as_bn254 = ?commits.exe_commit_to_bn254());
         debug!(name: "leaf-commitment", prover_name = Type::NAME, raw = ?leaf_commit, as_bn254 = ?commits.app_config_commit_to_bn254());
-        Ok((app_committed_exe, app_pk, commits))
+        Ok((app_committed_exe, Arc::new(app_pk), commits))
     }
 
     /// Dump assets required to setup verifier-only mode.

@@ -30,7 +30,6 @@ fn test_execute() -> eyre::Result<()> {
     BatchProverTester::setup()?;
 
     let (_, app_config, exe_path) = BatchProverTester::load()?;
-
     let task = BatchProverTester::gen_proving_task()?;
 
     BatchProverTester::execute(app_config.clone(), &task, exe_path.clone())?;
