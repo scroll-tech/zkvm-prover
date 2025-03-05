@@ -135,4 +135,4 @@ jobs:
       - name: Build guest and check diff
         run: |
           make build-guest
-          git diff --quiet && echo "no diff" || (echo "diff"; exit 1)
+          git diff && echo "no diff" || (echo "diff"; exit 1)
