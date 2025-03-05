@@ -1,0 +1,26 @@
+ci:
+  - .github/**/*
+
+crate-circuits:
+  - crates/circuits/**/*
+
+crate-chunk-circuit:
+  - crates/circuits/chunk-circuit/**/*
+
+crate-batch-circuit:
+  - crates/circuits/batch-circuit/**/*
+
+crate-bundle-circuit:
+  - crates/circuits/bundle-circuit/**/*
+
+crate-verifier:
+  - crates/verifier/**/*
+
+crate-prover:
+  - crates/prover/**/*
+
+crate-integration:
+  - crates/integration/**/*
+
+crate-build-guest:
+  - crates/build-guest/**/*
