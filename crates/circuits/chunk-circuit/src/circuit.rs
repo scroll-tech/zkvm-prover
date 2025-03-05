@@ -50,8 +50,8 @@ impl Circuit for ChunkCircuit {
     }
 
     fn deserialize_witness(witness_bytes: &[u8]) -> &Self::Witness {
-        return rkyv::access::<ArchivedChunkWitness, rkyv::rancor::BoxedError>(witness_bytes)
-            .expect("ChunkCircuit: rkyv deserialisation of witness bytes failed");
+        rkyv::access::<ArchivedChunkWitness, rkyv::rancor::BoxedError>(witness_bytes)
+            .expect("ChunkCircuit: rkyv deserialisation of witness bytes failed")
     }
 
     fn validate(witness: &Self::Witness) -> Self::PublicInputs {
