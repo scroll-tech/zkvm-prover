@@ -1,5 +1,5 @@
 ci:
-  - .github/
+  - .github/**/*
 
 crate-circuits:
   - crates/circuits/**/*
