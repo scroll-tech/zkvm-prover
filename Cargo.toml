@@ -102,3 +102,8 @@ reth-scroll-evm = { git = "https://github.com/scroll-tech//reth", branch = "fix/
 reth-scroll-primitives = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm" }
 
 scroll-alloy-consensus = { git = "https://github.com/scroll-tech//reth", branch = "fix/scroll-zkvm" }
+
+[profile.release]
+codegen-units = 1
+panic = "abort"
+strip = true

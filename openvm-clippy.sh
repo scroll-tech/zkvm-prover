@@ -1,5 +1,4 @@
 #!/bin/bash
-set -euxo pipefail
 
 # Alas, the openvm CLI does not offer `clippy` as a subcommand,
 # so we have to use `cargo` directly.  The options are copy-and-pasted from
