@@ -3,10 +3,6 @@
 # read arg to know if we are in github actions
 IS_ACTIONS=$1
 
-echo $PWD
-
-exit
-
 # config to stop dubious ownership warning
 if [ "$IS_ACTIONS" = "true" ]; then
   echo "github actions running"
