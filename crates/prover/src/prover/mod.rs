@@ -463,8 +463,7 @@ impl<Type: ProverType> Prover<Type> {
                             .collect::<Vec<_>>()
                             .join("|");
                         let counter_name = ckey.key().name().to_string();
-                        let counter_map =
-                            counter_sum.entry(counter_name).or_insert(BTreeMap::new());
+                        let counter_map = counter_sum.entry(counter_name).or_default();
                         let counter_value = counter_map.entry(label).or_insert(0);
                         *counter_value += value;
                     }
@@ -551,7 +550,6 @@ impl<Type: ProverType> Prover<Type> {
     ///
     /// [root_proof][openvm_sdk::verifier::root::types::RootVmVerifierInput]
     fn gen_proof_stark(&self, task: &Type::ProvingTask) -> Result<RootProof, Error> {
-
         let stdin = task
             .build_guest_input()
             .map_err(|e| Error::GenProof(e.to_string()))?;

@@ -7,7 +7,7 @@ use crate::{ProverTester, testers::PATH_TESTDATA};
 
 /// Load a file <block_n>.json in the <PATH_BLOCK_WITNESS> directory.
 fn read_block_witness_from_testdata(block_n: usize) -> eyre::Result<BlockWitness> {
-    read_block_witness(block_n, &Path::new(PATH_TESTDATA))
+    read_block_witness(block_n, Path::new(PATH_TESTDATA))
 }
 
 /// Utility function to read and deserialize block witness given the block number.

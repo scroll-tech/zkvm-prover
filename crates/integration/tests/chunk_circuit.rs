@@ -11,19 +11,18 @@ use scroll_zkvm_prover::{
     ChunkProver, ChunkProverType, ProverType,
     task::{ProvingTask, chunk::ChunkProvingTask},
 };
-use scroll_zkvm_prover::task::ProvingTask;
 
 #[test]
 fn test_cycle() -> eyre::Result<()> {
     ChunkProverTester::setup()?;
 
     let (path_app_config, _app_config, path_exe) = ChunkProverTester::load()?;
-    use rayon::prelude::*;
+    // use rayon::prelude::*;
 
     let blocks = 1..=8;
     blocks.into_iter().try_for_each(|blk| -> eyre::Result<()> {
         let task = ChunkProvingTask {
-            block_witnesses: vec![read_block_witness(blk, &Path::new(PATH_TESTDATA))?],
+            block_witnesses: vec![read_block_witness(blk, Path::new(PATH_TESTDATA))?],
             prev_msg_queue_hash: Default::default(),
         };
 
@@ -93,9 +92,7 @@ fn guest_profiling() -> eyre::Result<()> {
 
     let task = ChunkProverTester::gen_proving_task()?;
     let stdin = task.build_guest_input()?;
-    let (total_cycles, _) = chunk_prover
-        .execute_guest(&stdin)?
-        .ok_or(eyre::eyre!("execute_guest returned None"))?;
+    let (total_cycles, _) = chunk_prover.execute_guest(&stdin, true)?;
 
     println!(
         "scroll-zkvm-integration(chunk-circuit): total cycles = {:?}",
