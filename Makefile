@@ -19,15 +19,22 @@ fmt:
 	@cargo fmt --all
 
 clippy:
-	@cargo clippy --manifest-path crates/circuits/types/Cargo.toml
-	@cargo clippy --manifest-path crates/integration/Cargo.toml
-	@cargo clippy --manifest-path crates/prover/Cargo.toml
-	@cargo clippy --manifest-path crates/verifier/Cargo.toml
-	@cargo clippy --manifest-path crates/build-guest/Cargo.toml
-	sh openvm-clippy
+	@cargo clippy --tests --manifest-path crates/circuits/types/Cargo.toml -- -D warnings
+	sh openvm-clippy.sh
+	@cargo clippy --tests --all-features --manifest-path crates/verifier/Cargo.toml -- -D warnings
+	@cargo clippy --tests --all-features --manifest-path crates/prover/Cargo.toml -- -D warnings
+	@cargo clippy --tests --all-features --manifest-path crates/integration/Cargo.toml -- -D warnings
+	@cargo clippy --tests --all-features --manifest-path crates/build-guest/Cargo.toml -- -D warnings
+
+clean-guest:
+	docker stop build-guest
+	docker rm build-guest
+	docker rmi build-guest:local
 
 build-guest:
-	@cargo run --release -p scroll-zkvm-build-guest $(FEATURE)
+	sh build-guest.sh
+
+clean-build-guest: clean-guest build-guest
 
 test-execute-chunk:
 	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --features scroll --test chunk_circuit test_execute -- --exact --nocapture
