@@ -6,11 +6,11 @@ if [ -z "${SCROLL_ZKVM_VERSION}" ]; then
   exit 1
 fi
 
-mkdir -p releases
+# chunk-circuit exe
+wget https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/releases/$SCROLL_ZKVM_VERSION/chunk/app.vmexe -O crates/circuits/chunk-circuit/openvm/app.vmexe
 
-aws --profile default s3 cp s3://circuit-release/scroll-zkvm/releases/$SCROLL_ZKVM_VERSION releases/$SCROLL_ZKVM_VERSION --recursive
+# batch-circuit exe
+wget https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/releases/$SCROLL_ZKVM_VERSION/batch/app.vmexe -O crates/circuits/batch-circuit/openvm/app.vmexe
 
-# copy release assets to correct path in workdir, in preparation for integration tests
-cp releases/$SCROLL_ZKVM_VERSION/chunk/app.vmexe crates/circuits/chunk-circuit/openvm/app.vmexe
-cp releases/$SCROLL_ZKVM_VERSION/batch/app.vmexe crates/circuits/batch-circuit/openvm/app.vmexe
-cp releases/$SCROLL_ZKVM_VERSION/bundle/app.vmexe crates/circuits/bundle-circuit/openvm/app.vmexe
+# bundle-circuit exe
+wget https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/releases/$SCROLL_ZKVM_VERSION/bundle/app.vmexe -O crates/circuits/bundle-circuit/openvm/app.vmexe
