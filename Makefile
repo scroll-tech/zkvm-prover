@@ -32,7 +32,7 @@ clean-guest:
 	docker rmi build-guest:local
 
 build-guest:
-	sh build-guest.sh
+	FEATURE=$(FEATURE) sh build-guest.sh
 
 clean-build-guest: clean-guest build-guest
 
