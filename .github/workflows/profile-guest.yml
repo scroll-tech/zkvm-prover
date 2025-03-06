@@ -1,0 +1,50 @@
+name: Profile Guest
+
+on:
+  workflow_run:
+    workflows: ["Build Guest"]
+    types:
+      - completed
+
+jobs:
+  profile-guest:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download artifact (chunk app.vmexe)
+        uses: actions/download-artifact@v2
+        with:
+          name: chunk-app-vmexe
+          path: ./crates/circuits/chunk-circuit/openvm/
+
+      - name: Setup rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly-2024-12-06
+
+      - name: Guest profiling to capture total_cycles
+        id: guest-profiling
+        run: |
+          # Run the tests and capture the output
+          output=$(make profile-chunk | grep "scroll-zkvm-integration(chunk-circuit): total cycles = ")
+          echo "total_cycles=$output" >> $GITHUB_ENV
+
+      - name: Update PR Description
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const totalCycles = process.env.total_cycles;
+            const currentBody = context.payload.pull_request.body;
+
+            // Update the PR description with the total cycles
+            const newBody = `### Total Cycles (chunk-circuit)\n${totalCycles}\n\n${currentBody}`;
+            await github.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+              body: newBody,
+            });

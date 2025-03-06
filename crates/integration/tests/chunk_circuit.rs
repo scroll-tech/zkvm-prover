@@ -36,7 +36,10 @@ fn guest_profiling() -> eyre::Result<()> {
         .execute_guest(&stdin)?
         .ok_or(eyre::eyre!("execute_guest returned None"))?;
 
-    println!("total cycles = {:?}", total_cycles);
+    println!(
+        "scroll-zkvm-integration(chunk-circuit): total cycles = {:?}",
+        total_cycles
+    );
 
     Ok(())
 }

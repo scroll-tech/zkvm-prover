@@ -28,7 +28,8 @@ jobs:
     name: Docker containerized build of guest programs
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: chunk commitments (prover)
         id: commitments-chunk-prover
@@ -137,3 +138,9 @@ jobs:
           make build-guest
           git diff
           git diff --quiet && echo "no diff" || (echo "diff"; exit 1)
+
+      - name: Upload artifact (chunk app.vmexe)
+        uses: actions/upload-artifact@v2
+        with:
+          name: chunk-app-vmexe
+          path: ./crates/circuits/chunk-circuit/openvm/app.vmexe
