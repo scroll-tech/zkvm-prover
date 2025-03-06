@@ -120,7 +120,13 @@ impl<Type: ProverType> Prover<Type> {
                 let halo2_params_reader = CacheHalo2ParamsReader::new(DEFAULT_PARAMS_DIR);
                 let agg_pk = Sdk
                     .agg_keygen(
-                        AggConfig::default(),
+                        AggConfig {
+                            agg_stark_config: AggStarkConfig {
+                                leaf_fri_params: app_pk.leaf_fri_params,
+                                ..Default::default()
+                            },
+                            ..Default::default()
+                        },
                         &halo2_params_reader,
                         None::<&RootVerifierProvingKey>,
                     )
@@ -192,6 +198,11 @@ impl<Type: ProverType> Prover<Type> {
             .system
             .config
             .with_max_segment_len(segment_len);
+        assert_eq!(app_config.app_fri_params.fri_params.log_blowup, 1);
+        let agg_stark_config = AggStarkConfig {
+            leaf_fri_params: app_config.app_fri_params.fri_params,
+            ..Default::default()
+        };
 
         let app_pk = Sdk
             .app_keygen(app_config)
@@ -214,8 +225,8 @@ impl<Type: ProverType> Prover<Type> {
         debug!(name: "exe-commitment", prover_name = Type::NAME, raw = ?exe_commit, as_bn254 = ?commits.exe_commit_to_bn254());
         debug!(name: "leaf-commitment", prover_name = Type::NAME, raw = ?leaf_commit, as_bn254 = ?commits.app_config_commit_to_bn254());
 
-        let _agg_stark_pk = AGG_STARK_PROVING_KEY
-            .get_or_init(|| AggStarkProvingKey::keygen(AggStarkConfig::default()));
+        let _agg_stark_pk =
+            AGG_STARK_PROVING_KEY.get_or_init(|| AggStarkProvingKey::keygen(agg_stark_config));
 
         Ok((app_committed_exe, Arc::new(app_pk), [
             exe_commit,
