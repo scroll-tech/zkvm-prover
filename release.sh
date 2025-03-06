@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # release version
 if [[ -z "${SCROLL_ZKVM_VERSION}" ]]; then
   echo "SCROLL_ZKVM_VERSION not set"
