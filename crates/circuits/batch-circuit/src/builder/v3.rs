@@ -57,8 +57,8 @@ impl BatchInfoBuilderV3 {
             batch_hash: batch_header.batch_hash(),
             chain_id: last.chain_id,
             withdraw_root: last.withdraw_root,
-            prev_msg_queue_hash: Default::default(), // FIXME
-            post_msg_queue_hash: Default::default(), // FIXME
+            prev_msg_queue_hash: Default::default(),
+            post_msg_queue_hash: Default::default(),
         }
     }
 }

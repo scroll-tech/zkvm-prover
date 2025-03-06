@@ -5820,7 +5820,6 @@ dependencies = [
  "scroll-zkvm-circuit-input-types",
  "serde",
  "tiny-keccak",
- "vm-zstd",
 ]
 
 [[package]]

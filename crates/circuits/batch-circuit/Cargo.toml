@@ -17,9 +17,6 @@ openvm-algebra-complex-macros = { workspace = true }
 openvm-pairing-guest = { workspace = true, features = ["halo2curves"] }
 openvm-rv32im-guest.workspace = true
 
-# FIXME: move some v3 codes to "types" like v7 to get rid of this dep
-vm-zstd = { workspace = true }
-
 alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
 bitcode.workspace = true
 itertools.workspace = true
