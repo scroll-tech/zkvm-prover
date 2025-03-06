@@ -15,6 +15,9 @@ endif
 
 $(info FEATURE set to: $(FEATURE))
 
+download-release:
+	sh download-release.sh
+
 fmt:
 	@cargo fmt --all
 
