@@ -174,6 +174,12 @@ impl<Type: ProverType> Prover<Type> {
     pub fn init<P: AsRef<Path>>(path_exe: P, path_app_config: P) -> InitRes {
         let app_exe = read_app_exe(path_exe)?;
         let app_config = Type::read_app_config(path_app_config)?;
+        // agg stark inherits leaf fri params from app config
+        let agg_stark_config = AggStarkConfig {
+            leaf_fri_params: app_config.leaf_fri_params.fri_params,
+            ..Default::default()
+        };
+
         let app_pk = Sdk
             .app_keygen(app_config)
             .map_err(|e| Error::Keygen(e.to_string()))?;
@@ -195,8 +201,8 @@ impl<Type: ProverType> Prover<Type> {
         debug!(name: "exe-commitment", prover_name = Type::NAME, raw = ?exe_commit, as_bn254 = ?commits.exe_commit_to_bn254());
         debug!(name: "leaf-commitment", prover_name = Type::NAME, raw = ?leaf_commit, as_bn254 = ?commits.app_config_commit_to_bn254());
 
-        let _agg_stark_pk = AGG_STARK_PROVING_KEY
-            .get_or_init(|| AggStarkProvingKey::keygen(AggStarkConfig::default()));
+        let _agg_stark_pk =
+            AGG_STARK_PROVING_KEY.get_or_init(|| AggStarkProvingKey::keygen(agg_stark_config));
 
         Ok((app_committed_exe, Arc::new(app_pk), [
             exe_commit,

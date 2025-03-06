@@ -3,7 +3,7 @@ use openvm_instructions::{
     program::Program,
 };
 use openvm_sdk::{config::AggStarkConfig, keygen::AggStarkProvingKey};
-use openvm_stark_sdk::p3_baby_bear::BabyBear as F;
+use openvm_stark_sdk::{config::FriParameters, p3_baby_bear::BabyBear as F};
 
 #[allow(dead_code)]
 mod asm_utils;
@@ -69,7 +69,14 @@ fn dump_root_program(stark_pk: &AggStarkProvingKey, output_file: &str) {
 
 pub fn dump_verifier(path: &str) {
     println!("generating AggStarkProvingKey");
-    let (agg_stark_pk, _) = AggStarkProvingKey::dummy_proof_and_keygen(AggStarkConfig::default());
+
+    // always set leaf fri params's log blowup to be 1
+    let agg_stark_config = AggStarkConfig {
+        leaf_fri_params: FriParameters::standard_with_100_bits_conjectured_security(1),
+        ..Default::default()
+    };
+
+    let (agg_stark_pk, _) = AggStarkProvingKey::dummy_proof_and_keygen(agg_stark_config);
 
     println!("generating root_verifier.asm");
     dump_root_program(&agg_stark_pk, path);

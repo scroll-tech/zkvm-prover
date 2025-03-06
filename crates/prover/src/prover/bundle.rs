@@ -33,6 +33,9 @@ impl ProverType for BundleProverType {
         path_app_config: P,
     ) -> Result<openvm_sdk::config::AppConfig<openvm_sdk::config::SdkVmConfig>, Error> {
         let mut app_config = read_app_config(path_app_config)?;
+        assert_eq!(app_config.app_fri_params.fri_params.log_blowup, 1);
+        assert_eq!(app_config.leaf_fri_params.fri_params.log_blowup, 1);
+
         app_config.app_vm_config.system.config = app_config
             .app_vm_config
             .system
