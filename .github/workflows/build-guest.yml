@@ -141,7 +141,7 @@ jobs:
           git diff --quiet && echo "no diff" || (echo "diff"; exit 1)
 
       - name: Upload artifact (chunk app.vmexe)
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: chunk-app-vmexe
           path: ./crates/circuits/chunk-circuit/openvm/app.vmexe
