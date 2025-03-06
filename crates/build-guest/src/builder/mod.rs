@@ -16,9 +16,6 @@ use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE};
 
 use tracing::instrument;
 
-/// Feature to enable while building the guest program.
-const FEATURE_SCROLL: &str = "scroll";
-
 /// File descriptor for app openvm config.
 const FD_APP_CONFIG: &str = "openvm.toml";
 
