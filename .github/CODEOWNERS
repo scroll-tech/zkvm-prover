@@ -1,0 +1,10 @@
+*                               @roynalnaruto @lispc
+crates/integration/             @noel2004
+crates/prover/                  @roynalnaruto
+crates/verifier/                @roynalnaruto @noel2004
+crates/circuits/types/          @roynalnaruto @noel2004
+crates/circuits/chunk-circuit/  @lispc @lightsing
+crates/circuits/batch-circuit/  @roynalnaruto @noel2004
+crates/circuits/bundle-circuit/ @roynalnaruto @noel2004
+crates/build-guest/             @lispc
+.github/                        @roynalnaruto
