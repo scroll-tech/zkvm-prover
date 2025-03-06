@@ -10,6 +10,9 @@ export RUST_LOG
 download-release:
 	sh download-release.sh
 
+download-artifacts:
+	sh download-artifacts.sh
+
 fmt:
 	@cargo fmt --all
 
