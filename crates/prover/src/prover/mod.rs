@@ -403,27 +403,16 @@ impl<Type: ProverType> Prover<Type> {
         Ok(())
     }
 
-    /// Execute the guest program to get the cycle count.
-    ///
-    /// Runs only if the GUEST_PROFILING environment variable has been set to "true".
-    pub fn execute_guest(
+    /// Build the executor results.
+    /// Yes it is a bit wired that it has the "profile" parameter.
+    /// But now `segment.finalize_metric` is not public, so we can only collect
+    /// metrics during `segment.generate_proof_input`.
+    /// TODO: when `segment.finalize_metric` becomes public, refactor here.
+    pub fn build_executor_results(
         &self,
-        stdin: &StdIn,
-    ) -> Result<Option<(u64, VmExecutorResult<SC>)>, Error> {
-        use openvm_circuit::arch::VmConfig;
-        use openvm_stark_sdk::openvm_stark_backend::p3_field::Field;
-
-        if std::env::var("GUEST_PROFILING").as_deref() != Ok("true") {
-            return Ok(None);
-        }
-
-        let config = self.app_pk.app_vm_pk.vm_config.clone();
-        let system_config = <SdkVmConfig as VmConfig<F>>::system(&config);
-        let vm = VmExecutor::new(config.clone());
-
-        let mut segments = vm
-            .execute_segments(self.app_committed_exe.exe.clone(), stdin.clone())
-            .map_err(|e| Error::GenProof(e.to_string()))?;
+        mut segments: Vec<ExecutionSegment<F, SdkVmConfig>>,
+        profile: bool,
+    ) -> VmExecutorResult<SC> {
         let final_memory = std::mem::take(&mut segments.last_mut().unwrap().final_memory);
         let mut metric_snapshots = vec![];
 
@@ -562,18 +551,20 @@ impl<Type: ProverType> Prover<Type> {
     ///
     /// [root_proof][openvm_sdk::verifier::root::types::RootVmVerifierInput]
     fn gen_proof_stark(&self, task: &Type::ProvingTask) -> Result<RootProof, Error> {
-        let agg_stark_pk = AGG_STARK_PROVING_KEY
-            .get()
-            .ok_or(Error::GenProof(String::from(
-                "agg stark pk not initialized! Prover::setup",
-            )))?;
 
         let stdin = task
             .build_guest_input()
             .map_err(|e| Error::GenProof(e.to_string()))?;
 
-        if let Some((_cycle_count, executor_result)) = self.execute_guest(&stdin)? {
-            self.mock_prove_if_needed(executor_result)?;
+        let mock_prove = std::env::var("MOCK_PROVE").as_deref() == Ok("true");
+        let guest_profiling = std::env::var("GUEST_PROFILING").as_deref() == Ok("true");
+        // Here we always do an execution of the guest program to get the cycle count and do precheck before proving.
+        let (_cycle_count, segments) = self.execute_guest(&stdin, guest_profiling)?;
+        if mock_prove || guest_profiling {
+            let executor_result = self.build_executor_results(segments, guest_profiling);
+            if mock_prove {
+                self.mock_prove(executor_result)?;
+            }
         }
 
         let task_id = task.identifier();
@@ -582,7 +573,7 @@ impl<Type: ProverType> Prover<Type> {
         Sdk.generate_root_verifier_input(
             Arc::clone(&self.app_pk),
             Arc::clone(&self.app_committed_exe),
-            agg_stark_pk.clone(),
+            AGG_STARK_PROVING_KEY.clone(),
             stdin,
         )
         .map_err(|e| Error::GenProof(e.to_string()))
