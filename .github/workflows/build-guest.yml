@@ -22,6 +22,7 @@ on:
       - crates/circuits/batch-circuit/**/*
       - crates/circuits/bundle-circuit/**/*
       - crates/build-guest/**/*
+  workflow_dispatch:
 
 jobs:
   docker-build-guest:
