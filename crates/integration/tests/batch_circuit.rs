@@ -30,9 +30,7 @@ fn load_recent_chunk_proofs() -> eyre::Result<BatchProvingTask> {
 fn test_execute() -> eyre::Result<()> {
     MultiBatchProverTester::setup()?;
 
-    let elf = MultiBatchProverTester::build()?;
-
-    let (_, app_config, exe_path) = MultiBatchProverTester::transpile(elf, None)?;
+    let (_, app_config, exe_path) = MultiBatchProverTester::load()?;
 
     // let tasks = MultiBatchProverTester::gen_multi_proving_tasks()?;
     let tasks = vec![load_recent_chunk_proofs()?];

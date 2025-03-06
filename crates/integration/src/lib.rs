@@ -130,12 +130,7 @@ pub trait ProverTester {
 
         // First read the app config specified in the project's root directory.
         let path_app_config = Path::new(Self::PATH_PROJECT_ROOT).join(FD_APP_CONFIG);
-        let mut app_config = read_app_config(&path_app_config)?;
-
-        // FIXME: additional app config for batch and bundle guest program.
-        if Self::DIR_ASSETS != "chunk" {
-            app_config.app_vm_config.castf = Some(openvm_native_circuit::CastFExtension);
-        }
+        let app_config = read_app_config(&path_app_config)?;
 
         // Copy the app config to assets directory for convenience of export/release.
         //

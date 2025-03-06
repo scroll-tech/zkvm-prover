@@ -1,12 +1,17 @@
 use std::mem::ManuallyDrop;
 
 use sbv::{
-    core::{ChunkInfo as SbvChunkInfo, EvmDatabase, EvmExecutor},
+    core::{EvmDatabase, EvmExecutor},
     primitives::{
         BlockWitness, RecoveredBlock,
-        chainspec::{Chain, get_chain_spec},
+        chainspec::{
+            BaseFeeParams, BaseFeeParamsKind, Chain,
+            reth_chainspec::ChainSpec,
+            scroll::{ScrollChainConfig, ScrollChainSpec},
+        },
         ext::{BlockWitnessChunkExt, TxBytesHashExt},
-        types::reth::Block,
+        hardforks::SCROLL_DEV_HARDFORKS,
+        types::{ChunkInfoBuilder, reth::Block},
     },
 };
 use scroll_zkvm_circuit_input_types::chunk::{ChunkInfo, make_providers};
@@ -32,30 +37,44 @@ pub fn execute<W: BlockWitness>(witnesses: &[W]) -> ChunkInfo {
         .expect("failed to build reth block")
         .leak() as &'static [RecoveredBlock<Block>];
 
-    let sbv_chunk_info = SbvChunkInfo::from_blocks(
-        witnesses[0].chain_id(),
-        witnesses[0].pre_state_root(),
-        blocks,
-    );
+    let pre_state_root = witnesses[0].pre_state_root();
 
-    let chain_spec = get_chain_spec(Chain::from_id(sbv_chunk_info.chain_id()))
-        .expect("failed to get chain spec");
+    let chain = Chain::from_id(witnesses[0].chain_id());
+
+    // enable all forks
+    #[allow(unused_mut)]
+    let mut hardforks = (*SCROLL_DEV_HARDFORKS).clone();
+    // disable EuclidV2 if not configured
+    {
+        use sbv::primitives::{chainspec::ForkCondition, hardforks::ScrollHardfork};
+        hardforks.insert(ScrollHardfork::EuclidV2, ForkCondition::Never);
+    }
+
+    let inner = ChainSpec {
+        chain,
+        genesis_hash: Default::default(),
+        genesis: Default::default(),
+        genesis_header: Default::default(),
+        paris_block_and_final_difficulty: Default::default(),
+        hardforks,
+        deposit_contract: Default::default(),
+        base_fee_params: BaseFeeParamsKind::Constant(BaseFeeParams::ethereum()),
+        prune_delete_limit: 20000,
+        blob_params: Default::default(),
+    };
+    let config = ScrollChainConfig::mainnet();
+    let chain_spec: ScrollChainSpec = ScrollChainSpec { inner, config };
 
     let (code_db, nodes_provider, block_hashes) = make_providers(witnesses);
     let nodes_provider = ManuallyDrop::new(nodes_provider);
 
     let mut db = ManuallyDrop::new(
-        EvmDatabase::new_from_root(
-            code_db,
-            sbv_chunk_info.prev_state_root(),
-            &nodes_provider,
-            block_hashes,
-        )
-        .expect("failed to create EvmDatabase"),
+        EvmDatabase::new_from_root(code_db, pre_state_root, &nodes_provider, block_hashes)
+            .expect("failed to create EvmDatabase"),
     );
     for block in blocks.iter() {
         let output = ManuallyDrop::new(
-            EvmExecutor::new(chain_spec.clone(), &db, block)
+            EvmExecutor::new(std::sync::Arc::new(chain_spec.clone()), &db, block)
                 .execute()
                 .expect("failed to execute block"),
         );
@@ -64,16 +83,23 @@ pub fn execute<W: BlockWitness>(witnesses: &[W]) -> ChunkInfo {
     }
 
     let post_state_root = db.commit_changes();
+
+    let withdraw_root = db.withdraw_root().expect("failed to get withdraw root");
+
+    let sbv_chunk_info = {
+        #[allow(unused_mut)]
+        let mut builder = ChunkInfoBuilder::new(&chain_spec, pre_state_root.into(), &blocks);
+        builder.build(withdraw_root)
+    };
+
     assert_eq!(
         sbv_chunk_info.post_state_root(),
         post_state_root,
         "state root mismatch"
     );
 
-    let withdraw_root = db.withdraw_root().expect("failed to get withdraw root");
-
     let mut rlp_buffer = ManuallyDrop::new(Vec::with_capacity(2048));
-    let tx_data_digest = blocks
+    let (_, tx_data_digest) = blocks
         .iter()
         .flat_map(|b| b.body().transactions.iter())
         .tx_bytes_hash_in(rlp_buffer.as_mut());
@@ -86,7 +112,10 @@ pub fn execute<W: BlockWitness>(witnesses: &[W]) -> ChunkInfo {
         prev_state_root: sbv_chunk_info.prev_state_root(),
         post_state_root: sbv_chunk_info.post_state_root(),
         withdraw_root,
-        data_hash: sbv_chunk_info.data_hash(),
+        data_hash: sbv_chunk_info
+            .into_legacy()
+            .expect("legacy chunk")
+            .data_hash,
         tx_data_digest,
     }
 }

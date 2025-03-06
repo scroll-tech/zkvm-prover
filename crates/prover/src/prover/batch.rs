@@ -32,7 +32,6 @@ impl ProverType for BatchProverType {
         path_app_config: P,
     ) -> Result<openvm_sdk::config::AppConfig<openvm_sdk::config::SdkVmConfig>, Error> {
         let mut app_config = read_app_config(path_app_config)?;
-        app_config.app_vm_config.castf = Some(openvm_native_circuit::CastFExtension);
         app_config.app_vm_config.system.config = app_config
             .app_vm_config
             .system
