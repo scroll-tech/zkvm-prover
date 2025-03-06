@@ -1,0 +1,84 @@
+name: Run E2E Test on Comment
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  check-comment:
+    runs-on: [self-hosted, linux, x64, gpu]
+
+    outputs:
+      run_tests: ${{ steps.check.outputs.run_tests }}
+
+    steps:
+      # Step 1: Check if the comment mentions the bot and contains "run e2e gpu test"
+      - name: Check if the comment mentions the bot and contains "run e2e gpu test"
+        id: check
+        run: |
+          COMMENT=$(jq -r .comment.body "$GITHUB_EVENT_PATH")
+          BOT_USERNAME="@e2e-gpu-tester"  # Replace with your bot's username
+          if [[ $COMMENT == *"$BOT_USERNAME"* ]] && [[ $COMMENT == *"run e2e gpu test"* ]]; then
+            echo "::set-output name=run_tests::true"
+          else
+            echo "::set-output name=run_tests::false"
+          fi
+
+      # Optional: Output debug information
+      - name: Debug Check
+        run: echo "Run Tests: ${{ steps.check.outputs.run_tests }}"
+
+  run-tests:
+    needs: check-comment
+    if: needs.check-comment.outputs.run_tests == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Checkout plonky3-gpu repositories
+        uses: actions/checkout@v3
+        with:
+          repository: scroll-tech/plonky3-gpu
+          path: plonky3-gpu
+          ref: openvm-v2
+
+      - name: Checkout openvm-stark-gpu repositories
+        uses: actions/checkout@v3
+        with:
+          repository: scroll-tech/openvm-stark-gpu
+          path: openvm-stark-gpu
+          ref: main
+
+      - name: Checkout openvm-gpu repositories
+        uses: actions/checkout@v3
+        with:
+          repository: scroll-tech/openvm-gpu
+          path: openvm-gpu
+          ref: rebase/0306
+
+      - name: Run E2E GPU Test
+        run: |
+          echo "Running e2e gpu tests..."
+          # Add your test execution commands here, e.g.:
+          SCROLL_ZKVM_VERSION=0.1.0-rc.6 make download-release
+          make test-e2e-bundle
+
+      - name: Notify Results
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BODY="✅ E2E GPU test has been successfully completed."
+          # Using curl to post a new comment since GitHub API does not support replying directly to a specific comment
+          COMMENT_ID=$(jq -r .comment.id "$GITHUB_EVENT_PATH")
+          ISSUE_NUMBER=$(jq -r .issue.number "$GITHUB_EVENT_PATH")
+          REPO_FULL_NAME=$(jq -r .repository.full_name "$GITHUB_EVENT_PATH")
+          
+          # Note: Directly replying to a comment is not supported. Instead, create a new comment on the issue.
+          curl -X POST -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Content-Type: application/json" \
+            "https://api.github.com/repos/$REPO_FULL_NAME/issues/$ISSUE_NUMBER/comments" \
+            -d '{
+                  "body": "'"$BODY"'"
+                }'
