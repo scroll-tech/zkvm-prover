@@ -94,7 +94,7 @@ pub trait ProverTester {
     /// Load the app config.
     fn load() -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
         let path_assets = Path::new(Self::PATH_PROJECT_ROOT).join("openvm");
-        let path_app_config = path_assets.join(FD_APP_CONFIG);
+        let path_app_config = Path::new(Self::PATH_PROJECT_ROOT).join(FD_APP_CONFIG);
         let app_config = read_app_config(&path_app_config)?;
         let path_app_exe = path_assets.join(FD_APP_EXE);
         Ok((path_app_config, app_config, path_app_exe))
@@ -131,12 +131,6 @@ pub trait ProverTester {
         // First read the app config specified in the project's root directory.
         let path_app_config = Path::new(Self::PATH_PROJECT_ROOT).join(FD_APP_CONFIG);
         let app_config = read_app_config(&path_app_config)?;
-
-        // Copy the app config to assets directory for convenience of export/release.
-        //
-        // - <openvm-assets>/<assets-dir>/openvm.toml
-        let path_dup_app_config = path_assets.join(FD_APP_CONFIG);
-        std::fs::copy(&path_app_config, &path_dup_app_config)?;
 
         // Transpile ELF to openvm executable.
         let mut transpiler = app_config.app_vm_config.transpiler();
