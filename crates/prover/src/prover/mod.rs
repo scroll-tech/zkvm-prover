@@ -25,7 +25,7 @@ use openvm_sdk::{
     keygen::{AggStarkProvingKey, AppProvingKey, RootVerifierProvingKey},
     prover::ContinuationProver,
 };
-use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Config;
+use openvm_stark_sdk::config::{FriParameters, baby_bear_poseidon2::BabyBearPoseidon2Config};
 use serde::{Serialize, de::DeserializeOwned};
 use tracing::{debug, instrument};
 
@@ -192,6 +192,13 @@ impl<Type: ProverType> Prover<Type> {
             .system
             .config
             .with_max_segment_len(segment_len);
+        assert_eq!(app_config.app_fri_params.fri_params.log_blowup, 1);
+        let agg_stark_config = {
+            let mut config = AggStarkConfig::default();
+            // inherits the fri params from app config
+            config.leaf_fri_params = app_config.app_fri_params.fri_params.clone();
+            config
+        };
 
         let app_pk = Sdk
             .app_keygen(app_config)
@@ -214,8 +221,8 @@ impl<Type: ProverType> Prover<Type> {
         debug!(name: "exe-commitment", prover_name = Type::NAME, raw = ?exe_commit, as_bn254 = ?commits.exe_commit_to_bn254());
         debug!(name: "leaf-commitment", prover_name = Type::NAME, raw = ?leaf_commit, as_bn254 = ?commits.app_config_commit_to_bn254());
 
-        let _agg_stark_pk = AGG_STARK_PROVING_KEY
-            .get_or_init(|| AggStarkProvingKey::keygen(AggStarkConfig::default()));
+        let _agg_stark_pk =
+            AGG_STARK_PROVING_KEY.get_or_init(|| AggStarkProvingKey::keygen(agg_stark_config));
 
         Ok((app_committed_exe, Arc::new(app_pk), [
             exe_commit,
