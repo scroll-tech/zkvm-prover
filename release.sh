@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # release version
-if [[ -z "${SCROLL_ZKVM_VERSION}" ]]; then
+if [ -z "${SCROLL_ZKVM_VERSION}" ]; then
   echo "SCROLL_ZKVM_VERSION not set"
   exit 1
 else
@@ -9,7 +9,7 @@ else
 fi
 
 # directory to read assets from
-if [[ -z "${SCROLL_ZKVM_TESTRUN_DIR}" ]]; then
+if [ -z "${SCROLL_ZKVM_TESTRUN_DIR}" ]; then
   echo "SCROLL_ZKVM_TESTRUN_DIR not set"
   exit 1
 else
