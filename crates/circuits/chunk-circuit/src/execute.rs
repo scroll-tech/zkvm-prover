@@ -88,7 +88,7 @@ pub fn execute<W: BlockWitness>(witnesses: &[W]) -> ChunkInfo {
 
     let sbv_chunk_info = {
         #[allow(unused_mut)]
-        let mut builder = ChunkInfoBuilder::new(&chain_spec, pre_state_root.into(), &blocks);
+        let mut builder = ChunkInfoBuilder::new(&chain_spec, pre_state_root, blocks);
         builder.build(withdraw_root)
     };
 

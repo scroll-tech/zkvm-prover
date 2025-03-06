@@ -143,7 +143,7 @@ impl ProverType for ChunkProverType {
 
         let sbv_chunk_info = {
             #[allow(unused_mut)]
-            let mut builder = ChunkInfoBuilder::new(&chain_spec, prev_state_root.into(), &blocks);
+            let mut builder = ChunkInfoBuilder::new(&chain_spec, prev_state_root, &blocks);
             builder.build(withdraw_root)
         };
 
