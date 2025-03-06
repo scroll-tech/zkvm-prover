@@ -6,7 +6,7 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
-scroll-zkvm-circuit-input-types = {workspace = true, default-features = false }
+scroll-zkvm-circuit-input-types.workspace = true
 
 openvm = { workspace = true, features = ["std"] }
 openvm-algebra-guest.workspace = true
@@ -17,6 +17,5 @@ alloy-primitives = { workspace = true, default-features = false, features = ["st
 rkyv.workspace = true
 
 [features]
-default = ["scroll"]
-scroll = ["scroll-zkvm-circuit-input-types/scroll"]
+default = []
 euclidv2 = ["scroll-zkvm-circuit-input-types/euclidv2"]

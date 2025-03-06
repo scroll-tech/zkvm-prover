@@ -42,6 +42,6 @@ c-kzg = { version = "1.0", features = ["serde"] }
 eyre = "0.6"
 
 [features]
-default = ["scroll"]
-euclidv2 = []
+default = ["scroll", "euclidv2"]
+euclidv2 = ["scroll-zkvm-circuit-input-types/euclidv2"]
 scroll = ["sbv/scroll"]

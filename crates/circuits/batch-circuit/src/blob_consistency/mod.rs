@@ -2,7 +2,9 @@ use alloy_primitives::{B256 as H256, U256};
 
 use openvm_pairing_guest::bls12_381::Scalar;
 
+#[allow(dead_code)]
 mod openvm;
+#[allow(unused_imports)]
 pub use openvm::{EccToPairing, kzg_to_versioned_hash, point_evaluation, verify_kzg_proof};
 
 // Number of bytes in a u256.

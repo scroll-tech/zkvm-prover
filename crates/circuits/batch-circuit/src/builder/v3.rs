@@ -1,12 +1,8 @@
-use core::iter::Iterator;
-
 use alloy_primitives::B256;
 use scroll_zkvm_circuit_input_types::{
-    batch::{BatchHeader, BatchHeaderV3, BatchInfo, PayloadV3},
+    batch::{BatchHeader, BatchHeaderV3, BatchInfo, EnvelopeV3, PayloadV3},
     chunk::ChunkInfo,
-    utils::keccak256,
 };
-use vm_zstd::process;
 
 use crate::blob_consistency::BlobPolynomial;
 
@@ -23,12 +19,8 @@ impl BatchInfoBuilderV3 {
         blob_bytes: &[u8],
     ) -> BatchInfo {
         // Construct the batch payload using blob bytes.
-        let payload = if blob_bytes[0] & 1 == 1 {
-            let enveloped_bytes = process(&blob_bytes[1..]).unwrap().decoded_data;
-            PayloadV3::from_payload(&enveloped_bytes)
-        } else {
-            PayloadV3::from_payload(&blob_bytes[1..])
-        };
+        let envelope = EnvelopeV3::from(blob_bytes);
+        let payload = PayloadV3::from(&envelope);
 
         // Verify consistency of the EIP-4844 blob.
         //

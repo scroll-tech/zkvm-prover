@@ -21,8 +21,7 @@ openvm = { workspace = true, features = ["std"] }
 openvm-rv32im-guest= {  workspace = true }
 
 [features]
-default = ["scroll", "sbv"]
-sbv = [] # why this?
+default = ["scroll"]
 euclidv2 = []
 openvm = ["sbv/openvm"]
 scroll = ["sbv/scroll"]

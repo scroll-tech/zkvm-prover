@@ -84,7 +84,7 @@ fn binary_patch(elf_bin: &[u8]) -> Vec<u8> {
 /// Build the ELF binary from the circuit program.
 #[instrument("BuildGuest::build", fields(project_root))]
 pub fn build(project_root: &str) -> eyre::Result<Elf> {
-    let guest_opts = GuestOptions::default().with_features([FEATURE_SCROLL]);
+    let guest_opts = GuestOptions::default();
     #[cfg(feature = "euclidv2")]
     let guest_opts = guest_opts.with_features(["euclidv2"]);
     let guest_opts = guest_opts.with_profile("maxperf".to_string());

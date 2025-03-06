@@ -99,6 +99,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
         .iter()
         .flat_map(|b| b.body().transactions.iter())
         .tx_bytes_hash_in(rlp_buffer.as_mut());
+    let _ = tx_data_length;
 
     let sbv_chunk_info = {
         #[allow(unused_mut)]

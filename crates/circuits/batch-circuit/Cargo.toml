@@ -6,7 +6,7 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
-scroll-zkvm-circuit-input-types = {workspace = true, default-features = false }
+scroll-zkvm-circuit-input-types.workspace = true
 
 openvm = { workspace = true, features = ["std"] }
 openvm-algebra-guest.workspace = true
@@ -25,9 +25,8 @@ serde.workspace = true
 tiny-keccak.workspace = true
 
 [features]
-default = ["scroll", "euclidv2"]
+default = []
 euclidv2 = ["scroll-zkvm-circuit-input-types/euclidv2"]
-scroll = ["scroll-zkvm-circuit-input-types/scroll"]
 
 [dev-dependencies]
 c-kzg = "1.0"
