@@ -217,10 +217,11 @@ impl<Type: ProverType> Prover<Type> {
         let _agg_stark_pk = AGG_STARK_PROVING_KEY
             .get_or_init(|| AggStarkProvingKey::keygen(AggStarkConfig::default()));
 
-        Ok((app_committed_exe, Arc::new(app_pk), [
-            exe_commit,
-            leaf_commit,
-        ]))
+        Ok((
+            app_committed_exe,
+            Arc::new(app_pk),
+            [exe_commit, leaf_commit],
+        ))
     }
 
     /// Dump assets required to setup verifier-only mode.
@@ -420,47 +421,13 @@ impl<Type: ProverType> Prover<Type> {
         Ok(())
     }
 
-    /// File descriptor for the proof saved to disc.
-    #[instrument("Prover::fd_proof", skip_all, fields(task_id = task.identifier(), path_proof))]
-    fn fd_proof(task: &Type::ProvingTask) -> String {
-        let path_proof = format!("{}-{}.json", Type::NAME, task.identifier());
-        path_proof
-    }
-
-    /// Generate a [root proof][root_proof].
-    ///
-    /// [root_proof][openvm_sdk::verifier::root::types::RootVmVerifierInput]
-    fn gen_proof_stark(&self, task: &Type::ProvingTask) -> Result<RootProof, Error> {
-        let agg_stark_pk = AGG_STARK_PROVING_KEY
-            .get()
-            .ok_or(Error::GenProof(String::from(
-                "agg stark pk not initialized! Prover::setup",
-            )))?;
-
-        let stdin = task
-            .build_guest_input()
-            .map_err(|e| Error::GenProof(e.to_string()))?;
-
-        if let Some((_cycle_count, executor_result)) = self.execute_guest(&stdin)? {
-            self.mock_prove_if_needed(executor_result)?;
-        }
-
-        let task_id = task.identifier();
-
-        tracing::debug!(name: "generate_root_verifier_input", ?task_id);
-        Sdk.generate_root_verifier_input(
-            Arc::clone(&self.app_pk),
-            Arc::clone(&self.app_committed_exe),
-            agg_stark_pk.clone(),
-            stdin,
-        )
-        .map_err(|e| Error::GenProof(e.to_string()))
-    }
-
     /// Execute the guest program to get the cycle count.
     ///
     /// Runs only if the GUEST_PROFILING environment variable has been set to "true".
-    fn execute_guest(&self, stdin: &StdIn) -> Result<Option<(u64, VmExecutorResult<SC>)>, Error> {
+    pub fn execute_guest(
+        &self,
+        stdin: &StdIn,
+    ) -> Result<Option<(u64, VmExecutorResult<SC>)>, Error> {
         use openvm_circuit::arch::VmConfig;
         use openvm_stark_sdk::openvm_stark_backend::p3_field::Field;
 
@@ -541,6 +508,43 @@ impl<Type: ProverType> Prover<Type> {
 
         let total_cycle = counter_sum.get("total_cycles").cloned().unwrap_or(0);
         Ok(Some((total_cycle, executor_result)))
+    }
+
+    /// File descriptor for the proof saved to disc.
+    #[instrument("Prover::fd_proof", skip_all, fields(task_id = task.identifier(), path_proof))]
+    fn fd_proof(task: &Type::ProvingTask) -> String {
+        let path_proof = format!("{}-{}.json", Type::NAME, task.identifier());
+        path_proof
+    }
+
+    /// Generate a [root proof][root_proof].
+    ///
+    /// [root_proof][openvm_sdk::verifier::root::types::RootVmVerifierInput]
+    fn gen_proof_stark(&self, task: &Type::ProvingTask) -> Result<RootProof, Error> {
+        let agg_stark_pk = AGG_STARK_PROVING_KEY
+            .get()
+            .ok_or(Error::GenProof(String::from(
+                "agg stark pk not initialized! Prover::setup",
+            )))?;
+
+        let stdin = task
+            .build_guest_input()
+            .map_err(|e| Error::GenProof(e.to_string()))?;
+
+        if let Some((_cycle_count, executor_result)) = self.execute_guest(&stdin)? {
+            self.mock_prove_if_needed(executor_result)?;
+        }
+
+        let task_id = task.identifier();
+
+        tracing::debug!(name: "generate_root_verifier_input", ?task_id);
+        Sdk.generate_root_verifier_input(
+            Arc::clone(&self.app_pk),
+            Arc::clone(&self.app_committed_exe),
+            agg_stark_pk.clone(),
+            stdin,
+        )
+        .map_err(|e| Error::GenProof(e.to_string()))
     }
 
     /// Runs only if the MOCK_PROVE environment variable has been set to "true".
