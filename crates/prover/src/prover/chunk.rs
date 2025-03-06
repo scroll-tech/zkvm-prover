@@ -1,17 +1,20 @@
 use sbv::{
     core::{EvmDatabase, EvmExecutor},
     primitives::{
-        chainspec::{Chain, get_chain_spec},
+        chainspec::{
+            BaseFeeParams, BaseFeeParamsKind, Chain,
+            reth_chainspec::ChainSpec,
+            scroll::{ScrollChainConfig, ScrollChainSpec},
+        },
         ext::TxBytesHashExt,
+        hardforks::SCROLL_DEV_HARDFORKS,
+        types::ChunkInfoBuilder,
     },
 };
 use scroll_zkvm_circuit_input_types::chunk::{ChunkInfo, make_providers};
 
 #[cfg(feature = "scroll")]
-use sbv::{
-    core::ChunkInfo as SbvChunkInfo,
-    primitives::{BlockWitness, RecoveredBlock, types::reth::Block},
-};
+use sbv::primitives::{BlockWitness, RecoveredBlock, types::reth::Block};
 
 use crate::{
     Error,
@@ -51,7 +54,7 @@ impl ProverType for ChunkProverType {
             .app_vm_config
             .system
             .config
-            .with_max_segment_len(8388508);
+            .with_max_segment_len((1 << 22) - 100);
         Ok(config)
     }
 
@@ -73,34 +76,51 @@ impl ProverType for ChunkProverType {
             .expect("at least one block in a chunk");
 
         // Get the blocks to build the basic chunk-info.
-        let chain_id = first_block.chain_id;
         let blocks = task
             .block_witnesses
             .iter()
             .map(|s| s.build_reth_block())
             .collect::<Result<Vec<RecoveredBlock<Block>>, _>>()
             .map_err(|e| Error::GenProof(e.to_string()))?;
-        let sbv_chunk_info =
-            SbvChunkInfo::from_blocks(chain_id, first_block.pre_state_root(), &blocks);
 
-        let chain_spec = get_chain_spec(Chain::from_id(sbv_chunk_info.chain_id())).ok_or(
-            Error::GenProof(format!("{err_prefix}: failed to get chain spec")),
-        )?;
+        let prev_state_root = first_block.pre_state_root();
+
+        let chain = Chain::from_id(first_block.chain_id());
+
+        // enable all forks
+        #[allow(unused_mut)]
+        let mut hardforks = (*SCROLL_DEV_HARDFORKS).clone();
+        // disable EuclidV2 if not configured
+        {
+            use sbv::primitives::{chainspec::ForkCondition, hardforks::ScrollHardfork};
+            hardforks.insert(ScrollHardfork::EuclidV2, ForkCondition::Never);
+        }
+
+        let inner = ChainSpec {
+            chain,
+            genesis_hash: Default::default(),
+            genesis: Default::default(),
+            genesis_header: Default::default(),
+            paris_block_and_final_difficulty: Default::default(),
+            hardforks,
+            deposit_contract: Default::default(),
+            base_fee_params: BaseFeeParamsKind::Constant(BaseFeeParams::ethereum()),
+            prune_delete_limit: 20000,
+            blob_params: Default::default(),
+        };
+        let config = ScrollChainConfig::mainnet();
+        let chain_spec: ScrollChainSpec = ScrollChainSpec { inner, config };
 
         let (code_db, nodes_provider, block_hashes) = make_providers(&task.block_witnesses);
 
-        let mut db = EvmDatabase::new_from_root(
-            code_db,
-            sbv_chunk_info.prev_state_root(),
-            &nodes_provider,
-            block_hashes,
-        )
-        .map_err(|e| {
-            Error::GenProof(format!("{err_prefix}: failed to create EvmDatabase: {}", e,))
-        })?;
+        let mut db =
+            EvmDatabase::new_from_root(code_db, prev_state_root, &nodes_provider, block_hashes)
+                .map_err(|e| {
+                    Error::GenProof(format!("{err_prefix}: failed to create EvmDatabase: {}", e,))
+                })?;
 
         for block in blocks.iter() {
-            let output = EvmExecutor::new(chain_spec.clone(), &db, block)
+            let output = EvmExecutor::new(std::sync::Arc::new(chain_spec.clone()), &db, block)
                 .execute()
                 .map_err(|e| {
                     Error::GenProof(format!("{err_prefix}: failed to execute block: {}", e,))
@@ -113,13 +133,6 @@ impl ProverType for ChunkProverType {
         }
 
         let post_state_root = db.commit_changes();
-        if post_state_root != sbv_chunk_info.post_state_root() {
-            return Err(Error::GenProof(format!(
-                "{err_prefix}: state root mismatch: expected={}, found={}",
-                sbv_chunk_info.post_state_root(),
-                post_state_root
-            )));
-        }
 
         let withdraw_root = db.withdraw_root().map_err(|e| {
             Error::GenProof(format!(
@@ -128,8 +141,22 @@ impl ProverType for ChunkProverType {
             ))
         })?;
 
+        let sbv_chunk_info = {
+            #[allow(unused_mut)]
+            let mut builder = ChunkInfoBuilder::new(&chain_spec, prev_state_root, &blocks);
+            builder.build(withdraw_root)
+        };
+
+        if post_state_root != sbv_chunk_info.post_state_root() {
+            return Err(Error::GenProof(format!(
+                "{err_prefix}: state root mismatch: expected={}, found={}",
+                sbv_chunk_info.post_state_root(),
+                post_state_root
+            )));
+        }
+
         let mut rlp_buffer = Vec::with_capacity(2048);
-        let tx_data_digest = blocks
+        let (_, tx_data_digest) = blocks
             .iter()
             .flat_map(|b| b.body().transactions.iter())
             .tx_bytes_hash_in(rlp_buffer.as_mut());
@@ -139,7 +166,10 @@ impl ProverType for ChunkProverType {
             prev_state_root: sbv_chunk_info.prev_state_root(),
             post_state_root: sbv_chunk_info.post_state_root(),
             withdraw_root,
-            data_hash: sbv_chunk_info.data_hash(),
+            data_hash: sbv_chunk_info
+                .into_legacy()
+                .expect("legacy chunk")
+                .data_hash,
             tx_data_digest,
         };
 
