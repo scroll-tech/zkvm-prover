@@ -28,8 +28,6 @@ pub fn read_witnesses_rkyv_raw() -> Vec<u8> {
 pub fn read_witnesses() -> Vec<u8> {
     #[cfg(not(target_os = "zkvm"))]
     return openvm::io::read_vec(); // avoid compiler complaint
-    #[cfg(all(target_os = "zkvm", feature = "bincode"))]
-    return openvm::io::read_vec();
-    #[cfg(all(target_os = "zkvm", not(feature = "bincode")))]
+    #[cfg(target_os = "zkvm")]
     return read_witnesses_rkyv_raw();
 }

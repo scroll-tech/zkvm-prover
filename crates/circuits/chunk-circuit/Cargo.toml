@@ -23,6 +23,5 @@ openvm-rv32im-guest= {  workspace = true }
 
 [features]
 default = []
-bincode = ["scroll-zkvm-circuit-input-types/bincode"]
 euclidv2 = ["scroll-zkvm-circuit-input-types/euclidv2"]
 scroll = [] # useless

@@ -20,9 +20,6 @@ use sbv::{
 #[cfg(feature = "euclidv2")]
 use crate::chunk::public_inputs_euclidv2::BlockContextV2;
 
-#[cfg(feature = "bincode")]
-type Witness = ChunkWitness;
-#[cfg(not(feature = "bincode"))]
 type Witness = ArchivedChunkWitness;
 
 pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {

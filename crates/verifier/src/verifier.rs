@@ -64,13 +64,13 @@ impl<Type> Verifier<Type> {
     ) -> eyre::Result<Self> {
         let vm_executor = {
             let bytes = std::fs::read(path_vm_config.as_ref())?;
-            let vm_config: NativeConfig = bincode::deserialize(&bytes)?;
+            let vm_config: NativeConfig = bincode_v1::deserialize(&bytes)?;
             SingleSegmentVmExecutor::new(vm_config)
         };
 
         let root_committed_exe = {
             let bytes = std::fs::read(path_root_committed_exe.as_ref())?;
-            bincode::deserialize(&bytes)?
+            bincode_v1::deserialize(&bytes)?
         };
 
         let evm_verifier = {

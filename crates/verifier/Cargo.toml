@@ -15,7 +15,7 @@ openvm-sdk.workspace = true
 
 snark-verifier-sdk = {workspace = true, default-features = false, features = ["loader_evm"]}
 
-bincode = "1.3"
+bincode_v1.workspace = true
 eyre = "0.6"
 revm = "19.0"
 serde = "1.0"
