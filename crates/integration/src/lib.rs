@@ -89,8 +89,8 @@ pub trait ProverTester {
     /// Load the app config.
     fn load() -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
         let path_app_config = Path::new(Self::PATH_PROJECT_ROOT).join(FD_APP_CONFIG);
-        let path_assets = Path::new(Self::PATH_PROJECT_ROOT).join("openvm");
         let app_config = read_app_config(&path_app_config)?;
+        let path_assets = Path::new(Self::PATH_PROJECT_ROOT).join("openvm");
         let path_app_exe = path_assets.join(FD_APP_EXE);
         Ok((path_app_config, app_config, path_app_exe))
     }

@@ -11,6 +11,7 @@ use scroll_zkvm_prover::{
     ChunkProver, ChunkProverType, ProverType,
     task::{ProvingTask, chunk::ChunkProvingTask},
 };
+use scroll_zkvm_prover::task::ProvingTask;
 
 #[test]
 fn test_cycle() -> eyre::Result<()> {
@@ -73,6 +74,33 @@ fn test_execute_multi() -> eyre::Result<()> {
     for task in MultiChunkProverTester::gen_multi_proving_tasks()? {
         MultiChunkProverTester::execute(app_config.clone(), &task, exe_path.clone())?;
     }
+
+    Ok(())
+}
+
+#[test]
+fn guest_profiling() -> eyre::Result<()> {
+    ChunkProverTester::setup()?;
+
+    let (path_app_config, _, path_exe) = ChunkProverTester::load()?;
+
+    let chunk_prover = scroll_zkvm_prover::Prover::<scroll_zkvm_prover::ChunkProverType>::setup(
+        &path_exe,
+        &path_app_config,
+        None,
+        Default::default(),
+    )?;
+
+    let task = ChunkProverTester::gen_proving_task()?;
+    let stdin = task.build_guest_input()?;
+    let (total_cycles, _) = chunk_prover
+        .execute_guest(&stdin)?
+        .ok_or(eyre::eyre!("execute_guest returned None"))?;
+
+    println!(
+        "scroll-zkvm-integration(chunk-circuit): total cycles = {:?}",
+        total_cycles
+    );
 
     Ok(())
 }
