@@ -217,11 +217,10 @@ impl<Type: ProverType> Prover<Type> {
         let _agg_stark_pk = AGG_STARK_PROVING_KEY
             .get_or_init(|| AggStarkProvingKey::keygen(AggStarkConfig::default()));
 
-        Ok((
-            app_committed_exe,
-            Arc::new(app_pk),
-            [exe_commit, leaf_commit],
-        ))
+        Ok((app_committed_exe, Arc::new(app_pk), [
+            exe_commit,
+            leaf_commit,
+        ]))
     }
 
     /// Dump assets required to setup verifier-only mode.

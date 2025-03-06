@@ -18,7 +18,7 @@ fn test_execute() -> eyre::Result<()> {
 }
 
 #[test]
-fn test_profiling() -> eyre::Result<()> {
+fn guest_profiling() -> eyre::Result<()> {
     ChunkProverTester::setup()?;
 
     let (path_app_config, _, path_exe) = ChunkProverTester::load()?;
@@ -29,8 +29,6 @@ fn test_profiling() -> eyre::Result<()> {
         None,
         Default::default(),
     )?;
-
-    std::env::set_var("GUEST_PROFILING", "true");
 
     let task = ChunkProverTester::gen_proving_task()?;
     let stdin = task.build_guest_input()?;

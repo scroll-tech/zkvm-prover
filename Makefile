@@ -28,6 +28,9 @@ build-guest:
 
 clean-build-guest: clean-guest build-guest
 
+chunk-profiling:
+	GUEST_PROFILING=true @cargo test --release -p scroll-zkvm-integration --features scroll --test chunk_circuit guest_profiling -- --exact --nocapture
+
 test-execute-chunk:
 	@cargo test --release -p scroll-zkvm-integration --features scroll --test chunk_circuit test_execute -- --exact --nocapture
 
