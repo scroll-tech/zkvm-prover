@@ -120,7 +120,13 @@ impl<Type: ProverType> Prover<Type> {
                 let halo2_params_reader = CacheHalo2ParamsReader::new(DEFAULT_PARAMS_DIR);
                 let agg_pk = Sdk
                     .agg_keygen(
-                        AggConfig::default(),
+                        AggConfig {
+                            agg_stark_config: AggStarkConfig {
+                                leaf_fri_params: app_pk.leaf_fri_params,
+                                ..Default::default()
+                            },
+                            ..Default::default()
+                        },
                         &halo2_params_reader,
                         None::<&RootVerifierProvingKey>,
                     )
