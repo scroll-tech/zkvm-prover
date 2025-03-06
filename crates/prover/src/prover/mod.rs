@@ -25,7 +25,7 @@ use openvm_sdk::{
     keygen::{AggStarkProvingKey, AppProvingKey, RootVerifierProvingKey},
     prover::ContinuationProver,
 };
-use openvm_stark_sdk::config::{FriParameters, baby_bear_poseidon2::BabyBearPoseidon2Config};
+use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Config;
 use serde::{Serialize, de::DeserializeOwned};
 use tracing::{debug, instrument};
 
@@ -193,11 +193,9 @@ impl<Type: ProverType> Prover<Type> {
             .config
             .with_max_segment_len(segment_len);
         assert_eq!(app_config.app_fri_params.fri_params.log_blowup, 1);
-        let agg_stark_config = {
-            let mut config = AggStarkConfig::default();
-            // inherits the fri params from app config
-            config.leaf_fri_params = app_config.app_fri_params.fri_params.clone();
-            config
+        let agg_stark_config = AggStarkConfig {
+            leaf_fri_params: app_config.app_fri_params.fri_params,
+            ..Default::default()
         };
 
         let app_pk = Sdk

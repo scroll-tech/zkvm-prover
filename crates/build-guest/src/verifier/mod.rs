@@ -69,10 +69,9 @@ fn dump_root_program(stark_pk: &AggStarkProvingKey, output_file: &str) {
 
 pub fn dump_verifier(path: &str) {
     println!("generating AggStarkProvingKey");
-    let agg_stark_config = {
-        let mut config = AggStarkConfig::default();
-        config.leaf_fri_params = FriParameters::standard_with_100_bits_conjectured_security(1);
-        config
+    let agg_stark_config = AggStarkConfig {
+        leaf_fri_params: FriParameters::standard_with_100_bits_conjectured_security(1),
+        ..Default::default()
     };
     let (agg_stark_pk, _) = AggStarkProvingKey::dummy_proof_and_keygen(agg_stark_config);
 
