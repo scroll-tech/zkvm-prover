@@ -1,11 +1,6 @@
-use std::path::Path;
-
 use scroll_zkvm_integration::{
     ProverTester, prove_verify_multi, prove_verify_single,
-    testers::{
-        PATH_TESTDATA,
-        chunk::{ChunkProverTester, MultiChunkProverTester, read_block_witness},
-    },
+    testers::chunk::{ChunkProverTester, MultiChunkProverTester, read_block_witness_from_testdata},
 };
 use scroll_zkvm_prover::{
     ChunkProver, ChunkProverType, ProverType,
@@ -22,7 +17,7 @@ fn test_cycle() -> eyre::Result<()> {
     let blocks = 1..=8;
     blocks.into_iter().try_for_each(|blk| -> eyre::Result<()> {
         let task = ChunkProvingTask {
-            block_witnesses: vec![read_block_witness(blk, Path::new(PATH_TESTDATA))?],
+            block_witnesses: vec![read_block_witness_from_testdata(blk)?],
             prev_msg_queue_hash: Default::default(),
         };
 
