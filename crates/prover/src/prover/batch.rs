@@ -36,7 +36,7 @@ impl ProverType for BatchProverType {
             .app_vm_config
             .system
             .config
-            .with_max_segment_len(8388508 * 2);
+            .with_max_segment_len((1 << 22) - 100);
         Ok(app_config)
     }
 
