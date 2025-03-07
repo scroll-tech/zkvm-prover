@@ -1,0 +1,49 @@
+name: Profile Guest
+
+on:
+  workflow_run:
+    workflows: ["Build Guest"]
+    types:
+      - completed
+
+jobs:
+  profile-guest:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download artifact (chunk app.vmexe)
+        uses: actions/download-artifact@v4
+        with:
+          name: chunk-app-vmexe
+          path: ./crates/circuits/chunk-circuit/openvm/
+
+      - name: Setup rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly-2024-12-06
+
+      - name: Guest profiling to capture total_cycles
+        id: guest-profiling
+        run: |
+          # Run the tests and capture the output
+          # TODO: enable later
+          # output=$(make profile-chunk | grep "scroll-zkvm-integration(chunk-circuit): total cycles = ")
+          output="Dummy Profiling Result"
+          echo "total_cycles=$output" >> $GITHUB_ENV
+
+      - name: Update PR Description
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const totalCycles = process.env.total_cycles;
+            const comment = context.payload.pull_request.body;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `<!--Benchmark Results-->\n${comment}`
+            });

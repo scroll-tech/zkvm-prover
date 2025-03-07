@@ -1,6 +1,7 @@
 name: Build Guest
 
 on:
+  workflow_dispatch:
   pull_request:
     types: [synchronize, opened, reopened, ready_for_review]
     branches:
@@ -12,6 +13,7 @@ on:
       - crates/circuits/batch-circuit/**/*
       - crates/circuits/bundle-circuit/**/*
       - crates/build-guest/**/*
+      - Cargo.lock
   push:
     branches:
       - master
@@ -22,6 +24,7 @@ on:
       - crates/circuits/batch-circuit/**/*
       - crates/circuits/bundle-circuit/**/*
       - crates/build-guest/**/*
+      - Cargo.lock
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -141,4 +144,66 @@ jobs:
         run: |
           make build-guest
           git diff
-          git diff --quiet && echo "no diff" || (echo "diff"; exit 1)
+
+      - name: Configure Git
+        run: |
+          git config --local user.name "GitHub Actions Bot"
+          git config --local user.email "actions@github.com"
+
+      - name: Commit changes (commitments)
+        id: commit-commitments
+        run: |
+          git add crates/prover/src/commitments/chunk.rs
+          git add crates/prover/src/commitments/batch.rs
+          git add crates/prover/src/commitments/bundle.rs
+          git add crates/verifier/src/commitments/chunk.rs
+          git add crates/verifier/src/commitments/batch.rs
+          git add crates/verifier/src/commitments/bundle.rs
+          git add crates/circuits/batch-circuit/src/child_commitments.rs
+          git add crates/circuits/bundle-circuit/src/child_commitments.rs
+          git commit -m "[Automated] chore: update commitments" || echo "No changes to commit"
+          echo "COMMIT_REF=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Push changes (commitments)
+        run: |
+          git push origin ${{ github.head_ref }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Upload assets to s3
+        run: |
+          aws s3 cp crates/circuits/chunk-circuit/openvm/app.vmexe s3://circuit-release/scroll-zkvm/${{ steps.commit-commitments.outputs.COMMIT_REF }}/chunk/app.vmexe
+          aws s3 cp crates/circuits/batch-circuit/openvm/app.vmexe s3://circuit-release/scroll-zkvm/${{ steps.commit-commitments.outputs.COMMIT_REF }}/batch/app.vmexe
+          aws s3 cp crates/circuits/bundle-circuit/openvm/app.vmexe s3://circuit-release/scroll-zkvm/${{ steps.commit-commitments.outputs.COMMIT_REF }}/bundle/app.vmexe
+          aws s3 cp crates/build-guest/root_verifier.asm s3://circuit-release/scroll-zkvm/${{ steps.commit-commitments.outputs.COMMIT_REF }}/root_verifier.asm
+      
+      - name: Upload artifact (chunk app.vmexe)
+        uses: actions/upload-artifact@v4
+        with:
+          name: chunk-app-vmexe
+          path: ./crates/circuits/chunk-circuit/openvm/app.vmexe
+
+      - name: Upload artifact (batch app.vmexe)
+        uses: actions/upload-artifact@v4
+        with:
+          name: batch-app-vmexe
+          path: ./crates/circuits/batch-circuit/openvm/app.vmexe
+
+      - name: Upload artifact (bundle app.vmexe)
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-app-vmexe
+          path: ./crates/circuits/bundle-circuit/openvm/app.vmexe
+
+      - name: Upload artifact (root verifier)
+        uses: actions/upload-artifact@v4
+        with:
+          name: root-verifier-asm
+          path: ./crates/build-guest/root_verifier.asm
