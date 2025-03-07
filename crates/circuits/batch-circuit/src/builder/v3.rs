@@ -23,9 +23,11 @@ impl BatchInfoBuilderV3 {
     ) -> BatchInfo {
         // Construct the batch payload using blob bytes.
         let payload = if blob_bytes[0] & 1 == 1 {
+            openvm::io::println("zstd-decoding payload from envelope");
             let enveloped_bytes = process(&blob_bytes[1..]).unwrap().decoded_data;
             Payload::<N_MAX_CHUNKS>::from_payload(&enveloped_bytes)
         } else {
+            openvm::io::println("envelope == payload because no zstd-encoding");
             Payload::<N_MAX_CHUNKS>::from_payload(&blob_bytes[1..])
         };
 

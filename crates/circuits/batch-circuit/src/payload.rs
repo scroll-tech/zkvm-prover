@@ -29,7 +29,9 @@ impl<const N_MAX_CHUNKS: usize> Payload<N_MAX_CHUNKS> {
     /// This method is used INSIDE OF zkvm since we can not generate (compress) batch data within
     /// the vm program
     pub fn from_payload(batch_bytes_with_metadata: &[u8]) -> Self {
+        println!("Payload::from_payload");
         let n_bytes_metadata = Self::n_bytes_metadata();
+        println!("n bytes metadata = {:?}", n_bytes_metadata);
         let metadata_bytes = &batch_bytes_with_metadata[..n_bytes_metadata];
         let metadata_digest = keccak256(metadata_bytes);
         let batch_bytes = &batch_bytes_with_metadata[n_bytes_metadata..];
@@ -38,6 +40,7 @@ impl<const N_MAX_CHUNKS: usize> Payload<N_MAX_CHUNKS> {
         let valid_chunks = metadata_bytes[..N_BYTES_NUM_CHUNKS]
             .iter()
             .fold(0usize, |acc, &d| acc * 256usize + d as usize);
+        println!("n chunks = {:?}", valid_chunks);
 
         let chunk_size_bytes = metadata_bytes[N_BYTES_NUM_CHUNKS..]
             .iter()
@@ -56,6 +59,19 @@ impl<const N_MAX_CHUNKS: usize> Payload<N_MAX_CHUNKS> {
             },
         );
 
+        let chunk1_tx_bytes = segmented_batch_data.get(0).unwrap();
+        println!(
+            "\n\n\nchunk1, len(tx_bytes)={:?}, bytes={:?}",
+            chunk1_tx_bytes.len(),
+            chunk1_tx_bytes
+        );
+        let chunk2_tx_bytes = segmented_batch_data.get(1).unwrap();
+        println!(
+            "\n\n\nchunk2, len(tx_bytes)={:?}, bytes={:?}",
+            chunk2_tx_bytes.len(),
+            chunk2_tx_bytes
+        );
+
         assert!(
             final_bytes.is_empty(),
             "chunk segmentation len must add up to the correct value"
@@ -65,6 +81,14 @@ impl<const N_MAX_CHUNKS: usize> Payload<N_MAX_CHUNKS> {
             .iter()
             .map(|bytes| B256::from(keccak256(bytes)))
             .collect();
+        println!(
+            "\n\n\nchunk1(data_digest) = {:?}",
+            chunk_data_digests.get(0).unwrap()
+        );
+        println!(
+            "\n\n\nchunk2(data_digest) = {:?}",
+            chunk_data_digests.get(1).unwrap()
+        );
 
         Self {
             metadata_digest,
