@@ -39,6 +39,6 @@ glob = "0.3"
 
 [features]
 default = ["scroll","euclidv2"]
-euclidv2 = ["scroll-zkvm-circuit-input-types/euclidv2", "scroll-zkvm-prover/euclidv2"]
+euclidv2 = ["scroll-zkvm-prover/euclidv2"]
 limit-logs = []
 scroll = ["sbv/scroll"]

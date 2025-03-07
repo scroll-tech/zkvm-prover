@@ -1,5 +1,5 @@
 use crate::{
-    chunk::{ArchivedChunkWitness, ChunkInfo, make_providers},
+    chunk::{ArchivedChunkWitness, ChunkInfo, make_providers, public_inputs::CodecVersion},
     manually_drop_on_zkvm,
 };
 use sbv::{
@@ -17,12 +17,11 @@ use sbv::{
     },
 };
 
-#[cfg(feature = "euclidv2")]
-use crate::chunk::public_inputs_euclidv2::BlockContextV2;
+use crate::chunk::public_inputs::BlockContextV2;
 
 type Witness = ArchivedChunkWitness;
 
-pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
+pub fn execute(witness: &Witness, codec_version: CodecVersion) -> Result<ChunkInfo, String> {
     if witness.blocks.is_empty() {
         return Err("At least one witness must be provided in chunk mode".into());
     }
@@ -45,12 +44,9 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
 
     let chain = Chain::from_id(witness.blocks[0].chain_id());
 
-    // enable all forks
-    #[allow(unused_mut)]
+    // SCROLL_DEV_HARDFORKS will enable all forks
     let mut hardforks = (*SCROLL_DEV_HARDFORKS).clone();
-    // disable EuclidV2 if not configured
-    #[cfg(not(feature = "euclidv2"))]
-    {
+    if codec_version == CodecVersion::V3 {
         use sbv::primitives::{chainspec::ForkCondition, hardforks::ScrollHardfork};
         hardforks.insert(ScrollHardfork::EuclidV2, ForkCondition::Never);
     }
@@ -104,8 +100,9 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     let sbv_chunk_info = {
         #[allow(unused_mut)]
         let mut builder = ChunkInfoBuilder::new(&chain_spec, pre_state_root.into(), &blocks);
-        #[cfg(feature = "euclidv2")]
-        builder.set_prev_msg_queue_hash(witness.prev_msg_queue_hash.into());
+        if codec_version == CodecVersion::V7 {
+            builder.set_prev_msg_queue_hash(witness.prev_msg_queue_hash.into());
+        }
         builder.build(withdraw_root)
     };
     if post_state_root != sbv_chunk_info.post_state_root() {
@@ -116,11 +113,16 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
         ));
     }
 
-    #[cfg(feature = "euclidv2")]
     let chunk_info = ChunkInfo {
+        // codec_version,
         chain_id: sbv_chunk_info.chain_id(),
         prev_state_root: sbv_chunk_info.prev_state_root(),
         post_state_root: sbv_chunk_info.post_state_root(),
+        data_hash: sbv_chunk_info
+            .clone()
+            .into_legacy()
+            .map(|x| x.data_hash)
+            .unwrap_or_default(),
         withdraw_root,
         tx_data_digest,
         tx_data_length: u64::try_from(tx_data_length).expect("tx_data_length: u64"),
@@ -128,23 +130,11 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
         prev_msg_queue_hash: witness.prev_msg_queue_hash.into(),
         post_msg_queue_hash: sbv_chunk_info
             .into_euclid_v2()
-            .expect("euclid-v2")
-            .post_msg_queue_hash,
+            .map(|x| x.post_msg_queue_hash)
+            .unwrap_or_default(),
         block_ctxs: blocks.iter().map(BlockContextV2::from).collect(),
     };
 
-    #[cfg(not(feature = "euclidv2"))]
-    let chunk_info = ChunkInfo {
-        chain_id: sbv_chunk_info.chain_id(),
-        prev_state_root: sbv_chunk_info.prev_state_root(),
-        post_state_root: sbv_chunk_info.post_state_root(),
-        withdraw_root,
-        tx_data_digest,
-        data_hash: sbv_chunk_info
-            .into_legacy()
-            .expect("legacy chunk")
-            .data_hash,
-    };
     openvm::io::println(format!("withdraw_root = {:?}", withdraw_root));
     openvm::io::println(format!("tx_bytes_hash = {:?}", tx_data_digest));
 
