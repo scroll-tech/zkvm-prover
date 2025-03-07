@@ -102,3 +102,10 @@ jobs:
           SCROLL_ZKVM_VERSION=${{ github.event.inputs.version }}
           SCROLL_ZKVM_TESTRUN_DIR=${{ steps.guest-profiling.outputs.testrun_dir }}
         run: sh release.sh
+      
+      - name: Create GitHub Tag
+        run: |
+          git tag v${{ github.event.inputs.version }}
+          git push origin v${{ github.event.inputs.version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
