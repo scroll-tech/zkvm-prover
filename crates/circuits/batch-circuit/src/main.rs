@@ -11,8 +11,12 @@ mod execute;
 
 openvm::entry!(main);
 
+#[allow(dead_code)]
 #[rustfmt::skip]
 mod child_commitments;
+#[allow(dead_code)]
+#[rustfmt::skip]
+mod child_commitments_legacy;
 
 fn main() {
     // Setup openvm extensions for the circuit.

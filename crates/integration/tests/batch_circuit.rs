@@ -9,9 +9,13 @@ use scroll_zkvm_integration::{
 use scroll_zkvm_prover::{ChunkProof, task::batch::BatchProvingTask, utils::read_json_deep};
 
 fn load_recent_chunk_proofs() -> eyre::Result<BatchProvingTask> {
-    let proof_path = glob::glob("testdata/proofs/chunk-1-4.json")?
-        .next()
-        .unwrap()?;
+    let proof_path = glob::glob(if cfg!(feature = "euclidv2") {
+        "testdata/proofs/chunk-1-4.json"
+    } else {
+        "testdata/proofs/chunk-12508460-12508463.json"
+    })?
+    .next()
+    .unwrap()?;
     println!("proof_path: {:?}", proof_path);
     let chunk_proof = read_json_deep::<_, ChunkProof>(&proof_path)?;
 
@@ -23,14 +27,25 @@ fn load_recent_chunk_proofs() -> eyre::Result<BatchProvingTask> {
 
 #[test]
 fn test_execute() -> eyre::Result<()> {
-    MultiBatchProverTester::setup()?;
+    BatchProverTester::setup()?;
 
-    let (_, app_config, exe_path) = MultiBatchProverTester::load()?;
+    let (_, app_config, exe_path) = BatchProverTester::load()?;
+    let task = BatchProverTester::gen_proving_task()?;
 
-    // let tasks = MultiBatchProverTester::gen_multi_proving_tasks()?;
+    BatchProverTester::execute(app_config.clone(), &task, exe_path.clone())?;
+
+    Ok(())
+}
+
+#[test]
+fn test_e2e_execute() -> eyre::Result<()> {
+    BatchProverTester::setup()?;
+
+    let (_, app_config, exe_path) = BatchProverTester::load()?;
+
     let tasks = vec![load_recent_chunk_proofs()?];
     for task in tasks {
-        MultiBatchProverTester::execute(app_config.clone(), &task, exe_path.clone())?;
+        BatchProverTester::execute(app_config.clone(), &task, exe_path.clone())?;
     }
 
     Ok(())

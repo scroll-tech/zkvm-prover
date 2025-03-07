@@ -17,7 +17,8 @@ use sbv::{
     },
 };
 
-use crate::chunk::public_inputs::BlockContextV2;
+#[cfg(feature = "euclidv2")]
+use crate::chunk::public_inputs_euclidv2::BlockContextV2;
 
 type Witness = ArchivedChunkWitness;
 
@@ -45,7 +46,14 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     let chain = Chain::from_id(witness.blocks[0].chain_id());
 
     // enable all forks
-    let hardforks = (*SCROLL_DEV_HARDFORKS).clone();
+    #[allow(unused_mut)]
+    let mut hardforks = (*SCROLL_DEV_HARDFORKS).clone();
+    // disable EuclidV2 if not configured
+    #[cfg(not(feature = "euclidv2"))]
+    {
+        use sbv::primitives::{chainspec::ForkCondition, hardforks::ScrollHardfork};
+        hardforks.insert(ScrollHardfork::EuclidV2, ForkCondition::Never);
+    }
 
     let inner = ChainSpec {
         chain,
@@ -60,7 +68,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
         blob_params: Default::default(),
     };
     let config = ScrollChainConfig::mainnet();
-    let chain_spec = ScrollChainSpec { inner, config };
+    let chain_spec: ScrollChainSpec = ScrollChainSpec { inner, config };
 
     let (code_db, nodes_provider, block_hashes) = make_providers(&witness.blocks);
     let nodes_provider = manually_drop_on_zkvm!(nodes_provider);
@@ -91,9 +99,12 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
         .iter()
         .flat_map(|b| b.body().transactions.iter())
         .tx_bytes_hash_in(rlp_buffer.as_mut());
+    let _ = tx_data_length;
 
     let sbv_chunk_info = {
+        #[allow(unused_mut)]
         let mut builder = ChunkInfoBuilder::new(&chain_spec, pre_state_root.into(), &blocks);
+        #[cfg(feature = "euclidv2")]
         builder.set_prev_msg_queue_hash(witness.prev_msg_queue_hash.into());
         builder.build(withdraw_root)
     };
@@ -105,6 +116,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
         ));
     }
 
+    #[cfg(feature = "euclidv2")]
     let chunk_info = ChunkInfo {
         chain_id: sbv_chunk_info.chain_id(),
         prev_state_root: sbv_chunk_info.prev_state_root(),
@@ -121,6 +133,18 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
         block_ctxs: blocks.iter().map(BlockContextV2::from).collect(),
     };
 
+    #[cfg(not(feature = "euclidv2"))]
+    let chunk_info = ChunkInfo {
+        chain_id: sbv_chunk_info.chain_id(),
+        prev_state_root: sbv_chunk_info.prev_state_root(),
+        post_state_root: sbv_chunk_info.post_state_root(),
+        withdraw_root,
+        tx_data_digest,
+        data_hash: sbv_chunk_info
+            .into_legacy()
+            .expect("legacy chunk")
+            .data_hash,
+    };
     openvm::io::println(format!("withdraw_root = {:?}", withdraw_root));
     openvm::io::println(format!("tx_bytes_hash = {:?}", tx_data_digest));
 

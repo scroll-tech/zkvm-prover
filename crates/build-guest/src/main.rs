@@ -59,23 +59,35 @@ pub fn main() {
         tracing::debug!(name: "leaf-commitment", raw = ?leaf_commit, as_bn254 = ?commits.app_config_commit_to_bn254());
 
         let commitments = [exe_commit, leaf_commit];
-        write_commitments(
-            commitments,
-            format!("{workspace_dir}/crates/prover/src/commitments/{project_name}.rs").as_str(),
-        );
-        write_commitments(
-            commitments,
-            format!("{workspace_dir}/crates/verifier/src/commitments/{project_name}.rs").as_str(),
-        );
+
+        let flname = if cfg!(feature = "euclidv2") {
+            format!("{workspace_dir}/crates/prover/src/commitments/{project_name}.rs")
+        } else {
+            format!("{workspace_dir}/crates/prover/src/commitments/{project_name}_legacy.rs")
+        };
+        write_commitments(commitments, &flname);
+        let flname = if cfg!(feature = "euclidv2") {
+            format!("{workspace_dir}/crates/verifier/src/commitments/{project_name}.rs")
+        } else {
+            format!("{workspace_dir}/crates/verifier/src/commitments/{project_name}_legacy.rs")
+        };
+
+        write_commitments(commitments, &flname);
 
         if let Some(parent) = project_names.get(idx + 1) {
-            write_commitments(
-                commitments,
-                &format!(
+            let child_commitment_file = if cfg!(feature = "euclidv2") {
+                format!(
                     "{workspace_dir}/crates/circuits/{}-circuit/src/child_commitments.rs",
                     parent
-                ),
-            );
+                )
+            } else {
+                format!(
+                    "{workspace_dir}/crates/circuits/{}-circuit/src/child_commitments_legacy.rs",
+                    parent
+                )
+            };
+
+            write_commitments(commitments, &child_commitment_file);
         }
     }
 }

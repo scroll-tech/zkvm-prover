@@ -25,9 +25,16 @@ halo2curves-axiom.workspace = true
 eyre.workspace = true
 p3-field.workspace = true
 serde.workspace = true
+hex-literal.workspace = true
 serde_json.workspace = true
 serde_with.workspace = true
 snark-verifier-sdk.workspace = true
 toml.workspace = true
 
 cargo_metadata = "0.19.1"
+
+
+[features]
+default = ["euclidv2"]
+euclidv2 = []
+#euclidv2 = ["scroll-zkvm-integration/euclidv2", "scroll-zkvm-prover/euclidv2"]

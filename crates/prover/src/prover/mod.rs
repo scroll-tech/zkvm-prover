@@ -5,7 +5,7 @@ use std::{
 };
 
 use metrics_util::{MetricKind, debugging::DebugValue};
-use once_cell::sync::OnceCell;
+use once_cell::sync::Lazy;
 use openvm_circuit::{
     arch::{SingleSegmentVmExecutor, VmExecutor, VmExecutorResult},
     system::{memory::tree::public_values::extract_public_values, program::trace::VmCommittedExe},
@@ -44,10 +44,10 @@ pub use bundle::{BundleProver, BundleProverType};
 
 mod chunk;
 pub use chunk::{ChunkProver, ChunkProverType};
-
 /// Proving key for STARK aggregation. Primarily used to aggregate
 /// [continuation proofs][openvm_sdk::prover::vm::ContinuationVmProof].
-static AGG_STARK_PROVING_KEY: OnceCell<AggStarkProvingKey> = OnceCell::new();
+static AGG_STARK_PROVING_KEY: Lazy<AggStarkProvingKey> =
+    Lazy::new(|| AggStarkProvingKey::keygen(AggStarkConfig::default()));
 
 /// The default directory to locate openvm's halo2 SRS parameters.
 const DEFAULT_PARAMS_DIR: &str = concat!(env!("HOME"), "/.openvm/params/");
@@ -84,15 +84,11 @@ pub struct Prover<Type> {
 }
 
 /// Alias for convenience.
-pub type ProgramCommitments = [[u32; 8]; 2];
-type InitRes = Result<
-    (
-        Arc<VmCommittedExe<SC>>,
-        Arc<AppProvingKey<SdkVmConfig>>,
-        ProgramCommitments,
-    ),
-    Error,
->;
+type InitRes = (
+    Arc<VmCommittedExe<SC>>,
+    Arc<AppProvingKey<SdkVmConfig>>,
+    AppExecutionCommit<F>,
+);
 
 /// Alias for convenience.
 pub type SC = BabyBearPoseidon2Config;
@@ -182,9 +178,8 @@ impl<Type: ProverType> Prover<Type> {
         path_exe: P,
         path_app_config: P,
         prover_config: ProverConfig,
-    ) -> InitRes {
+    ) -> Result<InitRes, Error> {
         let app_exe = read_app_exe(path_exe)?;
-
         let mut app_config = read_app_config(path_app_config)?;
         let segment_len = prover_config.segment_len.unwrap_or(Type::SEGMENT_SIZE);
         app_config.app_vm_config.system.config = app_config
@@ -213,14 +208,7 @@ impl<Type: ProverType> Prover<Type> {
             .map(|x| x.as_canonical_u32());
         debug!(name: "exe-commitment", prover_name = Type::NAME, raw = ?exe_commit, as_bn254 = ?commits.exe_commit_to_bn254());
         debug!(name: "leaf-commitment", prover_name = Type::NAME, raw = ?leaf_commit, as_bn254 = ?commits.app_config_commit_to_bn254());
-
-        let _agg_stark_pk = AGG_STARK_PROVING_KEY
-            .get_or_init(|| AggStarkProvingKey::keygen(AggStarkConfig::default()));
-
-        Ok((app_committed_exe, Arc::new(app_pk), [
-            exe_commit,
-            leaf_commit,
-        ]))
+        Ok((app_committed_exe, Arc::new(app_pk), commits))
     }
 
     /// Dump assets required to setup verifier-only mode.
@@ -230,11 +218,7 @@ impl<Type: ProverType> Prover<Type> {
                 "dump_verifier only at bundle-prover".to_string(),
             ));
         };
-
-        let agg_stark_pk = AGG_STARK_PROVING_KEY.get().ok_or(Error::Custom(
-            "AGG_STARK_PROVING_KEY is not setup".to_string(),
-        ))?;
-        let root_verifier_pk = &agg_stark_pk.root_verifier_pk;
+        let root_verifier_pk = &AGG_STARK_PROVING_KEY.root_verifier_pk;
         let vm_config = root_verifier_pk.vm_pk.vm_config.clone();
         let root_committed_exe: &VmCommittedExe<_> = &root_verifier_pk.root_committed_exe;
 
@@ -365,11 +349,7 @@ impl<Type: ProverType> Prover<Type> {
     /// [root_proof][RootProof]
     #[instrument("Prover::verify_proof", skip_all, fields(?metadata = proof.metadata))]
     pub fn verify_proof(&self, proof: &WrappedProof<Type::ProofMetadata>) -> Result<(), Error> {
-        let agg_stark_pk = AGG_STARK_PROVING_KEY
-            .get()
-            .ok_or(Error::VerifyProof(String::from(
-                "agg stark pk not initialized! Prover::setup",
-            )))?;
+        let agg_stark_pk = &AGG_STARK_PROVING_KEY;
 
         let root_verifier_pk = &agg_stark_pk.root_verifier_pk;
         let vm_executor = SingleSegmentVmExecutor::new(root_verifier_pk.vm_pk.vm_config.clone());
@@ -409,11 +389,13 @@ impl<Type: ProverType> Prover<Type> {
         let evm_proof = proof.proof.as_evm_proof().ok_or(Error::VerifyProof(
             "verify_proof_evm expects EvmProof".to_string(),
         ))?;
-        let gas_cost = scroll_zkvm_verifier::evm::verify_evm_proof(
-            &self.evm_prover.as_ref().expect("").verifier_contract,
-            &evm_proof,
-        )
-        .map_err(|e| Error::VerifyProof(format!("EVM-proof verification failed: {e}")))?;
+        let contract = &self
+            .evm_prover
+            .as_ref()
+            .expect("uninited")
+            .verifier_contract;
+        let gas_cost = scroll_zkvm_verifier::evm::verify_evm_proof(contract, &evm_proof)
+            .map_err(|e| Error::VerifyProof(format!("EVM-proof verification failed: {e}")))?;
 
         tracing::info!(name: "verify_evm_proof", ?gas_cost);
 
@@ -520,12 +502,6 @@ impl<Type: ProverType> Prover<Type> {
     ///
     /// [root_proof][openvm_sdk::verifier::root::types::RootVmVerifierInput]
     fn gen_proof_stark(&self, task: &Type::ProvingTask) -> Result<RootProof, Error> {
-        let agg_stark_pk = AGG_STARK_PROVING_KEY
-            .get()
-            .ok_or(Error::GenProof(String::from(
-                "agg stark pk not initialized! Prover::setup",
-            )))?;
-
         let stdin = task
             .build_guest_input()
             .map_err(|e| Error::GenProof(e.to_string()))?;
@@ -540,7 +516,7 @@ impl<Type: ProverType> Prover<Type> {
         Sdk.generate_root_verifier_input(
             Arc::clone(&self.app_pk),
             Arc::clone(&self.app_committed_exe),
-            agg_stark_pk.clone(),
+            AGG_STARK_PROVING_KEY.clone(),
             stdin,
         )
         .map_err(|e| Error::GenProof(e.to_string()))
@@ -552,10 +528,6 @@ impl<Type: ProverType> Prover<Type> {
         use openvm_stark_sdk::{
             config::baby_bear_poseidon2::BabyBearPoseidon2Engine, engine::StarkFriEngine,
         };
-
-        if std::env::var("MOCK_PROVE").as_deref() != Ok("true") {
-            return Ok(());
-        }
 
         let engine = BabyBearPoseidon2Engine::new(self.app_pk.app_vm_pk.fri_params);
         let airs = self

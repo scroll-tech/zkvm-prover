@@ -16,9 +16,6 @@ use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE};
 
 use tracing::instrument;
 
-/// Feature to enable while building the guest program.
-const FEATURE_SCROLL: &str = "scroll";
-
 /// File descriptor for app openvm config.
 const FD_APP_CONFIG: &str = "openvm.toml";
 
@@ -84,7 +81,9 @@ fn binary_patch(elf_bin: &[u8]) -> Vec<u8> {
 /// Build the ELF binary from the circuit program.
 #[instrument("BuildGuest::build", fields(project_root))]
 pub fn build(project_root: &str) -> eyre::Result<Elf> {
-    let guest_opts = GuestOptions::default().with_features([FEATURE_SCROLL]);
+    let guest_opts = GuestOptions::default();
+    #[cfg(feature = "euclidv2")]
+    let guest_opts = guest_opts.with_features(["euclidv2"]);
     let guest_opts = guest_opts.with_profile("maxperf".to_string());
     let elf_path = build_elf(guest_opts, project_root, &Default::default())?;
     let bin = std::fs::read(&elf_path)?;
@@ -106,6 +105,11 @@ pub fn transpile(
     let path_app_config = Path::new(project_root).join(FD_APP_CONFIG);
     let app_config: AppConfig<SdkVmConfig> =
         toml::from_str(&read_to_string(&path_app_config).unwrap()).unwrap();
+
+    println!(
+        "{project_root} app config: {}",
+        toml::to_string_pretty(&app_config).unwrap()
+    );
 
     // Transpile ELF to openvm executable.
     let transpiler = app_config

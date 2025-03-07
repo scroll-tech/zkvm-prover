@@ -1,10 +1,15 @@
-use scroll_zkvm_circuit_input_types::chunk::{ArchivedChunkWitness, ChunkWitness, execute};
-
 use crate::{
     Error, Prover, ProverType,
-    commitments::chunk::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT},
     proof::{ChunkProofMetadata, RootProof},
     task::{ProvingTask, chunk::ChunkProvingTask},
+};
+use scroll_zkvm_circuit_input_types::chunk::{ArchivedChunkWitness, ChunkWitness, execute};
+
+#[cfg(feature = "euclidv2")]
+use crate::commitments::chunk::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT};
+#[cfg(not(feature = "euclidv2"))]
+use crate::commitments::chunk_legacy::{
+    EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT,
 };
 
 /// Prover for [`ChunkCircuit`].
@@ -45,11 +50,10 @@ impl ProverType for ChunkProverType {
             blocks: task.block_witnesses.to_vec(),
             prev_msg_queue_hash: task.prev_msg_queue_hash,
         };
-        // We want to reuse codes as much as possible, so we serialize the chunk witness
-        // and execute it with "ArchivedChunkWitness".
         let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&chunk_witness).map_err(|e| {
             Error::GenProof(format!(
-                "{err_prefix}: failed to serialize chunk witness: {e}"
+                "{}: failed to serialize chunk witness: {}",
+                err_prefix, e
             ))
         })?;
         let chunk_witness = rkyv::access::<ArchivedChunkWitness, rkyv::rancor::BoxedError>(
@@ -57,12 +61,13 @@ impl ProverType for ChunkProverType {
         )
         .map_err(|e| {
             Error::GenProof(format!(
-                "{err_prefix}: rkyv deserialisation of chunk witness bytes failed: {e}",
+                "{}: rkyv deserialisation of chunk witness bytes failed: {}",
+                err_prefix, e
             ))
         })?;
 
-        let chunk_info =
-            execute(chunk_witness).map_err(|e| Error::GenProof(format!("{err_prefix}: {e}")))?;
+        let chunk_info = execute(chunk_witness)
+            .map_err(|e| Error::GenProof(format!("{}: {}", err_prefix, e)))?;
 
         Ok(ChunkProofMetadata { chunk_info })
     }

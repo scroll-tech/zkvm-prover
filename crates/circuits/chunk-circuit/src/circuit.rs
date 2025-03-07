@@ -36,7 +36,6 @@ pub struct ChunkCircuit;
 
 impl Circuit for ChunkCircuit {
     type Witness = ArchivedChunkWitness;
-
     type PublicInputs = ChunkInfo;
 
     fn setup() {

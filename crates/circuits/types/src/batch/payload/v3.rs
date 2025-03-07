@@ -3,7 +3,10 @@ use core::iter::Iterator;
 use alloy_primitives::B256;
 use itertools::Itertools;
 
-use crate::utils::keccak256;
+use crate::{batch::BatchHeaderV3, chunk::ChunkInfo, utils::keccak256};
+
+/// The default max chunks for v3 payload
+pub const N_MAX_CHUNKS: usize = 45;
 
 /// The number of bytes to encode number of chunks in a batch.
 const N_BYTES_NUM_CHUNKS: usize = 2;
@@ -11,9 +14,47 @@ const N_BYTES_NUM_CHUNKS: usize = 2;
 /// The number of rows to encode chunk size (u32).
 const N_BYTES_CHUNK_SIZE: usize = 4;
 
+impl From<&[u8]> for EnvelopeV3 {
+    fn from(blob_bytes: &[u8]) -> Self {
+        let is_encoded = blob_bytes[0] & 1 == 1;
+        Self {
+            is_encoded,
+            envelope_bytes: if blob_bytes[0] & 1 == 1 {
+                vm_zstd::process(&blob_bytes[1..]).unwrap().decoded_data
+            } else {
+                Vec::from(&blob_bytes[1..])
+            },
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct EnvelopeV3 {
+    /// The original envelope bytes supplied.
+    ///
+    /// Caching just for re-use later in challenge digest computation.
+    pub envelope_bytes: Vec<u8>,
+    /// If the enveloped bytes is encoded (compressed) in envelop
+    pub is_encoded: bool,
+}
+
+impl EnvelopeV3 {
+    /// Parse payload bytes and obtain challenge digest
+    pub fn challenge_digest(&self, versioned_hash: B256) -> B256 {
+        let payload = Payload::from(self);
+        payload.get_challenge_digest(versioned_hash)
+    }
+}
+
+impl From<&EnvelopeV3> for Payload {
+    fn from(envelope: &EnvelopeV3) -> Self {
+        Self::from_payload(&envelope.envelope_bytes)
+    }
+}
+
 /// Payload that describes a batch.
 #[derive(Clone, Debug, Default)]
-pub struct Payload<const N_MAX_CHUNKS: usize> {
+pub struct Payload {
     /// Metadata that encodes the sizes of every chunk in the batch.
     pub metadata_digest: B256,
     /// The Keccak digests of transaction bytes for every chunk in the batch.
@@ -24,7 +65,9 @@ pub struct Payload<const N_MAX_CHUNKS: usize> {
     pub chunk_data_digests: Vec<B256>,
 }
 
-impl<const N_MAX_CHUNKS: usize> Payload<N_MAX_CHUNKS> {
+pub type PayloadV3 = Payload;
+
+impl Payload {
     /// For raw payload data (read from decompressed enveloped data), which is raw batch bytes with metadata, this function segments
     /// the byte stream into chunk segments.
     /// This method is used INSIDE OF zkvm since we can not generate (compress) batch data within
@@ -34,7 +77,6 @@ impl<const N_MAX_CHUNKS: usize> Payload<N_MAX_CHUNKS> {
         let metadata_bytes = &batch_bytes_with_metadata[..n_bytes_metadata];
         let metadata_digest = keccak256(metadata_bytes);
         let batch_bytes = &batch_bytes_with_metadata[n_bytes_metadata..];
-
         // Decoded batch bytes require segmentation based on chunk length
         let valid_chunks = metadata_bytes[..N_BYTES_NUM_CHUNKS]
             .iter()
@@ -74,6 +116,7 @@ impl<const N_MAX_CHUNKS: usize> Payload<N_MAX_CHUNKS> {
     }
 
     /// Get the preimage of the challenge digest.
+    #[allow(dead_code)]
     pub(crate) fn get_challenge_digest_preimage(&self, versioned_hash: B256) -> Vec<u8> {
         // preimage =
         //     metadata_digest ||
@@ -102,7 +145,7 @@ impl<const N_MAX_CHUNKS: usize> Payload<N_MAX_CHUNKS> {
 
     /// Compute the challenge digest from blob bytes. which is the combination of
     /// digest for bytes in each chunk
-    pub(crate) fn get_challenge_digest(&self, versioned_hash: B256) -> B256 {
+    pub fn get_challenge_digest(&self, versioned_hash: B256) -> B256 {
         keccak256(self.get_challenge_digest_preimage(versioned_hash))
     }
 
@@ -110,5 +153,34 @@ impl<const N_MAX_CHUNKS: usize> Payload<N_MAX_CHUNKS> {
     /// represent the size of chunks and max_chunks * u32 to represent chunk sizes
     const fn n_bytes_metadata() -> usize {
         N_BYTES_NUM_CHUNKS + (N_MAX_CHUNKS * N_BYTES_CHUNK_SIZE)
+    }
+
+    /// Validate the payload contents.
+    pub fn validate<'a>(
+        &self,
+        header: &BatchHeaderV3,
+        chunk_infos: &'a [ChunkInfo],
+    ) -> (&'a ChunkInfo, &'a ChunkInfo) {
+        // Get the first and last chunks' info, to construct the batch info.
+        let (first_chunk, last_chunk) = (
+            chunk_infos.first().expect("at least one chunk in batch"),
+            chunk_infos.last().expect("at least one chunk in batch"),
+        );
+
+        let _ = self
+            .chunk_data_digests
+            .iter()
+            .zip(chunk_infos)
+            .inspect(|(chunk_digest, info)| assert_eq!(*chunk_digest, &info.tx_data_digest));
+
+        // Validate the l1-msg identifier data_hash for the batch.
+        let batch_data_hash_preimage = chunk_infos
+            .iter()
+            .flat_map(|chunk_info| chunk_info.data_hash.0)
+            .collect::<Vec<_>>();
+        let batch_data_hash = keccak256(batch_data_hash_preimage);
+        assert_eq!(batch_data_hash, header.data_hash);
+
+        (first_chunk, last_chunk)
     }
 }

@@ -11,10 +11,12 @@ scroll-zkvm-verifier.workspace = true
 
 alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
 rkyv.workspace = true
+bincode_v1.workspace = true
 sbv.workspace = true
 tracing.workspace = true
 metrics.workspace = true
 metrics-util.workspace = true
+metrics-tracing-context.workspace = true
 snark-verifier-sdk.workspace = true
 
 openvm-circuit = { workspace = true }
@@ -24,7 +26,6 @@ openvm-sdk = { workspace = true }
 openvm-stark-sdk = { workspace = true, default-features = false }
 
 base64 = "0.22"
-bincode = "1.3"
 git-version = "0.3.5"
 hex = "0.4"
 munge = "=0.4.1"
@@ -42,4 +43,5 @@ eyre = "0.6"
 
 [features]
 default = ["scroll"]
+euclidv2 = ["scroll-zkvm-circuit-input-types/euclidv2"]
 scroll = ["sbv/scroll"]

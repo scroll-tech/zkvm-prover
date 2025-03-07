@@ -11,8 +11,8 @@ version.workspace = true
 alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
 alloy-serde.workspace = true
 rkyv.workspace = true
-sbv = { workspace = true, optional = true }
-vm-zstd = { workspace = true, optional = true }
+sbv = { workspace = true }
+vm-zstd = { workspace = true }
 serde.workspace = true
 itertools.workspace = true
 tiny-keccak = {workspace = true, features = ["openvm"] }
@@ -21,8 +21,7 @@ openvm = { workspace = true, features = ["std"] }
 openvm-rv32im-guest= {  workspace = true }
 
 [features]
-default = ["scroll", "sbv", "batch-v7"]
-batch-v3 = ["dep:vm-zstd"]
-batch-v7 = ["dep:vm-zstd"]
-sbv = ["dep:sbv"]
-scroll = ["sbv?/scroll"]
+default = ["scroll"]
+euclidv2 = []
+openvm = ["sbv/openvm"]
+scroll = ["sbv/scroll"]

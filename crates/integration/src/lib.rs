@@ -3,6 +3,7 @@ use std::{
     process,
 };
 
+// use metrics_tracing_context::MetricsLayer;
 use once_cell::sync::OnceCell;
 use openvm_sdk::{
     F, Sdk,
@@ -169,6 +170,7 @@ fn setup_logger() -> eyre::Result<()> {
         tracing_subscriber::registry()
             .with(tracing_subscriber::EnvFilter::from_default_env())
             .with(fmt_layer)
+            .with(MetricsLayer::new())
             .try_init()?;
     }
 
@@ -206,22 +208,23 @@ where
 {
     let (path_app_config, _, path_exe) = T::load()?;
 
-    // Setup prover.
     let cache_dir = DIR_TESTRUN
         .get()
         .ok_or(eyre::eyre!("missing assets dir"))?
         .join(T::DIR_ASSETS)
         .join(DIR_PROOFS);
     std::fs::create_dir_all(&cache_dir)?;
+
+    // Generate proving task for the circuit.
+    let task = task.unwrap_or(T::gen_proving_task()?);
+
+    // Setup prover.
     let prover = scroll_zkvm_prover::Prover::<T::Prover>::setup(
         &path_exe,
         &path_app_config,
         Some(&cache_dir),
         Default::default(),
     )?;
-
-    // Generate proving task for the circuit.
-    let task = task.unwrap_or(T::gen_proving_task()?);
 
     // Construct root proof for the circuit.
     let proof = prover.gen_proof(&task)?;

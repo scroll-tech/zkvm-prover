@@ -18,6 +18,19 @@ fn test_execute() -> eyre::Result<()> {
 }
 
 #[test]
+fn test_execute_multi() -> eyre::Result<()> {
+    MultiChunkProverTester::setup()?;
+
+    let (_, app_config, exe_path) = MultiChunkProverTester::load()?;
+
+    for task in MultiChunkProverTester::gen_multi_proving_tasks()? {
+        MultiChunkProverTester::execute(app_config.clone(), &task, exe_path.clone())?;
+    }
+
+    Ok(())
+}
+
+#[test]
 fn guest_profiling() -> eyre::Result<()> {
     ChunkProverTester::setup()?;
 
