@@ -7,7 +7,7 @@ use openvm::platform as openvm_platform;
 /// is more efficient than rkyv::access.
 #[cfg(target_os = "zkvm")]
 #[inline(always)]
-pub fn read_witnesses() -> Vec<u8> {
+pub fn read_witnesses_rkyv_raw() -> Vec<u8> {
     use std::alloc::{GlobalAlloc, Layout, System};
     openvm_rv32im_guest::hint_input();
     let mut len: u32 = 0;
@@ -24,8 +24,10 @@ pub fn read_witnesses() -> Vec<u8> {
     unsafe { Vec::from_raw_parts(ptr_start, len as usize, size) }
 }
 
-/// Dummy implement to avoid build errors.
-#[cfg(not(target_os = "zkvm"))]
+/// Read the witnesses from the hint stream.
 pub fn read_witnesses() -> Vec<u8> {
-    openvm::io::read_vec()
+    #[cfg(not(target_os = "zkvm"))]
+    return openvm::io::read_vec(); // avoid compiler complaint
+    #[cfg(target_os = "zkvm")]
+    return read_witnesses_rkyv_raw();
 }

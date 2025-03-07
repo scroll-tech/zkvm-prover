@@ -21,3 +21,5 @@ docs
 openvm-clippy
 
 target
+
+root_verifier.asm

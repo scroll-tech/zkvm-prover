@@ -7,7 +7,6 @@ clippycmd="cargo +nightly-2024-10-30 clippy \
   --target riscv32im-risc0-zkvm-elf \
   -Z build-std=alloc,core,proc_macro,panic_abort,std \
   -Z build-std-features=compiler-builtins-mem \
-  --all-targets \
   --all-features \
   -- -D warnings"
 

@@ -9,10 +9,17 @@ use openvm_native_recursion::{
 use openvm_sdk::{F, RootSC, SC, verifier::root::types::RootVmVerifierInput};
 use scroll_zkvm_circuit_input_types::proof::ProgramCommitment;
 
+#[cfg(feature = "euclidv2")]
 use crate::commitments::{
     batch::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT},
     bundle::{EXE_COMMIT as BUNDLE_EXE_COMMIT, LEAF_COMMIT as BUNDLE_LEAF_COMMIT},
     chunk::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT},
+};
+#[cfg(not(feature = "euclidv2"))]
+use crate::commitments::{
+    batch_legacy::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT},
+    bundle_legacy::{EXE_COMMIT as BUNDLE_EXE_COMMIT, LEAF_COMMIT as BUNDLE_LEAF_COMMIT},
+    chunk_legacy::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT},
 };
 
 pub trait VerifierType {
@@ -64,13 +71,13 @@ impl<Type> Verifier<Type> {
     ) -> eyre::Result<Self> {
         let vm_executor = {
             let bytes = std::fs::read(path_vm_config.as_ref())?;
-            let vm_config: NativeConfig = bincode::deserialize(&bytes)?;
+            let vm_config: NativeConfig = bincode_v1::deserialize(&bytes)?;
             SingleSegmentVmExecutor::new(vm_config)
         };
 
         let root_committed_exe = {
             let bytes = std::fs::read(path_root_committed_exe.as_ref())?;
-            bincode::deserialize(&bytes)?
+            bincode_v1::deserialize(&bytes)?
         };
 
         let evm_verifier = {

@@ -51,9 +51,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-chains"
-version = "0.1.63"
+version = "0.1.64"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "996564c1782285d4e0299c29b318bc74f24b1d7f456cef3e040810b061ee3256"
+checksum = "963fc7ac17f25d92c237448632330eb87b39ba8aa0209d4b517069a05b57db62"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -245,7 +245,7 @@ dependencies = [
 [[package]]
 name = "alloy-primitives"
 version = "0.8.18"
-source = "git+https://github.com/scroll-tech/alloy-core?branch=v0.8.18#aab106b9b7ca2e76a7b073064f86a04adb3122fe"
+source = "git+https://github.com/scroll-tech/alloy-core?branch=v0.8.18#b3dee66037780a556681e134502ab903363d61ff"
 dependencies = [
  "alloy-rlp",
  "bytes",
@@ -258,6 +258,8 @@ dependencies = [
  "itoa",
  "k256",
  "keccak-asm",
+ "openvm-ecc-guest",
+ "openvm-keccak256-guest",
  "paste",
  "proptest",
  "rand",
@@ -762,6 +764,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "bincode"
+version = "2.0.0-rc.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f11ea1a0346b94ef188834a65c068a03aec181c94896d481d7a0a40d85b0ce95"
+dependencies = [
+ "bincode_derive",
+ "serde",
+]
+
+[[package]]
+name = "bincode_derive"
+version = "2.0.0-rc.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e30759b3b99a1b802a7a3aa21c85c3ded5c28e1c83170d82d70f08bbf7f3e4c"
+dependencies = [
+ "virtue",
+]
+
+[[package]]
 name = "bit-set"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -877,19 +898,6 @@ dependencies = [
  "ff 0.12.1",
  "group 0.12.1",
  "pairing 0.22.0",
- "rand_core",
- "subtle",
-]
-
-[[package]]
-name = "bls12_381"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d7bc6d6292be3a19e6379786dac800f551e5865a5bb51ebbe3064ab80433f403"
-dependencies = [
- "ff 0.13.0",
- "group 0.13.0",
- "pairing 0.23.0",
  "rand_core",
  "subtle",
 ]
@@ -2429,7 +2437,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a575df5f985fe1cd5b2b05664ff6accfc46559032b954529fd225a2168d27b0f"
 dependencies = [
  "bitvec",
- "bls12_381 0.7.1",
+ "bls12_381",
  "ff 0.12.1",
  "group 0.12.1",
  "rand_core",
@@ -2670,18 +2678,18 @@ dependencies = [
 
 [[package]]
 name = "munge"
-version = "0.4.3"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0091202c98cf06da46c279fdf50cccb6b1c43b4521abdf6a27b4c7e71d5d9d7"
+checksum = "64142d38c84badf60abf06ff9bd80ad2174306a5b11bd4706535090a30a419df"
 dependencies = [
  "munge_macro",
 ]
 
 [[package]]
 name = "munge_macro"
-version = "0.4.3"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "734799cf91479720b2f970c61a22850940dd91e27d4f02b1c6fc792778df2459"
+checksum = "1bb5c1d8184f13f7d0ccbeeca0def2f9a181bce2624302793005f5ca8aa62e5e"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4923,7 +4931,7 @@ version = "1.1.5"
 source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
 dependencies = [
  "anyhow",
- "bincode",
+ "bincode 1.3.3",
  "derive_more 1.0.0",
  "lz4_flex",
  "memmap2",
@@ -5798,19 +5806,20 @@ version = "0.1.0-rc.5"
 dependencies = [
  "alloy-primitives",
  "bitcode",
- "bls12_381 0.8.0",
- "ff 0.13.0",
+ "c-kzg",
  "itertools 0.14.0",
  "openvm",
+ "openvm-algebra-complex-macros",
  "openvm-algebra-guest",
+ "openvm-ecc-guest",
  "openvm-keccak256-guest",
  "openvm-pairing-guest",
  "openvm-rv32im-guest",
+ "openvm-sha256-guest",
  "rkyv",
  "scroll-zkvm-circuit-input-types",
  "serde",
  "tiny-keccak",
- "vm-zstd",
 ]
 
 [[package]]
@@ -5819,20 +5828,29 @@ version = "0.1.0-rc.5"
 dependencies = [
  "bitcode",
  "cargo_metadata 0.19.2",
+ "eyre",
  "halo2curves-axiom 0.5.3",
+ "hex-literal",
+ "openvm-algebra-guest",
+ "openvm-build",
+ "openvm-ecc-guest",
  "openvm-instructions",
+ "openvm-native-circuit",
  "openvm-native-compiler",
  "openvm-native-recursion",
+ "openvm-native-transpiler",
  "openvm-rv32im-transpiler",
  "openvm-sdk",
  "openvm-stark-sdk",
+ "openvm-transpiler",
  "p3-field",
- "scroll-zkvm-integration",
- "scroll-zkvm-prover",
  "serde",
  "serde_json",
  "serde_with",
  "snark-verifier-sdk",
+ "toml",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -5852,6 +5870,7 @@ dependencies = [
 name = "scroll-zkvm-chunk-circuit"
 version = "0.1.0-rc.5"
 dependencies = [
+ "bincode 2.0.0-rc.3",
  "openvm",
  "openvm-algebra-complex-macros",
  "openvm-algebra-guest",
@@ -5861,7 +5880,6 @@ dependencies = [
  "openvm-pairing-guest",
  "openvm-rv32im-guest",
  "rkyv",
- "sbv",
  "scroll-zkvm-circuit-input-types",
 ]
 
@@ -5871,12 +5889,14 @@ version = "0.1.0-rc.5"
 dependencies = [
  "alloy-primitives",
  "alloy-serde 0.8.3",
+ "itertools 0.14.0",
  "openvm",
  "openvm-rv32im-guest",
  "rkyv",
  "sbv",
  "serde",
  "tiny-keccak",
+ "vm-zstd",
 ]
 
 [[package]]
@@ -5884,13 +5904,12 @@ name = "scroll-zkvm-integration"
 version = "0.1.0-rc.5"
 dependencies = [
  "alloy-primitives",
- "bls12_381 0.8.0",
- "c-kzg",
  "chrono",
  "eyre",
  "ff 0.13.0",
  "glob",
  "halo2curves-axiom 0.7.0",
+ "metrics-tracing-context",
  "once_cell",
  "openvm-build",
  "openvm-circuit",
@@ -5900,6 +5919,7 @@ dependencies = [
  "openvm-native-transpiler",
  "openvm-sdk",
  "openvm-transpiler",
+ "rayon",
  "sbv",
  "scroll-zkvm-circuit-input-types",
  "scroll-zkvm-prover",
@@ -5918,12 +5938,15 @@ version = "0.1.0-rc.5"
 dependencies = [
  "alloy-primitives",
  "base64",
- "bincode",
+ "bincode 1.3.3",
+ "c-kzg",
  "eyre",
  "git-version",
  "hex",
  "metrics 0.23.0",
+ "metrics-tracing-context",
  "metrics-util",
+ "munge",
  "once_cell",
  "openvm-circuit",
  "openvm-native-circuit",
@@ -5948,7 +5971,7 @@ dependencies = [
 name = "scroll-zkvm-verifier"
 version = "0.1.0-rc.5"
 dependencies = [
- "bincode",
+ "bincode 1.3.3",
  "eyre",
  "openvm-circuit",
  "openvm-native-circuit",
@@ -6246,7 +6269,7 @@ version = "0.1.8"
 source = "git+https://github.com/axiom-crypto/snark-verifier?branch=zkvm-v0.1#ab65fda41b56571aa33dd27f68ef1ea461e3fadc"
 dependencies = [
  "ark-std 0.3.0",
- "bincode",
+ "bincode 1.3.3",
  "ethereum-types",
  "getset",
  "halo2-base",
@@ -6600,9 +6623,9 @@ dependencies = [
 
 [[package]]
 name = "time"
-version = "0.3.38"
+version = "0.3.39"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb041120f25f8fbe8fd2dbe4671c7c2ed74d83be2e7a77529bf7e0790ae3f472"
+checksum = "dad298b01a40a23aac4580b67e3dbedb7cc8402f3592d7f49469de2ea4aecdd8"
 dependencies = [
  "deranged",
  "itoa",
@@ -6934,6 +6957,12 @@ name = "version_check"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
+
+[[package]]
+name = "virtue"
+version = "0.0.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9dcc60c0624df774c82a0ef104151231d37da4962957d691c011c852b2473314"
 
 [[package]]
 name = "vm-zstd"
@@ -7426,7 +7455,7 @@ dependencies = [
  "ark-std 0.4.0",
  "bitvec",
  "blake2",
- "bls12_381 0.7.1",
+ "bls12_381",
  "byteorder",
  "cfg-if",
  "group 0.12.1",

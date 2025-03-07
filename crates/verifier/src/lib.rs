@@ -1,3 +1,4 @@
+#[allow(unused_imports)]
 #[rustfmt::skip]
 pub mod commitments;
 
