@@ -119,6 +119,7 @@ impl EccToPairing for Bls12_381_G2 {
 /// form, and `commitment` is the KZG commitment to the polynomial `P`.
 ///
 /// We use [`openvm_pairing_guest`] extension to implement this in guest program.
+#[allow(dead_code)]
 pub fn verify_kzg_proof(z: Scalar, y: Scalar, commitment: G1Affine, proof: G1Affine) -> bool {
     let proof_q = G1Affine::from_xy_nonidentity(proof.x().clone(), proof.y().clone())
         .expect("kzg proof not G1 identity");

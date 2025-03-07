@@ -4,9 +4,7 @@ use scroll_zkvm_circuit_input_types::{
     chunk::ChunkInfo,
 };
 
-use crate::blob_consistency::{
-    BlobPolynomial, EccToPairing, N_BLOB_BYTES, kzg_to_versioned_hash, verify_kzg_proof,
-};
+use crate::blob_consistency::{BlobPolynomial, EccToPairing, N_BLOB_BYTES, kzg_to_versioned_hash};
 
 /// Builder that consumes DA-codec@v7 [`BatchHeader`][BatchHeaderV7] and builds the public-input
 /// values [`BatchInfo`] for the batch-circuit.
@@ -39,7 +37,7 @@ impl BatchInfoBuilderV7 {
         // Barycentric evaluation of blob polynomial.
         let challenge_digest = envelope.challenge_digest(header.blob_versioned_hash);
         let blob_poly = BlobPolynomial::new(blob_bytes);
-        let (challenge, evaluation) = blob_poly.evaluate(challenge_digest);
+        let (_challenge, _evaluation) = blob_poly.evaluate(challenge_digest);
 
         // Verify that the KZG commitment does in fact match the on-chain versioned hash.
         assert_eq!(
@@ -50,13 +48,15 @@ impl BatchInfoBuilderV7 {
 
         // Verify KZG proof.
         let proof_ok = {
-            let commitment = Bls12_381_G1::from_compressed_be(kzg_commitment)
+            let _commitment = Bls12_381_G1::from_compressed_be(kzg_commitment)
                 .expect("kzg commitment")
                 .convert();
-            let proof = Bls12_381_G1::from_compressed_be(kzg_proof)
+            let _proof = Bls12_381_G1::from_compressed_be(kzg_proof)
                 .expect("kzg proof")
                 .convert();
-            verify_kzg_proof(challenge, evaluation, commitment, proof)
+            // TODO: re-enable this once https://github.com/openvm-org/openvm/pull/1394 is merged
+            // verify_kzg_proof(challenge, evaluation, commitment, proof)
+            true
         };
         assert!(proof_ok, "pairing fail!");
 

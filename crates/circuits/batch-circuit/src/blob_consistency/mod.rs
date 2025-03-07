@@ -3,7 +3,7 @@ use alloy_primitives::{B256 as H256, U256};
 use openvm_pairing_guest::bls12_381::Scalar;
 
 mod openvm;
-pub use openvm::{EccToPairing, kzg_to_versioned_hash, point_evaluation, verify_kzg_proof};
+pub use openvm::{EccToPairing, kzg_to_versioned_hash, point_evaluation};
 
 // Number of bytes in a u256.
 pub const N_BYTES_U256: usize = 32;
