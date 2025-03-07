@@ -59,19 +59,6 @@ impl<const N_MAX_CHUNKS: usize> Payload<N_MAX_CHUNKS> {
             },
         );
 
-        let chunk1_tx_bytes = segmented_batch_data.first().unwrap();
-        println!(
-            "\n\n\nchunk1, len(tx_bytes)={:?}, bytes={:?}",
-            chunk1_tx_bytes.len(),
-            chunk1_tx_bytes
-        );
-        let chunk2_tx_bytes = segmented_batch_data.get(1).unwrap();
-        println!(
-            "\n\n\nchunk2, len(tx_bytes)={:?}, bytes={:?}",
-            chunk2_tx_bytes.len(),
-            chunk2_tx_bytes
-        );
-
         assert!(
             final_bytes.is_empty(),
             "chunk segmentation len must add up to the correct value"

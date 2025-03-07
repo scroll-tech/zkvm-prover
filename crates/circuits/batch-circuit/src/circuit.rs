@@ -7,7 +7,7 @@ use scroll_zkvm_circuit_input_types::{
     utils::read_witnesses,
 };
 
-// use crate::child_commitments::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT};
+use crate::child_commitments::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT};
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use openvm_keccak256_guest; // trigger extern native-keccak256
 
@@ -43,19 +43,19 @@ impl Circuit for BatchCircuit {
 impl AggCircuit for BatchCircuit {
     type AggregatedPublicInputs = ChunkInfo;
 
-    fn verify_commitments(_commitment: &ProgramCommitment) {
-        // if commitment.exe != CHUNK_EXE_COMMIT {
-        //     panic!(
-        //         "mismatch chunk-proof exe commitment: expected={:?}, got={:?}",
-        //         CHUNK_EXE_COMMIT, commitment.exe,
-        //     );
-        // }
-        // if commitment.leaf != CHUNK_LEAF_COMMIT {
-        //     panic!(
-        //         "mismatch chunk-proof leaf commitment: expected={:?}, got={:?}",
-        //         CHUNK_EXE_COMMIT, commitment.leaf,
-        //     );
-        // }
+    fn verify_commitments(commitment: &ProgramCommitment) {
+        if commitment.exe != CHUNK_EXE_COMMIT {
+            panic!(
+                "mismatch chunk-proof exe commitment: expected={:?}, got={:?}",
+                CHUNK_EXE_COMMIT, commitment.exe,
+            );
+        }
+        if commitment.leaf != CHUNK_LEAF_COMMIT {
+            panic!(
+                "mismatch chunk-proof leaf commitment: expected={:?}, got={:?}",
+                CHUNK_EXE_COMMIT, commitment.leaf,
+            );
+        }
     }
 
     fn aggregated_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs> {
