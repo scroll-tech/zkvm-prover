@@ -8,8 +8,20 @@ use crate::{ProverTester, testers::PATH_TESTDATA};
 /// Utility function to read and deserialize block witness given the block number.
 ///
 /// Expects a file <block_n>.json to be present in the <PATH_BLOCK_WITNESS> directory.
+#[allow(dead_code)]
 fn read_block_witness(block_n: usize) -> eyre::Result<BlockWitness> {
     let path_witness = Path::new(PATH_TESTDATA).join(format!("{}.json", block_n));
+    let witness = File::open(&path_witness)?;
+    Ok(serde_json::from_reader::<_, BlockWitness>(witness)?)
+}
+
+/// Utility function to read and deserialize block witness given the block number.
+///
+/// Expects a file <block_n>.json to be present in the <PATH_BLOCK_WITNESS> directory.
+fn read_block_witness_failed(block_n: usize) -> eyre::Result<BlockWitness> {
+    let path_witness = Path::new(PATH_TESTDATA)
+        .join("failed-witnesses")
+        .join(format!("{}.json", block_n));
     let witness = File::open(&path_witness)?;
     Ok(serde_json::from_reader::<_, BlockWitness>(witness)?)
 }
@@ -26,8 +38,8 @@ impl ProverTester for ChunkProverTester {
     /// [block-12508460, block-12508461, block-12508462, block-12508463]
     fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask> {
         Ok(ChunkProvingTask {
-            block_witnesses: (12508460usize..=12508463)
-                .map(read_block_witness)
+            block_witnesses: (581..=590)
+                .map(read_block_witness_failed)
                 .collect::<eyre::Result<Vec<BlockWitness>>>()?,
         })
     }
@@ -52,18 +64,53 @@ impl ProverTester for MultiChunkProverTester {
     fn gen_multi_proving_tasks() -> eyre::Result<Vec<<Self::Prover as ProverType>::ProvingTask>> {
         Ok(vec![
             ChunkProvingTask {
-                block_witnesses: (12508460usize..=12508460)
-                    .map(read_block_witness)
+                block_witnesses: (197..=293)
+                    .map(read_block_witness_failed)
                     .collect::<eyre::Result<Vec<BlockWitness>>>()?,
             },
             ChunkProvingTask {
-                block_witnesses: (12508461usize..=12508461)
-                    .map(read_block_witness)
+                block_witnesses: (294..=386)
+                    .map(read_block_witness_failed)
                     .collect::<eyre::Result<Vec<BlockWitness>>>()?,
             },
             ChunkProvingTask {
-                block_witnesses: (12508462usize..=12508463)
-                    .map(read_block_witness)
+                block_witnesses: (387..=470)
+                    .map(read_block_witness_failed)
+                    .collect::<eyre::Result<Vec<BlockWitness>>>()?,
+            },
+            ChunkProvingTask {
+                block_witnesses: (471..=480)
+                    .map(read_block_witness_failed)
+                    .collect::<eyre::Result<Vec<BlockWitness>>>()?,
+            },
+            ChunkProvingTask {
+                block_witnesses: (481..=490)
+                    .map(read_block_witness_failed)
+                    .collect::<eyre::Result<Vec<BlockWitness>>>()?,
+            },
+            ChunkProvingTask {
+                block_witnesses: (491..=500)
+                    .map(read_block_witness_failed)
+                    .collect::<eyre::Result<Vec<BlockWitness>>>()?,
+            },
+            ChunkProvingTask {
+                block_witnesses: (501..=510)
+                    .map(read_block_witness_failed)
+                    .collect::<eyre::Result<Vec<BlockWitness>>>()?,
+            },
+            ChunkProvingTask {
+                block_witnesses: (511..=520)
+                    .map(read_block_witness_failed)
+                    .collect::<eyre::Result<Vec<BlockWitness>>>()?,
+            },
+            ChunkProvingTask {
+                block_witnesses: (521..=530)
+                    .map(read_block_witness_failed)
+                    .collect::<eyre::Result<Vec<BlockWitness>>>()?,
+            },
+            ChunkProvingTask {
+                block_witnesses: (531..=540)
+                    .map(read_block_witness_failed)
                     .collect::<eyre::Result<Vec<BlockWitness>>>()?,
             },
         ])
