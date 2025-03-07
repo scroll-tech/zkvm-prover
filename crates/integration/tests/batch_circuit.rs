@@ -1,4 +1,3 @@
-use openvm_stark_sdk::bench::run_with_metric_collection;
 use scroll_zkvm_integration::{
     ProverTester, prove_verify_multi, prove_verify_single,
     testers::{
@@ -47,11 +46,9 @@ fn setup_prove_verify_single() -> eyre::Result<()> {
     BatchProverTester::setup()?;
 
     let task = load_recent_chunk_proofs()?;
-    run_with_metric_collection("OUTPUT_PATH", || -> eyre::Result<()> {
-        prove_verify_single::<BatchProverTester>(Some(task))?;
+    prove_verify_single::<BatchProverTester>(Some(task))?;
 
-        Ok(())
-    })
+    Ok(())
 }
 
 #[test]
