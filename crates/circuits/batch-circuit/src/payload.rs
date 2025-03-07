@@ -59,7 +59,7 @@ impl<const N_MAX_CHUNKS: usize> Payload<N_MAX_CHUNKS> {
             },
         );
 
-        let chunk1_tx_bytes = segmented_batch_data.get(0).unwrap();
+        let chunk1_tx_bytes = segmented_batch_data.first().unwrap();
         println!(
             "\n\n\nchunk1, len(tx_bytes)={:?}, bytes={:?}",
             chunk1_tx_bytes.len(),
@@ -77,13 +77,13 @@ impl<const N_MAX_CHUNKS: usize> Payload<N_MAX_CHUNKS> {
             "chunk segmentation len must add up to the correct value"
         );
 
-        let chunk_data_digests = segmented_batch_data
+        let chunk_data_digests: Vec<B256> = segmented_batch_data
             .iter()
             .map(|bytes| B256::from(keccak256(bytes)))
             .collect();
         println!(
             "\n\n\nchunk1(data_digest) = {:?}",
-            chunk_data_digests.get(0).unwrap()
+            chunk_data_digests.first().unwrap()
         );
         println!(
             "\n\n\nchunk2(data_digest) = {:?}",
