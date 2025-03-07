@@ -39,7 +39,7 @@ openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", r
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "f1b4844", default-features = false }
 openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", rev = "f1b4844", default-features = false, features = ["parallel", "bench-metrics"] }
 
-openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", rev = "bc364134b8315c27bfd29c6e77ac79fe77090137", default-features = false }
+openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", rev = "bc364134b8315c27bfd29c6e77ac79fe77090137" }
 
 bitcode = { version = "0.6.3", default-features = false, features = ["serde", "derive"] }
 derivative = "2.2.0"
