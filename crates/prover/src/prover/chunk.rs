@@ -51,6 +51,8 @@ impl ProverType for ChunkProverType {
     ) -> Result<openvm_sdk::config::AppConfig<openvm_sdk::config::SdkVmConfig>, Error> {
         let mut config = read_app_config(path_app_config)?;
         assert_eq!(config.app_fri_params.fri_params.log_blowup, 1);
+        assert_eq!(config.leaf_fri_params.fri_params.log_blowup, 1);
+
         config.app_vm_config.system.config = config
             .app_vm_config
             .system
