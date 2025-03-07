@@ -1,6 +1,7 @@
 name: Build Guest
 
 on:
+  workflow_dispatch:
   pull_request:
     types: [synchronize, opened, reopened, ready_for_review]
     branches:
@@ -12,6 +13,7 @@ on:
       - crates/circuits/batch-circuit/**/*
       - crates/circuits/bundle-circuit/**/*
       - crates/build-guest/**/*
+      - Cargo.lock
   push:
     branches:
       - master
@@ -22,6 +24,7 @@ on:
       - crates/circuits/batch-circuit/**/*
       - crates/circuits/bundle-circuit/**/*
       - crates/build-guest/**/*
+      - Cargo.lock
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -172,17 +175,34 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-bucket: ${{ secrets.AWS_BUCKET }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Upload file to S3
+      - name: Upload app exe to s3
         run: |
-          aws s3 cp crates/circuits/chunk-circuit/openvm/app.vmexe s3://${{ secrets.AWS_BUCKET }}/scroll-zkvm/${{ steps.commit-commitments.outputs.COMMIT_REF }}/chunk/app.vmexe
-          aws s3 cp crates/circuits/batch-circuit/openvm/app.vmexe s3://${{ secrets.AWS_BUCKET }}/scroll-zkvm/${{ steps.commit-commitments.outputs.COMMIT_REF }}/batch/app.vmexe
-          aws s3 cp crates/circuits/bundle-circuit/openvm/app.vmexe s3://${{ secrets.AWS_BUCKET }}/scroll-zkvm/${{ steps.commit-commitments.outputs.COMMIT_REF }}/bundle/app.vmexe
+          aws s3 cp crates/circuits/chunk-circuit/openvm/app.vmexe s3://circuit-release/scroll-zkvm/${{ steps.commit-commitments.outputs.COMMIT_REF }}/chunk/app.vmexe
+          aws s3 cp crates/circuits/batch-circuit/openvm/app.vmexe s3://circuit-release/scroll-zkvm/${{ steps.commit-commitments.outputs.COMMIT_REF }}/batch/app.vmexe
+          aws s3 cp crates/circuits/bundle-circuit/openvm/app.vmexe s3://circuit-release/scroll-zkvm/${{ steps.commit-commitments.outputs.COMMIT_REF }}/bundle/app.vmexe
       
       - name: Upload artifact (chunk app.vmexe)
         uses: actions/upload-artifact@v4
         with:
           name: chunk-app-vmexe
           path: ./crates/circuits/chunk-circuit/openvm/app.vmexe
+
+      - name: Upload artifact (batch app.vmexe)
+        uses: actions/upload-artifact@v4
+        with:
+          name: batch-app-vmexe
+          path: ./crates/circuits/batch-circuit/openvm/app.vmexe
+
+      - name: Upload artifact (bundle app.vmexe)
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-app-vmexe
+          path: ./crates/circuits/bundle-circuit/openvm/app.vmexe
+
+      - name: Upload artifact (root verifier)
+        uses: actions/upload-artifact@v4
+        with:
+          name: root-verifier-asm
+          path: ./crates/build-guest/root_verifier.asm

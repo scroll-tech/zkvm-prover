@@ -1,0 +1,104 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version
+        required: true
+
+jobs:
+  dispatch-build-guest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Trigger Build Guest
+        id: trigger_build_guest
+        run: |
+          response=$(curl -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build-guest.yml/dispatches \
+            -d '{"ref": "${{ github.ref }}"}')
+          echo "Response: $response"
+
+      - name: Check First Workflow Status
+        id: check_status
+        run: |
+          sleep 60
+          workflow_run_id=$(echo $response | jq -r '.id')
+          status=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/runs/$workflow_run_id | jq -r '.status')
+          conclusion=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/runs/$workflow_run_id | jq -r '.conclusion')
+
+          echo "Build Guest Status: $status"
+          echo "Build Guest Conclusion: $conclusion"
+
+          if [[ "$conclusion" != "success" ]]; then
+            echo "Build Guest did not succeed. Exiting."
+            exit 1
+          fi
+
+  run-e2e:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly-2024-12-06
+
+      - name: Download artifact (chunk app.vmexe)
+        uses: actions/download-artifact@v4
+        with:
+          name: chunk-app-vmexe
+          path: ./crates/circuits/chunk-circuit/openvm/
+
+      - name: Download artifact (batch app.vmexe)
+        uses: actions/download-artifact@v4
+        with:
+          name: batch-app-vmexe
+          path: ./crates/circuits/batch-circuit/openvm/
+
+      - name: Download artifact (bundle app.vmexe)
+        uses: actions/download-artifact@v4
+        with:
+          name: bundle-app-vmexe
+          path: ./crates/circuits/bundle-circuit/openvm/
+
+      - name: Download artifact (root verifier)
+        uses: actions/download-artifact@v4
+        with:
+          name: root-verifier-asm
+          path: ./crates/build-guest/
+
+      - name: Run
+        id: guest-profiling
+        env:
+          VERSION=${{ github.event.inputs.version }}
+        run: |
+          make e2e-release
+          echo "testrun_dir=$(ls -d .output/*/ | head -n 1 | xargs -I {} basename {})" >> $GITHUB_OUTPUT
+
+      - name: Configure AWS CLI
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Upload to AWS s3
+        if: success()
+        env:
+          SCROLL_ZKVM_VERSION=${{ github.event.inputs.version }}
+          SCROLL_ZKVM_TESTRUN_DIR=${{ steps.guest-profiling.outputs.testrun_dir }}
+        run: sh release.sh
