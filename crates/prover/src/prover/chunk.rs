@@ -46,10 +46,7 @@ impl ProverType for ChunkProverType {
             )));
         }
 
-        let chunk_witness = ChunkWitness {
-            blocks: task.block_witnesses.to_vec(),
-            prev_msg_queue_hash: task.prev_msg_queue_hash,
-        };
+        let chunk_witness = ChunkWitness::new(&task.block_witnesses, task.prev_msg_queue_hash);
         let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&chunk_witness).map_err(|e| {
             Error::GenProof(format!(
                 "{}: failed to serialize chunk witness: {}",
