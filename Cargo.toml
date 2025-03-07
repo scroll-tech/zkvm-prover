@@ -39,7 +39,7 @@ openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", r
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "f1b4844", default-features = false }
 openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", rev = "f1b4844", default-features = false, features = ["parallel", "bench-metrics"] }
 
-openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", rev = "bc364134b8315c27bfd29c6e77ac79fe77090137", default-features = false }
+openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", rev = "bc364134b8315c27bfd29c6e77ac79fe77090137" }
 
 bitcode = { version = "0.6.3", default-features = false, features = ["serde", "derive"] }
 derivative = "2.2.0"
@@ -75,28 +75,6 @@ scroll-zkvm-integration = { path = "crates/integration" }
 alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.18" }
 ruint = { git = "https://github.com/scroll-tech/uint.git", branch = "v1.12.3" }
 tiny-keccak = { git = "https://github.com/scroll-tech/tiny-keccak", branch = "scroll-patch-v2.0.2-openvm-v1.0.0-rc.1" }
-
-[patch."https://github.com/openvm-org/openvm.git"]
-openvm = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "rebase/0306", default-features = false }
-openvm-algebra-complex-macros = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "rebase/0306", default-features = false }
-openvm-algebra-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "rebase/0306", default-features = false }
-openvm-bigint-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "rebase/0306", default-features = false }
-openvm-build ={ git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "rebase/0306", default-features = false }
-openvm-circuit ={ git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "rebase/0306", default-features = false }
-openvm-native-circuit = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "rebase/0306", default-features = false }
-openvm-native-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "rebase/0306", default-features = false }
-openvm-native-compiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "rebase/0306", default-features = false }
-openvm-native-recursion = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "rebase/0306", default-features = false }
-openvm-ecc-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "rebase/0306", default-features = false }
-openvm-instructions ={ git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "rebase/0306", default-features = false }
-openvm-keccak256-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "rebase/0306", default-features = false }
-openvm-pairing-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "rebase/0306", default-features = false }
-openvm-rv32im-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "rebase/0306", default-features = false }
-openvm-rv32im-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "rebase/0306", default-features = false }
-openvm-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "rebase/0306", default-features = false }
-openvm-sdk = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "rebase/0306", default-features = false, features = ["gpu", "bench-metrics"] }
-openvm-sha256-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "rebase/0306", default-features = false }
-openvm-platform = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "rebase/0306", default-features = false }
 
 [patch."https://github.com/openvm-org/stark-backend.git"]
 openvm-stark-backend = { git = "ssh://git@github.com/scroll-tech/openvm-stark-gpu.git", branch = "main", features = ["gpu"] }
