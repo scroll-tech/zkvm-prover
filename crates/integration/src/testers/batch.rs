@@ -15,7 +15,7 @@ impl ProverTester for BatchProverTester {
 
     fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask> {
         Ok(read_json_deep(
-            Path::new(PATH_TESTDATA).join("batch-task.json"),
+            Path::new(PATH_TESTDATA).join("batch-task-failure-new.json"),
         )?)
     }
 }
