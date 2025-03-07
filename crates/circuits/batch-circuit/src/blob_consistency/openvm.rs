@@ -135,7 +135,7 @@ pub fn verify_kzg_proof(z: Scalar, y: Scalar, commitment: G1Affine, proof: G1Aff
     let _ = [q0, p0_proof];
     let _ = [q1, p1];
     true
-    //Bls12_381::pairing_check(&[q0, p0_proof], &[q1, p1]).is_ok()
+    // Bls12_381::pairing_check(&[q0, p0_proof], &[q1, p1]).is_ok()
 }
 
 /// Given the coefficients of the blob polynomial, evaluate the polynomial at the given challenge.

@@ -7,6 +7,8 @@ openvm::entry!(main);
 
 #[rustfmt::skip]
 mod child_commitments;
+#[rustfmt::skip]
+mod child_commitments_legacy;
 
 fn main() {
     // Setup openvm extensions for the circuit.

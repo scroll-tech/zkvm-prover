@@ -9,10 +9,17 @@ use openvm_native_recursion::{
 use openvm_sdk::{F, RootSC, SC, verifier::root::types::RootVmVerifierInput};
 use scroll_zkvm_circuit_input_types::proof::ProgramCommitment;
 
+#[cfg(feature = "euclidv2")]
 use crate::commitments::{
     batch::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT},
     bundle::{EXE_COMMIT as BUNDLE_EXE_COMMIT, LEAF_COMMIT as BUNDLE_LEAF_COMMIT},
     chunk::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT},
+};
+#[cfg(not(feature = "euclidv2"))]
+use crate::commitments::{
+    batch_legacy::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT},
+    bundle_legacy::{EXE_COMMIT as BUNDLE_EXE_COMMIT, LEAF_COMMIT as BUNDLE_LEAF_COMMIT},
+    chunk_legacy::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT},
 };
 
 pub trait VerifierType {

@@ -3,9 +3,17 @@ use scroll_zkvm_circuit_input_types::{PublicInputs, bundle::BundleInfo};
 
 use crate::{
     Error, Prover, ProverType,
-    commitments::bundle::{EXE_COMMIT as BUNDLE_EXE_COMMIT, LEAF_COMMIT as BUNDLE_LEAF_COMMIT},
     proof::BundleProofMetadata,
     task::{ProvingTask, bundle::BundleProvingTask},
+};
+
+#[cfg(feature = "euclidv2")]
+use crate::commitments::bundle::{
+    EXE_COMMIT as BUNDLE_EXE_COMMIT, LEAF_COMMIT as BUNDLE_LEAF_COMMIT,
+};
+#[cfg(not(feature = "euclidv2"))]
+use crate::commitments::bundle_legacy::{
+    EXE_COMMIT as BUNDLE_EXE_COMMIT, LEAF_COMMIT as BUNDLE_LEAF_COMMIT,
 };
 
 /// Prover for [`BundleCircuit`].

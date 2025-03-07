@@ -22,3 +22,6 @@ serde = "1.0"
 
 [dev-dependencies]
 scroll-zkvm-prover.workspace = true
+
+[features]
+euclidv2 = []
