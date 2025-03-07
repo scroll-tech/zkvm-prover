@@ -27,6 +27,6 @@ mkdir -p crates/circuits/bundle-circuit/openvm
 docker cp build-guest:/app/crates/circuits/chunk-circuit/openvm/app.vmexe crates/circuits/chunk-circuit/openvm/app.vmexe
 docker cp build-guest:/app/crates/circuits/batch-circuit/openvm/app.vmexe crates/circuits/batch-circuit/openvm/app.vmexe
 docker cp build-guest:/app/crates/circuits/bundle-circuit/openvm/app.vmexe crates/circuits/bundle-circuit/openvm/app.vmexe
-#docker cp build-guest:/app/crates/circuits/chunk-circuit/openvm/openvm.toml crates/circuits/chunk-circuit/openvm/openvm.toml
-#docker cp build-guest:/app/crates/circuits/batch-circuit/openvm/openvm.toml crates/circuits/batch-circuit/openvm/openvm.toml
-#docker cp build-guest:/app/crates/circuits/bundle-circuit/openvm/openvm.toml crates/circuits/bundle-circuit/openvm/openvm.toml
+
+# copy the root-verifier from container to local
+docker cp build-guest:/app/crates/build-guest/root_verifier.asm crates/build-guest/root_verifier.asm
