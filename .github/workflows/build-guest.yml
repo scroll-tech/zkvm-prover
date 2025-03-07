@@ -177,11 +177,12 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Upload app exe to s3
+      - name: Upload assets to s3
         run: |
           aws s3 cp crates/circuits/chunk-circuit/openvm/app.vmexe s3://circuit-release/scroll-zkvm/${{ steps.commit-commitments.outputs.COMMIT_REF }}/chunk/app.vmexe
           aws s3 cp crates/circuits/batch-circuit/openvm/app.vmexe s3://circuit-release/scroll-zkvm/${{ steps.commit-commitments.outputs.COMMIT_REF }}/batch/app.vmexe
           aws s3 cp crates/circuits/bundle-circuit/openvm/app.vmexe s3://circuit-release/scroll-zkvm/${{ steps.commit-commitments.outputs.COMMIT_REF }}/bundle/app.vmexe
+          aws s3 cp crates/build-guest/root_verifier.asm s3://circuit-release/scroll-zkvm/${{ steps.commit-commitments.outputs.COMMIT_REF }}/root_verifier.asm
       
       - name: Upload artifact (chunk app.vmexe)
         uses: actions/upload-artifact@v4

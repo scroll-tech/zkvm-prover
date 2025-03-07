@@ -14,3 +14,6 @@ wget https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/$COMMIT_REF/
 
 # bundle-circuit exe
 wget https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/$COMMIT_REF/bundle/app.vmexe -O crates/circuits/bundle-circuit/openvm/app.vmexe
+
+# root verifier
+wget https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/$COMMIT_REF/root_verifier.asm -O crates/build-guest/root_verifier.asm
