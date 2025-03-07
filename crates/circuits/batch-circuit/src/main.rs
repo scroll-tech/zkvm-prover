@@ -14,6 +14,7 @@ mod payload;
 openvm::entry!(main);
 
 #[rustfmt::skip]
+#[allow(dead_code)]
 mod child_commitments;
 
 fn main() {
