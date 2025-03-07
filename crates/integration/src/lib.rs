@@ -3,7 +3,6 @@ use std::{
     process,
 };
 
-// use metrics_tracing_context::MetricsLayer;
 use once_cell::sync::OnceCell;
 use openvm_sdk::{
     F, Sdk,
@@ -167,6 +166,7 @@ fn setup_logger() -> eyre::Result<()> {
 
     #[cfg(not(feature = "limit-logs"))]
     {
+        use metrics_tracing_context::MetricsLayer;
         tracing_subscriber::registry()
             .with(tracing_subscriber::EnvFilter::from_default_env())
             .with(fmt_layer)

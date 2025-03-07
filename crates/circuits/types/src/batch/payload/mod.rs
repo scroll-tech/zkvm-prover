@@ -1,6 +1,4 @@
-#[cfg(not(feature = "euclidv2"))]
 pub mod v3;
-#[cfg(feature = "euclidv2")]
 pub mod v7;
 
 /// The number data bytes we pack each BLS12-381 scalar into. The most-significant byte is 0.
@@ -8,9 +6,6 @@ pub const N_DATA_BYTES_PER_COEFFICIENT: usize = 31;
 
 /// The number of BLS12-381 scalar fields that effectively represent an EIP-4844 blob.
 pub const BLOB_WIDTH: usize = 4096;
-
-/// Base 2 logarithm of `BLOB_WIDTH`.
-pub const LOG_BLOB_WIDTH: usize = 12;
 
 /// The effective (reduced) number of bytes we can use within a blob.
 ///
