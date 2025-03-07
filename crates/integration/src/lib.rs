@@ -3,7 +3,7 @@ use std::{
     process,
 };
 
-use metrics_tracing_context::MetricsLayer;
+// use metrics_tracing_context::MetricsLayer;
 use once_cell::sync::OnceCell;
 use openvm_sdk::{
     F, Sdk,
