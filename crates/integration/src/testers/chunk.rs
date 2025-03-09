@@ -38,7 +38,7 @@ impl ProverTester for ChunkProverTester {
     /// [block-12508460, block-12508461, block-12508462, block-12508463]
     fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask> {
         Ok(ChunkProvingTask {
-            block_witnesses: (581..=590)
+            block_witnesses: (10319966..=10319974)
                 .map(read_block_witness_failed)
                 .collect::<eyre::Result<Vec<BlockWitness>>>()?,
         })
@@ -62,57 +62,30 @@ impl ProverTester for MultiChunkProverTester {
     /// [block-12508461]
     /// [block-12508462, block-12508463]
     fn gen_multi_proving_tasks() -> eyre::Result<Vec<<Self::Prover as ProverType>::ProvingTask>> {
-        Ok(vec![
-            ChunkProvingTask {
-                block_witnesses: (197..=293)
-                    .map(read_block_witness_failed)
-                    .collect::<eyre::Result<Vec<BlockWitness>>>()?,
-            },
-            ChunkProvingTask {
-                block_witnesses: (294..=386)
-                    .map(read_block_witness_failed)
-                    .collect::<eyre::Result<Vec<BlockWitness>>>()?,
-            },
-            ChunkProvingTask {
-                block_witnesses: (387..=470)
-                    .map(read_block_witness_failed)
-                    .collect::<eyre::Result<Vec<BlockWitness>>>()?,
-            },
-            ChunkProvingTask {
-                block_witnesses: (471..=480)
-                    .map(read_block_witness_failed)
-                    .collect::<eyre::Result<Vec<BlockWitness>>>()?,
-            },
-            ChunkProvingTask {
-                block_witnesses: (481..=490)
-                    .map(read_block_witness_failed)
-                    .collect::<eyre::Result<Vec<BlockWitness>>>()?,
-            },
-            ChunkProvingTask {
-                block_witnesses: (491..=500)
-                    .map(read_block_witness_failed)
-                    .collect::<eyre::Result<Vec<BlockWitness>>>()?,
-            },
-            ChunkProvingTask {
-                block_witnesses: (501..=510)
-                    .map(read_block_witness_failed)
-                    .collect::<eyre::Result<Vec<BlockWitness>>>()?,
-            },
-            ChunkProvingTask {
-                block_witnesses: (511..=520)
-                    .map(read_block_witness_failed)
-                    .collect::<eyre::Result<Vec<BlockWitness>>>()?,
-            },
-            ChunkProvingTask {
-                block_witnesses: (521..=530)
-                    .map(read_block_witness_failed)
-                    .collect::<eyre::Result<Vec<BlockWitness>>>()?,
-            },
-            ChunkProvingTask {
-                block_witnesses: (531..=540)
-                    .map(read_block_witness_failed)
-                    .collect::<eyre::Result<Vec<BlockWitness>>>()?,
-            },
-        ])
+        macro_rules! chunks_from_block_ranges {
+            ($($range:expr),*) => {{
+                vec![
+                    $(
+                        ChunkProvingTask {
+                            block_witnesses: ($range)
+                                .map(read_block_witness_failed)
+                                .collect::<eyre::Result<Vec<BlockWitness>>>()?,
+                        },
+                    )*
+                ]
+            }};
+        }
+        Ok(chunks_from_block_ranges!(
+            197..=293,
+            294..=386,
+            387..=470,
+            471..=480,
+            481..=490,
+            491..=500,
+            501..=510,
+            511..=520,
+            521..=530,
+            531..=540
+        ))
     }
 }
