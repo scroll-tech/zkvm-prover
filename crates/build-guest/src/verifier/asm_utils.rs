@@ -109,8 +109,7 @@ pub fn print_register(register_idx: usize) -> Vec<Instruction<F>> {
 
 //////////////////// load and store //////////////////////////
 
-pub fn load_register_to_native(native_addr: usize, register_idx: usize) -> Vec<Instruction<F>> {
-    let dst = F::from_canonical_usize(native_addr);
+pub fn load_register_to_native(dst: F, register_idx: usize) -> Vec<Instruction<F>> {
     let zero = F::ZERO;
 
     let add_op = |(b, as_b), (c, as_c)| Instruction::<F> {

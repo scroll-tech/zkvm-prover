@@ -1,4 +1,7 @@
-use std::{fs::File, path::Path};
+use std::{
+    fs::File,
+    path::{Path, PathBuf},
+};
 
 use sbv::primitives::{B256, types::BlockWitness};
 use scroll_zkvm_prover::{ChunkProverType, ProverType, task::chunk::ChunkProvingTask};
@@ -6,14 +9,17 @@ use scroll_zkvm_prover::{ChunkProverType, ProverType, task::chunk::ChunkProvingT
 use crate::{ProverTester, testers::PATH_TESTDATA};
 
 /// Load a file <block_n>.json in the <PATH_BLOCK_WITNESS> directory.
-fn read_block_witness_from_testdata(block_n: usize) -> eyre::Result<BlockWitness> {
-    read_block_witness(block_n, Path::new(PATH_TESTDATA))
+pub fn read_block_witness_from_testdata(block_n: usize) -> eyre::Result<BlockWitness> {
+    let path_witness = Path::new(PATH_TESTDATA).join(format!("{}.json", block_n));
+    read_block_witness(&path_witness)
 }
 
 /// Utility function to read and deserialize block witness given the block number.
-pub fn read_block_witness(block_n: usize, dir: &Path) -> eyre::Result<BlockWitness> {
-    let path_witness = dir.join(format!("{}.json", block_n));
-    let witness = File::open(&path_witness)?;
+pub fn read_block_witness<P>(path_witness: P) -> eyre::Result<BlockWitness>
+where
+    P: AsRef<Path>,
+{
+    let witness = File::open(path_witness)?;
     Ok(serde_json::from_reader::<_, BlockWitness>(witness)?)
 }
 
@@ -28,13 +34,23 @@ impl ProverTester for ChunkProverTester {
 
     /// [block-1, block-2, block-3, block-4]
     fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask> {
-        #[cfg(not(feature = "euclidv2"))]
-        let blocks = 12508460usize..=12508463usize;
-        #[cfg(feature = "euclidv2")]
-        let blocks = 1usize..=4usize;
+        let paths: Vec<PathBuf> = match std::env::var("TRACE_PATH") {
+            Ok(paths) => paths.split(',').map(PathBuf::from).collect(),
+            Err(_) => {
+                #[cfg(not(feature = "euclidv2"))]
+                let blocks = 12508460usize..=12508463usize;
+                #[cfg(feature = "euclidv2")]
+                let blocks = 1usize..=4usize;
+                blocks
+                    .into_iter()
+                    .map(|blk| Path::new(PATH_TESTDATA).join(format!("{}.json", blk)))
+                    .collect()
+            }
+        };
         Ok(ChunkProvingTask {
-            block_witnesses: blocks
-                .map(read_block_witness_from_testdata)
+            block_witnesses: paths
+                .iter()
+                .map(read_block_witness)
                 .collect::<eyre::Result<Vec<BlockWitness>>>()?,
             prev_msg_queue_hash: Default::default(),
         })

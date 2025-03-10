@@ -1,6 +1,9 @@
 use crate::{PublicInputs, utils::keccak256};
 use alloy_primitives::{B256, U256};
-use sbv::primitives::{RecoveredBlock, alloy_consensus::BlockHeader, types::reth::Block};
+use sbv::primitives::types::{
+    consensus::BlockHeader,
+    reth::{Block, RecoveredBlock},
+};
 
 /// Number of bytes used to serialise [`BlockContextV2`].
 pub const SIZE_BLOCK_CTX: usize = 52;

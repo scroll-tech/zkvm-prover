@@ -53,14 +53,10 @@ fn dump_root_program(stark_pk: &AggStarkProvingKey, output_file: &str) {
 
     program.instructions_and_debug_infos = new_instructions_and_debug_infos;
 
-    if let Some(0) = program
-        .instructions_and_debug_infos
-        .last()
-        .unwrap()
-        .as_ref()
-        .map(|x| x.0.opcode.as_usize())
-    {
-        program.instructions_and_debug_infos.pop();
+    if let Some(Some((instruction, _))) = program.instructions_and_debug_infos.last() {
+        if instruction.opcode.as_usize() == op_halt().as_usize() {
+            program.instructions_and_debug_infos.pop();
+        }
     }
 
     post_process_and_write(program, output_file);

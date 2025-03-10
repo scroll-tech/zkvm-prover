@@ -1,6 +1,6 @@
-# fmt: shfmt -w -i 4 scripts/print-patch.sh
+# fmt: shfmt -w -i 4 scripts/update-openvm.sh
 
-SED='s#tag = \"v1.0.0-rc.1\"#rev = \"f1b4844\"#'
+SED='s#rev = \"333b367\"#rev = \"485caec\"#'
 #SED='s#rev = \"f1b4844\"#tag = \"v1.0.0-rc.1\"#'
 
 function update_openvm() {
@@ -14,6 +14,7 @@ function update_openvm() {
         cargo clean -p $pkg
     done
     sed -i "$SED" Cargo.toml
+    cargo update
 }
 
 update_openvm

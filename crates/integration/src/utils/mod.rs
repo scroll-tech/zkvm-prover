@@ -1,7 +1,6 @@
 use sbv::primitives::{
     B256, U256,
-    eips::Encodable2718,
-    types::{BlockWitness, Transaction, reth::TransactionSigned},
+    types::{BlockWitness, Transaction, eips::Encodable2718, reth::TransactionSigned},
 };
 use scroll_zkvm_circuit_input_types::{
     batch::{BatchHeader, BatchHeaderV3, BatchHeaderV7},
@@ -20,7 +19,6 @@ fn is_l1_tx(tx: &Transaction) -> bool {
 }
 
 #[allow(dead_code)]
-#[cfg(feature = "scroll")]
 fn final_l1_index(blk: &BlockWitness) -> u64 {
     // Get number of l1 txs. L1 txs can be skipped, so just counting is not enough
     // (The comment copied from scroll-prover, but why the max l1 queue index is always

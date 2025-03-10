@@ -5,7 +5,7 @@ use crate::{
 use sbv::{
     core::{EvmDatabase, EvmExecutor},
     primitives::{
-        BlockWitness, RecoveredBlock,
+        BlockWitness,
         chainspec::{
             BaseFeeParams, BaseFeeParamsKind, Chain, MAINNET,
             reth_chainspec::ChainSpec,
@@ -13,7 +13,10 @@ use sbv::{
         },
         ext::{BlockWitnessChunkExt, TxBytesHashExt},
         hardforks::SCROLL_DEV_HARDFORKS,
-        types::{ChunkInfoBuilder, reth::Block},
+        types::{
+            reth::{Block, BlockWitnessRethExt, RecoveredBlock},
+            scroll::ChunkInfoBuilder,
+        },
     },
 };
 
