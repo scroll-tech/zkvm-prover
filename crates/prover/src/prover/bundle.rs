@@ -26,7 +26,7 @@ impl ProverType for BundleProverType {
 
     const EVM: bool = true;
 
-    const SEGMENT_SIZE: usize = 8388508 * 2;
+    const SEGMENT_SIZE: usize = (1<<22) - 100;
 
     const EXE_COMMIT: [u32; 8] = BUNDLE_EXE_COMMIT;
 

@@ -593,7 +593,7 @@ impl<Type: ProverType> Prover<Type> {
             .unwrap()
             .airs();
 
-        for result in result.per_segment {
+        for (_idx, result) in result.per_segment.into_iter().enumerate() {
             let (used_airs, per_air) = result
                 .per_air
                 .into_iter()
