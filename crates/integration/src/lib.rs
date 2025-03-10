@@ -3,7 +3,6 @@ use std::{
     process,
 };
 
-// use metrics_tracing_context::MetricsLayer;
 use once_cell::sync::OnceCell;
 use openvm_sdk::{
     F, Sdk,
@@ -170,7 +169,7 @@ fn setup_logger() -> eyre::Result<()> {
         tracing_subscriber::registry()
             .with(tracing_subscriber::EnvFilter::from_default_env())
             .with(fmt_layer)
-            .with(MetricsLayer::new())
+            .with(metrics_tracing_context::MetricsLayer::new())
             .try_init()?;
     }
 
@@ -216,7 +215,11 @@ where
     std::fs::create_dir_all(&cache_dir)?;
 
     // Generate proving task for the circuit.
-    let task = task.unwrap_or(T::gen_proving_task()?);
+    let task = if let Some(t) = task {
+        t
+    } else {
+        T::gen_proving_task()?
+    };
 
     // Setup prover.
     let prover = scroll_zkvm_prover::Prover::<T::Prover>::setup(
