@@ -360,7 +360,7 @@ where
     let verifier = scroll_zkvm_verifier::verifier::Verifier::setup(
         &path_vm_config,
         &path_root_committed_exe,
-        Some(&path_verifier_code),
+        &path_verifier_code,
     )?;
 
     // Generate proving task for the circuit.

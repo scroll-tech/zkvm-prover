@@ -14,3 +14,9 @@ wget https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/releases/$SC
 
 # bundle-circuit exe
 wget https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/releases/$SCROLL_ZKVM_VERSION/bundle/app.vmexe -O crates/circuits/bundle-circuit/openvm/app.vmexe
+
+# assets for verifier-only mode
+mkdir -p crates/verifier/testdata
+wget https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/releases/$SCROLL_ZKVM_VERSION/verifier/root-verifier-vm-config -O crates/verifier/testdata/root-verifier-vm-config
+wget https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/releases/$SCROLL_ZKVM_VERSION/verifier/root-verifier-committed-exe -O crates/verifier/testdata/root-verifier-committed-exe
+wget https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/releases/$SCROLL_ZKVM_VERSION/verifier/verifier.bin -O crates/verifier/testdata/verifier.bin
