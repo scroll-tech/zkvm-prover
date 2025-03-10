@@ -144,13 +144,15 @@ impl<Type: VerifierType> Verifier<Type> {
     }
 }
 
-#[ignore = "enable after correct proof has been updated"]
+#[ignore = "need release assets, enable after correct proof has been updated"]
 #[test]
 fn verify_chunk_proof() {
     use scroll_zkvm_prover::{ChunkProof, utils::read_json_deep};
-    let chunk_proof = read_json_deep::<_, ChunkProof>(
-        "../integration/testdata/proofs/chunk-12508460-12508463.json",
-    )
+    let chunk_proof = read_json_deep::<_, ChunkProof>(if cfg!(feature = "euclidv2") {
+        "../integration/testdata/proofs/chunk-1-4.json"
+    } else {
+        "../integration/testdata/proofs/chunk-12508460-12508463.json"
+    })
     .unwrap();
 
     let commitment = ProgramCommitment::deserialize(&chunk_proof.vk);
@@ -182,7 +184,8 @@ fn verify_chunk_proof() {
     );
 }
 
-#[ignore = "enable after feat/phase2"]
+#[cfg(not(feature = "euclidv2"))]
+#[ignore = "need release assets, enable after correct proof has been updated"]
 #[test]
 fn verify_batch_task_proof() {
     use scroll_zkvm_prover::{task::batch::BatchProvingTask, utils::read_json_deep};
