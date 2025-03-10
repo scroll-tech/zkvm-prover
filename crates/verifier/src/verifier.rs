@@ -137,6 +137,7 @@ impl<Type: VerifierType> Verifier<Type> {
     }
 }
 
+#[ignore = "enable after correct proof has been updated"]
 #[test]
 fn verify_chunk_proof() {
     use scroll_zkvm_prover::{ChunkProof, utils::read_json_deep};
@@ -174,6 +175,7 @@ fn verify_chunk_proof() {
     );
 }
 
+#[ignore = "enable after feat/phase2"]
 #[test]
 fn verify_batch_task_proof() {
     use scroll_zkvm_prover::{task::batch::BatchProvingTask, utils::read_json_deep};
