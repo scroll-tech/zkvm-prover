@@ -173,3 +173,42 @@ fn verify_chunk_proof() {
         "vk in root proof is not match with hard encoded commitment"
     );
 }
+
+#[test]
+fn verify_batch_task_proof() {
+    use scroll_zkvm_prover::{task::batch::BatchProvingTask, utils::read_json_deep};
+
+    let task =
+        read_json_deep::<_, BatchProvingTask>("../integration/testdata/batch-task-phase-1.json")
+            .unwrap();
+
+    let test_path = "../../releases/0.1.0-rc.6/verifier";
+    let verifier = ChunkVerifier::setup(
+        Path::new(test_path).join("root-verifier-vm-config"),
+        Path::new(test_path).join("root-verifier-committed-exe"),
+        None,
+    )
+    .unwrap();
+
+    for chunk_proof in task.chunk_proofs {
+        let root_proof = chunk_proof.as_proof();
+        let commitment = ProgramCommitment::deserialize(&chunk_proof.vk);
+        println!("commitment {:?}", commitment);
+        let ret = verifier.verify_proof_with_pi(root_proof).unwrap();
+        assert_eq!(
+            &ret[..8],
+            commitment.exe.map(Some).as_slice(),
+            "the output is not match with exe commitment in root proof!"
+        );
+        assert_eq!(
+            &ret[8..16],
+            commitment.leaf.map(Some).as_slice(),
+            "the output is not match with leaf commitment in root proof!"
+        );
+
+        assert!(
+            verifier.verify_proof(root_proof),
+            "vk in root proof is not match with hard encoded commitment"
+        );
+    }
+}
