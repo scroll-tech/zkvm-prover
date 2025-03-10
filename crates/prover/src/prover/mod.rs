@@ -20,11 +20,7 @@ use openvm_native_recursion::{
     hints::Hintable,
 };
 use openvm_sdk::{
-    F, NonRootCommittedExe, Sdk, StdIn,
-    commit::AppExecutionCommit,
-    config::{AggConfig, AggStarkConfig, SdkVmConfig},
-    keygen::{AggStarkProvingKey, AppProvingKey, RootVerifierProvingKey},
-    prover::{ContinuationProver, vm::types::VmProvingKey},
+    commit::AppExecutionCommit, config::{AggConfig, AggStarkConfig, SdkVmConfig}, keygen::{AggStarkProvingKey, AppProvingKey, RootVerifierProvingKey}, prover::{vm::types::VmProvingKey, AggStarkProver, AppProver, ContinuationProver, StarkProver}, NonRootCommittedExe, Sdk, StdIn, F
 };
 use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Config;
 use serde::{Serialize, de::DeserializeOwned};
@@ -47,14 +43,9 @@ mod chunk;
 pub use chunk::{ChunkProver, ChunkProverType};
 /// Proving key for STARK aggregation. Primarily used to aggregate
 /// [continuation proofs][openvm_sdk::prover::vm::ContinuationVmProof].
-static AGG_STARK_PROVING_KEY: Lazy<AggStarkProvingKey> = Lazy::new(|| {
-    let mut config = AggStarkProvingKey::keygen(AggStarkConfig::default());
-    let leaf_pk = Arc::get_mut(&mut config.leaf_vm_pk).unwrap();
-    let system_config = leaf_pk.vm_config.system.clone();
-    // TODO: try 23
-    leaf_pk.vm_config.system = system_config.with_max_segment_len((1 << 22) - 100);
-    config
-});
+static AGG_STARK_PROVING_KEY: Lazy<AggStarkProvingKey> = Lazy::new(|| 
+    AggStarkProvingKey::keygen(AggStarkConfig::default())  
+);
 
 /// The default directory to locate openvm's halo2 SRS parameters.
 const DEFAULT_PARAMS_DIR: &str = concat!(env!("HOME"), "/.openvm/params/");
@@ -574,13 +565,13 @@ impl<Type: ProverType> Prover<Type> {
         let task_id = task.identifier();
 
         tracing::debug!(name: "generate_root_verifier_input", ?task_id);
-        Sdk.generate_root_verifier_input(
-            Arc::clone(&self.app_pk),
-            Arc::clone(&self.app_committed_exe),
-            AGG_STARK_PROVING_KEY.clone(),
-            stdin,
-        )
-        .map_err(|e| Error::GenProof(e.to_string()))
+        let app_prover = AppProver::new(self.app_pk.app_vm_pk.clone(), self.app_committed_exe.clone());
+        // TODO: should we cache the app_proof?
+        let app_proof = app_prover.generate_app_proof(stdin);
+        tracing::debug!("app proof generated for task {task_id}");
+        let agg_prover = AggStarkProver::new(AGG_STARK_PROVING_KEY.clone(), self.app_pk.leaf_committed_exe.clone());
+        let proof = agg_prover.generate_root_verifier_input(app_proof);
+        Ok(proof)
     }
 
     /// Runs only if the MOCK_PROVE environment variable has been set to "true".

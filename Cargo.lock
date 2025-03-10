@@ -6067,14 +6067,13 @@ dependencies = [
  "openvm-algebra-complex-macros",
  "openvm-algebra-guest",
  "openvm-ecc-guest",
- "openvm-keccak256-guest",
  "openvm-pairing-guest",
  "openvm-rv32im-guest",
- "openvm-sha256-guest",
  "rkyv",
  "scroll-zkvm-circuit-input-types",
  "serde",
- "tiny-keccak",
+ "sha2",
+ "sha3",
 ]
 
 [[package]]
@@ -6150,6 +6149,7 @@ dependencies = [
  "rkyv",
  "sbv",
  "serde",
+ "sha3",
  "tiny-keccak",
  "vm-zstd",
 ]
