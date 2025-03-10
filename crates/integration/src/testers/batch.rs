@@ -44,3 +44,18 @@ impl ProverTester for MultiBatchProverTester {
         ])
     }
 }
+
+#[cfg(not(feature = "euclidv2"))]
+#[test]
+fn batch_task_parsing() {
+    use scroll_zkvm_prover::task::ProvingTask;
+    type BatchProvingTask =
+        <<BatchProverTester as ProverTester>::Prover as ProverType>::ProvingTask;
+
+    let task = read_json_deep::<_, BatchProvingTask>(
+        Path::new(PATH_TESTDATA).join("batch-task-phase-1.json"),
+    )
+    .unwrap();
+
+    let _ = task.build_guest_input().unwrap();
+}
