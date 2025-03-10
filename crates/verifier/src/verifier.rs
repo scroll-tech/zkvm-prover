@@ -1,5 +1,6 @@
 use std::{marker::PhantomData, path::Path};
 
+use itertools::Itertools;
 use openvm_circuit::{arch::SingleSegmentVmExecutor, system::program::trace::VmCommittedExe};
 use openvm_native_circuit::NativeConfig;
 use openvm_native_recursion::{
@@ -68,15 +69,11 @@ impl<Type> Verifier<Type> {
             SingleSegmentVmExecutor::new(vm_config)
         };
 
-        let root_committed_exe = {
-            let bytes = std::fs::read(path_root_committed_exe.as_ref())?;
-            bincode::deserialize(&bytes)?
-        };
+        let root_committed_exe = std::fs::read(path_root_committed_exe.as_ref())
+            .map_err(|e| e.into())
+            .and_then(|bytes| bincode::deserialize(&bytes))?;
 
-        let evm_verifier = {
-            let verifier_code = std::fs::read(path_verifier_code.as_ref())?;
-            EvmVerifier(verifier_code)
-        };
+        let evm_verifier = std::fs::read(path_verifier_code.as_ref()).map(EvmVerifier)?;
 
         Ok(Self {
             vm_executor,
@@ -93,12 +90,133 @@ impl<Type: VerifierType> Verifier<Type> {
     }
 
     pub fn verify_proof(&self, root_proof: &RootVmVerifierInput<SC>) -> bool {
-        self.vm_executor
-            .execute_and_compute_heights(self.root_committed_exe.exe.clone(), root_proof.write())
-            .is_ok()
+        match self.verify_proof_inner(root_proof) {
+            Ok(pi) => {
+                assert!(pi.len() >= 16, "unexpected len(pi)<16");
+                assert!(
+                    pi.iter().take(8).zip_eq(Type::EXE_COMMIT.iter()).all(
+                        |(op_found, &expected)| op_found.is_some_and(|found| found == expected)
+                    ),
+                    "mismatch EXE commitment"
+                );
+                assert!(
+                    pi.iter()
+                        .skip(8)
+                        .take(8)
+                        .zip_eq(Type::LEAF_COMMIT.iter())
+                        .all(
+                            |(op_found, &expected)| op_found.is_some_and(|found| found == expected)
+                        ),
+                    "mismatch LEAF commitment"
+                );
+                true
+            }
+            Err(_) => false,
+        }
     }
 
     pub fn verify_proof_evm(&self, evm_proof: &EvmProof) -> bool {
         crate::evm::verify_evm_proof(&self.evm_verifier, evm_proof).is_ok()
+    }
+
+    pub(crate) fn verify_proof_inner(
+        &self,
+        root_proof: &RootVmVerifierInput<SC>,
+    ) -> eyre::Result<Vec<Option<u32>>> {
+        use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
+        Ok(self
+            .vm_executor
+            .execute_and_compute_heights(self.root_committed_exe.exe.clone(), root_proof.write())
+            .map(|exec_res| {
+                exec_res
+                    .public_values
+                    .iter()
+                    .map(|op_f| op_f.map(|f| f.as_canonical_u32()))
+                    .collect()
+            })?)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use scroll_zkvm_circuit_input_types::proof::ProgramCommitment;
+    use scroll_zkvm_prover::{BatchProof, ChunkProof, utils::read_json_deep};
+
+    use super::{BatchVerifier, ChunkVerifier};
+
+    const PATH_TESTDATA: &str = "./testdata";
+
+    #[ignore = "need release assets"]
+    #[test]
+    fn verify_chunk_proof() -> eyre::Result<()> {
+        let chunk_proof = read_json_deep::<_, ChunkProof>(
+            Path::new(PATH_TESTDATA)
+                .join("proofs")
+                .join("chunk-proof.json"),
+        )?;
+
+        let verifier = ChunkVerifier::setup(
+            Path::new(PATH_TESTDATA).join("root-verifier-vm-config"),
+            Path::new(PATH_TESTDATA).join("root-verifier-committed-exe"),
+            Path::new(PATH_TESTDATA).join("verifier.bin"),
+        )?;
+
+        let commitment = ProgramCommitment::deserialize(&chunk_proof.vk);
+        let root_proof = chunk_proof.as_proof();
+        let pi = verifier.verify_proof_inner(root_proof)?;
+        assert_eq!(
+            &pi[..8],
+            commitment.exe.map(Some).as_slice(),
+            "the output is not match with exe commitment in root proof!"
+        );
+        assert_eq!(
+            &pi[8..16],
+            commitment.leaf.map(Some).as_slice(),
+            "the output is not match with leaf commitment in root proof!"
+        );
+        assert!(
+            verifier.verify_proof(root_proof),
+            "proof verification failed",
+        );
+
+        Ok(())
+    }
+
+    #[ignore = "need released assets"]
+    #[test]
+    fn verify_batch_proof() -> eyre::Result<()> {
+        let batch_proof = read_json_deep::<_, BatchProof>(
+            Path::new(PATH_TESTDATA)
+                .join("proofs")
+                .join("batch-proof.json"),
+        )?;
+
+        let verifier = BatchVerifier::setup(
+            Path::new(PATH_TESTDATA).join("root-verifier-vm-config"),
+            Path::new(PATH_TESTDATA).join("root-verifier-committed-exe"),
+            Path::new(PATH_TESTDATA).join("verifier.bin"),
+        )?;
+
+        let commitment = ProgramCommitment::deserialize(&batch_proof.vk);
+        let root_proof = batch_proof.as_proof();
+        let pi = verifier.verify_proof_inner(root_proof)?;
+        assert_eq!(
+            &pi[..8],
+            commitment.exe.map(Some).as_slice(),
+            "the output is not match with exe commitment in root proof!"
+        );
+        assert_eq!(
+            &pi[8..16],
+            commitment.leaf.map(Some).as_slice(),
+            "the output is not match with leaf commitment in root proof!"
+        );
+        assert!(
+            verifier.verify_proof(root_proof),
+            "proof verification failed",
+        );
+
+        Ok(())
     }
 }
