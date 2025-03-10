@@ -44,12 +44,21 @@ mod tests {
 
     #[test]
     fn test_compare_onchain_offchain() -> eyre::Result<()> {
-        let onchain_pi_hex = std::fs::read_to_string(std::path::Path::new("./testdata").join("failed").join("trace_pi.hex"))?;
+        let onchain_pi_hex = std::fs::read_to_string(
+            std::path::Path::new("./testdata")
+                .join("failed")
+                .join("trace_pi.hex"),
+        )?;
         let onchain_pi_hex = onchain_pi_hex.trim_end();
         let onchain_pi = hex::decode(onchain_pi_hex)?;
-        let onchain_pi = scroll_zkvm_circuit_input_types::bundle::BundleInfo::from_bytes(&onchain_pi);
+        let onchain_pi =
+            scroll_zkvm_circuit_input_types::bundle::BundleInfo::from_bytes(&onchain_pi);
 
-        let offchain_proof = crate::proof::BundleProof::from_json(std::path::Path::new("./testdata").join("failed").join("bundle-proof-failed.json"))?;
+        let offchain_proof = crate::proof::BundleProof::from_json(
+            std::path::Path::new("./testdata")
+                .join("failed")
+                .join("bundle-proof-failed.json"),
+        )?;
         let offchain_pi = &offchain_proof.metadata.bundle_info;
 
         println!("onchain pi  = {:#?}", onchain_pi);
@@ -63,15 +72,27 @@ mod tests {
         assert_eq!(onchain_pi.batch_hash, offchain_pi.batch_hash);
         assert_eq!(onchain_pi.withdraw_root, offchain_pi.withdraw_root);
 
-        let onchain_proof_hex = std::fs::read_to_string(std::path::Path::new("./testdata").join("failed").join("trace_proof.hex"))?;
+        let onchain_proof_hex = std::fs::read_to_string(
+            std::path::Path::new("./testdata")
+                .join("failed")
+                .join("trace_proof.hex"),
+        )?;
         let onchain_proof_hex = onchain_proof_hex.trim_end();
         let onchain_proof = hex::decode(onchain_proof_hex)?;
 
         let offchain_proof = offchain_proof.as_proof();
         let offchain_proof = crate::proof::EvmProof::from(&offchain_proof);
 
-        assert_eq!(&onchain_proof[0x00..0x180], &offchain_proof.instances[0x00..0x180], "accumulator mismatch");
-        assert_eq!(&onchain_proof[0x180..], &offchain_proof.proof, "proof mismatch");
+        assert_eq!(
+            &onchain_proof[0x00..0x180],
+            &offchain_proof.instances[0x00..0x180],
+            "accumulator mismatch"
+        );
+        assert_eq!(
+            &onchain_proof[0x180..],
+            &offchain_proof.proof,
+            "proof mismatch"
+        );
 
         Ok(())
     }
