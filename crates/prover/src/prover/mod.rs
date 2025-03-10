@@ -24,7 +24,7 @@ use openvm_sdk::{
     commit::AppExecutionCommit,
     config::{AggConfig, AggStarkConfig, SdkVmConfig},
     keygen::{AggStarkProvingKey, AppProvingKey, RootVerifierProvingKey},
-    prover::ContinuationProver,
+    prover::{ContinuationProver, vm::types::VmProvingKey},
 };
 use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Config;
 use serde::{Serialize, de::DeserializeOwned};
@@ -47,8 +47,14 @@ mod chunk;
 pub use chunk::{ChunkProver, ChunkProverType};
 /// Proving key for STARK aggregation. Primarily used to aggregate
 /// [continuation proofs][openvm_sdk::prover::vm::ContinuationVmProof].
-static AGG_STARK_PROVING_KEY: Lazy<AggStarkProvingKey> =
-    Lazy::new(|| AggStarkProvingKey::keygen(AggStarkConfig::default()));
+static AGG_STARK_PROVING_KEY: Lazy<AggStarkProvingKey> = Lazy::new(|| {
+    let mut config = AggStarkProvingKey::keygen(AggStarkConfig::default());
+    let leaf_pk = Arc::get_mut(&mut config.leaf_vm_pk).unwrap();
+    let system_config = leaf_pk.vm_config.system.clone();
+    // TODO: try 23
+    leaf_pk.vm_config.system = system_config.with_max_segment_len((1 << 22) - 100);
+    config
+});
 
 /// The default directory to locate openvm's halo2 SRS parameters.
 const DEFAULT_PARAMS_DIR: &str = concat!(env!("HOME"), "/.openvm/params/");
@@ -267,7 +273,7 @@ impl<Type: ProverType> Prover<Type> {
 
     /// Early-return if a proof is found in disc, otherwise generate and return the proof after
     /// writing to disc.
-    #[instrument("Prover::gen_proof", skip_all, fields(task_id))]
+    #[instrument("Prover::gen_proof", skip_all, fields(task_id, prover_name = Type::NAME))]
     pub fn gen_proof(
         &self,
         task: &Type::ProvingTask,

@@ -22,7 +22,7 @@ impl ProverType for ChunkProverType {
 
     const EVM: bool = false;
 
-    const SEGMENT_SIZE: usize = (1<<22) - 100;
+    const SEGMENT_SIZE: usize = (1 << 22) - 100;
 
     const EXE_COMMIT: [u32; 8] = CHUNK_EXE_COMMIT;
 
