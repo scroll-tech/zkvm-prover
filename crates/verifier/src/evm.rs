@@ -107,8 +107,11 @@ fn test_verify_evm_proof() -> eyre::Result<()> {
 
     const PATH_TESTDATA: &str = "./testdata";
 
-    let evm_proof =
-        read_json_deep::<_, BundleProof>(Path::new(PATH_TESTDATA).join("evm-proof.json"))?;
+    let evm_proof = read_json_deep::<_, BundleProof>(
+        Path::new(PATH_TESTDATA)
+            .join("proofs")
+            .join("evm-proof.json"),
+    )?;
 
     let evm_verifier = EvmVerifier(scroll_zkvm_prover::utils::read(
         Path::new(PATH_TESTDATA).join("verifier.bin"),

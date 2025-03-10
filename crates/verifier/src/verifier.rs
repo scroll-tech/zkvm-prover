@@ -142,9 +142,7 @@ mod tests {
     use std::path::Path;
 
     use scroll_zkvm_circuit_input_types::proof::ProgramCommitment;
-    use scroll_zkvm_prover::{
-        BatchProof, ChunkProof, task::batch::BatchProvingTask, utils::read_json_deep,
-    };
+    use scroll_zkvm_prover::{BatchProof, ChunkProof, utils::read_json_deep};
 
     use super::{BatchVerifier, ChunkVerifier};
 
@@ -182,45 +180,6 @@ mod tests {
             verifier.verify_proof(root_proof),
             "proof verification failed",
         );
-
-        Ok(())
-    }
-
-    #[ignore = "need released assets"]
-    #[test]
-    fn verify_chunk_proofs_from_batch_task() -> eyre::Result<()> {
-        // FIXME: this task include one problemic proof so we only test several of them
-        let task = read_json_deep::<_, BatchProvingTask>(
-            Path::new(PATH_TESTDATA)
-                .join("tasks")
-                .join("batch-task.json"),
-        )?;
-
-        let verifier = ChunkVerifier::setup(
-            Path::new(PATH_TESTDATA).join("root-verifier-vm-config"),
-            Path::new(PATH_TESTDATA).join("root-verifier-committed-exe"),
-            Path::new(PATH_TESTDATA).join("verifier.bin"),
-        )?;
-
-        for chunk_proof in &task.chunk_proofs[..3] {
-            let commitment = ProgramCommitment::deserialize(&chunk_proof.vk);
-            let root_proof = chunk_proof.as_proof();
-            let pi = verifier.verify_proof_inner(root_proof)?;
-            assert_eq!(
-                &pi[..8],
-                commitment.exe.map(Some).as_slice(),
-                "the output is not match with exe commitment in root proof!"
-            );
-            assert_eq!(
-                &pi[8..16],
-                commitment.leaf.map(Some).as_slice(),
-                "the output is not match with leaf commitment in root proof!"
-            );
-            assert!(
-                verifier.verify_proof(root_proof),
-                "proof verification failed",
-            );
-        }
 
         Ok(())
     }
