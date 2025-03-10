@@ -1122,7 +1122,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "117725a109d387c937a1533ce01b450cbde6b88abceea8473c4d7a85853cda3c"
 dependencies = [
  "lazy_static",
- "windows-sys 0.59.0",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
@@ -4612,7 +4612,7 @@ dependencies = [
 [[package]]
 name = "reth-chainspec"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-chains",
  "alloy-consensus",
@@ -4631,7 +4631,7 @@ dependencies = [
 [[package]]
 name = "reth-codecs"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4648,7 +4648,7 @@ dependencies = [
 [[package]]
 name = "reth-codecs-derive"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "convert_case 0.6.0",
  "proc-macro2",
@@ -4659,7 +4659,7 @@ dependencies = [
 [[package]]
 name = "reth-consensus"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4672,7 +4672,7 @@ dependencies = [
 [[package]]
 name = "reth-consensus-common"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4685,7 +4685,7 @@ dependencies = [
 [[package]]
 name = "reth-db"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
@@ -4709,7 +4709,7 @@ dependencies = [
 [[package]]
 name = "reth-db-api"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-consensus",
  "alloy-genesis",
@@ -4734,7 +4734,7 @@ dependencies = [
 [[package]]
 name = "reth-db-models"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -4748,7 +4748,7 @@ dependencies = [
 [[package]]
 name = "reth-ethereum-consensus"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4764,7 +4764,7 @@ dependencies = [
 [[package]]
 name = "reth-ethereum-forks"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-chains",
  "alloy-eip2124",
@@ -4779,7 +4779,7 @@ dependencies = [
 [[package]]
 name = "reth-ethereum-primitives"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4799,7 +4799,7 @@ dependencies = [
 [[package]]
 name = "reth-evm"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4824,7 +4824,7 @@ dependencies = [
 [[package]]
 name = "reth-evm-ethereum"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4845,7 +4845,7 @@ dependencies = [
 [[package]]
 name = "reth-execution-errors"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -4859,7 +4859,7 @@ dependencies = [
 [[package]]
 name = "reth-execution-types"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4877,7 +4877,7 @@ dependencies = [
 [[package]]
 name = "reth-fs-util"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "serde",
  "serde_json",
@@ -4887,7 +4887,7 @@ dependencies = [
 [[package]]
 name = "reth-metrics"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "metrics 0.24.1",
  "metrics-derive",
@@ -4896,7 +4896,7 @@ dependencies = [
 [[package]]
 name = "reth-network-peers"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -4909,7 +4909,7 @@ dependencies = [
 [[package]]
 name = "reth-nippy-jar"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "anyhow",
  "bincode",
@@ -4926,7 +4926,7 @@ dependencies = [
 [[package]]
 name = "reth-primitives"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-consensus",
  "once_cell",
@@ -4939,7 +4939,7 @@ dependencies = [
 [[package]]
 name = "reth-primitives-traits"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4968,7 +4968,7 @@ dependencies = [
 [[package]]
 name = "reth-prune-types"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-primitives",
  "derive_more 1.0.0",
@@ -4981,7 +4981,7 @@ dependencies = [
 [[package]]
 name = "reth-revm"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -4996,7 +4996,7 @@ dependencies = [
 [[package]]
 name = "reth-scroll-chainspec"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-chains",
  "alloy-consensus",
@@ -5019,7 +5019,7 @@ dependencies = [
 [[package]]
 name = "reth-scroll-consensus"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "revm 19.4.0",
 ]
@@ -5027,7 +5027,7 @@ dependencies = [
 [[package]]
 name = "reth-scroll-evm"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5053,7 +5053,7 @@ dependencies = [
 [[package]]
 name = "reth-scroll-forks"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-chains",
  "alloy-primitives",
@@ -5065,7 +5065,7 @@ dependencies = [
 [[package]]
 name = "reth-scroll-primitives"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5089,7 +5089,7 @@ dependencies = [
 [[package]]
 name = "reth-stages-types"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-primitives",
  "bytes",
@@ -5102,7 +5102,7 @@ dependencies = [
 [[package]]
 name = "reth-static-file-types"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-primitives",
  "derive_more 1.0.0",
@@ -5113,7 +5113,7 @@ dependencies = [
 [[package]]
 name = "reth-storage-api"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5138,7 +5138,7 @@ dependencies = [
 [[package]]
 name = "reth-storage-errors"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -5153,7 +5153,7 @@ dependencies = [
 [[package]]
 name = "reth-tracing"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "clap",
  "eyre",
@@ -5168,7 +5168,7 @@ dependencies = [
 [[package]]
 name = "reth-trie"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5190,7 +5190,7 @@ dependencies = [
 [[package]]
 name = "reth-trie-common"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
@@ -5213,7 +5213,7 @@ dependencies = [
 [[package]]
 name = "reth-trie-db"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -5231,7 +5231,7 @@ dependencies = [
 [[package]]
 name = "reth-trie-sparse"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -5246,7 +5246,7 @@ dependencies = [
 [[package]]
 name = "reth-zstd-compressors"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "zstd 1.1.4",
 ]
@@ -5642,7 +5642,7 @@ checksum = "28d3b2b1366ec20994f1fd18c3c594f05c5dd4bc44d8bb0c1c632c8d6829481f"
 [[package]]
 name = "sbv"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-v2#d8d215eb23262030e3e628b4156867cee2b1c50f"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-v2#74d7fb0398b1bc94fe20ac29bdc445634c4bfeea"
 dependencies = [
  "sbv-core",
  "sbv-helpers",
@@ -5654,7 +5654,7 @@ dependencies = [
 [[package]]
 name = "sbv-core"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-v2#d8d215eb23262030e3e628b4156867cee2b1c50f"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-v2#74d7fb0398b1bc94fe20ac29bdc445634c4bfeea"
 dependencies = [
  "reth-evm",
  "reth-evm-ethereum",
@@ -5671,7 +5671,7 @@ dependencies = [
 [[package]]
 name = "sbv-helpers"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-v2#d8d215eb23262030e3e628b4156867cee2b1c50f"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-v2#74d7fb0398b1bc94fe20ac29bdc445634c4bfeea"
 dependencies = [
  "revm 19.4.0",
 ]
@@ -5679,7 +5679,7 @@ dependencies = [
 [[package]]
 name = "sbv-kv"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-v2#d8d215eb23262030e3e628b4156867cee2b1c50f"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-v2#74d7fb0398b1bc94fe20ac29bdc445634c4bfeea"
 dependencies = [
  "auto_impl",
  "hashbrown 0.15.2",
@@ -5689,7 +5689,7 @@ dependencies = [
 [[package]]
 name = "sbv-primitives"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-v2#d8d215eb23262030e3e628b4156867cee2b1c50f"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-v2#74d7fb0398b1bc94fe20ac29bdc445634c4bfeea"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5720,7 +5720,7 @@ dependencies = [
 [[package]]
 name = "sbv-trie"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-v2#d8d215eb23262030e3e628b4156867cee2b1c50f"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-v2#74d7fb0398b1bc94fe20ac29bdc445634c4bfeea"
 dependencies = [
  "alloy-rlp",
  "alloy-trie",
@@ -5735,7 +5735,7 @@ dependencies = [
 [[package]]
 name = "scroll-alloy-consensus"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5753,7 +5753,7 @@ dependencies = [
 [[package]]
 name = "scroll-alloy-network"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-consensus",
  "alloy-network",
@@ -5767,7 +5767,7 @@ dependencies = [
 [[package]]
 name = "scroll-alloy-rpc-types"
 version = "1.1.5"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -7454,7 +7454,7 @@ dependencies = [
 [[package]]
 name = "zstd"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#9203a55c3521a267737480ea5e1e481e04a5eb9f"
+source = "git+https://github.com/scroll-tech/reth?branch=zkvm%2Feuclid-v2#b037c98a5a3462526829179f58cd67f51511f227"
 
 [[package]]
 name = "zstd-safe"
