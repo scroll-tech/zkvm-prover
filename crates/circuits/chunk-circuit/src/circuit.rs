@@ -1,6 +1,8 @@
-use rkyv::vec::ArchivedVec;
-use sbv::primitives::types::ArchivedBlockWitness;
-use scroll_zkvm_circuit_input_types::{Circuit, chunk::ChunkInfo, utils::read_witnesses};
+use scroll_zkvm_circuit_input_types::{
+    Circuit,
+    chunk::{ArchivedChunkWitness, ChunkInfo, execute},
+    utils::read_witnesses,
+};
 
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use {
@@ -33,8 +35,7 @@ openvm_algebra_complex_macros::complex_init! {
 pub struct ChunkCircuit;
 
 impl Circuit for ChunkCircuit {
-    type Witness = ArchivedVec<ArchivedBlockWitness>;
-
+    type Witness = ArchivedChunkWitness;
     type PublicInputs = ChunkInfo;
 
     fn setup() {
@@ -48,11 +49,11 @@ impl Circuit for ChunkCircuit {
     }
 
     fn deserialize_witness(witness_bytes: &[u8]) -> &Self::Witness {
-        rkyv::access::<ArchivedVec<ArchivedBlockWitness>, rkyv::rancor::BoxedError>(witness_bytes)
-            .expect("ChunkCircuit: rkyc deserialisation of witness bytes failed")
+        rkyv::access::<ArchivedChunkWitness, rkyv::rancor::BoxedError>(witness_bytes)
+            .expect("ChunkCircuit: rkyv deserialisation of witness bytes failed")
     }
 
     fn validate(witness: &Self::Witness) -> Self::PublicInputs {
-        crate::execute::execute(witness)
+        execute(witness).expect("failed to execute chunk")
     }
 }

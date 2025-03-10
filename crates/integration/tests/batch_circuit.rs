@@ -9,33 +9,43 @@ use scroll_zkvm_integration::{
 use scroll_zkvm_prover::{ChunkProof, task::batch::BatchProvingTask, utils::read_json_deep};
 
 fn load_recent_chunk_proofs() -> eyre::Result<BatchProvingTask> {
-    let proof_path = glob::glob("../../.output/chunk-tests-*/chunk/proofs/chunk-*.json")?
-        .next()
-        .unwrap()?;
+    let proof_path = glob::glob(if cfg!(feature = "euclidv2") {
+        "testdata/proofs/chunk-1-4.json"
+    } else {
+        "testdata/proofs/chunk-12508460-12508463.json"
+    })?
+    .next()
+    .unwrap()?;
     println!("proof_path: {:?}", proof_path);
     let chunk_proof = read_json_deep::<_, ChunkProof>(&proof_path)?;
 
     let chunk_task = ChunkProverTester::gen_proving_task()?;
 
-    let task = build_batch_task(
-        &[chunk_task],
-        &[chunk_proof],
-        scroll_zkvm_circuit_input_types::batch::MAX_AGG_CHUNKS,
-        Default::default(),
-    );
+    let task = build_batch_task(&[chunk_task], &[chunk_proof], Default::default());
     Ok(task)
 }
 
 #[test]
 fn test_execute() -> eyre::Result<()> {
-    MultiBatchProverTester::setup()?;
+    BatchProverTester::setup()?;
 
-    let (_, app_config, exe_path) = MultiBatchProverTester::load()?;
+    let (_, app_config, exe_path) = BatchProverTester::load()?;
+    let task = BatchProverTester::gen_proving_task()?;
 
-    // let tasks = MultiBatchProverTester::gen_multi_proving_tasks()?;
+    BatchProverTester::execute(app_config.clone(), &task, exe_path.clone())?;
+
+    Ok(())
+}
+
+#[test]
+fn test_e2e_execute() -> eyre::Result<()> {
+    BatchProverTester::setup()?;
+
+    let (_, app_config, exe_path) = BatchProverTester::load()?;
+
     let tasks = vec![load_recent_chunk_proofs()?];
     for task in tasks {
-        MultiBatchProverTester::execute(app_config.clone(), &task, exe_path.clone())?;
+        BatchProverTester::execute(app_config.clone(), &task, exe_path.clone())?;
     }
 
     Ok(())
@@ -66,12 +76,7 @@ fn e2e() -> eyre::Result<()> {
 
     let outcome = prove_verify_multi::<MultiChunkProverTester>(None)?;
 
-    let batch_task = build_batch_task(
-        &outcome.tasks,
-        &outcome.proofs,
-        scroll_zkvm_circuit_input_types::batch::MAX_AGG_CHUNKS,
-        Default::default(),
-    );
+    let batch_task = build_batch_task(&outcome.tasks, &outcome.proofs, Default::default());
     prove_verify_single::<BatchProverTester>(Some(batch_task))?;
 
     Ok(())

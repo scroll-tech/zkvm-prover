@@ -7,7 +7,13 @@ use scroll_zkvm_circuit_input_types::{
     utils::read_witnesses,
 };
 
+#[cfg(feature = "euclidv2")]
 use crate::child_commitments::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT};
+#[cfg(not(feature = "euclidv2"))]
+use crate::child_commitments_legacy::{
+    EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT,
+};
+
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use openvm_keccak256_guest;
 
@@ -59,6 +65,7 @@ impl Circuit for BundleCircuit {
         let post_state_root = last_batch.state_root.into();
         let batch_hash = last_batch.batch_hash.into();
         let withdraw_root = last_batch.withdraw_root.into();
+        let msg_queue_hash = last_batch.post_msg_queue_hash.into();
 
         BundleInfo {
             chain_id,
@@ -68,6 +75,7 @@ impl Circuit for BundleCircuit {
             post_state_root,
             batch_hash,
             withdraw_root,
+            msg_queue_hash,
         }
     }
 }

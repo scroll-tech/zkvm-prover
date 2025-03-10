@@ -11,6 +11,9 @@ scroll-zkvm-circuit-input-types.workspace = true
 openvm = { workspace = true, features = ["std"] }
 openvm-algebra-guest.workspace = true
 openvm-keccak256-guest.workspace = true
+openvm-sha256-guest.workspace = true
+openvm-ecc-guest = { workspace = true, features = ["halo2curves"] }
+openvm-algebra-complex-macros = { workspace = true } 
 openvm-pairing-guest = { workspace = true, features = ["halo2curves"] }
 openvm-rv32im-guest.workspace = true
 
@@ -20,14 +23,10 @@ itertools.workspace = true
 rkyv.workspace = true
 serde.workspace = true
 tiny-keccak.workspace = true
-vm-zstd.workspace = true
-
-bls12_381 = { version = "0.8", optional = true }
-ff = { version = "0.13", optional = true }
 
 [features]
-default = ["scroll"]
-scroll = ["scroll-zkvm-circuit-input-types/scroll"]
+default = []
+euclidv2 = ["scroll-zkvm-circuit-input-types/euclidv2"]
 
-# use common implement for curves for verification and testing
-common_curve = ["dep:bls12_381", "dep:ff"]
+[dev-dependencies]
+c-kzg = "1.0"
