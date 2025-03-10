@@ -101,17 +101,20 @@ fn deploy_and_call(deployment_code: Vec<u8>, calldata: Vec<u8>) -> Result<u64, S
 
 #[test]
 fn test_verify_evm_proof() -> eyre::Result<()> {
-    use scroll_zkvm_prover::{BundleProof, utils::read_json_deep};
     use std::path::Path;
 
-    const PATH_TESTDATA: &str = "../integration/testdata";
+    use scroll_zkvm_prover::{BundleProof, utils::read_json_deep};
 
-    let evm_proof = read_json_deep::<_, BundleProof>(Path::new(PATH_TESTDATA).join("proofs").join("bundle-0x60f88f3e46c74362cd93c07724c9ef8e56e391317df6504b905c3c16e81de2e4-0x30d2f51e20e9a4ecd460466af9c81d13daad4fb8d1ca1e42dab30603374f7e5f.json"))?;
+    const PATH_TESTDATA: &str = "./testdata";
+
+    let evm_proof = read_json_deep::<_, BundleProof>(
+        Path::new(PATH_TESTDATA)
+            .join("proofs")
+            .join("evm-proof.json"),
+    )?;
 
     let evm_verifier = EvmVerifier(scroll_zkvm_prover::utils::read(
-        Path::new(PATH_TESTDATA)
-            .join("verifier")
-            .join("verifier.bin"),
+        Path::new(PATH_TESTDATA).join("verifier.bin"),
     )?);
 
     let gas_cost = verify_evm_proof(&evm_verifier, &evm_proof.as_proof())
