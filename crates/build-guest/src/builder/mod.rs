@@ -1,18 +1,16 @@
-use openvm_build::{GuestOptions, TargetFilter};
+use openvm_build::GuestOptions;
 use std::{
     fs::read_to_string,
     path::{Path, PathBuf},
 };
 
-use openvm_build::{build_guest_package, find_unique_executable, get_package};
-use openvm_ecc_guest::CyclicGroup;
 use openvm_instructions::exe::VmExe;
 use openvm_sdk::{
     F, Sdk,
     config::{AppConfig, SdkVmConfig},
     fs::write_exe_to_file,
 };
-use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE};
+use openvm_transpiler::elf::Elf;
 
 use tracing::instrument;
 
@@ -22,62 +20,6 @@ const FD_APP_CONFIG: &str = "openvm.toml";
 /// File descriptor for app exe.
 const FD_APP_EXE: &str = "app.vmexe";
 
-pub fn build_elf<P: AsRef<Path>>(
-    guest_opts: GuestOptions,
-    pkg_dir: P,
-    target_filter: &Option<TargetFilter>,
-) -> eyre::Result<PathBuf> {
-    let pkg = get_package(pkg_dir.as_ref());
-    let target_dir = match build_guest_package(&pkg, &guest_opts, None, target_filter) {
-        Ok(target_dir) => target_dir,
-        Err(Some(code)) => {
-            return Err(eyre::eyre!("Failed to build guest: code = {}", code));
-        }
-        Err(None) => {
-            return Err(eyre::eyre!(
-                "Failed to build guest (OPENVM_SKIP_BUILD is set)"
-            ));
-        }
-    };
-
-    find_unique_executable(pkg_dir, target_dir, target_filter)
-}
-
-/// TODO: remove this after openvm v1.0
-fn binary_patch(elf_bin: &[u8]) -> Vec<u8> {
-    use openvm_algebra_guest::IntMod;
-    use openvm_ecc_guest::weierstrass::WeierstrassPoint;
-    let replaces = [
-        openvm_ecc_guest::p256::P256Point::GENERATOR
-            .x()
-            .as_le_bytes(),
-        openvm_ecc_guest::p256::P256Point::GENERATOR
-            .y()
-            .as_le_bytes(),
-        openvm_ecc_guest::p256::P256Point::NEG_GENERATOR
-            .y()
-            .as_le_bytes(),
-    ];
-    if replaces[0][0] != 107u8 {
-        println!("patching not needed");
-        return elf_bin.to_vec();
-    }
-
-    let mut new_elf_bin = elf_bin.to_vec();
-    for old_hex in replaces {
-        let mut new_hex = old_hex.to_vec();
-        new_hex.reverse();
-        for i in 0..new_elf_bin.len().saturating_sub(31) {
-            let end = i + 32;
-            if &new_elf_bin[i..end] == old_hex {
-                println!("replace at {i}");
-                new_elf_bin[i..end].copy_from_slice(&new_hex);
-            }
-        }
-    }
-    new_elf_bin
-}
-
 /// Build the ELF binary from the circuit program.
 #[instrument("BuildGuest::build", fields(project_root))]
 pub fn build(project_root: &str) -> eyre::Result<Elf> {
@@ -85,10 +27,7 @@ pub fn build(project_root: &str) -> eyre::Result<Elf> {
     #[cfg(feature = "euclidv2")]
     let guest_opts = guest_opts.with_features(["euclidv2"]);
     let guest_opts = guest_opts.with_profile("maxperf".to_string());
-    let elf_path = build_elf(guest_opts, project_root, &Default::default())?;
-    let bin = std::fs::read(&elf_path)?;
-    let new_bin = binary_patch(&bin);
-    Elf::decode(&new_bin, MEM_SIZE as u32)
+    Ok(Sdk.build(guest_opts, project_root, &Default::default())?)
 }
 
 /// Transpile the ELF into a VmExe.

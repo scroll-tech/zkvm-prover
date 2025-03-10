@@ -8,11 +8,7 @@ type CodeDb = NoHashMap<B256, Bytes>;
 
 type NodesProvider = NoHashMap<B256, TrieNode>;
 
-#[cfg(feature = "scroll")]
 type BlockHashProvider = sbv::kv::null::NullProvider;
-
-#[cfg(not(feature = "scroll"))]
-type BlockHashProvider = NoHashMap<u64, B256>;
 
 pub fn make_providers<W: BlockWitness>(
     witnesses: &[W],
@@ -32,15 +28,6 @@ pub fn make_providers<W: BlockWitness>(
         witnesses.import_nodes(&mut nodes_provider).unwrap();
         nodes_provider
     };
-    #[cfg(not(feature = "scroll"))]
-    let block_hashes = {
-        let num_hashes = witnesses.iter().map(|w| w.block_hashes_iter().len()).sum();
-        let mut block_hashes =
-            NoHashMap::<u64, B256>::with_capacity_and_hasher(num_hashes, Default::default());
-        witnesses.import_block_hashes(&mut block_hashes);
-        block_hashes
-    };
-    #[cfg(feature = "scroll")]
     let block_hashes = sbv::kv::null::NullProvider;
 
     (code_db, nodes_provider, block_hashes)
