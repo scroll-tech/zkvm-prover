@@ -5,4 +5,9 @@
 /releases
 
 *.log
+
 root_verifier.asm
+
+crates/verifier/testdata/root-verifier-vm-config
+crates/verifier/testdata/root-verifier-committed-exe
+crates/verifier/testdata/verifier.bin

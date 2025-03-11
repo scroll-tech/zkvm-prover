@@ -12,7 +12,9 @@ openvm-circuit.workspace = true
 openvm-native-circuit.workspace = true
 openvm-native-recursion = { workspace = true, features = ["static-verifier"] }
 openvm-sdk.workspace = true
+openvm-stark-sdk.workspace = true
 
+itertools.workspace = true
 snark-verifier-sdk = {workspace = true, default-features = false, features = ["loader_evm"]}
 
 bincode = "1.3"
