@@ -158,12 +158,17 @@ mod tests {
     #[ignore = "need release assets"]
     #[test]
     fn verify_chunk_proof() -> eyre::Result<()> {
-        let chunk_proof = read_json_deep::<_, ChunkProof>(
-            Path::new(PATH_TESTDATA)
-                .join("proofs")
-                .join("chunk-proof.json"),
-        )?;
+        let chunk_proof =
+            read_json_deep::<_, ChunkProof>(Path::new(PATH_TESTDATA).join("proofs").join(
+                if cfg!(feature = "euclidv2") {
+                    "chunk-proof-phase2.json"
+                } else {
+                    "chunk-proof-phase1.json"
+                },
+            ))?;
 
+        // Note: the committed exe has to match the version of openvm
+        // which is used to generate the proof
         let verifier = ChunkVerifier::setup(
             Path::new(PATH_TESTDATA).join("root-verifier-vm-config"),
             Path::new(PATH_TESTDATA).join("root-verifier-committed-exe"),
@@ -194,11 +199,14 @@ mod tests {
     #[ignore = "need release assets"]
     #[test]
     fn verify_batch_proof() -> eyre::Result<()> {
-        let batch_proof = read_json_deep::<_, BatchProof>(
-            Path::new(PATH_TESTDATA)
-                .join("proofs")
-                .join("batch-proof.json"),
-        )?;
+        let batch_proof =
+            read_json_deep::<_, BatchProof>(Path::new(PATH_TESTDATA).join("proofs").join(
+                if cfg!(feature = "euclidv2") {
+                    "batch-proof-phase2.json"
+                } else {
+                    "batch-proof-phase1.json"
+                },
+            ))?;
 
         let verifier = BatchVerifier::setup(
             Path::new(PATH_TESTDATA).join("root-verifier-vm-config"),
