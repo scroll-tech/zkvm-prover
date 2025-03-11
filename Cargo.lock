@@ -3866,7 +3866,7 @@ dependencies = [
 [[package]]
 name = "openvm-stark-backend"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-stark-gpu.git?branch=main#46392c694a4bab0bc7ebfab646c15015f48a83da"
+source = "git+ssh://git@github.com/scroll-tech/openvm-stark-gpu.git?branch=main#49db21be4060fe5430d02f5b5f59b36e3af2f7d4"
 dependencies = [
  "async-trait",
  "cfg-if",
@@ -3895,7 +3895,7 @@ dependencies = [
 [[package]]
 name = "openvm-stark-sdk"
 version = "1.0.0-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-stark-gpu.git?branch=main#46392c694a4bab0bc7ebfab646c15015f48a83da"
+source = "git+ssh://git@github.com/scroll-tech/openvm-stark-gpu.git?branch=main#49db21be4060fe5430d02f5b5f59b36e3af2f7d4"
 dependencies = [
  "derivative",
  "derive_more 0.99.19",
@@ -3981,7 +3981,7 @@ dependencies = [
 [[package]]
 name = "p3-air"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
  "p3-field",
  "p3-matrix",
@@ -3990,7 +3990,7 @@ dependencies = [
 [[package]]
 name = "p3-baby-bear"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
  "p3-field",
  "p3-mds",
@@ -4004,7 +4004,7 @@ dependencies = [
 [[package]]
 name = "p3-blake3"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
  "blake3",
  "p3-symmetric",
@@ -4014,7 +4014,7 @@ dependencies = [
 [[package]]
 name = "p3-bn254-fr"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
  "ff 0.13.0",
  "halo2curves",
@@ -4029,7 +4029,7 @@ dependencies = [
 [[package]]
 name = "p3-challenger"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
  "p3-field",
  "p3-maybe-rayon",
@@ -4041,7 +4041,7 @@ dependencies = [
 [[package]]
 name = "p3-commit"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
  "anyhow",
  "itertools 0.13.0",
@@ -4057,7 +4057,7 @@ dependencies = [
 [[package]]
 name = "p3-dft"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
  "itertools 0.13.0",
  "p3-field",
@@ -4070,7 +4070,7 @@ dependencies = [
 [[package]]
 name = "p3-field"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
  "itertools 0.13.0",
  "num-bigint 0.4.6",
@@ -4087,7 +4087,7 @@ dependencies = [
 [[package]]
 name = "p3-fri"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
  "anyhow",
  "itertools 0.13.0",
@@ -4111,7 +4111,7 @@ dependencies = [
 [[package]]
 name = "p3-goldilocks"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
  "num-bigint 0.4.6",
  "p3-dft",
@@ -4128,7 +4128,7 @@ dependencies = [
 [[package]]
 name = "p3-gpu-backend"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -4165,7 +4165,7 @@ dependencies = [
 [[package]]
 name = "p3-gpu-base"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -4182,7 +4182,7 @@ dependencies = [
 [[package]]
 name = "p3-gpu-build"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
  "cc",
  "directories",
@@ -4195,13 +4195,14 @@ dependencies = [
 [[package]]
 name = "p3-gpu-field"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 
 [[package]]
 name = "p3-gpu-module"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
+ "itertools 0.13.0",
  "p3-field",
  "p3-gpu-base",
  "p3-matrix",
@@ -4212,7 +4213,7 @@ dependencies = [
 [[package]]
 name = "p3-interpolation"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
  "p3-field",
  "p3-matrix",
@@ -4223,7 +4224,7 @@ dependencies = [
 [[package]]
 name = "p3-keccak"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
  "itertools 0.13.0",
  "p3-field",
@@ -4235,7 +4236,7 @@ dependencies = [
 [[package]]
 name = "p3-keccak-air"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
  "p3-air",
  "p3-field",
@@ -4251,7 +4252,7 @@ dependencies = [
 [[package]]
 name = "p3-matrix"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
  "itertools 0.13.0",
  "p3-field",
@@ -4266,7 +4267,7 @@ dependencies = [
 [[package]]
 name = "p3-maybe-rayon"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
  "rayon",
 ]
@@ -4274,7 +4275,7 @@ dependencies = [
 [[package]]
 name = "p3-mds"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
  "itertools 0.13.0",
  "p3-dft",
@@ -4288,7 +4289,7 @@ dependencies = [
 [[package]]
 name = "p3-merkle-tree"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
  "anyhow",
  "itertools 0.13.0",
@@ -4307,7 +4308,7 @@ dependencies = [
 [[package]]
 name = "p3-monty-31"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
  "itertools 0.13.0",
  "num-bigint 0.4.6",
@@ -4328,7 +4329,7 @@ dependencies = [
 [[package]]
 name = "p3-poseidon"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
  "p3-field",
  "p3-mds",
@@ -4339,7 +4340,7 @@ dependencies = [
 [[package]]
 name = "p3-poseidon2"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
  "gcd",
  "p3-field",
@@ -4351,7 +4352,7 @@ dependencies = [
 [[package]]
 name = "p3-poseidon2-air"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
  "p3-air",
  "p3-field",
@@ -4367,7 +4368,7 @@ dependencies = [
 [[package]]
 name = "p3-symmetric"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
  "itertools 0.13.0",
  "p3-field",
@@ -4377,7 +4378,7 @@ dependencies = [
 [[package]]
 name = "p3-uni-stark"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
  "itertools 0.13.0",
  "p3-air",
@@ -4395,7 +4396,7 @@ dependencies = [
 [[package]]
 name = "p3-util"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#9929c6d169aac20effda8e0ef02ef231782f6734"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?branch=openvm-v2#342685a5353519a56d26abea43ac40415f4189b3"
 dependencies = [
  "serde",
 ]
@@ -6194,6 +6195,7 @@ dependencies = [
  "openvm-native-recursion",
  "openvm-native-transpiler",
  "openvm-sdk",
+ "openvm-stark-sdk",
  "openvm-transpiler",
  "sbv",
  "scroll-zkvm-circuit-input-types",
@@ -6577,7 +6579,7 @@ dependencies = [
 [[package]]
 name = "sppark"
 version = "0.1.8"
-source = "git+ssh://git@github.com/scroll-tech/sppark.git?branch=sp1-v3.0#07fe0de43a745a395dd718c735cdfe0cfc457b0a"
+source = "git+https://github.com/scroll-tech/sppark.git?branch=sp1-v3.0#07fe0de43a745a395dd718c735cdfe0cfc457b0a"
 dependencies = [
  "cc",
  "which",
