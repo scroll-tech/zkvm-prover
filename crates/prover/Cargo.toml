@@ -41,3 +41,4 @@ eyre = "0.6"
 [features]
 default = ["scroll"]
 scroll = ["sbv/scroll"]
+bench-metrics = ["openvm-sdk/bench-metrics", "openvm-circuit/bench-metrics"]
