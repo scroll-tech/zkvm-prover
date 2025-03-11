@@ -96,4 +96,18 @@ mod tests {
 
         Ok(())
     }
+
+    #[test]
+    fn test_get_app_vk() -> eyre::Result<()> {
+        let testdata = std::path::Path::new("./testdata");
+        let chunk_prover = super::ChunkProver::setup(testdata.join("chunk-app.vmexe"), testdata.join("chunk-config.toml"), None)?;
+        let batch_prover = super::BatchProver::setup(testdata.join("batch-app.vmexe"), testdata.join("batch-config.toml"), None)?;
+        let bundle_prover = super::BundleProver::setup(testdata.join("bundle-app.vmexe"), testdata.join("bundle-config.toml"), None)?;
+
+        println!("{:?}", chunk_prover.get_app_vk());
+        println!("{:?}", batch_prover.get_app_vk());
+        println!("{:?}", bundle_prover.get_app_vk());
+
+        Ok(())
+    }
 }
