@@ -175,6 +175,36 @@ impl<Type: ProverType> Prover<Type> {
         })
     }
 
+    fn get_verify_program_commitment(
+        app_committed_exe: &NonRootCommittedExe,
+        app_pk: &AppProvingKey<SdkVmConfig>,
+        debug_out: bool,
+    ) -> ProgramCommitments {
+        use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
+        let commits = AppExecutionCommit::compute(
+            &app_pk.app_vm_pk.vm_config,
+            app_committed_exe,
+            &app_pk.leaf_committed_exe,
+        );
+
+        let exe_commit = commits.exe_commit.map(|x| x.as_canonical_u32());
+        let leaf_commit = commits.leaf_vm_verifier_commit.map(|x| x.as_canonical_u32());
+
+        // print the 2 exe commitments
+        if debug_out {
+            debug!(name: "exe-commitment", prover_name = Type::NAME, raw = ?exe_commit, as_bn254 = ?commits.exe_commit_to_bn254());
+            debug!(name: "leaf-commitment", prover_name = Type::NAME, raw = ?leaf_commit, as_bn254 = ?commits.app_config_commit_to_bn254());
+        }
+
+        assert_eq!(exe_commit, Type::EXE_COMMIT, "read unmatched exe commitment from app");
+        assert_eq!(leaf_commit, Type::LEAF_COMMIT, "read unmatched app commitment from app");
+
+        [
+            exe_commit,
+            leaf_commit,
+        ]
+    }
+
     /// Read app exe, proving key and return committed data.
     #[instrument("Prover::init", fields(path_exe, path_app_config))]
     pub fn init<P: AsRef<Path>>(path_exe: P, path_app_config: P) -> InitRes {
@@ -193,19 +223,11 @@ impl<Type: ProverType> Prover<Type> {
             .commit_app_exe(app_pk.app_fri_params(), app_exe)
             .map_err(|e| Error::Commit(e.to_string()))?;
 
-        // print the 2 exe commitments
-        use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
-        let commits = AppExecutionCommit::compute(
-            &app_pk.app_vm_pk.vm_config,
+        let [exe_commit, leaf_commit] = Self::get_verify_program_commitment(
             &app_committed_exe,
-            &app_pk.leaf_committed_exe,
+            &app_pk,
+            true,
         );
-        let exe_commit = commits.exe_commit.map(|x| x.as_canonical_u32());
-        let leaf_commit = commits
-            .leaf_vm_verifier_commit
-            .map(|x| x.as_canonical_u32());
-        debug!(name: "exe-commitment", prover_name = Type::NAME, raw = ?exe_commit, as_bn254 = ?commits.exe_commit_to_bn254());
-        debug!(name: "leaf-commitment", prover_name = Type::NAME, raw = ?leaf_commit, as_bn254 = ?commits.app_config_commit_to_bn254());
 
         let _agg_stark_pk =
             AGG_STARK_PROVING_KEY.get_or_init(|| AggStarkProvingKey::keygen(agg_stark_config));
@@ -242,24 +264,14 @@ impl<Type: ProverType> Prover<Type> {
 
     /// Pick up app commit as "vk" in proof, to distinguish from which circuit the proof comes
     pub fn get_app_vk(&self) -> Vec<u8> {
-        use openvm_sdk::commit::AppExecutionCommit;
-        use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
-        use scroll_zkvm_circuit_input_types::proof::ProgramCommitment;
 
-        let app_pk = &self.app_pk;
-
-        let commits = AppExecutionCommit::compute(
-            &app_pk.app_vm_pk.vm_config,
+        let [exe, leaf] = Self::get_verify_program_commitment(
             &self.app_committed_exe,
-            &app_pk.leaf_committed_exe,
+            &self.app_pk,
+            false,
         );
 
-        let exe = commits.exe_commit.map(|v| v.as_canonical_u32());
-        let leaf = commits
-            .leaf_vm_verifier_commit
-            .map(|v| v.as_canonical_u32());
-
-        ProgramCommitment { exe, leaf }.serialize()
+        scroll_zkvm_circuit_input_types::proof::ProgramCommitment { exe, leaf }.serialize()
     }
 
     /// Pick up the actual vk (serialized) for evm proof, would be empty if prover
@@ -440,6 +452,13 @@ impl<Type: ProverType> Prover<Type> {
 
         let task_id = task.identifier();
 
+        // sanity check
+        let _ = Self::get_verify_program_commitment(
+            &self.app_committed_exe,
+            &self.app_pk,
+            false,
+        );        
+
         tracing::debug!(name: "generate_root_verifier_input", ?task_id);
         Sdk.generate_root_verifier_input(
             Arc::clone(&self.app_pk),
@@ -572,6 +591,14 @@ impl<Type: ProverType> Prover<Type> {
     ///
     /// [evm_proof][openvm_native_recursion::halo2::EvmProof]
     fn gen_proof_snark(&self, task: &Type::ProvingTask) -> Result<EvmProof, Error> {
+
+        // sanity check
+        let _ = Self::get_verify_program_commitment(
+            &self.app_committed_exe,
+            &self.app_pk,
+            false,
+        );
+
         let stdin = task
             .build_guest_input()
             .map_err(|e| Error::GenProof(e.to_string()))?;
