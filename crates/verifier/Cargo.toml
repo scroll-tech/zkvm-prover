@@ -25,4 +25,4 @@ serde = "1.0"
 scroll-zkvm-prover.workspace = true
 
 [features]
-euclidv2 = []
+euclidv2 = ["scroll-zkvm-prover/euclidv2"]
