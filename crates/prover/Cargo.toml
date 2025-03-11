@@ -39,7 +39,6 @@ revm = "19.0"
 eyre = "0.6"
 
 [features]
-default = ["scroll", "gpu"]
+default = ["scroll"]
 scroll = ["sbv/scroll"]
-gpu = ["openvm-sdk/gpu", "openvm-circuit/gpu"]
 bench-metrics = ["openvm-sdk/bench-metrics", "openvm-circuit/bench-metrics"]
