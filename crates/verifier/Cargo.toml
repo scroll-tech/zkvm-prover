@@ -19,6 +19,7 @@ snark-verifier-sdk = {workspace = true, default-features = false, features = ["l
 
 bincode = "1.3"
 eyre = "0.6"
+hex = "0.4"
 revm = "19.0"
 serde = "1.0"
 

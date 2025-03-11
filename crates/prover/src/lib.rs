@@ -5,7 +5,7 @@ mod error;
 pub use error::Error;
 
 mod proof;
-pub use proof::{BatchProof, BundleProof, ChunkProof, WrappedProof};
+pub use proof::{BatchProof, BundleProof, ChunkProof, WrappedProof, EvmProof};
 
 mod prover;
 pub use prover::{

@@ -44,7 +44,7 @@ pub fn verify_evm_proof(evm_verifier: &EvmVerifier, evm_proof: &EvmProof) -> Res
     deploy_and_call(evm_verifier.0.clone(), calldata)
 }
 
-fn deploy_and_call(deployment_code: Vec<u8>, calldata: Vec<u8>) -> Result<u64, String> {
+pub(crate) fn deploy_and_call(deployment_code: Vec<u8>, calldata: Vec<u8>) -> Result<u64, String> {
     let mut evm = Evm::new(
         Context::new_with_db(InMemoryDB::default()),
         Handler::mainnet::<CancunSpec>(),
@@ -120,6 +120,43 @@ fn test_verify_evm_proof() -> eyre::Result<()> {
         .map_err(|e| eyre::eyre!("evm-proof verification failed: {e}"))?;
 
     println!("evm-verify gas cost = {gas_cost}");
+
+    Ok(())
+}
+
+#[test]
+fn test_verify_evm_calldata() -> eyre::Result<()> {
+    use std::path::Path;
+
+    use scroll_zkvm_prover::{BundleProof, utils::read_json_deep};
+
+    const PATH_TESTDATA: &str = "./testdata";
+
+    let onchain_calldata_hex = std::fs::read_to_string(
+        std::path::Path::new("./testdata").join("trace_input_verifier.hex"),
+    )?;
+    let onchain_calldata_hex = onchain_calldata_hex.trim_end();
+    let onchain_calldata = hex::decode(onchain_calldata_hex)?;
+
+    let deployment_code =
+        scroll_zkvm_prover::utils::read(Path::new(PATH_TESTDATA).join("verifier.bin"))?;
+
+    let res = deploy_and_call(deployment_code.clone(), onchain_calldata.clone());
+    println!("res = {:?}", res);
+
+    let bundle_proof = read_json_deep::<_, BundleProof>(
+        // Path::new(PATH_TESTDATA)
+        Path::new("../prover/testdata/failed").join("bundle-proof-failed.json"),
+    )?;
+    let evm_proof = bundle_proof.as_proof();
+    let correct_calldata = snark_verifier_sdk::evm::encode_calldata(&evm_proof.instances, &evm_proof.proof);
+    assert!(deploy_and_call(deployment_code, correct_calldata.clone()).is_ok());
+
+    assert_eq!(onchain_calldata.len(), correct_calldata.len());
+
+    assert_eq!(onchain_calldata[0x00..0x180], correct_calldata[0x00..0x180], "accumulator mismatch");
+    assert_eq!(onchain_calldata[0x180..(0x180 + 0x20)], correct_calldata[0x180..(0x180 + 0x20)], "digest 1 mismatch");
+    assert_eq!(onchain_calldata[(0x180 + 0x20)..(0x180 + 0x40)], correct_calldata[(0x180 + 0x20)..(0x180 + 0x40)], "digest 2 mismatch");
 
     Ok(())
 }
