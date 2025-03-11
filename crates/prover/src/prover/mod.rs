@@ -185,7 +185,9 @@ impl<Type: ProverType> Prover<Type> {
         );
 
         let exe_commit = commits.exe_commit.map(|x| x.as_canonical_u32());
-        let leaf_commit = commits.leaf_vm_verifier_commit.map(|x| x.as_canonical_u32());
+        let leaf_commit = commits
+            .leaf_vm_verifier_commit
+            .map(|x| x.as_canonical_u32());
 
         // print the 2 exe commitments
         if debug_out {
@@ -193,13 +195,18 @@ impl<Type: ProverType> Prover<Type> {
             debug!(name: "leaf-commitment", prover_name = Type::NAME, raw = ?leaf_commit, as_bn254 = ?commits.app_config_commit_to_bn254());
         }
 
-        assert_eq!(exe_commit, Type::EXE_COMMIT, "read unmatched exe commitment from app");
-        assert_eq!(leaf_commit, Type::LEAF_COMMIT, "read unmatched app commitment from app");
-
-        [
+        assert_eq!(
             exe_commit,
+            Type::EXE_COMMIT,
+            "read unmatched exe commitment from app"
+        );
+        assert_eq!(
             leaf_commit,
-        ]
+            Type::LEAF_COMMIT,
+            "read unmatched app commitment from app"
+        );
+
+        [exe_commit, leaf_commit]
     }
 
     /// Read app exe, proving key and return committed data.
@@ -225,11 +232,8 @@ impl<Type: ProverType> Prover<Type> {
             .commit_app_exe(app_pk.app_fri_params(), app_exe)
             .map_err(|e| Error::Commit(e.to_string()))?;
 
-        let [exe_commit, leaf_commit] = Self::get_verify_program_commitment(
-            &app_committed_exe,
-            &app_pk,
-            true,
-        );
+        let [exe_commit, leaf_commit] =
+            Self::get_verify_program_commitment(&app_committed_exe, &app_pk, true);
 
         Ok((app_committed_exe, Arc::new(app_pk), [
             exe_commit,
@@ -259,12 +263,8 @@ impl<Type: ProverType> Prover<Type> {
 
     /// Pick up app commit as "vk" in proof, to distinguish from which circuit the proof comes
     pub fn get_app_vk(&self) -> Vec<u8> {
-
-        let [exe, leaf] = Self::get_verify_program_commitment(
-            &self.app_committed_exe,
-            &self.app_pk,
-            false,
-        );
+        let [exe, leaf] =
+            Self::get_verify_program_commitment(&self.app_committed_exe, &self.app_pk, false);
 
         scroll_zkvm_circuit_input_types::proof::ProgramCommitment { exe, leaf }.serialize()
     }
@@ -577,13 +577,8 @@ impl<Type: ProverType> Prover<Type> {
     ///
     /// [evm_proof][openvm_native_recursion::halo2::EvmProof]
     fn gen_proof_snark(&self, task: &Type::ProvingTask) -> Result<EvmProof, Error> {
-
         // sanity check
-        let _ = Self::get_verify_program_commitment(
-            &self.app_committed_exe,
-            &self.app_pk,
-            false,
-        );
+        let _ = Self::get_verify_program_commitment(&self.app_committed_exe, &self.app_pk, false);
 
         let stdin = task
             .build_guest_input()
