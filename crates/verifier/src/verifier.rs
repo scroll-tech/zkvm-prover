@@ -89,6 +89,25 @@ impl<Type> Verifier<Type> {
             _type: PhantomData,
         })
     }
+
+    pub fn switch_to<AnotherType>(self) -> Verifier<AnotherType> {
+        Verifier::<AnotherType> {
+            vm_executor: self.vm_executor,
+            root_committed_exe: self.root_committed_exe,
+            evm_verifier: self.evm_verifier,
+            _type: PhantomData,
+        }
+    }
+
+    pub fn to_chunk_verifier(self) -> ChunkVerifier {
+        self.switch_to()
+    }
+    pub fn to_batch_verifier(self) -> BatchVerifier {
+        self.switch_to()
+    }
+    pub fn to_bundle_verifier(self) -> BundleVerifier {
+        self.switch_to()
+    }
 }
 
 impl<Type: VerifierType> Verifier<Type> {

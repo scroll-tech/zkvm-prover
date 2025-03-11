@@ -79,12 +79,15 @@ fn e2e() -> eyre::Result<()> {
     )?;
 
     // Verifier all above proofs with the verifier-only mode.
+    let verifier = verifier.to_chunk_verifier();
     for proof in chunk_proofs.iter() {
         assert!(verifier.verify_proof(proof.as_proof()));
     }
+    let verifier = verifier.to_batch_verifier();
     for proof in bundle_task.batch_proofs.iter() {
         assert!(verifier.verify_proof(proof.as_proof()));
     }
+    let verifier = verifier.to_bundle_verifier();
     assert!(verifier.verify_proof_evm(&outcome.proofs[0].as_proof()));
 
     let expected_pi_hash = &outcome.proofs[0].metadata.bundle_pi_hash;
