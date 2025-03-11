@@ -5,7 +5,7 @@ mod error;
 pub use error::Error;
 
 mod proof;
-pub use proof::{BatchProof, BundleProof, ChunkProof, WrappedProof, EvmProof};
+pub use proof::{BatchProof, BundleProof, ChunkProof, EvmProof, WrappedProof};
 
 mod prover;
 pub use prover::{
@@ -100,13 +100,50 @@ mod tests {
     #[test]
     fn test_get_app_vk() -> eyre::Result<()> {
         let testdata = std::path::Path::new("./testdata");
-        let chunk_prover = super::ChunkProver::setup(testdata.join("chunk-app.vmexe"), testdata.join("chunk-config.toml"), None)?;
-        let batch_prover = super::BatchProver::setup(testdata.join("batch-app.vmexe"), testdata.join("batch-config.toml"), None)?;
-        let bundle_prover = super::BundleProver::setup(testdata.join("bundle-app.vmexe"), testdata.join("bundle-config.toml"), None)?;
+        let chunk_prover = super::ChunkProver::setup(
+            testdata.join("chunk-app.vmexe"),
+            testdata.join("chunk-config.toml"),
+            None,
+        )?;
+        let batch_prover = super::BatchProver::setup(
+            testdata.join("batch-app.vmexe"),
+            testdata.join("batch-config.toml"),
+            None,
+        )?;
+        let bundle_prover = super::BundleProver::setup(
+            testdata.join("bundle-app.vmexe"),
+            testdata.join("bundle-config.toml"),
+            None,
+        )?;
 
-        println!("{:?}", chunk_prover.get_app_vk());
-        println!("{:?}", batch_prover.get_app_vk());
-        println!("{:?}", bundle_prover.get_app_vk());
+        let vk_chunk = chunk_prover.get_app_vk();
+        let vk_batch = batch_prover.get_app_vk();
+        let vk_bundle = bundle_prover.get_app_vk();
+
+        assert_eq!(
+            vk_chunk,
+            scroll_zkvm_circuit_input_types::proof::ProgramCommitment {
+                exe: crate::commitments::chunk::EXE_COMMIT,
+                leaf: crate::commitments::chunk::LEAF_COMMIT
+            }
+            .serialize()
+        );
+        assert_eq!(
+            vk_batch,
+            scroll_zkvm_circuit_input_types::proof::ProgramCommitment {
+                exe: crate::commitments::batch::EXE_COMMIT,
+                leaf: crate::commitments::batch::LEAF_COMMIT
+            }
+            .serialize()
+        );
+        assert_eq!(
+            vk_bundle,
+            scroll_zkvm_circuit_input_types::proof::ProgramCommitment {
+                exe: crate::commitments::bundle::EXE_COMMIT,
+                leaf: crate::commitments::bundle::LEAF_COMMIT
+            }
+            .serialize()
+        );
 
         Ok(())
     }
