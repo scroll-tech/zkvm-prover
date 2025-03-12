@@ -251,7 +251,7 @@ dependencies = [
 [[package]]
 name = "alloy-primitives"
 version = "0.8.18"
-source = "git+https://github.com/scroll-tech/alloy-core?branch=v0.8.18-euclid-upgrade#d65d8926c4b147810fd3d20ae7b49e9ff664a0a8"
+source = "git+https://github.com/scroll-tech/alloy-core?branch=v0.8.18-euclid-upgrade#af71ffc535f4129a1af04d562d2255b4605ece66"
 dependencies = [
  "alloy-rlp",
  "bytes",
@@ -5523,7 +5523,7 @@ dependencies = [
 [[package]]
 name = "revm"
 version = "19.4.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor%2Ffeat%2Fv55%2Feuclid-upgrade#70747b983e3830df941544cce5809d4eb55231f5"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor%2Ffeat%2Fv55%2Feuclid-upgrade#945345be140c9a42eae6bcc2308ab9d0ebfaffad"
 dependencies = [
  "auto_impl",
  "cfg-if",
@@ -5562,7 +5562,7 @@ dependencies = [
 [[package]]
 name = "revm-interpreter"
 version = "15.1.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor%2Ffeat%2Fv55%2Feuclid-upgrade#70747b983e3830df941544cce5809d4eb55231f5"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor%2Ffeat%2Fv55%2Feuclid-upgrade#945345be140c9a42eae6bcc2308ab9d0ebfaffad"
 dependencies = [
  "revm-primitives 15.1.0",
  "serde",
@@ -5600,7 +5600,7 @@ dependencies = [
 [[package]]
 name = "revm-precompile"
 version = "16.0.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor%2Ffeat%2Fv55%2Feuclid-upgrade#70747b983e3830df941544cce5809d4eb55231f5"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor%2Ffeat%2Fv55%2Feuclid-upgrade#945345be140c9a42eae6bcc2308ab9d0ebfaffad"
 dependencies = [
  "aurora-engine-modexp",
  "c-kzg",
@@ -5661,7 +5661,7 @@ dependencies = [
 [[package]]
 name = "revm-primitives"
 version = "15.1.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor%2Ffeat%2Fv55%2Feuclid-upgrade#70747b983e3830df941544cce5809d4eb55231f5"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor%2Ffeat%2Fv55%2Feuclid-upgrade#945345be140c9a42eae6bcc2308ab9d0ebfaffad"
 dependencies = [
  "alloy-eip2930",
  "alloy-eip7702 0.5.1",
@@ -6918,7 +6918,7 @@ dependencies = [
 [[package]]
 name = "tiny-keccak"
 version = "2.0.2"
-source = "git+https://github.com/scroll-tech/tiny-keccak?branch=scroll-patch-v2.0.2-euclid-upgrade#62a5ddb11a80879276c54c93d3a9e63713b9d197"
+source = "git+https://github.com/scroll-tech/tiny-keccak?branch=scroll-patch-v2.0.2-euclid-upgrade#e4cc6f6a0ff2231eab76e284ec48ab61fd3d632f"
 dependencies = [
  "cfg-if",
  "crunchy",
