@@ -11,13 +11,11 @@ use openvm_ecc_guest::{
     msm,
     weierstrass::WeierstrassPoint,
 };
-
 use openvm_pairing_guest::{
     algebra,
     bls12_381::{Bls12_381, Fp, Fp2, G1Affine, G2Affine, Scalar},
-    //pairing::PairingCheck,
+    pairing::PairingCheck,
 };
-
 
 use super::{BLOB_WIDTH, LOG_BLOB_WIDTH};
 
@@ -122,8 +120,6 @@ impl EccToPairing for Bls12_381_G2 {
 ///
 /// We use [`openvm_pairing_guest`] extension to implement this in guest program.
 pub fn verify_kzg_proof(z: Scalar, y: Scalar, commitment: G1Affine, proof: G1Affine) -> bool {
-    true 
-    /* 
     let proof_q = G1Affine::from_xy_nonidentity(proof.x().clone(), proof.y().clone())
         .expect("kzg proof not G1 identity");
     let p_minus_y = G1Affine::from_xy_nonidentity(commitment.x().clone(), commitment.y().clone())
@@ -137,7 +133,6 @@ pub fn verify_kzg_proof(z: Scalar, y: Scalar, commitment: G1Affine, proof: G1Aff
     let q1 = AffinePoint::new(G2_GENERATOR.x().clone(), G2_GENERATOR.y().clone());
 
     Bls12_381::pairing_check(&[q0, p0_proof], &[q1, p1]).is_ok()
-    */
 }
 
 /// Given the coefficients of the blob polynomial, evaluate the polynomial at the given challenge.
@@ -167,18 +162,9 @@ pub fn point_evaluation(
 ///
 /// We use the [`openvm_sha256_guest`] extension to compute the SHA-256 digest.
 pub fn kzg_to_versioned_hash(kzg_commitment: &[u8]) -> [u8; 32] {
-    let mut hash = sha256_rv32(kzg_commitment);
+    let mut hash = openvm_sha256_guest::sha256(kzg_commitment);
     hash[0] = VERSIONED_HASH_VERSION_KZG;
     hash
-}
-
-pub fn sha256_rv32(input: &[u8]) -> [u8; 32] {
-    use sha2::{Digest, Sha256};
-    let mut output = [0u8; 32];
-    let mut hasher = Sha256::new();
-    hasher.update(input);
-    output.copy_from_slice(hasher.finalize().as_ref());
-    output
 }
 
 // picked from ExpBytes trait, some compilation issue (infinity recursion) raised

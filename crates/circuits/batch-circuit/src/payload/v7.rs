@@ -2,7 +2,7 @@ use alloy_primitives::B256;
 use scroll_zkvm_circuit_input_types::{
     batch::BatchHeaderV7,
     chunk::{BlockContextV2, ChunkInfo, SIZE_BLOCK_CTX},
-    utils::{keccak256_rv32 as keccak256},
+    utils::keccak256,
 };
 
 use crate::blob_consistency::N_BLOB_BYTES;

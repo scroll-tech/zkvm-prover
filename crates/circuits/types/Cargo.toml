@@ -21,6 +21,7 @@ openvm = { workspace = true, features = ["std"] }
 openvm-rv32im-guest = {  workspace = true }
 openvm-custom-insn = { workspace = true }
 sha3 = "0.10.8"
+sha2 = "0.10.8"
 
 [features]
 default = []

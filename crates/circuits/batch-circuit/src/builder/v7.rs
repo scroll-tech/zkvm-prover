@@ -49,21 +49,16 @@ impl BatchInfoBuilderV7 {
         );
 
         // Verify KZG proof.
-        /* 
-        #[cfg(feature = "kzg")]
-        {
-            let proof_ok = {
-                let commitment = Bls12_381_G1::from_compressed_be(kzg_commitment)
-                    .expect("kzg commitment")
-                    .convert();
-                let proof = Bls12_381_G1::from_compressed_be(kzg_proof)
-                    .expect("kzg proof")
-                    .convert();
-                verify_kzg_proof(challenge, evaluation, commitment, proof)
-            };
-            assert!(proof_ok, "pairing fail!");
-        }
-        */
+        let proof_ok = {
+            let commitment = Bls12_381_G1::from_compressed_be(kzg_commitment)
+                .expect("kzg commitment")
+                .convert();
+            let proof = Bls12_381_G1::from_compressed_be(kzg_proof)
+                .expect("kzg proof")
+                .convert();
+            verify_kzg_proof(challenge, evaluation, commitment, proof)
+        };
+        assert!(proof_ok, "pairing fail!");
 
         // Validate payload (batch data).
         let (first_chunk, last_chunk) = payload.validate(header, chunk_infos);

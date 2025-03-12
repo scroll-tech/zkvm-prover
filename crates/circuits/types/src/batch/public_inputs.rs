@@ -1,6 +1,6 @@
 use alloy_primitives::B256;
 
-use crate::{PublicInputs, utils::keccak256_rv32};
+use crate::{PublicInputs, utils::keccak256};
 
 /// Represents public-input values for a batch.
 #[derive(
@@ -69,7 +69,7 @@ impl PublicInputs for BatchInfo {
     ///     post msg queue hash
     /// )
     fn pi_hash(&self) -> B256 {
-        keccak256_rv32(
+        keccak256(
             std::iter::empty()
                 .chain(self.parent_state_root.as_slice())
                 .chain(self.parent_batch_hash.as_slice())
@@ -97,4 +97,3 @@ impl PublicInputs for BatchInfo {
         assert_eq!(self.prev_msg_queue_hash, prev_pi.post_msg_queue_hash);
     }
 }
-

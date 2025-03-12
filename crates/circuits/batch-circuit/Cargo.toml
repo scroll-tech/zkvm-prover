@@ -10,8 +10,8 @@ scroll-zkvm-circuit-input-types.workspace = true
 
 openvm = { workspace = true, features = ["std"] }
 openvm-algebra-guest.workspace = true
-#openvm-keccak256-guest.workspace = true
-#openvm-sha256-guest.workspace = true
+openvm-keccak256-guest.workspace = true
+openvm-sha256-guest.workspace = true
 openvm-ecc-guest = { workspace = true, features = ["halo2curves"] }
 openvm-algebra-complex-macros = { workspace = true } 
 openvm-pairing-guest = { workspace = true, features = ["halo2curves"] }
@@ -22,9 +22,7 @@ bitcode.workspace = true
 itertools.workspace = true
 rkyv.workspace = true
 serde.workspace = true
-#tiny-keccak.workspace = true
-sha2 = "0.10.8"
-sha3 = "0.10.8"
+tiny-keccak.workspace = true
 
 [features]
 default = []

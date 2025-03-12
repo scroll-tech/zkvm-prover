@@ -568,7 +568,7 @@ impl<Type: ProverType> Prover<Type> {
         let app_prover = AppProver::new(self.app_pk.app_vm_pk.clone(), self.app_committed_exe.clone());
         // TODO: should we cache the app_proof?
         let app_proof = app_prover.generate_app_proof(stdin);
-        tracing::debug!("app proof generated for task {task_id}");
+        tracing::info!("app proof generated for {} task {task_id}", Type::NAME);
         let agg_prover = AggStarkProver::new(AGG_STARK_PROVING_KEY.clone(), self.app_pk.leaf_committed_exe.clone());
         let proof = agg_prover.generate_root_verifier_input(app_proof);
         Ok(proof)
