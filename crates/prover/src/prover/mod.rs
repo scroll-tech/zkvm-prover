@@ -196,18 +196,18 @@ impl<Type: ProverType> Prover<Type> {
         if debug_out {
             debug!(name: "exe-commitment", prover_name = Type::NAME, raw = ?exe_commit, as_bn254 = ?commits.exe_commit_to_bn254());
             debug!(name: "leaf-commitment", prover_name = Type::NAME, raw = ?leaf_commit, as_bn254 = ?commits.app_config_commit_to_bn254());
+        } else {
+            assert_eq!(
+                exe_commit,
+                Type::EXE_COMMIT,
+                "read unmatched exe commitment from app"
+            );
+            assert_eq!(
+                leaf_commit,
+                Type::LEAF_COMMIT,
+                "read unmatched app commitment from app"
+            );
         }
-
-        assert_eq!(
-            exe_commit,
-            Type::EXE_COMMIT,
-            "read unmatched exe commitment from app"
-        );
-        assert_eq!(
-            leaf_commit,
-            Type::LEAF_COMMIT,
-            "read unmatched app commitment from app"
-        );
 
         [exe_commit, leaf_commit]
     }
@@ -587,19 +587,30 @@ impl<Type: ProverType> Prover<Type> {
     ///
     /// [evm_proof][openvm_native_recursion::halo2::EvmProof]
     fn gen_proof_snark(&self, task: &Type::ProvingTask) -> Result<EvmProof, Error> {
-        // sanity check
-        let _ = Self::get_verify_program_commitment(&self.app_committed_exe, &self.app_pk, false);
-
         let stdin = task
             .build_guest_input()
             .map_err(|e| Error::GenProof(e.to_string()))?;
 
-        Ok(self
+        let evm_proof = self
             .evm_prover
             .as_ref()
             .expect("Prover::gen_proof_snark expects EVM-prover setup")
             .continuation_prover
-            .generate_proof_for_evm(stdin))
+            .generate_proof_for_evm(stdin);
+
+        // sanity check
+        assert_eq!(
+            evm_proof.instances[0][12],
+            crate::utils::compress_commitment(&Type::EXE_COMMIT),
+            "commitment is not match in generate evm proof",
+        );
+        assert_eq!(
+            evm_proof.instances[0][13],
+            crate::utils::compress_commitment(&Type::LEAF_COMMIT),
+            "commitment is not match in generate evm proof",
+        );
+
+        Ok(evm_proof)
     }
 }
 
