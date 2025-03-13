@@ -162,3 +162,5 @@ pub mod point_eval {
         (proof, U256::from_be_slice(y.as_slice()))
     }
 }
+
+pub mod vm;
