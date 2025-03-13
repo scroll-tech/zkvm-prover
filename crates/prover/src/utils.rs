@@ -105,3 +105,20 @@ pub mod as_base64 {
         bincode::deserialize(&v_bytes).map_err(serde::de::Error::custom)
     }
 }
+
+use snark_verifier_sdk::snark_verifier::halo2_base::halo2_proofs::halo2curves::bn256::Fr;
+
+/// use the openvm's implement for compress 8xbabybear into bn254
+pub fn compress_commitment(commitment: &[u32; 8]) -> Fr {
+    use openvm_stark_sdk::{openvm_stark_backend::p3_field::PrimeField32, p3_baby_bear::BabyBear};
+    let order = Fr::from(BabyBear::ORDER_U32 as u64);
+    let mut base = Fr::one();
+    let mut ret = Fr::zero();
+
+    for v in commitment {
+        ret += Fr::from(*v as u64) * base;
+        base *= order;
+    }
+
+    ret
+}

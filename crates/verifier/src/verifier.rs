@@ -161,7 +161,7 @@ mod tests {
     use std::path::Path;
 
     use scroll_zkvm_circuit_input_types::proof::ProgramCommitment;
-    use scroll_zkvm_prover::{BatchProof, ChunkProof, utils::read_json_deep};
+    use scroll_zkvm_prover::{BatchProof, BundleProof, ChunkProof, utils::read_json_deep};
 
     use super::{BatchVerifier, ChunkVerifier};
 
@@ -235,6 +235,55 @@ mod tests {
             verifier.verify_proof(root_proof),
             "proof verification failed",
         );
+
+        Ok(())
+    }
+
+    #[ignore = "need released assets"]
+    #[test]
+    fn verify_bundle_proof() -> eyre::Result<()> {
+        use openvm_stark_sdk::{
+            openvm_stark_backend::p3_field::PrimeField32, p3_baby_bear::BabyBear,
+        };
+        use snark_verifier_sdk::snark_verifier::halo2_base::halo2_proofs::halo2curves::bn256::Fr;
+
+        let compress_commitment = |commitment: &[u32; 8]| -> Fr {
+            let order = Fr::from(BabyBear::ORDER_U32 as u64);
+            let mut base = Fr::one();
+            let mut ret = Fr::zero();
+
+            for v in commitment {
+                ret += Fr::from(*v as u64) * base;
+                base *= order;
+            }
+
+            ret
+        };
+
+        let evm_proof = read_json_deep::<_, BundleProof>(
+            Path::new(PATH_TESTDATA)
+                .join("proofs")
+                .join("evm-proof.json"),
+        )?;
+
+        let verifier = BatchVerifier::setup(
+            Path::new(PATH_TESTDATA).join("root-verifier-vm-config"),
+            Path::new(PATH_TESTDATA).join("root-verifier-committed-exe"),
+            Path::new(PATH_TESTDATA).join("verifier.bin"),
+        )?;
+
+        assert_eq!(
+            evm_proof.as_proof().instances[0][12],
+            compress_commitment(&super::BUNDLE_EXE_COMMIT),
+            "the output is not match with exe commitment in evm proof!"
+        );
+        assert_eq!(
+            evm_proof.as_proof().instances[0][13],
+            compress_commitment(&super::BUNDLE_LEAF_COMMIT),
+            "the output is not match with leaf commitment in evm proof!"
+        );
+
+        assert!(verifier.verify_proof_evm(&evm_proof.as_proof()));
 
         Ok(())
     }
