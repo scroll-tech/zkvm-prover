@@ -35,7 +35,11 @@ impl ProverTester for ChunkProverTester {
     /// [block-1, block-2, block-3, block-4]
     fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask> {
         let paths: Vec<PathBuf> = match std::env::var("TRACE_PATH") {
-            Ok(paths) => paths.split(',').map(PathBuf::from).collect(),
+            Ok(paths) => {
+                glob::glob(&paths)?
+                    .filter_map(|entry| entry.ok())
+                    .collect()
+            }
             Err(_) => {
                 #[cfg(not(feature = "euclidv2"))]
                 let blocks = 12508460usize..=12508463usize;
