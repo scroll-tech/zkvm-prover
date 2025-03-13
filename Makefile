@@ -45,6 +45,9 @@ profile-chunk:
 test-execute-chunk:
 	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test chunk_circuit test_execute -- --exact --nocapture
 
+test-execute-chunk-multi:
+	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test chunk_circuit test_execute_multi -- --exact --nocapture
+
 test-cycle:
 	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test chunk_circuit test_cycle -- --exact --nocapture
 

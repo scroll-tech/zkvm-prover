@@ -35,7 +35,7 @@ impl ProverTester for ChunkProverTester {
     /// [block-1, block-2, block-3, block-4]
     fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask> {
         let paths: Vec<PathBuf> = match std::env::var("TRACE_PATH") {
-            Ok(paths) => paths.split(',').map(PathBuf::from).collect(),
+            Ok(paths) => glob::glob(&paths)?.filter_map(|entry| entry.ok()).collect(),
             Err(_) => {
                 #[cfg(not(feature = "euclidv2"))]
                 let blocks = 12508460usize..=12508463usize;
@@ -74,23 +74,40 @@ impl ProverTester for MultiChunkProverTester {
     /// [block-2]
     /// [block-3, block-4]
     fn gen_multi_proving_tasks() -> eyre::Result<Vec<<Self::Prover as ProverType>::ProvingTask>> {
-        #[cfg(not(feature = "euclidv2"))]
-        let blocks = vec![vec![12508460], vec![12508461], vec![12508462, 12508463]];
-        #[cfg(feature = "euclidv2")]
-        let blocks = vec![vec![1], vec![2], vec![3, 4]];
-        let msg_queue_hashes = std::iter::repeat(B256::repeat_byte(1u8));
-        let tasks = blocks
+        let paths: Vec<Vec<PathBuf>> = match std::env::var("TRACE_PATH") {
+            Ok(paths) => glob::glob(&paths)?
+                .filter_map(|entry| entry.ok())
+                .map(|p| vec![p])
+                .collect(),
+            Err(_) => {
+                #[cfg(not(feature = "euclidv2"))]
+                let blocks = vec![vec![12508460], vec![12508461], vec![12508462, 12508463]];
+                #[cfg(feature = "euclidv2")]
+                let blocks = vec![vec![1], vec![2], vec![3, 4]];
+                blocks
+                    .into_iter()
+                    .map(|block_group| {
+                        block_group
+                            .into_iter()
+                            .map(|block_n| {
+                                Path::new(PATH_TESTDATA).join(format!("{}.json", block_n))
+                            })
+                            .collect()
+                    })
+                    .collect()
+            }
+        };
+
+        let tasks = paths
             .into_iter()
-            .zip(msg_queue_hashes)
-            .map(|(block_group, prev_msg_queue_hash)| -> eyre::Result<_> {
+            .map(|block_group| -> eyre::Result<_> {
                 let block_witnesses = block_group
                     .iter()
-                    .copied()
-                    .map(read_block_witness_from_testdata)
+                    .map(read_block_witness)
                     .collect::<eyre::Result<Vec<BlockWitness>>>()?;
                 Ok(ChunkProvingTask {
                     block_witnesses,
-                    prev_msg_queue_hash,
+                    prev_msg_queue_hash: B256::repeat_byte(1u8),
                 })
             })
             .collect::<eyre::Result<Vec<ChunkProvingTask>>>()?;
