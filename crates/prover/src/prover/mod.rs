@@ -196,18 +196,18 @@ impl<Type: ProverType> Prover<Type> {
         if debug_out {
             debug!(name: "exe-commitment", prover_name = Type::NAME, raw = ?exe_commit, as_bn254 = ?commits.exe_commit_to_bn254());
             debug!(name: "leaf-commitment", prover_name = Type::NAME, raw = ?leaf_commit, as_bn254 = ?commits.app_config_commit_to_bn254());
+        } else {
+            assert_eq!(
+                exe_commit,
+                Type::EXE_COMMIT,
+                "read unmatched exe commitment from app"
+            );
+            assert_eq!(
+                leaf_commit,
+                Type::LEAF_COMMIT,
+                "read unmatched app commitment from app"
+            );
         }
-
-        assert_eq!(
-            exe_commit,
-            Type::EXE_COMMIT,
-            "read unmatched exe commitment from app"
-        );
-        assert_eq!(
-            leaf_commit,
-            Type::LEAF_COMMIT,
-            "read unmatched app commitment from app"
-        );
 
         [exe_commit, leaf_commit]
     }
