@@ -24,7 +24,7 @@ use openvm_sdk::{
     commit::AppExecutionCommit,
     config::{AggConfig, AggStarkConfig, SdkVmConfig},
     keygen::{AggStarkProvingKey, AppProvingKey, RootVerifierProvingKey},
-    prover::{AggStarkProver, AppProver, ContinuationProver, StarkProver, vm::types::VmProvingKey},
+    prover::{AggStarkProver, AppProver, ContinuationProver},
 };
 use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Config;
 use serde::{Serialize, de::DeserializeOwned};
@@ -599,7 +599,7 @@ impl<Type: ProverType> Prover<Type> {
             .unwrap()
             .airs();
 
-        for (_idx, result) in result.per_segment.into_iter().enumerate() {
+        for result in result.per_segment {
             let (used_airs, per_air) = result
                 .per_air
                 .into_iter()
