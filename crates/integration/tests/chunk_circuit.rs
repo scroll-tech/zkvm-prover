@@ -78,21 +78,22 @@ fn test_execute_multi() -> eyre::Result<()> {
     // Execute tasks in parallel
     let (total_gas, total_cycle, _) = pool.install(|| {
         let tasks = MultiChunkProverTester::gen_multi_proving_tasks().unwrap();
-        tasks.into_par_iter()
-            .map(|task| -> (u64, u64, u64) {
-                exec_chunk(&task).unwrap()
-            })
+        tasks
+            .into_par_iter()
+            .map(|task| -> (u64, u64, u64) { exec_chunk(&task).unwrap() })
             .reduce(
                 || (0, 0, 0),
                 |(gas1, cycle1, _), (gas2, cycle2, _)| {
                     (gas1 + gas2, cycle1 + cycle2, 0) // We don't need to sum cycle_per_gas
-                }
+                },
             )
     });
-    
+
     println!(
         "Total gas: {}, Total cycles: {}, Average cycle/gas: {}",
-        total_gas, total_cycle, total_cycle as f64 / total_gas as f64
+        total_gas,
+        total_cycle,
+        total_cycle as f64 / total_gas as f64
     );
 
     Ok(())
