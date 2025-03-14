@@ -48,7 +48,7 @@ fn test_cycle() -> eyre::Result<()> {
             prev_msg_queue_hash: Default::default(),
         };
         let (exec_result, gas) = exec_chunk(&task)?;
-        let cycle_per_gas = exec_result.total_cycle as u64 / gas;
+        let cycle_per_gas = exec_result.total_cycle / gas;
         assert!(cycle_per_gas < 30);
         Ok(())
     })?;
@@ -84,11 +84,7 @@ fn test_execute_multi() -> eyre::Result<()> {
             .into_par_iter()
             .map(|task| -> (u64, u64, u64) {
                 let (exec_result, gas) = exec_chunk(&task).unwrap();
-                (
-                    gas,
-                    exec_result.total_cycle as u64,
-                    exec_result.total_tick as u64,
-                )
+                (gas, exec_result.total_cycle, exec_result.total_tick)
             })
             .reduce(
                 || (0, 0, 0),
