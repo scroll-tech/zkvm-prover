@@ -1,52 +1,102 @@
+use std::sync::Arc;
+
 use openvm_circuit::{
-    arch::{ExecutionSegment, VmExecutor, instructions::exe::VmExe},
-    system::memory::tree::public_values::extract_public_values,
+    arch::{VmExecutor, instructions::exe::VmExe},
+    system::{memory::tree::public_values::extract_public_values, program::trace::VmCommittedExe},
 };
-use openvm_sdk::{F, StdIn, config::SdkVmConfig};
+use openvm_sdk::{F, SC, StdIn, config::SdkVmConfig};
+use openvm_stark_sdk::{
+    config::{FriParameters, baby_bear_poseidon2::BabyBearPoseidon2Engine},
+    engine::StarkFriEngine,
+    openvm_stark_backend::verifier::VerificationError,
+};
 
 use crate::Error;
 
-pub struct ExecResult {
-    pub total_cycle: u64,
+pub struct ExecutionResult {
+    pub total_cycle: usize,
+    pub final_ts: u32,
     #[allow(dead_code)]
     pub public_values: Vec<F>,
-    pub segments: Vec<ExecutionSegment<F, SdkVmConfig>>,
 }
 
-pub fn execute_exe(config: SdkVmConfig, exe: VmExe<F>, stdin: &StdIn) -> Result<ExecResult, Error> {
+#[derive(Default)]
+pub struct DebugInput {
+    pub mock_prove: bool,
+    pub commited_exe: Option<Arc<VmCommittedExe<SC>>>,
+}
+
+pub fn execute_guest(
+    vm_config: SdkVmConfig,
+    exe: VmExe<F>,
+    stdin: &StdIn,
+    aux_args: &DebugInput,
+) -> Result<ExecutionResult, Error> {
     use openvm_circuit::arch::VmConfig;
     use openvm_stark_sdk::openvm_stark_backend::p3_field::Field;
 
-    let vm = VmExecutor::new(config.clone());
+    let vm = VmExecutor::new(vm_config.clone());
 
-    let segments = vm
-        .execute_segments(exe, stdin.clone())
+    let mut total_cycle = 0;
+    let mut final_ts = 0;
+    let mut final_memory = None;
+    let segment_output: Vec<Result<(), VerificationError>> = vm
+        .execute_and_then(
+            exe,
+            stdin.clone(),
+            |idx, mut segment| -> Result<(), VerificationError> {
+                total_cycle += segment.metrics.cycle_count;
+                final_ts = segment.chip_complex.memory_controller().timestamp();
+                tracing::debug!("after segment {idx}: cycle count: {}, timestamp: {}", total_cycle, final_ts);
+                final_memory = std::mem::take(&mut segment.final_memory);
+                if aux_args.mock_prove {
+                    let proof_input = segment.generate_proof_input(
+                        aux_args
+                            .commited_exe
+                            .as_ref()
+                            .map(|x| x.committed_program.clone()),
+                    );
+                    // TODO: should we use app_pk.app_vm_pk.fri_params?
+                    // export OPENVM_FAST_TEST=1 can make the test very fast
+                    let engine = BabyBearPoseidon2Engine::new(FriParameters::new_for_testing(1));
+                    let airs = vm_config.create_chip_complex().unwrap().airs();
+
+                    let (used_airs, per_air) = proof_input
+                        .per_air
+                        .into_iter()
+                        .map(|(air_id, x)| (airs[air_id].clone(), x))
+                        .unzip();
+                    engine.run_test(used_airs, per_air)?;
+                }
+                Ok(())
+            },
+        )
         .map_err(|e| Error::GenProof(e.to_string()))?;
-    let total_cycle = segments
-        .iter()
-        .map(|seg| seg.metrics.cycle_count)
-        .sum::<usize>() as u64;
-    tracing::info!(name: "segment length", segment_len = segments.len());
-    tracing::info!(name: "total cycle", ?total_cycle);
 
-    // extract and check public values
-    let final_memory = segments
-        .last()
-        .and_then(|x| x.final_memory.as_ref())
-        .unwrap();
-    let system_config = <SdkVmConfig as VmConfig<F>>::system(&config);
+    let segment_len = segment_output.len();
+    tracing::info!("segment length" = ?segment_len);
+    tracing::info!("total cycle" = ?total_cycle);
+    tracing::info!("final ts" = ?final_ts);
+
+    segment_output
+        .into_iter()
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| Error::GenProof(e.to_string()))?;
+
+    let system_config = <SdkVmConfig as VmConfig<F>>::system(&vm_config);
     let public_values: Vec<F> = extract_public_values(
         &system_config.memory_config.memory_dimensions(),
         system_config.num_public_values,
-        final_memory,
+        final_memory.as_ref().unwrap(),
     );
     tracing::debug!(name: "public_values after guest execution", ?public_values);
     if public_values.iter().all(|x| x.is_zero()) {
         return Err(Error::GenProof("public_values are all 0s".to_string()));
     }
-    Ok(ExecResult {
+
+    Ok(ExecutionResult {
         total_cycle,
+        final_ts,
         public_values,
-        segments,
     })
 }

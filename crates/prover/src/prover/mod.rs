@@ -1,16 +1,11 @@
 use std::{
-    collections::BTreeMap,
     marker::PhantomData,
     path::{Path, PathBuf},
     sync::Arc,
 };
 
-use metrics_util::{MetricKind, debugging::DebugValue};
 use once_cell::sync::Lazy;
-use openvm_circuit::{
-    arch::{ExecutionSegment, SingleSegmentVmExecutor, VmExecutorResult},
-    system::program::trace::VmCommittedExe,
-};
+use openvm_circuit::{arch::SingleSegmentVmExecutor, system::program::trace::VmCommittedExe};
 use openvm_native_recursion::{
     halo2::{
         EvmProof,
@@ -19,14 +14,14 @@ use openvm_native_recursion::{
     },
     hints::Hintable,
 };
+pub use openvm_sdk::{self, F, SC};
 use openvm_sdk::{
-    F, NonRootCommittedExe, Sdk, StdIn,
+    NonRootCommittedExe, Sdk, StdIn,
     commit::AppExecutionCommit,
     config::{AggConfig, AggStarkConfig, SdkVmConfig},
     keygen::{AggStarkProvingKey, AppProvingKey, RootVerifierProvingKey},
     prover::{AggStarkProver, AppProver, ContinuationProver},
 };
-use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Config;
 use serde::{Serialize, de::DeserializeOwned};
 use tracing::{debug, instrument};
 
@@ -90,9 +85,6 @@ type InitRes = (
     Arc<AppProvingKey<SdkVmConfig>>,
     AppExecutionCommit<F>,
 );
-
-/// Alias for convenience.
-pub type SC = BabyBearPoseidon2Config;
 
 #[derive(Debug, Clone, Default)]
 pub struct ProverConfig {
@@ -403,111 +395,16 @@ impl<Type: ProverType> Prover<Type> {
         Ok(())
     }
 
-    /// Build the executor results.
-    /// Yes it is a bit wired that it has the "profile" parameter.
-    /// But now `segment.finalize_metric` is not public, so we can only collect
-    /// metrics during `segment.generate_proof_input`.
-    /// TODO: when `segment.finalize_metric` becomes public, refactor here.
-    pub fn build_executor_results(
-        &self,
-        mut segments: Vec<ExecutionSegment<F, SdkVmConfig>>,
-        profile: bool,
-    ) -> VmExecutorResult<SC> {
-        let final_memory = std::mem::take(&mut segments.last_mut().unwrap().final_memory);
-        let mut metric_snapshots = vec![];
-
-        let executor_result = VmExecutorResult {
-            per_segment: segments
-                .into_iter()
-                .map(|seg| {
-                    use metrics_tracing_context::TracingContextLayer;
-                    use metrics_util::layers::Layer;
-                    let recorder = metrics_util::debugging::DebuggingRecorder::new();
-                    let snapshotter = recorder.snapshotter();
-                    // zzhang: i don't know why this TracingContextLayer is needed, but i copied it from
-                    // "stark-backend" repo.
-                    let recorder = TracingContextLayer::all().layer(recorder);
-                    let seg_proof_input = metrics::with_local_recorder(&recorder, || {
-                        seg.generate_proof_input(Some(
-                            self.app_committed_exe.committed_program.clone(),
-                        ))
-                    });
-                    metric_snapshots.push(snapshotter.snapshot());
-                    seg_proof_input
-                })
-                .collect(),
-            final_memory,
-        };
-
-        let mut counter_sum = BTreeMap::<String, BTreeMap<String, u64>>::new();
-        for (idx, metric_snapshot) in metric_snapshots.into_iter().enumerate() {
-            let metrics = metric_snapshot.into_vec();
-            for (ckey, _, _, value) in metrics {
-                match ckey.kind() {
-                    MetricKind::Counter => {
-                        let value = match value {
-                            DebugValue::Counter(v) => v,
-                            _ => panic!("unexpected value type"),
-                        };
-                        tracing::debug!(
-                            "metric of segment {}: {}=>{}, {ckey:?}",
-                            idx,
-                            ckey.key().name(),
-                            value
-                        );
-                        let label = ckey
-                            .key()
-                            .labels()
-                            .map(|l| l.value())
-                            .filter(|l| !l.is_empty())
-                            .collect::<Vec<_>>()
-                            .join("|");
-                        let counter_name = ckey.key().name().to_string();
-                        let counter_map = counter_sum.entry(counter_name).or_default();
-                        let counter_value = counter_map.entry(label).or_insert(0);
-                        *counter_value += value;
-                    }
-                    MetricKind::Gauge => {}
-                    MetricKind::Histogram => {}
-                }
-            }
-        }
-
-        if profile {
-            let mut bench_report = String::new();
-            use std::fmt::Write;
-            writeln!(&mut bench_report, "guest profiling:").unwrap();
-            for (counter_name, values) in counter_sum.iter() {
-                writeln!(&mut bench_report, "{counter_name}:").unwrap();
-                let mut sorted_values: Vec<_> = values.iter().collect();
-                sorted_values.sort_by(|a, b| b.1.cmp(a.1));
-                for (label, value) in sorted_values {
-                    writeln!(&mut bench_report, "  {label}\t{value}").unwrap();
-                }
-                writeln!(&mut bench_report).unwrap();
-            }
-            println!("{}", bench_report);
-        }
-
-        executor_result
-    }
-
     /// Execute the guest program to get the cycle count.
-    ///
-    /// If the GUEST_PROFILING environment variable has been set to "true",
-    /// row_usage/cell_usage/counter_per_op metrics are also collected.
-    pub fn execute_guest(
-        &self,
-        stdin: &StdIn,
-        profile: bool,
-    ) -> Result<(u64, Vec<ExecutionSegment<F, SdkVmConfig>>), Error> {
-        let mut config = self.app_pk.app_vm_pk.vm_config.clone();
-        if profile {
-            config.system.config = config.system.config.with_profiling();
-        }
+    pub fn execute_and_check(&self, stdin: &StdIn, mock_prove: bool) -> Result<u64, Error> {
+        let config = self.app_pk.app_vm_pk.vm_config.clone();
         let exe = self.app_committed_exe.exe.clone();
-        let exec_result = crate::utils::vm::execute_exe(config, exe, stdin)?;
-        Ok((exec_result.total_cycle, exec_result.segments))
+        let debug_input = crate::utils::vm::DebugInput {
+            mock_prove,
+            commited_exe: mock_prove.then(|| self.app_committed_exe.clone()),
+        };
+        let exec_result = crate::utils::vm::execute_guest(config, exe, stdin, &debug_input)?;
+        Ok(exec_result.total_cycle as u64)
     }
 
     /// File descriptor for the proof saved to disc.
@@ -526,15 +423,9 @@ impl<Type: ProverType> Prover<Type> {
             .map_err(|e| Error::GenProof(e.to_string()))?;
 
         let mock_prove = std::env::var("MOCK_PROVE").as_deref() == Ok("true");
-        let guest_profiling = std::env::var("GUEST_PROFILING").as_deref() == Ok("true");
-        // Here we always do an execution of the guest program to get the cycle count and do precheck before proving.
-        let (_cycle_count, segments) = self.execute_guest(&stdin, guest_profiling)?;
-        if mock_prove || guest_profiling {
-            let executor_result = self.build_executor_results(segments, guest_profiling);
-            if mock_prove {
-                self.mock_prove(executor_result)?;
-            }
-        }
+        // Here we always do an execution of the guest program to get the cycle count.
+        // and do precheck before proving like ensure PI != 0
+        self.execute_and_check(&stdin, mock_prove)?;
 
         let task_id = task.identifier();
 
@@ -552,34 +443,6 @@ impl<Type: ProverType> Prover<Type> {
         );
         let proof = agg_prover.generate_root_verifier_input(app_proof);
         Ok(proof)
-    }
-
-    /// Runs only if the MOCK_PROVE environment variable has been set to "true".
-    fn mock_prove(&self, result: VmExecutorResult<SC>) -> Result<(), Error> {
-        use openvm_circuit::arch::VmConfig;
-        use openvm_stark_sdk::{
-            config::baby_bear_poseidon2::BabyBearPoseidon2Engine, engine::StarkFriEngine,
-        };
-
-        let engine = BabyBearPoseidon2Engine::new(self.app_pk.app_vm_pk.fri_params);
-        let airs = self
-            .app_pk
-            .app_vm_pk
-            .vm_config
-            .create_chip_complex()
-            .unwrap()
-            .airs();
-
-        for result in result.per_segment {
-            let (used_airs, per_air) = result
-                .per_air
-                .into_iter()
-                .map(|(air_id, x)| (airs[air_id].clone(), x))
-                .unzip();
-            engine.run_test(used_airs, per_air).unwrap();
-        }
-
-        Ok(())
     }
 
     /// Generate an [evm proof][evm_proof].
