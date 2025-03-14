@@ -3,24 +3,21 @@ use scroll_zkvm_circuit_input_types::{
     chunk::ChunkInfo,
 };
 
-use crate::builder::BatchInfoBuilder;
+use crate::builder::{BatchInfoBuilderV3, BatchInfoBuilderV7};
 
 pub fn execute(witness: &ArchivedBatchWitness) -> BatchInfo {
     let chunk_infos: Vec<ChunkInfo> = witness.chunk_infos.iter().map(|ci| ci.into()).collect();
 
     match &witness.reference_header {
-        #[cfg(not(feature = "euclidv2"))]
         ArchivedReferenceHeader::V3(header) => {
-            BatchInfoBuilder::build(&header.into(), &chunk_infos, &witness.blob_bytes)
+            BatchInfoBuilderV3::build(&header.into(), &chunk_infos, &witness.blob_bytes)
         }
-        #[cfg(feature = "euclidv2")]
-        ArchivedReferenceHeader::V7(header) => BatchInfoBuilder::build(
+        ArchivedReferenceHeader::V7(header) => BatchInfoBuilderV7::build(
             &header.into(),
             &chunk_infos,
             &witness.blob_bytes,
             &witness.point_eval_witness.kzg_commitment,
             &witness.point_eval_witness.kzg_proof,
         ),
-        _ => unreachable!(),
     }
 }

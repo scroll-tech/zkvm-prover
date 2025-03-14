@@ -3,7 +3,9 @@ use crate::{
     proof::{ChunkProofMetadata, RootProof},
     task::{ProvingTask, chunk::ChunkProvingTask},
 };
-use scroll_zkvm_circuit_input_types::chunk::{ArchivedChunkWitness, ChunkWitness, execute};
+use scroll_zkvm_circuit_input_types::chunk::{
+    ArchivedChunkWitness, ChunkWitness, CodecVersion, execute,
+};
 
 #[cfg(feature = "euclidv2")]
 use crate::commitments::chunk::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT};
@@ -63,7 +65,13 @@ impl ProverType for ChunkProverType {
             ))
         })?;
 
-        let chunk_info = execute(chunk_witness)
+        // FIXME: make this runtime
+        let codec_version = if cfg!(feature = "euclidv2") {
+            CodecVersion::V7
+        } else {
+            CodecVersion::V3
+        };
+        let chunk_info = execute(chunk_witness, codec_version)
             .map_err(|e| Error::GenProof(format!("{}: {}", err_prefix, e)))?;
 
         Ok(ChunkProofMetadata { chunk_info })

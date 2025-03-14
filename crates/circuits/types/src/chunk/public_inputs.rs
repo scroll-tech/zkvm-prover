@@ -8,6 +8,34 @@ use sbv_primitives::types::{
 /// Number of bytes used to serialise [`BlockContextV2`].
 pub const SIZE_BLOCK_CTX: usize = 52;
 
+#[derive(
+    Debug,
+    Copy,
+    Clone,
+    PartialEq,
+    Eq,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    serde::Deserialize,
+    serde::Serialize,
+)]
+#[rkyv(derive(Debug))]
+
+pub enum CodecVersion {
+    V3,
+    V7,
+}
+
+impl From<&ArchivedCodecVersion> for CodecVersion {
+    fn from(archived: &ArchivedCodecVersion) -> Self {
+        match archived {
+            ArchivedCodecVersion::V3 => CodecVersion::V3,
+            ArchivedCodecVersion::V7 => CodecVersion::V7,
+        }
+    }
+}
+
 /// Represents the version 2 of block context.
 ///
 /// The difference between v2 and v1 is that the block number field has been removed since v2.
@@ -92,6 +120,8 @@ impl BlockContextV2 {
 )]
 #[rkyv(derive(Debug))]
 pub struct ChunkInfo {
+    // zhuo: i thought to add this to ChunkInfo, but not fully sure it is ok
+    // pub codec_version: CodecVersion,
     /// The EIP-155 chain ID for all txs in the chunk.
     #[rkyv()]
     pub chain_id: u64,
@@ -104,6 +134,9 @@ pub struct ChunkInfo {
     /// The withdrawals root after applying the chunk.
     #[rkyv()]
     pub withdraw_root: B256,
+    /// Digest of L1 message txs force included in the chunk.
+    #[rkyv()]
+    pub data_hash: B256,
     /// Digest of L2 tx data flattened over all L2 txs in the chunk.
     #[rkyv()]
     pub tx_data_digest: B256,
@@ -124,28 +157,31 @@ pub struct ChunkInfo {
     pub block_ctxs: Vec<BlockContextV2>,
 }
 
-impl From<&ArchivedChunkInfo> for ChunkInfo {
-    fn from(archived: &ArchivedChunkInfo) -> Self {
-        Self {
-            chain_id: archived.chain_id.into(),
-            prev_state_root: archived.prev_state_root.into(),
-            post_state_root: archived.post_state_root.into(),
-            withdraw_root: archived.withdraw_root.into(),
-            tx_data_digest: archived.tx_data_digest.into(),
-            prev_msg_queue_hash: archived.prev_msg_queue_hash.into(),
-            post_msg_queue_hash: archived.post_msg_queue_hash.into(),
-            tx_data_length: archived.tx_data_length.into(),
-            initial_block_number: archived.initial_block_number.into(),
-            block_ctxs: archived
-                .block_ctxs
-                .iter()
-                .map(BlockContextV2::from)
-                .collect(),
-        }
+impl ChunkInfo {
+    /// Public input hash for a given chunk is defined as
+    ///
+    /// keccak(
+    ///     chain id ||
+    ///     prev state root ||
+    ///     post state root ||
+    ///     withdraw root ||
+    ///     chunk data hash ||
+    ///     tx data hash
+    /// )
+    pub fn pi_hash_v3(&self) -> B256 {
+        keccak256(
+            std::iter::empty()
+                .chain(&self.chain_id.to_be_bytes())
+                .chain(self.prev_state_root.as_slice())
+                .chain(self.post_state_root.as_slice())
+                .chain(self.withdraw_root.as_slice())
+                .chain(self.data_hash.as_slice())
+                .chain(self.tx_data_digest.as_slice())
+                .cloned()
+                .collect::<Vec<u8>>(),
+        )
     }
-}
 
-impl PublicInputs for ChunkInfo {
     /// Public input hash for a given chunk is defined as
     ///
     /// keccak(
@@ -159,7 +195,7 @@ impl PublicInputs for ChunkInfo {
     ///     initial block number ||
     ///     block_ctx for block_ctx in block_ctxs
     /// )
-    fn pi_hash(&self) -> B256 {
+    pub fn pi_hash_v7(&self) -> B256 {
         keccak256(
             std::iter::empty()
                 .chain(&self.chain_id.to_be_bytes())
@@ -181,6 +217,40 @@ impl PublicInputs for ChunkInfo {
                 .collect::<Vec<u8>>(),
         )
     }
+}
+
+impl From<&ArchivedChunkInfo> for ChunkInfo {
+    fn from(archived: &ArchivedChunkInfo) -> Self {
+        Self {
+            // codec_version: CodecVersion::from(&archived.codec_version),
+            chain_id: archived.chain_id.into(),
+            prev_state_root: archived.prev_state_root.into(),
+            post_state_root: archived.post_state_root.into(),
+            withdraw_root: archived.withdraw_root.into(),
+            data_hash: archived.data_hash.into(),
+            tx_data_digest: archived.tx_data_digest.into(),
+            prev_msg_queue_hash: archived.prev_msg_queue_hash.into(),
+            post_msg_queue_hash: archived.post_msg_queue_hash.into(),
+            tx_data_length: archived.tx_data_length.into(),
+            initial_block_number: archived.initial_block_number.into(),
+            block_ctxs: archived
+                .block_ctxs
+                .iter()
+                .map(BlockContextV2::from)
+                .collect(),
+        }
+    }
+}
+
+impl PublicInputs for ChunkInfo {
+    /// Compute the public input hash for the chunk.
+    fn pi_hash(&self) -> B256 {
+        unimplemented!("use pi_hash_v3 or pi_hash_v7");
+        // match self.codec_version {
+        //    CodecVersion::V3 => self.pi_hash_v3(),
+        //    CodecVersion::V7 => self.pi_hash_v7(),
+        //}
+    }
 
     /// Validate public inputs between 2 contiguous chunks.
     ///
@@ -190,6 +260,7 @@ impl PublicInputs for ChunkInfo {
     fn validate(&self, prev_pi: &Self) {
         assert_eq!(self.chain_id, prev_pi.chain_id);
         assert_eq!(self.prev_state_root, prev_pi.post_state_root);
+        // For V3, they should always be 0.
         assert_eq!(self.prev_msg_queue_hash, prev_pi.post_msg_queue_hash);
     }
 }
