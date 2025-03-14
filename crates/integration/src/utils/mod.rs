@@ -1,26 +1,24 @@
-use sbv::primitives::{
+use sbv_primitives::{
     B256, U256,
-    eips::Encodable2718,
-    types::{BlockWitness, Transaction, reth::TransactionSigned},
+    types::{BlockWitness, Transaction, eips::Encodable2718, reth::TransactionSigned},
 };
 use scroll_zkvm_circuit_input_types::{
-    batch::{BatchHeader, BatchHeaderV3},
+    batch::{BatchHeader, BatchHeaderV3, BatchHeaderV7},
     utils::keccak256,
 };
 use scroll_zkvm_prover::{
     ChunkProof,
     task::{batch::BatchProvingTask, chunk::ChunkProvingTask},
+    utils::point_eval,
 };
 use vm_zstd::zstd_encode;
-
-mod blob;
 
 fn is_l1_tx(tx: &Transaction) -> bool {
     // 0x7e is l1 tx
     tx.transaction_type == 0x7e
 }
 
-#[cfg(feature = "scroll")]
+#[allow(dead_code)]
 fn final_l1_index(blk: &BlockWitness) -> u64 {
     // Get number of l1 txs. L1 txs can be skipped, so just counting is not enough
     // (The comment copied from scroll-prover, but why the max l1 queue index is always
@@ -31,10 +29,6 @@ fn final_l1_index(blk: &BlockWitness) -> u64 {
         .map(|tx| tx.queue_index.expect("l1 msg should has queue index"))
         .max()
         .unwrap_or_default()
-}
-#[cfg(not(feature = "scroll"))]
-fn num_l1_txs(trace: &BlockWitness) -> u64 {
-    0
 }
 
 fn blks_tx_bytes<'a>(blks: impl Iterator<Item = &'a BlockWitness>) -> Vec<u8> {
@@ -51,9 +45,10 @@ fn blks_tx_bytes<'a>(blks: impl Iterator<Item = &'a BlockWitness>) -> Vec<u8> {
 #[derive(Debug)]
 pub struct LastHeader {
     pub batch_index: u64,
-    pub l1_message_index: u64,
     pub batch_hash: B256,
     pub version: u8,
+    /// legacy field
+    pub l1_message_index: u64,
 }
 
 impl Default for LastHeader {
@@ -64,7 +59,7 @@ impl Default for LastHeader {
 
         Self {
             batch_index: 123,
-            version: 4,
+            version: 7,
             batch_hash: B256::new([
                 0xab, 0xac, 0xad, 0xae, 0xaf, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -85,33 +80,24 @@ impl From<&BatchHeaderV3> for LastHeader {
     }
 }
 
+impl From<&BatchHeaderV7> for LastHeader {
+    fn from(h: &BatchHeaderV7) -> Self {
+        Self {
+            batch_index: h.batch_index,
+            version: h.version,
+            batch_hash: h.batch_hash(),
+            l1_message_index: 0,
+        }
+    }
+}
+
 pub fn build_batch_task(
     chunk_tasks: &[ChunkProvingTask],
     chunk_proofs: &[ChunkProof],
-    max_chunks: usize,
     last_header: LastHeader,
 ) -> BatchProvingTask {
     // Sanity check.
     assert_eq!(chunk_tasks.len(), chunk_proofs.len());
-
-    // collect required fields for batch header
-    let last_l1_message_index: u64 = chunk_tasks
-        .iter()
-        .flat_map(|t| &t.block_witnesses)
-        .map(final_l1_index)
-        .reduce(|last, cur| if cur == 0 { last } else { cur })
-        .expect("at least one chunk");
-    let last_l1_message_index = if last_l1_message_index == 0 {
-        last_header.l1_message_index
-    } else {
-        last_l1_message_index
-    };
-
-    let last_block_timestamp = chunk_tasks.last().map_or(0u64, |t| {
-        t.block_witnesses
-            .last()
-            .map_or(0, |trace| trace.header.timestamp)
-    });
 
     // collect tx bytes from chunk tasks
     let (meta_chunk_sizes, chunk_digests, chunk_tx_bytes) = chunk_tasks.iter().fold(
@@ -130,117 +116,271 @@ pub fn build_batch_task(
         assert_eq!(digest, &proof.metadata.chunk_info.tx_data_digest);
     }
 
-    let valid_chunk_size = chunk_proofs.len() as u16;
-    let mut payload = meta_chunk_sizes
-        .into_iter()
-        .chain(std::iter::repeat(0))
-        .take(max_chunks)
-        .fold(
-            Vec::from(valid_chunk_size.to_be_bytes()),
-            |mut bytes, len| {
-                bytes.extend_from_slice(&(len as u32).to_be_bytes());
-                bytes
-            },
-        );
+    const LEGACY_MAX_CHUNKS: usize = 45;
 
-    let mut payload_for_challenge = Vec::from(keccak256(&payload).0);
+    let meta_chunk_bytes = {
+        let valid_chunk_size = chunk_proofs.len() as u16;
+        meta_chunk_sizes
+            .into_iter()
+            .chain(std::iter::repeat(0))
+            .take(LEGACY_MAX_CHUNKS)
+            .fold(
+                Vec::from(valid_chunk_size.to_be_bytes()),
+                |mut bytes, len| {
+                    bytes.extend_from_slice(&(len as u32).to_be_bytes());
+                    bytes
+                },
+            )
+    };
 
-    let data_hash = keccak256(
-        chunk_proofs
+    // collect all data together for payload
+    let mut payload = if cfg!(feature = "euclidv2") {
+        Vec::new()
+    } else {
+        meta_chunk_bytes.clone()
+    };
+    #[cfg(feature = "euclidv2")]
+    {
+        let num_blocks = chunk_tasks
             .iter()
-            .map(|proof| &proof.metadata.chunk_info.data_hash)
-            .fold(Vec::new(), |mut bytes, h| {
-                bytes.extend_from_slice(&h.0);
-                bytes
-            }),
-    );
+            .map(|t| t.block_witnesses.len())
+            .sum::<usize>() as u16;
+        let (prev_msg_queue_hash, initial_block_number) = {
+            let first_chunk = &chunk_proofs
+                .first()
+                .expect("at least one chunk")
+                .metadata
+                .chunk_info;
+            (
+                first_chunk.prev_msg_queue_hash,
+                first_chunk.initial_block_number,
+            )
+        };
 
-    // payload can setup
+        let post_msg_queue_hash = chunk_proofs
+            .last()
+            .expect("at least one chunk")
+            .metadata
+            .chunk_info
+            .post_msg_queue_hash;
+        payload.extend_from_slice(prev_msg_queue_hash.as_slice());
+        payload.extend_from_slice(post_msg_queue_hash.as_slice());
+        payload.extend(initial_block_number.to_be_bytes());
+        payload.extend(num_blocks.to_be_bytes());
+        assert_eq!(payload.len(), 74);
+        for proof in chunk_proofs {
+            for ctx in &proof.metadata.chunk_info.block_ctxs {
+                payload.extend(ctx.to_bytes());
+            }
+        }
+        assert_eq!(payload.len(), 74 + 52 * num_blocks as usize);
+    }
     payload.extend(chunk_tx_bytes);
-
     // compress ...
     let compressed_payload = zstd_encode(&payload);
-    let mut blob_bytes = vec![1];
-    blob_bytes.extend(compressed_payload);
 
-    // generate versioned hash
-    let coefficients = blob::get_coefficients(&blob_bytes);
-    let blob_versioned_hash = blob::get_versioned_hash(&coefficients);
+    let version = 7u32;
+    let heading = compressed_payload.len() as u32 + (version << 24);
 
-    // calc blob_data_proof ...
-    let last_digest = chunk_digests.last().expect("at least we have one");
+    let blob_bytes = if cfg!(feature = "euclidv2") {
+        let mut blob_bytes = Vec::from(heading.to_be_bytes());
+        blob_bytes.push(1u8); // compressed flag
+        blob_bytes.extend(compressed_payload);
+        blob_bytes.resize(4096 * 31, 0);
+        blob_bytes
+    } else {
+        let mut blob_bytes = vec![1];
+        blob_bytes.extend(compressed_payload);
+        blob_bytes
+    };
 
-    payload_for_challenge.extend(
-        chunk_digests
+    let kzg_blob = point_eval::to_blob(&blob_bytes);
+    let kzg_commitment = point_eval::blob_to_kzg_commitment(&kzg_blob);
+    let blob_versioned_hash = point_eval::get_versioned_hash(&kzg_commitment);
+
+    // primage = keccak(payload) + blob_versioned_hash
+    let chg_preimage = if cfg!(feature = "euclidv2") {
+        let mut chg_preimage = keccak256(&blob_bytes).to_vec();
+        chg_preimage.extend(blob_versioned_hash.0);
+        chg_preimage
+    } else {
+        let mut chg_preimage = Vec::from(keccak256(&meta_chunk_bytes).0);
+        let last_digest = chunk_digests.last().expect("at least we have one");
+        chg_preimage.extend(
+            chunk_digests
+                .iter()
+                .chain(std::iter::repeat(last_digest))
+                .take(LEGACY_MAX_CHUNKS)
+                .fold(Vec::new(), |mut ret, digest| {
+                    ret.extend_from_slice(&digest.0);
+                    ret
+                }),
+        );
+        chg_preimage.extend_from_slice(blob_versioned_hash.as_slice());
+        chg_preimage
+    };
+    let challenge_digest = keccak256(&chg_preimage);
+
+    let x = point_eval::get_x_from_challenge(challenge_digest);
+    let (kzg_proof, z) = point_eval::get_kzg_proof(&kzg_blob, challenge_digest);
+
+    #[cfg(feature = "euclidv2")]
+    let batch_header = {
+        // avoid unused variant warning
+        let _ = x + z;
+        BatchHeaderV7 {
+            version: last_header.version,
+            batch_index: last_header.batch_index + 1,
+            parent_batch_hash: last_header.batch_hash,
+            blob_versioned_hash,
+        }
+    };
+
+    #[cfg(not(feature = "euclidv2"))]
+    let batch_header = {
+        // collect required fields for batch header
+        let last_l1_message_index: u64 = chunk_tasks
             .iter()
-            .chain(std::iter::repeat(last_digest))
-            .take(max_chunks)
-            .fold(Vec::new(), |mut ret, digest| {
-                ret.extend_from_slice(&digest.0);
-                ret
-            }),
-    );
-    payload_for_challenge.extend_from_slice(blob_versioned_hash.as_slice());
-    let point_evaluations = blob::point_evaluation(
-        &coefficients,
-        U256::from_be_bytes(keccak256(payload_for_challenge).0),
-    );
+            .flat_map(|t| &t.block_witnesses)
+            .map(final_l1_index)
+            .reduce(|last, cur| if cur == 0 { last } else { cur })
+            .expect("at least one chunk");
+        let last_l1_message_index = if last_l1_message_index == 0 {
+            last_header.l1_message_index
+        } else {
+            last_l1_message_index
+        };
 
-    let point_evaluations = [point_evaluations.0, point_evaluations.1];
+        let last_block_timestamp = chunk_tasks.last().map_or(0u64, |t| {
+            t.block_witnesses
+                .last()
+                .map_or(0, |trace| trace.header.timestamp)
+        });
 
-    let batch_header = BatchHeaderV3 {
-        version: last_header.version,
-        batch_index: last_header.batch_index + 1,
-        l1_message_popped: last_l1_message_index - last_header.l1_message_index,
-        last_block_timestamp,
-        total_l1_message_popped: last_l1_message_index,
-        parent_batch_hash: last_header.batch_hash,
-        data_hash,
-        blob_versioned_hash,
-        blob_data_proof: point_evaluations.map(|u| B256::new(u.to_be_bytes())),
+        let point_evaluations = [x, z];
+
+        let data_hash = keccak256(
+            chunk_proofs
+                .iter()
+                .map(|proof| &proof.metadata.chunk_info.data_hash)
+                .fold(Vec::new(), |mut bytes, h| {
+                    bytes.extend_from_slice(&h.0);
+                    bytes
+                }),
+        );
+
+        BatchHeaderV3 {
+            version: last_header.version,
+            batch_index: last_header.batch_index + 1,
+            l1_message_popped: last_l1_message_index - last_header.l1_message_index,
+            last_block_timestamp,
+            total_l1_message_popped: last_l1_message_index,
+            parent_batch_hash: last_header.batch_hash,
+            data_hash,
+            blob_versioned_hash,
+            blob_data_proof: point_evaluations.map(|u| B256::new(u.to_be_bytes())),
+        }
     };
 
     BatchProvingTask {
         chunk_proofs: Vec::from(chunk_proofs),
         batch_header,
         blob_bytes,
+        challenge_digest: Some(U256::from_be_bytes(challenge_digest.0)),
+        kzg_commitment: Some(kzg_commitment.to_bytes()),
+        kzg_proof: Some(kzg_proof.to_bytes()),
     }
 }
 
 #[test]
-fn test_build_batch_task() -> eyre::Result<()> {
-    use scroll_zkvm_prover::utils::{read_json, read_json_deep};
+fn test_build_and_parse_batch_task() -> eyre::Result<()> {
+    #[cfg(not(feature = "euclidv2"))]
+    use scroll_zkvm_circuit_input_types::batch::{EnvelopeV3 as Envelope, PayloadV3 as Payload};
+    #[cfg(feature = "euclidv2")]
+    use scroll_zkvm_circuit_input_types::batch::{EnvelopeV7 as Envelope, PayloadV7 as Payload};
+    use scroll_zkvm_prover::utils::{read_json, read_json_deep, write_json};
 
     // ./testdata/
     let path_testdata = std::path::Path::new("testdata");
 
     // read block witnesses.
-    let paths_block_witnesses = [
-        path_testdata.join("12508460.json"),
-        path_testdata.join("12508461.json"),
-        path_testdata.join("12508462.json"),
-        path_testdata.join("12508463.json"),
-    ];
+    let paths_block_witnesses = if cfg!(feature = "euclidv2") {
+        [
+            path_testdata.join("1.json"),
+            path_testdata.join("2.json"),
+            path_testdata.join("3.json"),
+            path_testdata.join("4.json"),
+        ]
+    } else {
+        [
+            path_testdata.join("12508460.json"),
+            path_testdata.join("12508461.json"),
+            path_testdata.join("12508462.json"),
+            path_testdata.join("12508463.json"),
+        ]
+    };
     let read_block_witness = |path| Ok(read_json::<_, BlockWitness>(path)?);
     let chunk_task = ChunkProvingTask {
         block_witnesses: paths_block_witnesses
             .iter()
             .map(read_block_witness)
             .collect::<eyre::Result<Vec<BlockWitness>>>()?,
+        prev_msg_queue_hash: Default::default(),
     };
 
     // read chunk proof.
     let path_chunk_proof = path_testdata
         .join("proofs")
-        .join("chunk-12508460-12508463.json");
+        .join(if cfg!(feature = "euclidv2") {
+            "chunk-1-4.json"
+        } else {
+            "chunk-12508460-12508463.json"
+        });
     let chunk_proof = read_json_deep::<_, ChunkProof>(&path_chunk_proof)?;
 
-    build_batch_task(
-        &[chunk_task],
-        &[chunk_proof],
-        scroll_zkvm_circuit_input_types::batch::MAX_AGG_CHUNKS,
-        Default::default(),
-    );
+    let task = build_batch_task(&[chunk_task], &[chunk_proof], Default::default());
+
+    let chunk_infos = task
+        .chunk_proofs
+        .iter()
+        .map(|proof| proof.metadata.chunk_info.clone())
+        .collect::<Vec<_>>();
+
+    let enveloped = Envelope::from(task.blob_bytes.as_slice());
+
+    Payload::from(&enveloped).validate(&task.batch_header, &chunk_infos);
+
+    // depressed task output for pre-v2
+    #[cfg(feature = "euclidv2")]
+    write_json(path_testdata.join("batch-task-test-out.json"), &task).unwrap();
+    #[cfg(not(feature = "euclidv2"))]
+    write_json(path_testdata.join("batch-task-legacy-test-out.json"), &task).unwrap();
+    Ok(())
+}
+
+#[cfg(feature = "euclidv2")]
+#[test]
+fn test_batch_task_payload() -> eyre::Result<()> {
+    use scroll_zkvm_circuit_input_types::batch::{EnvelopeV7, PayloadV7};
+    use scroll_zkvm_prover::utils::read_json_deep;
+
+    // ./testdata/
+    let path_testdata = std::path::Path::new("testdata");
+
+    let task =
+        read_json_deep::<_, BatchProvingTask>(path_testdata.join("batch-task-test-out.json"))
+            .unwrap();
+
+    println!("blob {:?}", &task.blob_bytes[..32]);
+    let enveloped = EnvelopeV7::from(task.blob_bytes.as_slice());
+
+    let chunk_infos = task
+        .chunk_proofs
+        .iter()
+        .map(|proof| proof.metadata.chunk_info.clone())
+        .collect::<Vec<_>>();
+
+    PayloadV7::from(&enveloped).validate(&task.batch_header, &chunk_infos);
 
     Ok(())
 }

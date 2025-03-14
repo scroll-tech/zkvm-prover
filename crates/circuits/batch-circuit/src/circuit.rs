@@ -7,12 +7,34 @@ use scroll_zkvm_circuit_input_types::{
     utils::read_witnesses,
 };
 
+#[cfg(feature = "euclidv2")]
 use crate::child_commitments::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT};
+#[cfg(not(feature = "euclidv2"))]
+use crate::child_commitments_legacy::{
+    EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT,
+};
+
 #[allow(unused_imports, clippy::single_component_path_imports)]
-use openvm_keccak256_guest; // trigger extern native-keccak256
+use {
+    openvm_algebra_guest::{IntMod, field::FieldExtension},
+    openvm_ecc_guest::AffinePoint,
+    openvm_keccak256_guest, // trigger extern native-keccak256
+    openvm_pairing_guest::{
+        bls12_381::{Bls12_381, Bls12_381G1Affine, Fp, Fp2},
+        pairing::PairingCheck,
+    },
+    openvm_sha256_guest,
+};
 
 openvm_algebra_guest::moduli_macros::moduli_init! {
-    "52435875175126190479447740508185965837690552500527637822603658699938581184513"
+    "0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab",
+    "0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001"
+}
+openvm_ecc_guest::sw_macros::sw_init! {
+    Bls12_381G1Affine
+}
+openvm_algebra_complex_macros::complex_init! {
+    Bls12_381Fp2 { mod_idx = 0 },
 }
 
 pub struct BatchCircuit;
@@ -23,6 +45,9 @@ impl Circuit for BatchCircuit {
     type PublicInputs = BatchInfo;
 
     fn setup() {
+        setup_all_complex_extensions();
+        // barycentric require scalar field algebra so we setup all moduli,
+        // not `setup_0` in openvm's example
         setup_all_moduli();
     }
 

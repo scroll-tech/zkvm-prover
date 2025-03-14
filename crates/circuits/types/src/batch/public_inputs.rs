@@ -32,6 +32,12 @@ pub struct BatchInfo {
     /// The withdraw root of the last block in the last chunk in the batch.
     #[rkyv()]
     pub withdraw_root: B256,
+    /// The L1 msg queue hash at the end of the previous batch.
+    #[rkyv()]
+    pub prev_msg_queue_hash: B256,
+    /// The L1 msg queue hash at the end of the current batch.
+    #[rkyv()]
+    pub post_msg_queue_hash: B256,
 }
 
 impl From<&ArchivedBatchInfo> for BatchInfo {
@@ -43,6 +49,8 @@ impl From<&ArchivedBatchInfo> for BatchInfo {
             batch_hash: archived.batch_hash.into(),
             chain_id: archived.chain_id.into(),
             withdraw_root: archived.withdraw_root.into(),
+            prev_msg_queue_hash: archived.prev_msg_queue_hash.into(),
+            post_msg_queue_hash: archived.post_msg_queue_hash.into(),
         }
     }
 }
@@ -56,7 +64,9 @@ impl PublicInputs for BatchInfo {
     ///     state root ||
     ///     batch hash ||
     ///     chain id ||
-    ///     withdraw root
+    ///     withdraw root ||
+    ///     prev msg queue hash ||
+    ///     post msg queue hash
     /// )
     fn pi_hash(&self) -> B256 {
         keccak256(
@@ -67,6 +77,8 @@ impl PublicInputs for BatchInfo {
                 .chain(self.batch_hash.as_slice())
                 .chain(self.chain_id.to_be_bytes().as_slice())
                 .chain(self.withdraw_root.as_slice())
+                .chain(self.prev_msg_queue_hash.as_slice())
+                .chain(self.post_msg_queue_hash.as_slice())
                 .cloned()
                 .collect::<Vec<u8>>(),
         )
@@ -77,9 +89,11 @@ impl PublicInputs for BatchInfo {
     /// - chain id MUST match
     /// - state roots MUST be chained
     /// - batch hashes MUST be chained
+    /// - L1 msg queue hashes MUST be chained
     fn validate(&self, prev_pi: &Self) {
         assert_eq!(self.chain_id, prev_pi.chain_id);
         assert_eq!(self.parent_state_root, prev_pi.state_root);
         assert_eq!(self.parent_batch_hash, prev_pi.batch_hash);
+        assert_eq!(self.prev_msg_queue_hash, prev_pi.post_msg_queue_hash);
     }
 }

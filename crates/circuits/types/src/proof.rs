@@ -84,20 +84,19 @@ pub fn verify_proof(commitment: &ProgramCommitment, public_inputs: &[u32]) {
     extended_public_inputs.extend(commitment.exe);
     extended_public_inputs.extend(commitment.leaf);
     extended_public_inputs.extend_from_slice(public_inputs);
-
     // Pass through kernel and verify against root verifier's ASM.
-    exec_kernel(&extended_public_inputs);
+    exec_kernel(extended_public_inputs.as_ptr());
 }
 
-fn exec_kernel(output: &[u32]) {
-    let mut _output_ptr: *const u32 = output.as_ptr();
+fn exec_kernel(_pi_ptr: *const u32) {
+    // reserve x29, x30, x31 for kernel
     let mut _buf1: u32 = 0;
     let mut _buf2: u32 = 0;
     #[cfg(all(target_os = "zkvm", target_arch = "riscv32"))]
     unsafe {
         std::arch::asm!(
             include_str!("../../../build-guest/root_verifier.asm"),
-            inout("x29") _output_ptr,
+            in("x29") _pi_ptr,
             inout("x30") _buf1,
             inout("x31") _buf2,
         )

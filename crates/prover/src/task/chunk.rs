@@ -1,5 +1,7 @@
+use alloy_primitives::B256;
 use openvm_sdk::StdIn;
-use sbv::primitives::types::BlockWitness;
+use sbv_primitives::types::BlockWitness;
+use scroll_zkvm_circuit_input_types::chunk::ChunkWitness;
 
 use crate::task::ProvingTask;
 
@@ -14,6 +16,37 @@ const CHUNK_SANITY_MSG: &str = "chunk must have at least one block";
 pub struct ChunkProvingTask {
     /// Witnesses for every block in the chunk.
     pub block_witnesses: Vec<BlockWitness>,
+    /// The on-chain L1 msg queue hash before applying L1 msg txs from the chunk.
+    pub prev_msg_queue_hash: B256,
+}
+
+#[derive(Clone, Debug)]
+pub struct ChunkDetails {
+    pub num_blocks: usize,
+    pub num_txs: usize,
+    pub total_gas_used: u64,
+}
+
+impl ChunkProvingTask {
+    pub fn stats(&self) -> ChunkDetails {
+        let num_blocks = self.block_witnesses.len();
+        let num_txs = self
+            .block_witnesses
+            .iter()
+            .map(|b| b.transaction.len())
+            .sum::<usize>();
+        let total_gas_used = self
+            .block_witnesses
+            .iter()
+            .map(|b| b.header.gas_used)
+            .sum::<u64>();
+
+        ChunkDetails {
+            num_blocks,
+            num_txs,
+            total_gas_used,
+        }
+    }
 }
 
 impl ProvingTask for ChunkProvingTask {
@@ -37,7 +70,13 @@ impl ProvingTask for ChunkProvingTask {
     }
 
     fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error> {
-        let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&self.block_witnesses)?;
+        let witness = ChunkWitness {
+            blocks: self.block_witnesses.to_vec(),
+            prev_msg_queue_hash: self.prev_msg_queue_hash,
+        };
+
+        let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&witness)?;
+
         let mut stdin = StdIn::default();
         stdin.write_bytes(&serialized);
         Ok(stdin)

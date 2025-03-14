@@ -6,10 +6,9 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
-scroll-zkvm-circuit-input-types.workspace = true
+scroll-zkvm-circuit-input-types = { workspace = true, features = ["openvm"] }
 
 rkyv.workspace = true
-sbv = { workspace = true, features = ["openvm"] }
 
 openvm = { workspace = true, features = ["std"] }
 openvm-algebra-complex-macros = { workspace = true } 
@@ -21,5 +20,5 @@ openvm-pairing-guest = { workspace = true, features = ["bn254"] }
 openvm-rv32im-guest= {  workspace = true }
 
 [features]
-default = ["scroll"]
-scroll = ["sbv/scroll"]
+default = []
+euclidv2 = ["scroll-zkvm-circuit-input-types/euclidv2"]

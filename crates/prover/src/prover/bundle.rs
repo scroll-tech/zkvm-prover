@@ -3,10 +3,17 @@ use scroll_zkvm_circuit_input_types::{PublicInputs, bundle::BundleInfo};
 
 use crate::{
     Error, Prover, ProverType,
-    commitments::bundle::{EXE_COMMIT as BUNDLE_EXE_COMMIT, LEAF_COMMIT as BUNDLE_LEAF_COMMIT},
     proof::BundleProofMetadata,
-    setup::read_app_config,
     task::{ProvingTask, bundle::BundleProvingTask},
+};
+
+#[cfg(feature = "euclidv2")]
+use crate::commitments::bundle::{
+    EXE_COMMIT as BUNDLE_EXE_COMMIT, LEAF_COMMIT as BUNDLE_LEAF_COMMIT,
+};
+#[cfg(not(feature = "euclidv2"))]
+use crate::commitments::bundle_legacy::{
+    EXE_COMMIT as BUNDLE_EXE_COMMIT, LEAF_COMMIT as BUNDLE_LEAF_COMMIT,
 };
 
 /// Prover for [`BundleCircuit`].
@@ -19,6 +26,8 @@ impl ProverType for BundleProverType {
 
     const EVM: bool = true;
 
+    const SEGMENT_SIZE: usize = (1 << 22) - 100;
+
     const EXE_COMMIT: [u32; 8] = BUNDLE_EXE_COMMIT;
 
     const LEAF_COMMIT: [u32; 8] = BUNDLE_LEAF_COMMIT;
@@ -28,18 +37,6 @@ impl ProverType for BundleProverType {
     type ProofType = EvmProof;
 
     type ProofMetadata = BundleProofMetadata;
-
-    fn read_app_config<P: AsRef<std::path::Path>>(
-        path_app_config: P,
-    ) -> Result<openvm_sdk::config::AppConfig<openvm_sdk::config::SdkVmConfig>, Error> {
-        let mut app_config = read_app_config(path_app_config)?;
-        app_config.app_vm_config.system.config = app_config
-            .app_vm_config
-            .system
-            .config
-            .with_max_segment_len((1 << 22) - 100);
-        Ok(app_config)
-    }
 
     fn metadata_with_prechecks(task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error> {
         let err_prefix = format!("metadata_with_prechecks for task_id={}", task.identifier());
@@ -84,9 +81,11 @@ impl ProverType for BundleProverType {
         let post_state_root = last_batch.state_root;
         let batch_hash = last_batch.batch_hash;
         let withdraw_root = last_batch.withdraw_root;
+        let msg_queue_hash = last_batch.post_msg_queue_hash;
 
         let bundle_info = BundleInfo {
             chain_id,
+            msg_queue_hash,
             num_batches,
             prev_state_root,
             prev_batch_hash,

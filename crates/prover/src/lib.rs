@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 #[rustfmt::skip]
 mod commitments;
 

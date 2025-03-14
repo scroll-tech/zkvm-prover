@@ -4,12 +4,8 @@ use std::{
     sync::Arc,
 };
 
-use metrics_util::{MetricKind, debugging::DebugValue};
-use once_cell::sync::OnceCell;
-use openvm_circuit::{
-    arch::{SingleSegmentVmExecutor, VmExecutor, VmExecutorResult},
-    system::{memory::tree::public_values::extract_public_values, program::trace::VmCommittedExe},
-};
+use once_cell::sync::Lazy;
+use openvm_circuit::{arch::SingleSegmentVmExecutor, system::program::trace::VmCommittedExe};
 use openvm_native_recursion::{
     halo2::{
         EvmProof,
@@ -18,21 +14,21 @@ use openvm_native_recursion::{
     },
     hints::Hintable,
 };
+pub use openvm_sdk::{self, F, SC};
 use openvm_sdk::{
-    F, NonRootCommittedExe, Sdk, StdIn,
+    NonRootCommittedExe, Sdk, StdIn,
     commit::AppExecutionCommit,
-    config::{AggConfig, AggStarkConfig, AppConfig, SdkVmConfig},
+    config::{AggConfig, AggStarkConfig, SdkVmConfig},
     keygen::{AggStarkProvingKey, AppProvingKey, RootVerifierProvingKey},
-    prover::ContinuationProver,
+    prover::{AggStarkProver, AppProver, ContinuationProver},
 };
-use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Config;
 use serde::{Serialize, de::DeserializeOwned};
 use tracing::{debug, instrument};
 
 use crate::{
     Error, WrappedProof,
     proof::RootProof,
-    setup::read_app_exe,
+    setup::{read_app_config, read_app_exe},
     task::{ProvingTask, flatten_wrapped_proof},
 };
 
@@ -44,10 +40,10 @@ pub use bundle::{BundleProver, BundleProverType};
 
 mod chunk;
 pub use chunk::{ChunkProver, ChunkProverType};
-
 /// Proving key for STARK aggregation. Primarily used to aggregate
 /// [continuation proofs][openvm_sdk::prover::vm::ContinuationVmProof].
-static AGG_STARK_PROVING_KEY: OnceCell<AggStarkProvingKey> = OnceCell::new();
+static AGG_STARK_PROVING_KEY: Lazy<AggStarkProvingKey> =
+    Lazy::new(|| AggStarkProvingKey::keygen(AggStarkConfig::default()));
 
 /// The default directory to locate openvm's halo2 SRS parameters.
 const DEFAULT_PARAMS_DIR: &str = concat!(env!("HOME"), "/.openvm/params/");
@@ -84,18 +80,16 @@ pub struct Prover<Type> {
 }
 
 /// Alias for convenience.
-pub type ProgramCommitments = [[u32; 8]; 2];
-type InitRes = Result<
-    (
-        Arc<VmCommittedExe<SC>>,
-        Arc<AppProvingKey<SdkVmConfig>>,
-        ProgramCommitments,
-    ),
-    Error,
->;
+type InitRes = (
+    Arc<VmCommittedExe<SC>>,
+    Arc<AppProvingKey<SdkVmConfig>>,
+    AppExecutionCommit<F>,
+);
 
-/// Alias for convenience.
-pub type SC = BabyBearPoseidon2Config;
+#[derive(Debug, Clone, Default)]
+pub struct ProverConfig {
+    pub segment_len: Option<usize>,
+}
 
 impl<Type: ProverType> Prover<Type> {
     /// Setup the [`Prover`] given paths to the application's exe and proving key.
@@ -104,8 +98,10 @@ impl<Type: ProverType> Prover<Type> {
         path_exe: P,
         path_app_config: P,
         cache_dir: Option<P>,
+        prover_config: ProverConfig,
     ) -> Result<Self, Error> {
-        let (app_committed_exe, app_pk, _) = Self::init(&path_exe, &path_app_config)?;
+        let (app_committed_exe, app_pk, _) =
+            Self::init(&path_exe, &path_app_config, prover_config)?;
 
         let evm_prover = Type::EVM
             .then(|| {
@@ -169,11 +165,58 @@ impl<Type: ProverType> Prover<Type> {
         })
     }
 
+    fn get_verify_program_commitment(
+        app_committed_exe: &NonRootCommittedExe,
+        app_pk: &AppProvingKey<SdkVmConfig>,
+        debug_out: bool,
+    ) -> (AppExecutionCommit<F>, [[u32; 8]; 2]) {
+        use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
+        let commits = AppExecutionCommit::compute(
+            &app_pk.app_vm_pk.vm_config,
+            app_committed_exe,
+            &app_pk.leaf_committed_exe,
+        );
+
+        let exe_commit = commits.exe_commit.map(|x| x.as_canonical_u32());
+        let leaf_commit = commits
+            .leaf_vm_verifier_commit
+            .map(|x| x.as_canonical_u32());
+
+        // print the 2 exe commitments
+        if debug_out {
+            debug!(name: "exe-commitment", prover_name = Type::NAME, raw = ?exe_commit, as_bn254 = ?commits.exe_commit_to_bn254());
+            debug!(name: "leaf-commitment", prover_name = Type::NAME, raw = ?leaf_commit, as_bn254 = ?commits.app_config_commit_to_bn254());
+        }
+
+        assert_eq!(
+            exe_commit,
+            Type::EXE_COMMIT,
+            "read unmatched exe commitment from app"
+        );
+        assert_eq!(
+            leaf_commit,
+            Type::LEAF_COMMIT,
+            "read unmatched app commitment from app"
+        );
+        (commits, [exe_commit, leaf_commit])
+    }
+
     /// Read app exe, proving key and return committed data.
     #[instrument("Prover::init", fields(path_exe, path_app_config))]
-    pub fn init<P: AsRef<Path>>(path_exe: P, path_app_config: P) -> InitRes {
+    pub fn init<P: AsRef<Path>>(
+        path_exe: P,
+        path_app_config: P,
+        prover_config: ProverConfig,
+    ) -> Result<InitRes, Error> {
         let app_exe = read_app_exe(path_exe)?;
-        let app_config = Type::read_app_config(path_app_config)?;
+        let mut app_config = read_app_config(path_app_config)?;
+        let segment_len = prover_config.segment_len.unwrap_or(Type::SEGMENT_SIZE);
+        app_config.app_vm_config.system.config = app_config
+            .app_vm_config
+            .system
+            .config
+            .with_max_segment_len(segment_len);
+
         let app_pk = Sdk
             .app_keygen(app_config)
             .map_err(|e| Error::Keygen(e.to_string()))?;
@@ -181,27 +224,9 @@ impl<Type: ProverType> Prover<Type> {
             .commit_app_exe(app_pk.app_fri_params(), app_exe)
             .map_err(|e| Error::Commit(e.to_string()))?;
 
-        // print the 2 exe commitments
-        use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
-        let commits = AppExecutionCommit::compute(
-            &app_pk.app_vm_pk.vm_config,
-            &app_committed_exe,
-            &app_pk.leaf_committed_exe,
-        );
-        let exe_commit = commits.exe_commit.map(|x| x.as_canonical_u32());
-        let leaf_commit = commits
-            .leaf_vm_verifier_commit
-            .map(|x| x.as_canonical_u32());
-        debug!(name: "exe-commitment", prover_name = Type::NAME, raw = ?exe_commit, as_bn254 = ?commits.exe_commit_to_bn254());
-        debug!(name: "leaf-commitment", prover_name = Type::NAME, raw = ?leaf_commit, as_bn254 = ?commits.app_config_commit_to_bn254());
+        let (commits, _) = Self::get_verify_program_commitment(&app_committed_exe, &app_pk, true);
 
-        let _agg_stark_pk = AGG_STARK_PROVING_KEY
-            .get_or_init(|| AggStarkProvingKey::keygen(AggStarkConfig::default()));
-
-        Ok((app_committed_exe, Arc::new(app_pk), [
-            exe_commit,
-            leaf_commit,
-        ]))
+        Ok((app_committed_exe, Arc::new(app_pk), commits))
     }
 
     /// Dump assets required to setup verifier-only mode.
@@ -211,11 +236,7 @@ impl<Type: ProverType> Prover<Type> {
                 "dump_verifier only at bundle-prover".to_string(),
             ));
         };
-
-        let agg_stark_pk = AGG_STARK_PROVING_KEY.get().ok_or(Error::Custom(
-            "AGG_STARK_PROVING_KEY is not setup".to_string(),
-        ))?;
-        let root_verifier_pk = &agg_stark_pk.root_verifier_pk;
+        let root_verifier_pk = &AGG_STARK_PROVING_KEY.root_verifier_pk;
         let vm_config = root_verifier_pk.vm_pk.vm_config.clone();
         let root_committed_exe: &VmCommittedExe<_> = &root_verifier_pk.root_committed_exe;
 
@@ -230,24 +251,10 @@ impl<Type: ProverType> Prover<Type> {
 
     /// Pick up app commit as "vk" in proof, to distinguish from which circuit the proof comes
     pub fn get_app_vk(&self) -> Vec<u8> {
-        use openvm_sdk::commit::AppExecutionCommit;
-        use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
-        use scroll_zkvm_circuit_input_types::proof::ProgramCommitment;
+        let (_, [exe, leaf]) =
+            Self::get_verify_program_commitment(&self.app_committed_exe, &self.app_pk, false);
 
-        let app_pk = &self.app_pk;
-
-        let commits = AppExecutionCommit::compute(
-            &app_pk.app_vm_pk.vm_config,
-            &self.app_committed_exe,
-            &app_pk.leaf_committed_exe,
-        );
-
-        let exe = commits.exe_commit.map(|v| v.as_canonical_u32());
-        let leaf = commits
-            .leaf_vm_verifier_commit
-            .map(|v| v.as_canonical_u32());
-
-        ProgramCommitment { exe, leaf }.serialize()
+        scroll_zkvm_circuit_input_types::proof::ProgramCommitment { exe, leaf }.serialize()
     }
 
     /// Pick up the actual vk (serialized) for evm proof, would be empty if prover
@@ -263,7 +270,7 @@ impl<Type: ProverType> Prover<Type> {
 
     /// Early-return if a proof is found in disc, otherwise generate and return the proof after
     /// writing to disc.
-    #[instrument("Prover::gen_proof", skip_all, fields(task_id))]
+    #[instrument("Prover::gen_proof", skip_all, fields(task_id, prover_name = Type::NAME))]
     pub fn gen_proof(
         &self,
         task: &Type::ProvingTask,
@@ -346,11 +353,7 @@ impl<Type: ProverType> Prover<Type> {
     /// [root_proof][RootProof]
     #[instrument("Prover::verify_proof", skip_all, fields(?metadata = proof.metadata))]
     pub fn verify_proof(&self, proof: &WrappedProof<Type::ProofMetadata>) -> Result<(), Error> {
-        let agg_stark_pk = AGG_STARK_PROVING_KEY
-            .get()
-            .ok_or(Error::VerifyProof(String::from(
-                "agg stark pk not initialized! Prover::setup",
-            )))?;
+        let agg_stark_pk = &AGG_STARK_PROVING_KEY;
 
         let root_verifier_pk = &agg_stark_pk.root_verifier_pk;
         let vm_executor = SingleSegmentVmExecutor::new(root_verifier_pk.vm_pk.vm_config.clone());
@@ -390,15 +393,29 @@ impl<Type: ProverType> Prover<Type> {
         let evm_proof = proof.proof.as_evm_proof().ok_or(Error::VerifyProof(
             "verify_proof_evm expects EvmProof".to_string(),
         ))?;
-        let gas_cost = scroll_zkvm_verifier::evm::verify_evm_proof(
-            &self.evm_prover.as_ref().expect("").verifier_contract,
-            &evm_proof,
-        )
-        .map_err(|e| Error::VerifyProof(format!("EVM-proof verification failed: {e}")))?;
+        let contract = &self
+            .evm_prover
+            .as_ref()
+            .expect("uninited")
+            .verifier_contract;
+        let gas_cost = scroll_zkvm_verifier::evm::verify_evm_proof(contract, &evm_proof)
+            .map_err(|e| Error::VerifyProof(format!("EVM-proof verification failed: {e}")))?;
 
         tracing::info!(name: "verify_evm_proof", ?gas_cost);
 
         Ok(())
+    }
+
+    /// Execute the guest program to get the cycle count.
+    pub fn execute_and_check(&self, stdin: &StdIn, mock_prove: bool) -> Result<u64, Error> {
+        let config = self.app_pk.app_vm_pk.vm_config.clone();
+        let exe = self.app_committed_exe.exe.clone();
+        let debug_input = crate::utils::vm::DebugInput {
+            mock_prove,
+            commited_exe: mock_prove.then(|| self.app_committed_exe.clone()),
+        };
+        let exec_result = crate::utils::vm::execute_guest(config, exe, stdin, &debug_input)?;
+        Ok(exec_result.total_cycle as u64)
     }
 
     /// File descriptor for the proof saved to disc.
@@ -412,148 +429,34 @@ impl<Type: ProverType> Prover<Type> {
     ///
     /// [root_proof][openvm_sdk::verifier::root::types::RootVmVerifierInput]
     fn gen_proof_stark(&self, task: &Type::ProvingTask) -> Result<RootProof, Error> {
-        let agg_stark_pk = AGG_STARK_PROVING_KEY
-            .get()
-            .ok_or(Error::GenProof(String::from(
-                "agg stark pk not initialized! Prover::setup",
-            )))?;
-
         let stdin = task
             .build_guest_input()
             .map_err(|e| Error::GenProof(e.to_string()))?;
 
-        if let Some((_cycle_count, executor_result)) = self.execute_guest(&stdin)? {
-            self.mock_prove_if_needed(executor_result)?;
-        }
+        let mock_prove = std::env::var("MOCK_PROVE").as_deref() == Ok("true");
+        // Here we always do an execution of the guest program to get the cycle count.
+        // and do precheck before proving like ensure PI != 0
+        self.execute_and_check(&stdin, mock_prove)?;
 
         let task_id = task.identifier();
 
+        // sanity check
+        let _ = Self::get_verify_program_commitment(&self.app_committed_exe, &self.app_pk, false);
+
         tracing::debug!(name: "generate_root_verifier_input", ?task_id);
-        Sdk.generate_root_verifier_input(
-            Arc::clone(&self.app_pk),
-            Arc::clone(&self.app_committed_exe),
-            agg_stark_pk.clone(),
-            stdin,
-        )
-        .map_err(|e| Error::GenProof(e.to_string()))
-    }
-
-    /// Execute the guest program to get the cycle count.
-    ///
-    /// Runs only if the GUEST_PROFILING environment variable has been set to "true".
-    fn execute_guest(&self, stdin: &StdIn) -> Result<Option<(u64, VmExecutorResult<SC>)>, Error> {
-        use openvm_circuit::arch::VmConfig;
-        use openvm_stark_sdk::openvm_stark_backend::p3_field::Field;
-
-        if std::env::var("GUEST_PROFILING").as_deref() != Ok("true") {
-            return Ok(None);
-        }
-
-        let config = self.app_pk.app_vm_pk.vm_config.clone();
-        let system_config = <SdkVmConfig as VmConfig<F>>::system(&config);
-        let vm = VmExecutor::new(config.clone());
-
-        let mut segments = vm
-            .execute_segments(self.app_committed_exe.exe.clone(), stdin.clone())
-            .map_err(|e| Error::GenProof(e.to_string()))?;
-        let final_memory = std::mem::take(&mut segments.last_mut().unwrap().final_memory);
-        let mut metric_snapshots = vec![];
-        let executor_result = VmExecutorResult {
-            per_segment: segments
-                .into_iter()
-                .map(|seg| {
-                    let recorder = metrics_util::debugging::DebuggingRecorder::new();
-                    let snapshotter = recorder.snapshotter();
-                    let seg_proof_input = metrics::with_local_recorder(&recorder, || {
-                        seg.generate_proof_input(Some(
-                            self.app_committed_exe.committed_program.clone(),
-                        ))
-                    });
-                    metric_snapshots.push(snapshotter.snapshot());
-                    seg_proof_input
-                })
-                .collect(),
-            final_memory,
-        };
-
-        tracing::debug!(name: "segment length", segment_len = executor_result.per_segment.len());
-
-        // extract and check public values
-        let final_memory = executor_result.final_memory.as_ref().unwrap();
-        let public_values: Vec<F> = extract_public_values(
-            &system_config.memory_config.memory_dimensions(),
-            system_config.num_public_values,
-            final_memory,
+        let app_prover = AppProver::new(
+            self.app_pk.app_vm_pk.clone(),
+            self.app_committed_exe.clone(),
         );
-        tracing::debug!(name: "public_values after guest execution", ?public_values);
-        if public_values.iter().all(|x| x.is_zero()) {
-            return Err(Error::GenProof("public_values are all 0s".to_string()));
-        }
-
-        let mut counter_sum = std::collections::HashMap::<String, u64>::new();
-        for (idx, metric_snapshot) in metric_snapshots.into_iter().enumerate() {
-            let metrics = metric_snapshot.into_vec();
-            for (ckey, _, _, value) in metrics {
-                match ckey.kind() {
-                    MetricKind::Gauge => {}
-                    MetricKind::Counter => {
-                        let value = match value {
-                            DebugValue::Counter(v) => v,
-                            _ => panic!("unexpected value type"),
-                        };
-                        tracing::debug!(
-                            "metric of segment {}: {}=>{}",
-                            idx,
-                            ckey.key().name(),
-                            value
-                        );
-                        // add to `counter_sum`
-                        let counter_name = ckey.key().name().to_string();
-                        let counter_value = counter_sum.entry(counter_name).or_insert(0);
-                        *counter_value += value;
-                    }
-                    MetricKind::Histogram => {}
-                }
-            }
-        }
-        for (name, value) in counter_sum.iter() {
-            tracing::debug!("metric of all segments: {}=>{}", name, value);
-        }
-
-        let total_cycle = counter_sum.get("total_cycles").cloned().unwrap_or(0);
-        Ok(Some((total_cycle, executor_result)))
-    }
-
-    /// Runs only if the MOCK_PROVE environment variable has been set to "true".
-    fn mock_prove_if_needed(&self, result: VmExecutorResult<SC>) -> Result<(), Error> {
-        use openvm_circuit::arch::VmConfig;
-        use openvm_stark_sdk::{
-            config::baby_bear_poseidon2::BabyBearPoseidon2Engine, engine::StarkFriEngine,
-        };
-
-        if std::env::var("MOCK_PROVE").as_deref() != Ok("true") {
-            return Ok(());
-        }
-
-        let engine = BabyBearPoseidon2Engine::new(self.app_pk.app_vm_pk.fri_params);
-        let airs = self
-            .app_pk
-            .app_vm_pk
-            .vm_config
-            .create_chip_complex()
-            .unwrap()
-            .airs();
-
-        for result in result.per_segment {
-            let (used_airs, per_air) = result
-                .per_air
-                .into_iter()
-                .map(|(air_id, x)| (airs[air_id].clone(), x))
-                .unzip();
-            engine.run_test(used_airs, per_air).unwrap();
-        }
-
-        Ok(())
+        // TODO: should we cache the app_proof?
+        let app_proof = app_prover.generate_app_proof(stdin);
+        tracing::info!("app proof generated for {} task {task_id}", Type::NAME);
+        let agg_prover = AggStarkProver::new(
+            AGG_STARK_PROVING_KEY.clone(),
+            self.app_pk.leaf_committed_exe.clone(),
+        );
+        let proof = agg_prover.generate_root_verifier_input(app_proof);
+        Ok(proof)
     }
 
     /// Generate an [evm proof][evm_proof].
@@ -564,12 +467,26 @@ impl<Type: ProverType> Prover<Type> {
             .build_guest_input()
             .map_err(|e| Error::GenProof(e.to_string()))?;
 
-        Ok(self
+        let evm_proof = self
             .evm_prover
             .as_ref()
             .expect("Prover::gen_proof_snark expects EVM-prover setup")
             .continuation_prover
-            .generate_proof_for_evm(stdin))
+            .generate_proof_for_evm(stdin);
+
+        // sanity check
+        assert_eq!(
+            evm_proof.instances[0][12],
+            crate::utils::compress_commitment(&Type::EXE_COMMIT),
+            "commitment is not match in generate evm proof",
+        );
+        assert_eq!(
+            evm_proof.instances[0][13],
+            crate::utils::compress_commitment(&Type::LEAF_COMMIT),
+            "commitment is not match in generate evm proof",
+        );
+
+        Ok(evm_proof)
     }
 }
 
@@ -581,6 +498,9 @@ pub trait ProverType {
     /// Whether this prover generates SNARKs that are EVM-verifiable. In our context, only the
     /// [`BundleProver`] has the EVM set to `true`.
     const EVM: bool;
+
+    /// The size of a segment, i.e. the max height of its chips.
+    const SEGMENT_SIZE: usize;
 
     /// The app program's exe commitment.
     const EXE_COMMIT: [u32; 8];
@@ -599,10 +519,6 @@ pub trait ProverType {
 
     /// The metadata accompanying the wrapper proof generated by this prover.
     type ProofMetadata: Serialize + DeserializeOwned + std::fmt::Debug;
-
-    /// Read the app config from the given path.
-    fn read_app_config<P: AsRef<Path>>(path_app_config: P)
-    -> Result<AppConfig<SdkVmConfig>, Error>;
 
     /// Provided the proving task, computes the proof metadata.
     fn metadata_with_prechecks(task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error>;

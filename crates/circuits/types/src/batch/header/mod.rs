@@ -2,6 +2,8 @@ use alloy_primitives::B256;
 
 pub mod v3;
 
+pub mod v7;
+
 pub trait BatchHeader {
     /// The DA-codec version for the batch header.
     fn version(&self) -> u8;
@@ -23,4 +25,6 @@ pub trait BatchHeader {
 pub enum ReferenceHeader {
     /// Represents DA-codec v3.
     V3(v3::BatchHeaderV3),
+    /// Represents DA-codec v7.
+    V7(v7::BatchHeaderV7),
 }
