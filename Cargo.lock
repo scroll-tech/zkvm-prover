@@ -5962,10 +5962,12 @@ version = "0.1.0-rc.5"
 dependencies = [
  "bincode",
  "eyre",
+ "itertools 0.14.0",
  "openvm-circuit",
  "openvm-native-circuit",
  "openvm-native-recursion",
  "openvm-sdk",
+ "openvm-stark-sdk",
  "revm 19.6.0",
  "scroll-zkvm-circuit-input-types",
  "scroll-zkvm-prover",
