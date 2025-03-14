@@ -30,7 +30,7 @@ fn exec_chunk(task: &ChunkProvingTask) -> eyre::Result<(ExecutionResult, u64)> {
     println!(
         "blk {blk}, cycle {cycle_count}, gas {}, cycle-per-gas {cycle_per_gas}, tick-per-gas {}",
         stats.total_gas_used,
-        exec_result.final_ts as u64 / stats.total_gas_used,
+        exec_result.total_tick as u64 / stats.total_gas_used,
     );
     Ok((exec_result, stats.total_gas_used))
 }
@@ -87,7 +87,7 @@ fn test_execute_multi() -> eyre::Result<()> {
                 (
                     gas,
                     exec_result.total_cycle as u64,
-                    exec_result.final_ts as u64,
+                    exec_result.total_tick as u64,
                 )
             })
             .reduce(
