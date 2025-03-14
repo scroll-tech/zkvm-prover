@@ -26,7 +26,7 @@ impl ProverTester for ChunkProverTester {
     /// [block-12508460, block-12508461, block-12508462, block-12508463]
     fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask> {
         Ok(ChunkProvingTask {
-            block_witnesses: (12508460usize..=12508463)
+            block_witnesses: (10319970..=10319974)
                 .map(read_block_witness)
                 .collect::<eyre::Result<Vec<BlockWitness>>>()?,
         })

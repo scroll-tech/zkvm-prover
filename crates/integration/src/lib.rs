@@ -63,7 +63,7 @@ pub trait ProverTester {
     /// Setup directory structure for the test suite.
     fn setup() -> eyre::Result<()> {
         // Setup tracing subscriber.
-        setup_logger()?;
+        // setup_logger()?;
 
         // If user has set an output directory, use it.
         let dir_testrun = if let Ok(env_dir) = std::env::var(ENV_OUTPUT_DIR) {
@@ -200,6 +200,7 @@ impl<T: Clone, P: Clone> ProveVerifyOutcome<T, P> {
 }
 
 /// Setup test environment
+#[allow(dead_code)]
 fn setup_logger() -> eyre::Result<()> {
     let fmt_layer = tracing_subscriber::fmt::layer()
         .pretty()
