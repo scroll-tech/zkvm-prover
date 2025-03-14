@@ -1,6 +1,6 @@
 use std::{fs::File, path::Path};
 
-use sbv::primitives::{B256, types::BlockWitness};
+use sbv_primitives::{B256, types::BlockWitness};
 use scroll_zkvm_prover::{ChunkProverType, ProverType, task::chunk::ChunkProvingTask};
 
 use crate::{ProverTester, testers::PATH_TESTDATA};

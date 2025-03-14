@@ -23,7 +23,7 @@ impl ProverType for BatchProverType {
 
     const EVM: bool = false;
 
-    const SEGMENT_SIZE: usize = 8388508 * 2;
+    const SEGMENT_SIZE: usize = (1 << 22) - 100;
 
     const EXE_COMMIT: [u32; 8] = BATCH_EXE_COMMIT;
 

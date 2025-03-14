@@ -1,5 +1,5 @@
 use alloy_primitives::B256;
-use sbv::primitives::types::BlockWitness;
+use sbv_primitives::types::BlockWitness;
 use std::collections::HashSet;
 
 /// The witness type accepted by the chunk-circuit.

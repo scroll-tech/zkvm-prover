@@ -9,8 +9,6 @@ version.workspace = true
 scroll-zkvm-circuit-input-types = { workspace = true, features = ["openvm"] }
 
 rkyv.workspace = true
-bincode.workspace = true
-#sbv = { workspace = true, features = ["openvm"] }
 
 openvm = { workspace = true, features = ["std"] }
 openvm-algebra-complex-macros = { workspace = true } 
