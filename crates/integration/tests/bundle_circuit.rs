@@ -2,7 +2,7 @@ use sbv_primitives::B256;
 use scroll_zkvm_integration::{
     ProverTester, prove_verify_multi, prove_verify_single_evm,
     testers::{
-        batch::MultiBatchProverTester,
+        batch::BatchProverTester,
         bundle::{BundleLocalTaskTester, BundleProverTester},
         chunk::MultiChunkProverTester,
     },
@@ -108,8 +108,7 @@ fn e2e() -> eyre::Result<()> {
     );
     let batch_task_example = batch_task_1.clone();
 
-    let outcome =
-        prove_verify_multi::<MultiBatchProverTester>(Some(&[batch_task_1, batch_task_2]))?;
+    let outcome = prove_verify_multi::<BatchProverTester>(Some(&[batch_task_1, batch_task_2]))?;
 
     let fork_name = if cfg!(feature = "euclidv2") {
         Some(String::from("euclidv2"))

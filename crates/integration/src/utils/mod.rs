@@ -45,8 +45,8 @@ fn blks_tx_bytes<'a>(blks: impl Iterator<Item = &'a BlockWitness>) -> Vec<u8> {
         })
 }
 
-pub fn phase_base_directory() -> &'static str{
-    if cfg!(feature="euclidv2"){
+pub fn phase_base_directory() -> &'static str {
+    if cfg!(feature = "euclidv2") {
         "phase2"
     } else {
         "phase1"

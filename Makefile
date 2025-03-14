@@ -66,9 +66,6 @@ test-multi-chunk:
 test-single-batch:
 	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test batch_circuit setup_prove_verify_single -- --exact --nocapture
 
-test-multi-batch:
-	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test batch_circuit setup_prove_verify_multi -- --exact --nocapture
-
 test-e2e-batch:
 	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test batch_circuit e2e -- --exact --nocapture
 

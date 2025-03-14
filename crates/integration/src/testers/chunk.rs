@@ -12,9 +12,9 @@ use crate::{ProverTester, testers::PATH_TESTDATA, utils::phase_base_directory};
 pub fn read_block_witness_from_testdata(block_n: usize) -> eyre::Result<BlockWitness> {
     read_block_witness(
         &Path::new(PATH_TESTDATA)
-        .join(phase_base_directory())
-        .join("witnesses")
-        .join(format!("{}.json", block_n))
+            .join(phase_base_directory())
+            .join("witnesses")
+            .join(format!("{}.json", block_n)),
     )
 }
 
@@ -47,7 +47,12 @@ impl ProverTester for ChunkProverTester {
                 let blocks = 1usize..=4usize;
                 blocks
                     .into_iter()
-                    .map(|blk| Path::new(PATH_TESTDATA).join(format!("{}.json", blk)))
+                    .map(|block_n| {
+                        Path::new(PATH_TESTDATA)
+                            .join(phase_base_directory())
+                            .join("witnesses")
+                            .join(format!("{}.json", block_n))
+                    })
                     .collect()
             }
         };
@@ -99,7 +104,10 @@ impl ProverTester for MultiChunkProverTester {
                         block_group
                             .into_iter()
                             .map(|block_n| {
-                                Path::new(PATH_TESTDATA).join(format!("{}.json", block_n))
+                                Path::new(PATH_TESTDATA)
+                                    .join(phase_base_directory())
+                                    .join("witnesses")
+                                    .join(format!("{}.json", block_n))
                             })
                             .collect()
                     })
