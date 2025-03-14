@@ -1,14 +1,12 @@
-use sbv::{
-    kv::nohash::NoHashMap,
-    primitives::{B256, BlockWitness, Bytes, ext::BlockWitnessExt},
-    trie::{BlockWitnessTrieExt, TrieNode},
-};
+use sbv_kv::nohash::NoHashMap;
+use sbv_primitives::{B256, BlockWitness, Bytes, ext::BlockWitnessExt};
+use sbv_trie::{BlockWitnessTrieExt, TrieNode};
 
 type CodeDb = NoHashMap<B256, Bytes>;
 
 type NodesProvider = NoHashMap<B256, TrieNode>;
 
-type BlockHashProvider = sbv::kv::null::NullProvider;
+type BlockHashProvider = sbv_kv::null::NullProvider;
 
 pub fn make_providers<W: BlockWitness>(
     witnesses: &[W],
@@ -28,7 +26,7 @@ pub fn make_providers<W: BlockWitness>(
         witnesses.import_nodes(&mut nodes_provider).unwrap();
         nodes_provider
     };
-    let block_hashes = sbv::kv::null::NullProvider;
+    let block_hashes = sbv_kv::null::NullProvider;
 
     (code_db, nodes_provider, block_hashes)
 }

@@ -27,7 +27,7 @@ pub fn build(project_root: &str) -> eyre::Result<Elf> {
     #[cfg(feature = "euclidv2")]
     let guest_opts = guest_opts.with_features(["euclidv2"]);
     let guest_opts = guest_opts.with_profile("maxperf".to_string());
-    Ok(Sdk.build(guest_opts, project_root, &Default::default())?)
+    Sdk.build(guest_opts, project_root, &Default::default())
 }
 
 /// Transpile the ELF into a VmExe.
