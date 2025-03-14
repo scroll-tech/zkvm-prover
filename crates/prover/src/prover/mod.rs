@@ -176,7 +176,7 @@ impl<Type: ProverType> Prover<Type> {
         app_committed_exe: &NonRootCommittedExe,
         app_pk: &AppProvingKey<SdkVmConfig>,
         debug_out: bool,
-    ) -> [[u32; 8]; 2] {
+    ) -> (AppExecutionCommit<F>, [[u32; 8]; 2]) {
         use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
         let commits = AppExecutionCommit::compute(
             &app_pk.app_vm_pk.vm_config,
@@ -206,7 +206,7 @@ impl<Type: ProverType> Prover<Type> {
             );
         }
 
-        [exe_commit, leaf_commit]
+        (commits, [exe_commit, leaf_commit])
     }
 
     /// Read app exe, proving key and return committed data.
@@ -232,13 +232,9 @@ impl<Type: ProverType> Prover<Type> {
             .commit_app_exe(app_pk.app_fri_params(), app_exe)
             .map_err(|e| Error::Commit(e.to_string()))?;
 
-        let [exe_commit, leaf_commit] =
-            Self::get_verify_program_commitment(&app_committed_exe, &app_pk, true);
+        let (commits, _) = Self::get_verify_program_commitment(&app_committed_exe, &app_pk, true);
 
-        Ok((app_committed_exe, Arc::new(app_pk), [
-            exe_commit,
-            leaf_commit,
-        ]))
+        Ok((app_committed_exe, Arc::new(app_pk), commits))
     }
 
     /// Dump assets required to setup verifier-only mode.
@@ -263,7 +259,7 @@ impl<Type: ProverType> Prover<Type> {
 
     /// Pick up app commit as "vk" in proof, to distinguish from which circuit the proof comes
     pub fn get_app_vk(&self) -> Vec<u8> {
-        let [exe, leaf] =
+        let (_, [exe, leaf]) =
             Self::get_verify_program_commitment(&self.app_committed_exe, &self.app_pk, false);
 
         scroll_zkvm_circuit_input_types::proof::ProgramCommitment { exe, leaf }.serialize()
@@ -529,11 +525,7 @@ impl<Type: ProverType> Prover<Type> {
         let task_id = task.identifier();
 
         // sanity check
-        let _ = Self::get_verify_program_commitment(
-            &self.app_committed_exe,
-            &self.app_pk,
-            false,
-        );
+        let _ = Self::get_verify_program_commitment(&self.app_committed_exe, &self.app_pk, false);
 
         tracing::debug!(name: "generate_root_verifier_input", ?task_id);
         Sdk.generate_root_verifier_input(
