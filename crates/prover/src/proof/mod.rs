@@ -3,7 +3,7 @@ use std::path::Path;
 use openvm_native_recursion::halo2::EvmProof as OpenVmEvmProof;
 use openvm_sdk::verifier::root::types::RootVmVerifierInput;
 use openvm_stark_sdk::{openvm_stark_backend::proof::Proof, p3_baby_bear::BabyBear};
-use sbv_primitives::B256;
+use sbv::primitives::B256;
 use scroll_zkvm_circuit_input_types::{batch::BatchInfo, bundle::BundleInfo, chunk::ChunkInfo};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use snark_verifier_sdk::snark_verifier::{

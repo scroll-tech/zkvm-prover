@@ -1,31 +1,110 @@
 use scroll_zkvm_integration::{
     ProverTester, prove_verify_multi, prove_verify_single,
-    testers::chunk::{ChunkProverTester, MultiChunkProverTester},
+    testers::chunk::{ChunkProverTester, MultiChunkProverTester, read_block_witness_from_testdata},
 };
-use scroll_zkvm_prover::task::ProvingTask;
+use scroll_zkvm_prover::{
+    ChunkProverType, ProverType,
+    setup::read_app_exe,
+    task::{ProvingTask, chunk::ChunkProvingTask},
+    utils::{self, vm::ExecutionResult},
+};
+
+fn exec_chunk(task: &ChunkProvingTask) -> eyre::Result<(ExecutionResult, u64)> {
+    let (_path_app_config, app_config, path_exe) = ChunkProverTester::load()?;
+    let config = app_config.app_vm_config;
+    let app_exe = read_app_exe(path_exe)?;
+
+    let blk = task.block_witnesses[0].header.number;
+    println!(
+        "task block num: {}, block[0] idx: {}",
+        task.block_witnesses.len(),
+        blk
+    );
+    let stats = task.stats();
+    println!("chunk stats {:#?}", stats);
+    ChunkProverType::metadata_with_prechecks(&task)?;
+    let stdin = task.build_guest_input()?;
+    let exec_result = utils::vm::execute_guest(config, app_exe, &stdin, &Default::default())?;
+    let cycle_count = exec_result.total_cycle as u64;
+    let cycle_per_gas = cycle_count / stats.total_gas_used;
+    println!(
+        "blk {blk}, cycle {cycle_count}, gas {}, cycle-per-gas {cycle_per_gas}, tick-per-gas {}",
+        stats.total_gas_used,
+        exec_result.final_ts as u64 / stats.total_gas_used,
+    );
+    Ok((exec_result, stats.total_gas_used))
+}
+
+#[test]
+fn test_cycle() -> eyre::Result<()> {
+    ChunkProverTester::setup()?;
+
+    // use rayon::prelude::*;
+
+    let blocks = 1..=8;
+    blocks.into_iter().try_for_each(|blk| -> eyre::Result<()> {
+        let task = ChunkProvingTask {
+            block_witnesses: vec![read_block_witness_from_testdata(blk)?],
+            prev_msg_queue_hash: Default::default(),
+        };
+        let (exec_result, gas) = exec_chunk(&task)?;
+        let cycle_per_gas = exec_result.total_cycle as u64 / gas;
+        assert!(cycle_per_gas < 30);
+        Ok(())
+    })?;
+    Ok(())
+}
 
 #[test]
 fn test_execute() -> eyre::Result<()> {
-    MultiChunkProverTester::setup()?;
+    ChunkProverTester::setup()?;
 
-    let (_, app_config, exe_path) = MultiChunkProverTester::load()?;
-
-    for task in MultiChunkProverTester::gen_multi_proving_tasks()? {
-        MultiChunkProverTester::execute(app_config.clone(), &task, exe_path.clone())?;
-    }
+    let task = ChunkProverTester::gen_proving_task()?;
+    exec_chunk(&task)?;
 
     Ok(())
 }
 
 #[test]
 fn test_execute_multi() -> eyre::Result<()> {
+    use rayon::iter::{IntoParallelIterator, ParallelIterator};
+
     MultiChunkProverTester::setup()?;
 
-    let (_, app_config, exe_path) = MultiChunkProverTester::load()?;
+    // Initialize Rayon thread pool with 8 threads
+    let parallel = 8;
+    let pool = rayon::ThreadPoolBuilder::new()
+        .num_threads(parallel)
+        .build()
+        .unwrap();
+    // Execute tasks in parallel
+    let (total_gas, total_cycle, total_tick) = pool.install(|| {
+        let tasks = MultiChunkProverTester::gen_multi_proving_tasks().unwrap();
+        tasks
+            .into_par_iter()
+            .map(|task| -> (u64, u64, u64) {
+                let (exec_result, gas) = exec_chunk(&task).unwrap();
+                (
+                    gas,
+                    exec_result.total_cycle as u64,
+                    exec_result.final_ts as u64,
+                )
+            })
+            .reduce(
+                || (0, 0, 0),
+                |(gas1, cycle1, tick1), (gas2, cycle2, tick2)| {
+                    (gas1 + gas2, cycle1 + cycle2, tick1 + tick2)
+                },
+            )
+    });
 
-    for task in MultiChunkProverTester::gen_multi_proving_tasks()? {
-        MultiChunkProverTester::execute(app_config.clone(), &task, exe_path.clone())?;
-    }
+    println!(
+        "Total gas: {}, Total cycles: {}, Average cycle/gas: {}, Average tick/gas: {}",
+        total_gas,
+        total_cycle,
+        total_cycle as f64 / total_gas as f64,
+        total_tick as f64 / total_gas as f64,
+    );
 
     Ok(())
 }
@@ -45,9 +124,7 @@ fn guest_profiling() -> eyre::Result<()> {
 
     let task = ChunkProverTester::gen_proving_task()?;
     let stdin = task.build_guest_input()?;
-    let (total_cycles, _) = chunk_prover
-        .execute_guest(&stdin)?
-        .ok_or(eyre::eyre!("execute_guest returned None"))?;
+    let total_cycles = chunk_prover.execute_and_check(&stdin, false)?;
 
     println!(
         "scroll-zkvm-integration(chunk-circuit): total cycles = {:?}",

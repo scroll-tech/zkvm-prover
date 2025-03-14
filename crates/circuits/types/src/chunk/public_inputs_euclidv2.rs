@@ -1,6 +1,6 @@
 use crate::{PublicInputs, utils::keccak256};
 use alloy_primitives::{B256, U256};
-use sbv_primitives::types::{
+use sbv::primitives::types::{
     consensus::BlockHeader,
     reth::{Block, RecoveredBlock},
 };

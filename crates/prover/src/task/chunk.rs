@@ -1,6 +1,6 @@
 use alloy_primitives::B256;
 use openvm_sdk::StdIn;
-use sbv_primitives::types::BlockWitness;
+use sbv::primitives::types::BlockWitness;
 use scroll_zkvm_circuit_input_types::chunk::ChunkWitness;
 
 use crate::task::ProvingTask;

@@ -108,7 +108,7 @@ pub mod as_base64 {
 
 pub mod point_eval {
     use c_kzg;
-    use sbv_primitives::{B256 as H256, U256, types::eips::eip4844::BLS_MODULUS};
+    use sbv::primitives::{B256 as H256, U256, types::eips::eip4844::BLS_MODULUS};
 
     /// Given the blob-envelope, translate it to a fixed size EIP-4844 blob.
     ///
@@ -162,3 +162,5 @@ pub mod point_eval {
         (proof, U256::from_be_slice(y.as_slice()))
     }
 }
+
+pub mod vm;
