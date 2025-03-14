@@ -47,7 +47,11 @@ pub fn execute_guest(
             |idx, mut segment| -> Result<(), VerificationError> {
                 total_cycle += segment.metrics.cycle_count;
                 final_ts = segment.chip_complex.memory_controller().timestamp();
-                tracing::debug!("after segment {idx}: cycle count: {}, timestamp: {}", total_cycle, final_ts);
+                tracing::debug!(
+                    "after segment {idx}: cycle count: {}, timestamp: {}",
+                    total_cycle,
+                    final_ts
+                );
                 final_memory = std::mem::take(&mut segment.final_memory);
                 if aux_args.mock_prove {
                     let proof_input = segment.generate_proof_input(
