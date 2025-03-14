@@ -14,8 +14,8 @@ use openvm_stark_sdk::{
 use crate::Error;
 
 pub struct ExecutionResult {
-    pub total_cycle: usize,
-    pub final_ts: u32,
+    pub total_cycle: u64,
+    pub total_tick: u64,
     #[allow(dead_code)]
     pub public_values: Vec<F>,
 }
@@ -37,20 +37,20 @@ pub fn execute_guest(
 
     let vm = VmExecutor::new(vm_config.clone());
 
-    let mut total_cycle = 0;
-    let mut final_ts = 0;
+    let mut total_cycle: u64 = 0;
+    let mut total_tick: u64 = 0;
     let mut final_memory = None;
     let segment_output: Vec<Result<(), VerificationError>> = vm
         .execute_and_then(
             exe,
             stdin.clone(),
             |idx, mut segment| -> Result<(), VerificationError> {
-                total_cycle += segment.metrics.cycle_count;
-                final_ts = segment.chip_complex.memory_controller().timestamp();
+                total_cycle += segment.metrics.cycle_count as u64;
+                total_tick += segment.chip_complex.memory_controller().timestamp() as u64;
                 tracing::debug!(
-                    "after segment {idx}: cycle count: {}, timestamp: {}",
+                    "after segment {idx}: cycle count: {}, tick count: {}",
                     total_cycle,
-                    final_ts
+                    total_tick
                 );
                 final_memory = std::mem::take(&mut segment.final_memory);
                 if aux_args.mock_prove {
@@ -80,7 +80,7 @@ pub fn execute_guest(
     let segment_len = segment_output.len();
     tracing::info!("segment length" = ?segment_len);
     tracing::info!("total cycle" = ?total_cycle);
-    tracing::info!("final ts" = ?final_ts);
+    tracing::info!("final ts" = ?total_tick);
 
     segment_output
         .into_iter()
@@ -100,7 +100,7 @@ pub fn execute_guest(
 
     Ok(ExecutionResult {
         total_cycle,
-        final_ts,
+        total_tick,
         public_values,
     })
 }

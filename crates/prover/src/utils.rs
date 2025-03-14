@@ -8,6 +8,8 @@ use serde::{
 
 use crate::Error;
 
+pub mod vm;
+
 pub const GIT_VERSION: &str = git_version!(args = ["--abbrev=7", "--always"]);
 
 /// Shortened git commit ref from [`scroll_zkvm_prover`].
@@ -162,5 +164,3 @@ pub mod point_eval {
         (proof, U256::from_be_slice(y.as_slice()))
     }
 }
-
-pub mod vm;
