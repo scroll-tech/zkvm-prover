@@ -28,5 +28,4 @@ sha2 = "0.10.8"
 
 [features]
 default = []
-euclidv2 = []
 openvm = ["sbv-trie/openvm", "sbv-core/openvm", "sbv-primitives/openvm", "tiny-keccak/openvm"]

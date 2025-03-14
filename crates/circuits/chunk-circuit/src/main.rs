@@ -1,4 +1,4 @@
-use scroll_zkvm_circuit_input_types::Circuit;
+use scroll_zkvm_circuit_input_types::{Circuit, reveal_pi_hash};
 
 mod circuit;
 use circuit::ChunkCircuit as C;
@@ -14,5 +14,10 @@ fn main() {
 
     let public_inputs = C::validate(witness);
 
-    C::reveal_pi(&public_inputs);
+    let pi_hash = if cfg!(feature = "euclidv2") {
+        public_inputs.pi_hash_v7()
+    } else {
+        public_inputs.pi_hash_v3()
+    };
+    reveal_pi_hash(pi_hash);
 }
