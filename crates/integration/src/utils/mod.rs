@@ -1,4 +1,4 @@
-use sbv::primitives::{
+use sbv_primitives::{
     B256, U256,
     types::{BlockWitness, Transaction, eips::Encodable2718, reth::TransactionSigned},
 };

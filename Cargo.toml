@@ -43,6 +43,12 @@ openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "6
 
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", rev = "9f7368b3c73fc559a92684b2ecf6c7d9ed00368b", default-features = false }
 
+
+sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "zkvm/euclid-upgrade", features = ["scroll"] }
+sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "zkvm/euclid-upgrade", features = ["scroll"] }
+sbv-kv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "zkvm/euclid-upgrade" }
+sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "zkvm/euclid-upgrade" }
+
 alloy-primitives = { version = "0.8", default-features = false }
 alloy-serde = { version = "0.8", default-features = false }
 bitcode = { version = "0.6.3", default-features = false, features = ["serde", "derive"] }
@@ -58,7 +64,6 @@ metrics-tracing-context = "0.16.0"
 p3-field = { git = "https://github.com/Plonky3/Plonky3.git", rev = "88d7f05" }
 rayon = "1.10"
 rkyv = "0.8"
-sbv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "zkvm/euclid-upgrade", features = ["scroll"] }
 serde = { version = "1", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0" }
 serde_with = "3.11.0"

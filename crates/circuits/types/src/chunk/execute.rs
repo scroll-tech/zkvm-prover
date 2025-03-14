@@ -2,21 +2,19 @@ use crate::{
     chunk::{ArchivedChunkWitness, ChunkInfo, make_providers},
     manually_drop_on_zkvm,
 };
-use sbv::{
-    core::{EvmDatabase, EvmExecutor},
-    primitives::{
-        BlockWitness,
-        chainspec::{
-            BaseFeeParams, BaseFeeParamsKind, Chain, MAINNET,
-            reth_chainspec::ChainSpec,
-            scroll::{ScrollChainConfig, ScrollChainSpec},
-        },
-        ext::{BlockWitnessChunkExt, TxBytesHashExt},
-        hardforks::SCROLL_DEV_HARDFORKS,
-        types::{
-            reth::{Block, BlockWitnessRethExt, RecoveredBlock},
-            scroll::ChunkInfoBuilder,
-        },
+use sbv_core::{EvmDatabase, EvmExecutor};
+use sbv_primitives::{
+    BlockWitness,
+    chainspec::{
+        BaseFeeParams, BaseFeeParamsKind, Chain, MAINNET,
+        reth_chainspec::ChainSpec,
+        scroll::{ScrollChainConfig, ScrollChainSpec},
+    },
+    ext::{BlockWitnessChunkExt, TxBytesHashExt},
+    hardforks::SCROLL_DEV_HARDFORKS,
+    types::{
+        reth::{Block, BlockWitnessRethExt, RecoveredBlock},
+        scroll::ChunkInfoBuilder,
     },
 };
 
@@ -54,7 +52,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     // disable EuclidV2 if not configured
     #[cfg(not(feature = "euclidv2"))]
     {
-        use sbv::primitives::{chainspec::ForkCondition, hardforks::ScrollHardfork};
+        use sbv_primitives::{chainspec::ForkCondition, hardforks::ScrollHardfork};
         hardforks.insert(ScrollHardfork::EuclidV2, ForkCondition::Never);
     }
 

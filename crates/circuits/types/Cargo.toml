@@ -11,7 +11,10 @@ version.workspace = true
 alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
 alloy-serde.workspace = true
 rkyv.workspace = true
-sbv = { workspace = true, features = ["scroll"] }
+sbv-trie = { workspace = true }
+sbv-core = { workspace = true }
+sbv-primitives = { workspace = true }
+sbv-kv = { workspace = true }
 vm-zstd = { workspace = true }
 serde.workspace = true
 itertools.workspace = true
@@ -26,4 +29,4 @@ sha2 = "0.10.8"
 [features]
 default = []
 euclidv2 = []
-openvm = ["sbv/openvm", "tiny-keccak/openvm"]
+openvm = ["sbv-trie/openvm", "sbv-core/openvm", "sbv-primitives/openvm", "tiny-keccak/openvm"]
