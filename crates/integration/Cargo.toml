@@ -7,7 +7,7 @@ edition.workspace = true
 scroll-zkvm-circuit-input-types.workspace = true
 scroll-zkvm-prover.workspace = true
 scroll-zkvm-verifier.workspace = true
-sbv.workspace = true
+sbv-primitives = { workspace = true }
 tracing.workspace = true
 tracing-subscriber.workspace = true
 metrics-tracing-context.workspace = true
@@ -29,6 +29,7 @@ vm-zstd = { workspace = true, features = ["zstd"] }
 
 chrono = "0.4"
 ff = "0.13"
+glob = "0.3"
 once_cell = "1.20"
 serde_json = "1.0"
 sha2 = "0.10"
@@ -38,7 +39,6 @@ halo2curves-axiom = "0.7"
 glob = "0.3"
 
 [features]
-default = ["scroll","euclidv2"]
+default = ["euclidv2"]
 euclidv2 = ["scroll-zkvm-circuit-input-types/euclidv2", "scroll-zkvm-prover/euclidv2"]
 limit-logs = []
-scroll = ["sbv/scroll"]

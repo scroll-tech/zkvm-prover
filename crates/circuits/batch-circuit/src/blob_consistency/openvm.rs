@@ -132,10 +132,7 @@ pub fn verify_kzg_proof(z: Scalar, y: Scalar, commitment: G1Affine, proof: G1Aff
     let p1 = AffinePoint::new(x_minus_z.x().clone(), x_minus_z.y().clone());
     let q1 = AffinePoint::new(G2_GENERATOR.x().clone(), G2_GENERATOR.y().clone());
 
-    let _ = [q0, p0_proof];
-    let _ = [q1, p1];
-    true
-    // Bls12_381::pairing_check(&[q0, p0_proof], &[q1, p1]).is_ok()
+    Bls12_381::pairing_check(&[q0, p0_proof], &[q1, p1]).is_ok()
 }
 
 /// Given the coefficients of the blob polynomial, evaluate the polynomial at the given challenge.
