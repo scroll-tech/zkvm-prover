@@ -2,12 +2,13 @@ use std::{marker::PhantomData, path::Path};
 
 use itertools::Itertools;
 use openvm_circuit::{arch::SingleSegmentVmExecutor, system::program::trace::VmCommittedExe};
+use openvm_continuations::verifier::root::types::RootVmVerifierInput;
 use openvm_native_circuit::NativeConfig;
 use openvm_native_recursion::{
     halo2::{EvmProof, wrapper::EvmVerifier},
     hints::Hintable,
 };
-use openvm_sdk::{F, RootSC, SC, verifier::root::types::RootVmVerifierInput};
+use openvm_sdk::{F, RootSC, SC};
 use scroll_zkvm_circuit_input_types::proof::ProgramCommitment;
 
 #[cfg(feature = "euclidv2")]

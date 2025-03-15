@@ -16,10 +16,10 @@ use openvm_native_recursion::{
 };
 pub use openvm_sdk::{self, F, SC};
 use openvm_sdk::{
-    NonRootCommittedExe, Sdk, StdIn,
+    DefaultStaticVerifierPvHandler, NonRootCommittedExe, Sdk, StdIn,
     commit::AppExecutionCommit,
     config::{AggConfig, AggStarkConfig, SdkVmConfig},
-    keygen::{AggStarkProvingKey, AppProvingKey, RootVerifierProvingKey},
+    keygen::{AggStarkProvingKey, AppProvingKey},
     prover::{AggStarkProver, AppProver, ContinuationProver},
 };
 use serde::{Serialize, de::DeserializeOwned};
@@ -111,7 +111,7 @@ impl<Type: ProverType> Prover<Type> {
                     .agg_keygen(
                         AggConfig::default(),
                         &halo2_params_reader,
-                        None::<&RootVerifierProvingKey>,
+                        &DefaultStaticVerifierPvHandler,
                     )
                     .map_err(|e| Error::Setup {
                         path: PathBuf::from(DEFAULT_PARAMS_DIR),
