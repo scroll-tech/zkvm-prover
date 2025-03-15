@@ -9,11 +9,14 @@ export RUST_LOG
 
 ifdef LEGACY
 FEATURE := --no-default-features
+TESTDATA_PATH := crates/integration/testdata/phase1
 else
 FEATURE := 
+TESTDATA_PATH := crates/integration/testdata/phase2
 endif
 
 $(info FEATURE set to: $(FEATURE))
+$(info TESTDATA_PATH set to: $(TESTDATA_PATH))
 
 download-release:
 	sh download-release.sh
@@ -51,7 +54,10 @@ test-execute-chunk-multi:
 test-cycle:
 	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test chunk_circuit test_cycle -- --exact --nocapture
 
-test-execute-batch:
+test-execute-batch: $(TESTDATA_PATH)/proofs/chunk-proof.json
+	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test batch_circuit test_e2e_execute -- --exact --nocapture
+
+test-execute-batch-fast: $(TESTDATA_PATH)/tasks/batch-task.json
 	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test batch_circuit test_execute -- --exact --nocapture
 
 test-execute-bundle:
@@ -63,7 +69,7 @@ test-single-chunk:
 test-multi-chunk:
 	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test chunk_circuit setup_prove_verify_multi -- --exact --nocapture
 
-test-single-batch:
+test-single-batch: $(TESTDATA_PATH)/tasks/batch-task.json
 	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test batch_circuit setup_prove_verify_single -- --exact --nocapture
 
 test-e2e-batch:
