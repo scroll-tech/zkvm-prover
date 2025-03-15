@@ -1,7 +1,7 @@
 use scroll_zkvm_integration::{
     ProverTester, prove_verify_multi, prove_verify_single_evm,
     testers::{
-        batch::MultiBatchProverTester, bundle::BundleProverTester, chunk::MultiChunkProverTester,
+        batch::BatchProverTester, bundle::BundleProverTester, chunk::MultiChunkProverTester,
     },
     utils::{LastHeader, build_batch_task},
 };
@@ -48,8 +48,7 @@ fn e2e() -> eyre::Result<()> {
         LastHeader::from(&batch_task_1.batch_header),
     );
 
-    let outcome =
-        prove_verify_multi::<MultiBatchProverTester>(Some(&[batch_task_1, batch_task_2]))?;
+    let outcome = prove_verify_multi::<BatchProverTester>(Some(&[batch_task_1, batch_task_2]))?;
 
     // Construct bundle task using batch tasks and batch proofs.
     let bundle_task = BundleProvingTask {

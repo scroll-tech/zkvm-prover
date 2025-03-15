@@ -1,29 +1,11 @@
 use scroll_zkvm_integration::{
     ProverTester, prove_verify_multi, prove_verify_single,
     testers::{
-        batch::{BatchProverTester, MultiBatchProverTester},
-        chunk::{ChunkProverTester, MultiChunkProverTester},
+        batch::{BatchProverTester, BatchTaskBuildingTester},
+        chunk::MultiChunkProverTester,
     },
     utils::build_batch_task,
 };
-use scroll_zkvm_prover::{ChunkProof, task::batch::BatchProvingTask, utils::read_json_deep};
-
-fn load_recent_chunk_proofs() -> eyre::Result<BatchProvingTask> {
-    let proof_path = glob::glob(if cfg!(feature = "euclidv2") {
-        "testdata/proofs/chunk-1-4.json"
-    } else {
-        "testdata/proofs/chunk-12508460-12508463.json"
-    })?
-    .next()
-    .unwrap()?;
-    println!("proof_path: {:?}", proof_path);
-    let chunk_proof = read_json_deep::<_, ChunkProof>(&proof_path)?;
-
-    let chunk_task = ChunkProverTester::gen_proving_task()?;
-
-    let task = build_batch_task(&[chunk_task], &[chunk_proof], Default::default());
-    Ok(task)
-}
 
 #[test]
 fn test_execute() -> eyre::Result<()> {
@@ -41,31 +23,19 @@ fn test_execute() -> eyre::Result<()> {
 fn test_e2e_execute() -> eyre::Result<()> {
     BatchProverTester::setup()?;
 
-    let (_, app_config, exe_path) = BatchProverTester::load()?;
+    let (_, app_config, exe_path) = BatchTaskBuildingTester::load()?;
 
-    let tasks = vec![load_recent_chunk_proofs()?];
-    for task in tasks {
-        BatchProverTester::execute(app_config.clone(), &task, exe_path.clone())?;
-    }
+    let task = BatchTaskBuildingTester::gen_proving_task()?;
+    BatchTaskBuildingTester::execute(app_config.clone(), &task, exe_path.clone())?;
 
     Ok(())
 }
 
 #[test]
 fn setup_prove_verify_single() -> eyre::Result<()> {
-    BatchProverTester::setup()?;
+    BatchTaskBuildingTester::setup()?;
 
-    let task = load_recent_chunk_proofs()?;
-    prove_verify_single::<BatchProverTester>(Some(task))?;
-
-    Ok(())
-}
-
-#[test]
-fn setup_prove_verify_multi() -> eyre::Result<()> {
-    MultiBatchProverTester::setup()?;
-
-    prove_verify_single::<MultiBatchProverTester>(None)?;
+    prove_verify_single::<BatchTaskBuildingTester>(None)?;
 
     Ok(())
 }
