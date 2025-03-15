@@ -42,7 +42,7 @@ openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", rev = "84f07ea"
 openvm-sha256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "84f07ea", default-features = false }
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "84f07ea", default-features = false }
 
-openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", rev = "fdb808bec40ff21dce7e462c2c18dbb997207adb", default-features = false }
+openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", rev = "fdb808bec40ff21dce7e462c2c18dbb997207adb" }
 
 
 sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "zkvm/euclid-upgrade", features = ["scroll"] }
