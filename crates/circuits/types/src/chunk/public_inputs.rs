@@ -21,7 +21,6 @@ pub const SIZE_BLOCK_CTX: usize = 52;
     serde::Serialize,
 )]
 #[rkyv(derive(Debug))]
-
 pub enum CodecVersion {
     V3,
     V7,

@@ -51,3 +51,24 @@ fn e2e() -> eyre::Result<()> {
 
     Ok(())
 }
+
+#[cfg(feature = "euclidv2")]
+#[test]
+fn verify_batch_hash_invariant() -> eyre::Result<()> {
+    use scroll_zkvm_integration::testers::chunk::YAMultiChunkProverTester;
+    BatchProverTester::setup()?;
+
+    let outcome_1 = prove_verify_multi::<MultiChunkProverTester>(None)?;
+    let outcome_2 = prove_verify_multi::<YAMultiChunkProverTester>(None)?;
+
+    let batch_task_1 = build_batch_task(&outcome_1.tasks, &outcome_1.proofs, Default::default());
+    let batch_task_2 = build_batch_task(&outcome_2.tasks, &outcome_2.proofs, Default::default());
+
+    // verify the two task has the same blob bytes
+    assert_eq!(
+        batch_task_1.batch_header.blob_versioned_hash,
+        batch_task_2.batch_header.blob_versioned_hash
+    );
+
+    Ok(())
+}
