@@ -42,8 +42,8 @@ build-guest:
 
 clean-build-guest: clean-guest build-guest
 
-$(TESTDATA_PATH)/proofs/chunk-%.json
-	@OUTPUT_DIR=$(TESTDATA_PATH)/proofs $(MAKE) test-single-chunk
+$(TESTDATA_PATH)/proofs/chunk-%.json:
+	@OUTPUT_DIR=$(realpath $(TESTDATA_PATH)/proofs) $(MAKE) test-single-chunk
 	cp -f $(TESTDATA_PATH)/proofs/chunk/proofs/*.json $(TESTDATA_PATH)/proofs
 
 profile-chunk:

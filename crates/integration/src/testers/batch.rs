@@ -1,6 +1,8 @@
 use std::path::Path;
 
-use scroll_zkvm_prover::{task::ProvingTask, BatchProverType, ChunkProof, ProverType, utils::read_json_deep};
+use scroll_zkvm_prover::{
+    BatchProverType, ChunkProof, ProverType, task::ProvingTask, utils::read_json_deep,
+};
 
 use crate::{
     ProverTester,
@@ -37,7 +39,6 @@ impl ProverTester for BatchTaskBuildingTester {
     const DIR_ASSETS: &str = "batch";
 
     fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask> {
-
         let chunk_task = ChunkProverTester::gen_proving_task()?;
 
         let proof_path = Path::new(PATH_TESTDATA)
@@ -46,7 +47,7 @@ impl ProverTester for BatchTaskBuildingTester {
             .join(format!("chunk-{}.json", chunk_task.identifier()));
         println!("proof_path: {:?}", proof_path);
 
-        let chunk_proof = read_json_deep::<_, ChunkProof>(&proof_path)?;        
+        let chunk_proof = read_json_deep::<_, ChunkProof>(&proof_path)?;
 
         let task = build_batch_task(&[chunk_task], &[chunk_proof], Default::default());
         Ok(task)
