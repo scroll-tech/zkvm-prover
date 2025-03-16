@@ -35,8 +35,6 @@ clippy:
 	@cargo clippy --tests --all-features --manifest-path crates/build-guest/Cargo.toml -- -D warnings
 
 clean-guest:
-	docker stop build-guest
-	docker rm build-guest
 	docker rmi build-guest:local
 
 build-guest:
