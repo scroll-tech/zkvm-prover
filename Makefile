@@ -10,9 +10,11 @@ export RUST_LOG
 ifdef LEGACY
 FEATURE := --no-default-features
 TESTDATA_PATH := crates/integration/testdata/phase1
+CHUNK_PROOF := 12508460-12508463
 else
 FEATURE := 
 TESTDATA_PATH := crates/integration/testdata/phase2
+CHUNK_PROOF := 1-4
 endif
 
 $(info FEATURE set to: $(FEATURE))
@@ -58,7 +60,7 @@ test-execute-chunk-multi:
 test-cycle:
 	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test chunk_circuit test_cycle -- --exact --nocapture
 
-test-execute-batch: $(TESTDATA_PATH)/proofs/chunk-1-4.json
+test-execute-batch: $(TESTDATA_PATH)/proofs/chunk-$(CHUNK_PROOF).json
 	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test batch_circuit test_e2e_execute -- --exact --nocapture
 
 test-execute-batch-fast: $(TESTDATA_PATH)/tasks/batch-task.json
