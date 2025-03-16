@@ -42,6 +42,10 @@ build-guest:
 
 clean-build-guest: clean-guest build-guest
 
+$(TESTDATA_PATH)/proofs/chunk-%.json
+	@OUTPUT_DIR=$(TESTDATA_PATH)/proofs $(MAKE) test-single-chunk
+	cp -f $(TESTDATA_PATH)/proofs/chunk/proofs/*.json $(TESTDATA_PATH)/proofs
+
 profile-chunk:
 	@GUEST_PROFILING=true cargo test --release -p scroll-zkvm-integration --test chunk_circuit guest_profiling -- --exact --nocapture
 
@@ -54,7 +58,7 @@ test-execute-chunk-multi:
 test-cycle:
 	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test chunk_circuit test_cycle -- --exact --nocapture
 
-test-execute-batch: $(TESTDATA_PATH)/proofs/chunk-proof.json
+test-execute-batch: $(TESTDATA_PATH)/proofs/chunk-1-4.json
 	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test batch_circuit test_e2e_execute -- --exact --nocapture
 
 test-execute-batch-fast: $(TESTDATA_PATH)/tasks/batch-task.json
