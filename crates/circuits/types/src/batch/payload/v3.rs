@@ -68,8 +68,9 @@ pub struct Payload {
 pub type PayloadV3 = Payload;
 
 impl Payload {
-    /// For raw payload data (read from decompressed enveloped data), which is raw batch bytes with metadata, this function segments
-    /// the byte stream into chunk segments.
+    /// For raw payload data (read from decompressed enveloped data), which is raw batch bytes
+    /// with metadata, this function segments the byte stream into chunk segments.
+    ///
     /// This method is used INSIDE OF zkvm since we can not generate (compress) batch data within
     /// the vm program
     pub fn from_payload(batch_bytes_with_metadata: &[u8]) -> Self {
@@ -115,34 +116,6 @@ impl Payload {
         }
     }
 
-    /// Get the preimage of the challenge digest.
-    #[allow(dead_code)]
-    pub(crate) fn get_challenge_digest_preimage(&self, versioned_hash: B256) -> Vec<u8> {
-        // preimage =
-        //     metadata_digest ||
-        //     chunk[0].chunk_data_digest || ...
-        //     chunk[N_SNARKS-1].chunk_data_digest ||
-        //     blob_versioned_hash
-        //
-        // where chunk_data_digest for a padded chunk is set equal to the "last valid chunk"'s
-        // chunk_data_digest.
-        let mut preimage = self.metadata_digest.to_vec();
-        let last_digest = self
-            .chunk_data_digests
-            .last()
-            .expect("at least we have one");
-        for chunk_digest in self
-            .chunk_data_digests
-            .iter()
-            .chain(std::iter::repeat(last_digest))
-            .take(N_MAX_CHUNKS)
-        {
-            preimage.extend_from_slice(chunk_digest.as_slice());
-        }
-        preimage.extend_from_slice(versioned_hash.as_slice());
-        preimage
-    }
-
     /// Compute the challenge digest from blob bytes. which is the combination of
     /// digest for bytes in each chunk
     pub fn get_challenge_digest(&self, versioned_hash: B256) -> B256 {
@@ -167,11 +140,9 @@ impl Payload {
             chunk_infos.last().expect("at least one chunk in batch"),
         );
 
-        let _ = self
-            .chunk_data_digests
-            .iter()
-            .zip(chunk_infos)
-            .inspect(|(chunk_digest, info)| assert_eq!(*chunk_digest, &info.tx_data_digest));
+        for (&chunk_data_digest, chunk_info) in self.chunk_data_digests.iter().zip(chunk_infos) {
+            assert_eq!(chunk_data_digest, chunk_info.tx_data_digest)
+        }
 
         // Validate the l1-msg identifier data_hash for the batch.
         let batch_data_hash_preimage = chunk_infos
@@ -182,5 +153,32 @@ impl Payload {
         assert_eq!(batch_data_hash, header.data_hash);
 
         (first_chunk, last_chunk)
+    }
+
+    /// Get the preimage for the challenge digest.
+    pub(crate) fn get_challenge_digest_preimage(&self, versioned_hash: B256) -> Vec<u8> {
+        // preimage =
+        //     metadata_digest ||
+        //     chunk[0].chunk_data_digest || ...
+        //     chunk[N_SNARKS-1].chunk_data_digest ||
+        //     blob_versioned_hash
+        //
+        // where chunk_data_digest for a padded chunk is set equal to the "last valid chunk"'s
+        // chunk_data_digest.
+        let mut preimage = self.metadata_digest.to_vec();
+        let last_digest = self
+            .chunk_data_digests
+            .last()
+            .expect("at least we have one");
+        for chunk_digest in self
+            .chunk_data_digests
+            .iter()
+            .chain(std::iter::repeat(last_digest))
+            .take(N_MAX_CHUNKS)
+        {
+            preimage.extend_from_slice(chunk_digest.as_slice());
+        }
+        preimage.extend_from_slice(versioned_hash.as_slice());
+        preimage
     }
 }
