@@ -91,57 +91,44 @@ impl Payload {
         let metadata_bytes = &batch_bytes_with_metadata[..n_bytes_metadata];
         let metadata_digest = keccak256(metadata_bytes);
 
-        // The remaining bytes are the bytes representing L2 tx data over all chunks.
+        // The remaining bytes represent the chunk data (L2 tx bytes) segmented as chunks.
         let batch_bytes = &batch_bytes_with_metadata[n_bytes_metadata..];
 
         // The number of chunks in the batch.
         let valid_chunks = metadata_bytes[..N_BYTES_NUM_CHUNKS]
             .iter()
             .fold(0usize, |acc, &d| acc * 256usize + d as usize);
-        assert!(
-            valid_chunks <= N_MAX_CHUNKS,
-            "only up to N_MAX_CHUNKS chunks supported"
-        );
 
-        // N_BYTES_CHUNK_SIZE slice chunks representing the size of eac valid chunk.
-        let chunk_size_bytes = metadata_bytes[N_BYTES_NUM_CHUNKS..]
+        // The size of each chunk in the batch.
+        let chunk_sizes = metadata_bytes[N_BYTES_NUM_CHUNKS..]
             .iter()
-            .chunks(N_BYTES_CHUNK_SIZE);
+            .chunks(N_BYTES_CHUNK_SIZE)
+            .into_iter()
+            .map(|bytes| bytes.fold(0usize, |acc, &d| acc * 256usize + d as usize))
+            .collect::<Vec<usize>>();
 
-        // Sanity check: the chunk sizes for unused chunks (up to N_MAX_CHUNKS) should be 0.
-        for unused_chunk_len in
-            chunk_size_bytes
-                .into_iter()
-                .skip(valid_chunks)
-                .map(|chunk_size_bytes| {
-                    chunk_size_bytes.fold(0usize, |acc, &d| acc * 256usize + d as usize)
-                })
-        {
-            assert_eq!(unused_chunk_len, 0, "unused chunk has a size of 0");
+        // For every unused chunk, the chunk size should be set to 0.
+        for &unused_chunk_size in chunk_sizes.iter().skip(valid_chunks) {
+            assert_eq!(unused_chunk_size, 0, "unused chunk has size 0");
         }
 
-        // The number of bytes in each chunk.
-        let chunk_lens = chunk_size_bytes
-            .into_iter()
-            .take(valid_chunks)
-            .map(|chunk_bytes| chunk_bytes.fold(0usize, |acc, &d| acc * 256usize + d as usize));
+        // Segment the batch bytes based on the chunk sizes.
+        let (segmented_batch_data, remaining_bytes) =
+            chunk_sizes.into_iter().take(valid_chunks).fold(
+                (Vec::new(), batch_bytes),
+                |(mut datas, rest_bytes), size| {
+                    datas.push(Vec::from(&rest_bytes[..size]));
+                    (datas, &rest_bytes[size..])
+                },
+            );
 
-        // Batch bytes segmented by the chunk sizes and the number of bytes that remain after
-        // segmenting.
-        let (segmented_batch_data, remaining_bytes) = chunk_lens.fold(
-            (Vec::new(), batch_bytes),
-            |(mut datas, rest_bytes), size| {
-                datas.push(Vec::from(&rest_bytes[..size]));
-                (datas, &rest_bytes[size..])
-            },
-        );
-
+        // After segmenting the batch data into chunks, no bytes should be left.
         assert!(
             remaining_bytes.is_empty(),
-            "batch data after segmentation must consume all batch bytes",
+            "chunk segmentation len must add up to the correct value"
         );
 
-        // Compute chunk data digests for each chunk's L2 tx bytes.
+        // Compute the chunk data digests based on the segmented data.
         let chunk_data_digests = segmented_batch_data
             .iter()
             .map(|bytes| B256::from(keccak256(bytes)))
