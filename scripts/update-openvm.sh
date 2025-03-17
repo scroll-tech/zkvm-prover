@@ -1,6 +1,6 @@
 # fmt: shfmt -w -i 4 scripts/update-openvm.sh
 
-SED='s#rev = \"6169765\"#rev = \"84f07ea\"#'
+SED='s#rev = \"84f07ea\"#rev = \"7f87e1d\"#'
 #SED='s#rev = \"f1b4844\"#tag = \"v1.0.0-rc.1\"#'
 
 function update_openvm() {

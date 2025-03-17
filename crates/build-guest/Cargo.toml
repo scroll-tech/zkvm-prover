@@ -22,6 +22,7 @@ tracing-subscriber.workspace = true
 
 bitcode.workspace = true
 halo2curves-axiom.workspace = true
+chrono = "0.4"
 eyre.workspace = true
 p3-field.workspace = true
 serde.workspace = true
@@ -35,5 +36,4 @@ cargo_metadata = "0.19.1"
 
 
 [features]
-default = ["euclidv2"]
-euclidv2 = []
+default = []

@@ -11,7 +11,7 @@ pub use proof::{BatchProof, BundleProof, ChunkProof, WrappedProof};
 mod prover;
 pub use prover::{
     BatchProver, BatchProverType, BundleProver, BundleProverType, ChunkProver, ChunkProverType,
-    Prover, ProverType, SC,
+    Prover, ProverConfig, ProverType, SC,
 };
 
 pub mod setup;

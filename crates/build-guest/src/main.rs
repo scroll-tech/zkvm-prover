@@ -12,6 +12,27 @@ fn write_commitments(commitments: [[u32; 8]; 2], output: &str) {
     std::fs::write(output, content).unwrap();
 }
 
+pub(crate) struct BuildConfig {
+    pub(crate) features: Vec<String>,
+    pub(crate) filename_suffix: String,
+}
+
+impl BuildConfig {
+    pub(crate) fn get(spec: &str) -> Self {
+        match spec {
+            "euclidv1" => Self {
+                features: vec![],
+                filename_suffix: "_legacy".to_string(),
+            },
+            "euclidv2" => Self {
+                features: vec!["euclidv2".to_string()],
+                filename_suffix: "".to_string(),
+            },
+            _ => panic!("Unknown spec"),
+        }
+    }
+}
+
 pub fn main() {
     // change cwd to manifest_dir
     let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
@@ -23,6 +44,9 @@ pub fn main() {
     let root_verifier = format!("{workspace_dir}/crates/build-guest/root_verifier.asm");
     dump_verifier(&root_verifier);
 
+    // TODO: read it from env var?
+    let specs = &["euclidv2", "euclidv1"];
+
     let project_name_var = std::env::var("BUILD_PROJECT");
     let project_names = project_name_var
         .as_ref()
@@ -32,59 +56,58 @@ pub fn main() {
 
     for (idx, project_name) in project_names.iter().enumerate() {
         let project_dir = format!("{workspace_dir}/crates/circuits/{project_name}-circuit");
-        let elf = builder::build(&project_dir).unwrap();
-        let (_app_config_path, app_config, _app_exe_path, app_exe) =
-            builder::transpile(&project_dir, elf).unwrap();
+        for spec in specs {
+            let now = chrono::Local::now();
+            let formatted_time = now.format("%y%m%d_%H%M%S").to_string();
+            println!(
+                "building project: {project_name} for spec {spec}, current time: {}",
+                formatted_time
+            );
+            let build_config = BuildConfig::get(spec);
+            let elf = builder::build(&project_dir, build_config.features).unwrap();
+            let (_app_config_path, app_config, _app_exe_path, app_exe) =
+                builder::transpile(&project_dir, elf).unwrap();
 
-        let app_pk = Sdk.app_keygen(app_config).unwrap();
-        let app_committed_exe = Sdk
-            .commit_app_exe(app_pk.app_fri_params(), app_exe)
-            .unwrap();
+            let app_pk = Sdk.app_keygen(app_config).unwrap();
+            let app_committed_exe = Sdk
+                .commit_app_exe(app_pk.app_fri_params(), app_exe)
+                .unwrap();
 
-        let commits = AppExecutionCommit::compute(
-            &app_pk.app_vm_pk.vm_config,
-            &app_committed_exe,
-            &app_pk.leaf_committed_exe,
-        );
+            let commits = AppExecutionCommit::compute(
+                &app_pk.app_vm_pk.vm_config,
+                &app_committed_exe,
+                &app_pk.leaf_committed_exe,
+            );
 
-        use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
-        let exe_commit = commits.exe_commit.map(|x| x.as_canonical_u32());
-        let leaf_commit = commits
-            .leaf_vm_verifier_commit
-            .map(|x| x.as_canonical_u32());
-        tracing::debug!(name: "exe-commitment", raw = ?exe_commit, as_bn254 = ?commits.exe_commit_to_bn254());
-        tracing::debug!(name: "leaf-commitment", raw = ?leaf_commit, as_bn254 = ?commits.app_config_commit_to_bn254());
+            use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
+            let exe_commit = commits.exe_commit.map(|x| x.as_canonical_u32());
+            let leaf_commit = commits
+                .leaf_vm_verifier_commit
+                .map(|x| x.as_canonical_u32());
+            tracing::debug!(name: "exe-commitment", raw = ?exe_commit, as_bn254 = ?commits.exe_commit_to_bn254());
+            tracing::debug!(name: "leaf-commitment", raw = ?leaf_commit, as_bn254 = ?commits.app_config_commit_to_bn254());
 
-        let commitments = [exe_commit, leaf_commit];
+            let commitments = [exe_commit, leaf_commit];
 
-        let flname = if cfg!(feature = "euclidv2") {
-            format!("{workspace_dir}/crates/prover/src/commitments/{project_name}.rs")
-        } else {
-            format!("{workspace_dir}/crates/prover/src/commitments/{project_name}_legacy.rs")
-        };
-        write_commitments(commitments, &flname);
-        let flname = if cfg!(feature = "euclidv2") {
-            format!("{workspace_dir}/crates/verifier/src/commitments/{project_name}.rs")
-        } else {
-            format!("{workspace_dir}/crates/verifier/src/commitments/{project_name}_legacy.rs")
-        };
+            let filename_suffix = build_config.filename_suffix;
+            let flname = format!(
+                "{workspace_dir}/crates/prover/src/commitments/{project_name}{filename_suffix}.rs"
+            );
+            write_commitments(commitments, &flname);
+            let flname = format!(
+                "{workspace_dir}/crates/verifier/src/commitments/{project_name}{filename_suffix}.rs"
+            );
 
-        write_commitments(commitments, &flname);
+            write_commitments(commitments, &flname);
 
-        if let Some(parent) = project_names.get(idx + 1) {
-            let child_commitment_file = if cfg!(feature = "euclidv2") {
-                format!(
-                    "{workspace_dir}/crates/circuits/{}-circuit/src/child_commitments.rs",
+            if let Some(parent) = project_names.get(idx + 1) {
+                let child_commitment_file = format!(
+                    "{workspace_dir}/crates/circuits/{}-circuit/src/child_commitments{filename_suffix}.rs",
                     parent
-                )
-            } else {
-                format!(
-                    "{workspace_dir}/crates/circuits/{}-circuit/src/child_commitments_legacy.rs",
-                    parent
-                )
-            };
+                );
 
-            write_commitments(commitments, &child_commitment_file);
+                write_commitments(commitments, &child_commitment_file);
+            }
         }
     }
 }
