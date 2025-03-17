@@ -1,5 +1,3 @@
-use core::iter::Iterator;
-
 use alloy_primitives::B256;
 use itertools::Itertools;
 
@@ -134,13 +132,16 @@ impl Payload {
         header: &BatchHeaderV3,
         chunk_infos: &'a [ChunkInfo],
     ) -> (&'a ChunkInfo, &'a ChunkInfo) {
+        // There should be at least 1 chunk info.
+        assert!(!chunk_infos.is_empty(), "at least 1 chunk info");
+
         // Get the first and last chunks' info, to construct the batch info.
         let (first_chunk, last_chunk) = (
             chunk_infos.first().expect("at least one chunk in batch"),
             chunk_infos.last().expect("at least one chunk in batch"),
         );
 
-        for (&chunk_data_digest, chunk_info) in self.chunk_data_digests.iter().zip(chunk_infos) {
+        for (&chunk_data_digest, chunk_info) in self.chunk_data_digests.iter().zip_eq(chunk_infos) {
             assert_eq!(chunk_data_digest, chunk_info.tx_data_digest)
         }
 
