@@ -57,12 +57,8 @@ pub fn main() {
     for (idx, project_name) in project_names.iter().enumerate() {
         let project_dir = format!("{workspace_dir}/crates/circuits/{project_name}-circuit");
         for spec in specs {
-            let now = chrono::Local::now();
-            let formatted_time = now.format("%y%m%d_%H%M%S").to_string();
-            println!(
-                "building project: {project_name} for spec {spec}, current time: {}",
-                formatted_time
-            );
+            let start_time = std::time::Instant::now();
+            println!("building project: {project_name} for spec {spec}");
             let build_config = BuildConfig::get(spec);
             let elf = builder::build(&project_dir, build_config.features).unwrap();
             let (_app_config_path, app_config, _app_exe_path, app_exe) =
@@ -108,6 +104,10 @@ pub fn main() {
 
                 write_commitments(commitments, &child_commitment_file);
             }
+            println!(
+                "finished building project: {project_name} for spec {spec} in {:?}",
+                start_time.elapsed()
+            );
         }
     }
 }

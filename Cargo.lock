@@ -5837,7 +5837,6 @@ version = "0.1.0-rc.8"
 dependencies = [
  "bitcode",
  "cargo_metadata 0.19.2",
- "chrono",
  "eyre",
  "halo2curves-axiom 0.5.3",
  "hex-literal",
