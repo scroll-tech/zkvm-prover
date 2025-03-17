@@ -2,16 +2,16 @@ use alloy_primitives::B256;
 use scroll_zkvm_circuit_input_types::{
     AggCircuit, Circuit,
     batch::{ArchivedBatchWitness, BatchInfo},
-    chunk::ChunkInfo,
+    chunk::{ChunkInfo, CodecVersion},
     proof::{AggregationInput, ProgramCommitment},
     utils::read_witnesses,
 };
 
-#[cfg(feature = "euclidv2")]
-use crate::child_commitments::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT};
-#[cfg(not(feature = "euclidv2"))]
-use crate::child_commitments_legacy::{
-    EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT,
+use crate::{
+    child_commitments::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT},
+    child_commitments_legacy::{
+        EXE_COMMIT as LEGACY_CHUNK_EXE_COMMIT, LEAF_COMMIT as LEGACY_CHUNK_LEAF_COMMIT,
+    },
 };
 
 #[allow(unused_imports, clippy::single_component_path_imports)]
@@ -68,18 +68,43 @@ impl Circuit for BatchCircuit {
 impl AggCircuit for BatchCircuit {
     type AggregatedPublicInputs = ChunkInfo;
 
-    fn verify_commitments(commitment: &ProgramCommitment) {
-        if commitment.exe != CHUNK_EXE_COMMIT {
-            panic!(
-                "mismatch chunk-proof exe commitment: expected={:?}, got={:?}",
-                CHUNK_EXE_COMMIT, commitment.exe,
-            );
-        }
-        if commitment.leaf != CHUNK_LEAF_COMMIT {
-            panic!(
-                "mismatch chunk-proof leaf commitment: expected={:?}, got={:?}",
-                CHUNK_EXE_COMMIT, commitment.leaf,
-            );
+    fn verify_commitments(_commitment: &ProgramCommitment) {
+        unreachable!("should not be called since verify_commitment_with_agg_pi is overriden")
+    }
+
+    fn verify_commitments_with_agg_pi(
+        commitment: &ProgramCommitment,
+        agg_pi: &Self::AggregatedPublicInputs,
+    ) {
+        match agg_pi.codec_version {
+            CodecVersion::V3 => {
+                if commitment.exe != LEGACY_CHUNK_EXE_COMMIT {
+                    panic!(
+                        "mismatch chunk-proof exe commitment: expected={:?}, got={:?}",
+                        LEGACY_CHUNK_EXE_COMMIT, commitment.exe,
+                    );
+                }
+                if commitment.leaf != LEGACY_CHUNK_LEAF_COMMIT {
+                    panic!(
+                        "mismatch chunk-proof leaf commitment: expected={:?}, got={:?}",
+                        LEGACY_CHUNK_EXE_COMMIT, commitment.leaf,
+                    );
+                }
+            }
+            CodecVersion::V7 => {
+                if commitment.exe != CHUNK_EXE_COMMIT {
+                    panic!(
+                        "mismatch chunk-proof exe commitment: expected={:?}, got={:?}",
+                        CHUNK_EXE_COMMIT, commitment.exe,
+                    );
+                }
+                if commitment.leaf != CHUNK_LEAF_COMMIT {
+                    panic!(
+                        "mismatch chunk-proof leaf commitment: expected={:?}, got={:?}",
+                        CHUNK_EXE_COMMIT, commitment.leaf,
+                    );
+                }
+            }
         }
     }
 

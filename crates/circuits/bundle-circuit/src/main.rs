@@ -22,11 +22,16 @@ fn main() {
     // Deserialize witness bytes to the witness data type.
     let witness = C::deserialize_witness(&witness_bytes);
 
-    // Verify the root proofs being aggregated in this circuit.
+    // Get the public-input values of the proofs being aggregated from witness.
+    let agg_pis = C::aggregated_public_inputs(witness);
+
+    // Verify the root proofs being aggregated in the circuit.
     let agg_proofs = C::verify_proofs(witness);
 
-    // Get the public-input values of the aggregated proofs from witness.
-    let agg_pis = C::aggregated_public_inputs(witness);
+    // Verify the commitments
+    for (proof, agg_pi) in agg_proofs.iter().zip(agg_pis.iter()) {
+        C::verify_commitments_with_agg_pi(&proof.commitment, agg_pi);
+    }
 
     // Derive the digests of the public-input values of the proofs being aggregated.
     let agg_pi_hashes = C::aggregated_pi_hashes(&agg_proofs);

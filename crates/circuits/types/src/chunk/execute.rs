@@ -115,7 +115,7 @@ pub fn execute(witness: &Witness, codec_version: CodecVersion) -> Result<ChunkIn
     }
 
     let chunk_info = ChunkInfo {
-        // codec_version,
+        codec_version,
         chain_id: sbv_chunk_info.chain_id(),
         prev_state_root: sbv_chunk_info.prev_state_root(),
         post_state_root: sbv_chunk_info.post_state_root(),

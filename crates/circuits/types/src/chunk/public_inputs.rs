@@ -21,7 +21,6 @@ pub const SIZE_BLOCK_CTX: usize = 52;
     serde::Serialize,
 )]
 #[rkyv(derive(Debug))]
-
 pub enum CodecVersion {
     V3,
     V7,
@@ -121,7 +120,8 @@ impl BlockContextV2 {
 #[rkyv(derive(Debug))]
 pub struct ChunkInfo {
     // zhuo: i thought to add this to ChunkInfo, but not fully sure it is ok
-    // pub codec_version: CodecVersion,
+    #[rkyv()]
+    pub codec_version: CodecVersion,
     /// The EIP-155 chain ID for all txs in the chunk.
     #[rkyv()]
     pub chain_id: u64,
@@ -222,7 +222,7 @@ impl ChunkInfo {
 impl From<&ArchivedChunkInfo> for ChunkInfo {
     fn from(archived: &ArchivedChunkInfo) -> Self {
         Self {
-            // codec_version: CodecVersion::from(&archived.codec_version),
+            codec_version: CodecVersion::from(&archived.codec_version),
             chain_id: archived.chain_id.into(),
             prev_state_root: archived.prev_state_root.into(),
             post_state_root: archived.post_state_root.into(),
@@ -245,11 +245,15 @@ impl From<&ArchivedChunkInfo> for ChunkInfo {
 impl PublicInputs for ChunkInfo {
     /// Compute the public input hash for the chunk.
     fn pi_hash(&self) -> B256 {
-        unimplemented!("use pi_hash_v3 or pi_hash_v7");
-        // match self.codec_version {
-        //    CodecVersion::V3 => self.pi_hash_v3(),
-        //    CodecVersion::V7 => self.pi_hash_v7(),
-        //}
+        // unimplemented!("use pi_hash_v3 or pi_hash_v7");
+        match self.codec_version {
+            CodecVersion::V3 => {
+                // sanity check
+                assert_ne!(self.data_hash, B256::ZERO, "v3 must has valid data hash");
+                self.pi_hash_v3()
+            }
+            CodecVersion::V7 => self.pi_hash_v7(),
+        }
     }
 
     /// Validate public inputs between 2 contiguous chunks.

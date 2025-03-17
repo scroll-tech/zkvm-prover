@@ -72,6 +72,15 @@ where
     /// we have expected)
     fn verify_commitments(commitment: &proof::ProgramCommitment);
 
+    /// Check if the commitment in proof is valid (from program(s)
+    /// we have expected), extend the method for pi
+    fn verify_commitments_with_agg_pi(
+        commitment: &proof::ProgramCommitment,
+        _agg_pi: &Self::AggregatedPublicInputs,
+    ) {
+        Self::verify_commitments(commitment);
+    }
+
     /// Verify the proofs being aggregated.
     ///
     /// Also returns the root proofs being aggregated.
@@ -79,7 +88,6 @@ where
         let proofs = witness.get_proofs();
 
         for proof in proofs.iter() {
-            Self::verify_commitments(&proof.commitment);
             proof::verify_proof(&proof.commitment, proof.public_values.as_slice());
         }
 
