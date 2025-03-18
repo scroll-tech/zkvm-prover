@@ -15,7 +15,7 @@ impl BatchInfoBuilderV3 {
     /// by processing the witness, while making some validations.
     pub fn build(
         batch_header: &BatchHeaderV3,
-        chunks_info: &[ChunkInfo],
+        chunk_infos: &[ChunkInfo],
         blob_bytes: &[u8],
     ) -> BatchInfo {
         // Construct the batch payload using blob bytes.
@@ -40,7 +40,7 @@ impl BatchInfoBuilderV3 {
         );
 
         // Validate payload (batch data).
-        let (first, last) = payload.validate(batch_header, chunks_info);
+        let (first, last) = payload.validate(batch_header, chunk_infos);
 
         BatchInfo {
             parent_state_root: first.prev_state_root,

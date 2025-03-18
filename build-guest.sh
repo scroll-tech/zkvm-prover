@@ -30,6 +30,9 @@ cp crates/prover/src/commitments/batch.rs crates/circuits/bundle-circuit/src/chi
 cp crates/prover/src/commitments/chunk_legacy.rs crates/circuits/batch-circuit/src/child_commitments_legacy.rs
 cp crates/prover/src/commitments/batch_legacy.rs crates/circuits/bundle-circuit/src/child_commitments_legacy.rs
 
+# copy root verifier
+docker cp ${container_id}:/app/crates/build-guest/root_verifier.asm crates/build-guest/root_verifier.asm
+
 # copy app.vmexe from container to local
 mkdir -p crates/circuits/chunk-circuit/openvm
 mkdir -p crates/circuits/batch-circuit/openvm

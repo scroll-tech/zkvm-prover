@@ -5,11 +5,12 @@ use circuit::BundleCircuit as C;
 
 openvm::entry!(main);
 
-#[allow(dead_code)]
 #[rustfmt::skip]
+#[cfg(feature = "euclidv2")]
 mod child_commitments;
-#[allow(dead_code)]
+
 #[rustfmt::skip]
+#[cfg(not(feature = "euclidv2"))]
 mod child_commitments_legacy;
 
 fn main() {
