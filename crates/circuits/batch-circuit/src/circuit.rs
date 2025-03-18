@@ -78,32 +78,28 @@ impl AggCircuit for BatchCircuit {
     ) {
         match agg_pi.codec_version {
             CodecVersion::V3 => {
-                if commitment.exe != LEGACY_CHUNK_EXE_COMMIT {
-                    panic!(
-                        "mismatch chunk-proof exe commitment: expected={:?}, got={:?}",
-                        LEGACY_CHUNK_EXE_COMMIT, commitment.exe,
-                    );
-                }
-                if commitment.leaf != LEGACY_CHUNK_LEAF_COMMIT {
-                    panic!(
-                        "mismatch chunk-proof leaf commitment: expected={:?}, got={:?}",
-                        LEGACY_CHUNK_EXE_COMMIT, commitment.leaf,
-                    );
-                }
+                assert_eq!(
+                    commitment.exe, CHUNK_EXE_COMMIT,
+                    "mismatch chunk-proof exe commitment: expected={:?}, got={:?}",
+                    CHUNK_EXE_COMMIT, commitment.exe,
+                );
+                assert_eq!(
+                    commitment.leaf, CHUNK_LEAF_COMMIT,
+                    "mismatch chunk-proof leaf commitment: expected={:?}, got={:?}",
+                    CHUNK_EXE_COMMIT, commitment.leaf,
+                );
             }
             CodecVersion::V7 => {
-                if commitment.exe != CHUNK_EXE_COMMIT {
-                    panic!(
-                        "mismatch chunk-proof exe commitment: expected={:?}, got={:?}",
-                        CHUNK_EXE_COMMIT, commitment.exe,
-                    );
-                }
-                if commitment.leaf != CHUNK_LEAF_COMMIT {
-                    panic!(
-                        "mismatch chunk-proof leaf commitment: expected={:?}, got={:?}",
-                        CHUNK_EXE_COMMIT, commitment.leaf,
-                    );
-                }
+                assert_eq!(
+                    commitment.exe, LEGACY_CHUNK_EXE_COMMIT,
+                    "mismatch chunk-proof exe commitment: expected={:?}, got={:?}",
+                    LEGACY_CHUNK_EXE_COMMIT, commitment.exe,
+                );
+                assert_eq!(
+                    commitment.leaf, LEGACY_CHUNK_LEAF_COMMIT,
+                    "mismatch chunk-proof leaf commitment: expected={:?}, got={:?}",
+                    LEGACY_CHUNK_EXE_COMMIT, commitment.leaf,
+                );
             }
         }
     }

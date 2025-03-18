@@ -20,6 +20,7 @@ metrics-tracing-context.workspace = true
 snark-verifier-sdk.workspace = true
 
 openvm-circuit = { workspace = true }
+openvm-continuations.workspace = true
 openvm-native-circuit = { workspace = true, default-features = false }
 openvm-native-recursion = { workspace = true }
 openvm-sdk = { workspace = true }

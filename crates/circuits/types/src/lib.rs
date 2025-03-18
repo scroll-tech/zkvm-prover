@@ -1,5 +1,6 @@
 #![feature(lazy_get)]
 use alloy_primitives::B256;
+use itertools::Itertools;
 
 pub mod batch;
 
@@ -105,13 +106,16 @@ where
     /// - That the public-inputs of contiguous chunks/batches are valid
     /// - That the public-input values in fact hash to the pi_hash values from the root proofs.
     fn validate_aggregated_pi(agg_pis: &[Self::AggregatedPublicInputs], agg_pi_hashes: &[B256]) {
+        // There should be at least a single proof being aggregated.
+        assert!(!agg_pis.is_empty(), "at least 1 pi to aggregate");
+
         // Validation for the contiguous public-input values.
         for w in agg_pis.windows(2) {
             w[1].validate(&w[0]);
         }
 
         // Validation for public-input values hash being the pi_hash from root proof.
-        for (agg_pi, &agg_pi_hash) in agg_pis.iter().zip(agg_pi_hashes.iter()) {
+        for (agg_pi, &agg_pi_hash) in agg_pis.iter().zip_eq(agg_pi_hashes.iter()) {
             assert_eq!(
                 agg_pi.pi_hash(),
                 agg_pi_hash,
