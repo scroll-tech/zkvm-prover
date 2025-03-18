@@ -5,7 +5,6 @@ use openvm_pairing_guest::bls12_381::Scalar;
 mod openvm;
 pub use openvm::point_evaluation;
 
-#[cfg(feature = "euclidv2")]
 pub use openvm::{EccToPairing, kzg_to_versioned_hash, verify_kzg_proof};
 
 // Number of bytes in a u256.
