@@ -63,7 +63,10 @@ impl ProvingTask for BatchProvingTask {
         }
 
         if let Some(c) = &self.challenge_digest {
-            assert_eq!(*c, U256::from_be_bytes(challenge_digest.0));
+            // some of our protocol use the evalulated value (digest % BLS_MODULES)
+            // for this field, so we have to relax the sanity check
+            let challenge_x = point_eval::get_x_from_challenge(challenge_digest);
+            assert_eq!(*c % point_eval::BLS_MODULUS, challenge_x);
         }
 
         if let Some(p) = &self.kzg_proof {
