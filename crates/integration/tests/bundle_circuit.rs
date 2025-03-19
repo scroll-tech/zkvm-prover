@@ -1,3 +1,4 @@
+use sbv_primitives::B256;
 use scroll_zkvm_integration::{
     ProverTester, prove_verify_multi, prove_verify_single_evm,
     testers::{
@@ -12,6 +13,7 @@ use scroll_zkvm_prover::{
     task::bundle::BundleProvingTask,
     utils::{read_json_deep, write_json},
 };
+use std::str::FromStr;
 
 fn load_recent_batch_proofs() -> eyre::Result<BundleProvingTask> {
     let proof_path = glob::glob("../../.output/batch-tests-*/batch/proofs/batch-*.json")?
@@ -47,9 +49,7 @@ fn setup_prove_verify_local_task() -> eyre::Result<()> {
 
 #[test]
 fn verify_bundle_info_pi() {
-    use sbv_primitives::B256;
     use scroll_zkvm_circuit_input_types::{PublicInputs, bundle::BundleInfo};
-    use std::str::FromStr;
 
     let info = BundleInfo {
         chain_id: 534352,
@@ -121,8 +121,8 @@ fn e2e() -> eyre::Result<()> {
         bundle_info: Some(outcome.proofs[0].metadata.bundle_info.clone()),
     };
     // collect batch and bundle task as data example
-    write_json(path_assets.join("batch_task.json"), &batch_task_example)?;
-    write_json(path_assets.join("bundle_task.json"), &bundle_task_with_info)?;
+    write_json(path_assets.join("batch-task.json"), &batch_task_example)?;
+    write_json(path_assets.join("bundle-task.json"), &bundle_task_with_info)?;
 
     // The structure of the halo2-proof's instances is:
     // - 12 instances for accumulator
@@ -168,6 +168,14 @@ fn e2e() -> eyre::Result<()> {
             "pi inconsistent at index {i}: expected={expected}, observed={observed:?}"
         );
     }
+
+    // sanity check for pi of bundle hash, update the expected hash if block witness changed
+    assert_eq!(
+        expected_pi_hash,
+        &B256::from_str("0x004bd600d361ad25ae28af9383f7f102b0ed11e20e571dc1a380621a09f33888")
+            .unwrap(),
+        "unexpected pi hash for e2e bundle info, block witness changed?"
+    );
 
     Ok(())
 }
