@@ -25,6 +25,23 @@ impl ProverTester for BundleProverTester {
                     "batch-0x5f769da6d14efecf756c2a82c164416f31b3986d6c701479107acb1bcd421b21.json",
                 ))?,
             ],
+            bundle_info: None,
         })
+    }
+}
+
+pub struct BundleLocalTaskTester;
+
+impl ProverTester for BundleLocalTaskTester {
+    type Prover = BundleProverType;
+
+    const PATH_PROJECT_ROOT: &str = "./../circuits/bundle-circuit";
+
+    const DIR_ASSETS: &str = "bundle";
+
+    fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask> {
+        Ok(read_json_deep(
+            Path::new(PATH_TESTDATA).join("bundle-task.json"),
+        )?)
     }
 }
