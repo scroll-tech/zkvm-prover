@@ -34,7 +34,6 @@ impl PublicInputs for BundleInfo {
     ///
     /// keccak(
     ///     chain id ||
-    ///     msg queue hash ||
     ///     num batches ||
     ///     prev state root ||
     ///     prev batch hash ||
@@ -46,7 +45,6 @@ impl PublicInputs for BundleInfo {
         keccak256(
             std::iter::empty()
                 .chain(self.chain_id.to_be_bytes().as_slice())
-                .chain(self.msg_queue_hash.as_slice())
                 .chain(self.num_batches.to_be_bytes().as_slice())
                 .chain(self.prev_state_root.as_slice())
                 .chain(self.prev_batch_hash.as_slice())
