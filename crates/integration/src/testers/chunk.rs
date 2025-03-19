@@ -38,7 +38,7 @@ impl ProverTester for ChunkProverTester {
             Ok(paths) => glob::glob(&paths)?.filter_map(|entry| entry.ok()).collect(),
             Err(_) => {
                 #[cfg(not(feature = "euclidv2"))]
-                let blocks = 12508460usize..=12508463usize;
+                let blocks = 10319966usize..=10319974usize;
                 #[cfg(feature = "euclidv2")]
                 let blocks = 1usize..=4usize;
                 blocks
