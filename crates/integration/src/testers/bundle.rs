@@ -29,3 +29,19 @@ impl ProverTester for BundleProverTester {
         })
     }
 }
+
+pub struct BundleLocalTaskTester;
+
+impl ProverTester for BundleLocalTaskTester {
+    type Prover = BundleProverType;
+
+    const PATH_PROJECT_ROOT: &str = "./../circuits/bundle-circuit";
+
+    const DIR_ASSETS: &str = "bundle";
+
+    fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask> {
+        Ok(read_json_deep(
+            Path::new(PATH_TESTDATA).join("bundle-task.json"),
+        )?)
+    }
+}
