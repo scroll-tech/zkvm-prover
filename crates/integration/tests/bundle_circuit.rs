@@ -171,9 +171,8 @@ fn e2e() -> eyre::Result<()> {
 
     // sanity check for pi of bundle hash, update the expected hash if block witness changed
     assert_eq!(
-        expected_pi_hash,
-        &B256::from_str("0x004bd600d361ad25ae28af9383f7f102b0ed11e20e571dc1a380621a09f33888")
-            .unwrap(),
+        alloy_primitives::hex::encode(expected_pi_hash),
+        "0x004bd600d361ad25ae28af9383f7f102b0ed11e20e571dc1a380621a09f33888",
         "unexpected pi hash for e2e bundle info, block witness changed?"
     );
 

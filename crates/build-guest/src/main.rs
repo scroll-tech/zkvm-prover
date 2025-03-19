@@ -45,7 +45,7 @@ pub fn main() {
     dump_verifier(&root_verifier);
 
     // TODO: read it from env var?
-    let specs = &["euclidv2", "euclidv1"];
+    let specs = &["euclidv2"];
 
     let project_name_var = std::env::var("BUILD_PROJECT");
     let project_names = project_name_var
