@@ -98,7 +98,7 @@ impl ProverType for BundleProverType {
             assert_eq!(
                 bundle_pi_hash,
                 checked_bundle_info.pi_hash(),
-                "infra side bundle ins not consistent with our implement, got {:?}, expect {:?}",
+                "our implement has derived different bundle info with ground truth, got {:?}, expect {:?}",
                 bundle_info,
                 checked_bundle_info,
             )
