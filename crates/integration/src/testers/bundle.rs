@@ -25,6 +25,7 @@ impl ProverTester for BundleProverTester {
                     "batch-0x5f769da6d14efecf756c2a82c164416f31b3986d6c701479107acb1bcd421b21.json",
                 ))?,
             ],
+            bundle_info: None,
         })
     }
 }

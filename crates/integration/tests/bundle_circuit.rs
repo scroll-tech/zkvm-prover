@@ -16,6 +16,7 @@ fn load_recent_batch_proofs() -> eyre::Result<BundleProvingTask> {
 
     let task = BundleProvingTask {
         batch_proofs: vec![batch_proof],
+        bundle_info: None,
     };
     Ok(task)
 }
@@ -54,6 +55,7 @@ fn e2e() -> eyre::Result<()> {
     // Construct bundle task using batch tasks and batch proofs.
     let bundle_task = BundleProvingTask {
         batch_proofs: outcome.proofs,
+        bundle_info: None,
     };
     let (outcome, verifier, path_assets) =
         prove_verify_single_evm::<BundleProverTester>(Some(bundle_task.clone()))?;

@@ -94,6 +94,15 @@ impl ProverType for BundleProverType {
             withdraw_root,
         };
         let bundle_pi_hash = bundle_info.pi_hash();
+        if let Some(checked_bundle_info) = task.bundle_info.as_ref() {
+            assert_eq!(
+                bundle_pi_hash,
+                checked_bundle_info.pi_hash(),
+                "infra side bundle ins not consistent with our implement, got {:?}, expect {:?}",
+                bundle_info,
+                checked_bundle_info,
+            )
+        }
 
         Ok(BundleProofMetadata {
             bundle_info,

@@ -8,6 +8,8 @@ pub struct BundleInfo {
     /// The EIP-155 chain ID of all txs in the bundle.
     pub chain_id: u64,
     /// The L1 msg queue hash at the end of the last batch in the bundle.
+    /// Not a phase 1 field so we make it omitable
+    #[serde(default)]
     pub msg_queue_hash: B256,
     /// The number of batches bundled together in the bundle.
     pub num_batches: u32,
