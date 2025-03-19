@@ -48,6 +48,10 @@ static AGG_STARK_PROVING_KEY: Lazy<AggStarkProvingKey> =
 /// The default directory to locate openvm's halo2 SRS parameters.
 const DEFAULT_PARAMS_DIR: &str = concat!(env!("HOME"), "/.openvm/params/");
 
+/// The environment variable that needs to be set in order to configure the directory from where
+/// Prover can read HALO2 trusted setup parameters.
+const ENV_HALO2_PARAMS_DIR: &str = "ENV_HALO2_PARAMS_DIR";
+
 /// File descriptor for the root verifier's VM config.
 const FD_ROOT_VERIFIER_VM_CONFIG: &str = "root-verifier-vm-config";
 
@@ -349,7 +353,7 @@ impl<Type: ProverType> Prover<Type> {
         let dir_halo2_params = config
             .dir_halo2_params
             .clone()
-            .ok_or(std::env::var("ENV_HALO2_PARAMS_DIR"))
+            .ok_or(std::env::var(ENV_HALO2_PARAMS_DIR))
             .unwrap_or(Path::new(DEFAULT_PARAMS_DIR).to_path_buf());
 
         let halo2_params_reader = CacheHalo2ParamsReader::new(&dir_halo2_params);

@@ -109,14 +109,15 @@ fn test_execute_multi() -> eyre::Result<()> {
 fn guest_profiling() -> eyre::Result<()> {
     ChunkProverTester::setup()?;
 
-    let (path_app_config, _, path_exe) = ChunkProverTester::load()?;
+    let (path_app_config, _, path_app_exe) = ChunkProverTester::load()?;
 
-    let chunk_prover = scroll_zkvm_prover::Prover::<scroll_zkvm_prover::ChunkProverType>::setup(
-        &path_exe,
-        &path_app_config,
-        None,
-        Default::default(),
-    )?;
+    let config = scroll_zkvm_prover::ProverConfig {
+        path_app_exe,
+        path_app_config,
+        ..Default::default()
+    };
+    let chunk_prover =
+        scroll_zkvm_prover::Prover::<scroll_zkvm_prover::ChunkProverType>::setup(config)?;
 
     let task = ChunkProverTester::gen_proving_task()?;
     let stdin = task.build_guest_input()?;
