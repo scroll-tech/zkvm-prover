@@ -4,7 +4,7 @@ use crate::{
 };
 use openvm_native_recursion::hints::Hintable;
 use openvm_sdk::StdIn;
-use scroll_zkvm_circuit_input_types::bundle::BundleWitness;
+use scroll_zkvm_circuit_input_types::bundle::{BundleInfo, BundleWitness};
 
 /// Message indicating a sanity check failure.
 const BUNDLE_SANITY_MSG: &str = "bundle must have at least one batch";
@@ -12,6 +12,8 @@ const BUNDLE_SANITY_MSG: &str = "bundle must have at least one batch";
 #[derive(Clone, serde::Deserialize, serde::Serialize)]
 pub struct BundleProvingTask {
     pub batch_proofs: Vec<BatchProof>,
+    // for sanity check
+    pub bundle_info: Option<BundleInfo>,
 }
 
 impl ProvingTask for BundleProvingTask {

@@ -21,11 +21,13 @@ const FD_APP_CONFIG: &str = "openvm.toml";
 const FD_APP_EXE: &str = "app.vmexe";
 
 /// Build the ELF binary from the circuit program.
-#[instrument("BuildGuest::build", fields(project_root))]
-pub fn build(project_root: &str) -> eyre::Result<Elf> {
+#[instrument("BuildGuest::build", fields(project_root), skip(feature_flags))]
+pub fn build<S: AsRef<str>>(
+    project_root: &str,
+    feature_flags: impl IntoIterator<Item = S>,
+) -> eyre::Result<Elf> {
     let guest_opts = GuestOptions::default();
-    #[cfg(feature = "euclidv2")]
-    let guest_opts = guest_opts.with_features(["euclidv2"]);
+    let guest_opts = guest_opts.with_features(feature_flags);
     let guest_opts = guest_opts.with_profile("maxperf".to_string());
     Sdk.build(guest_opts, project_root, &Default::default())
 }

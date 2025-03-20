@@ -69,18 +69,16 @@ impl AggCircuit for BatchCircuit {
     type AggregatedPublicInputs = ChunkInfo;
 
     fn verify_commitments(commitment: &ProgramCommitment) {
-        if commitment.exe != CHUNK_EXE_COMMIT {
-            panic!(
-                "mismatch chunk-proof exe commitment: expected={:?}, got={:?}",
-                CHUNK_EXE_COMMIT, commitment.exe,
-            );
-        }
-        if commitment.leaf != CHUNK_LEAF_COMMIT {
-            panic!(
-                "mismatch chunk-proof leaf commitment: expected={:?}, got={:?}",
-                CHUNK_EXE_COMMIT, commitment.leaf,
-            );
-        }
+        assert_eq!(
+            commitment.exe, CHUNK_EXE_COMMIT,
+            "mismatch chunk-proof exe commitment: expected={:?}, got={:?}",
+            CHUNK_EXE_COMMIT, commitment.exe,
+        );
+        assert_eq!(
+            commitment.leaf, CHUNK_LEAF_COMMIT,
+            "mismatch chunk-proof leaf commitment: expected={:?}, got={:?}",
+            CHUNK_EXE_COMMIT, commitment.leaf,
+        );
     }
 
     fn aggregated_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs> {

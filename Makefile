@@ -7,6 +7,7 @@ export RUST_BACKTRACE
 RUST_LOG ?= off,scroll_zkvm_integration=debug,scroll_zkvm_verifier=debug,scroll_zkvm_prover=debug,openvm_circuit=debug
 export RUST_LOG
 
+LEGACY := 1
 ifdef LEGACY
 FEATURE := --no-default-features
 else
@@ -74,6 +75,9 @@ test-e2e-batch:
 
 test-bundle:
 	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test bundle_circuit setup_prove_verify -- --exact --nocapture
+
+test-bundle-local:
+	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test bundle_circuit setup_prove_verify_local_task -- --exact --nocapture
 
 test-e2e-bundle:
 	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test bundle_circuit e2e -- --exact --nocapture
