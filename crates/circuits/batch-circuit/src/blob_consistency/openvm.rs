@@ -46,6 +46,8 @@ static ROOTS_OF_UNITY: LazyLock<Vec<Scalar>> = LazyLock::new(|| {
 static G2_GENERATOR: LazyLock<G2Affine> = LazyLock::new(|| Bls12_381_G2::generator().convert());
 
 static KZG_G2_SETUP: LazyLock<G2Affine> = LazyLock::new(|| {
+    // Use the second G2 field in kzg setup (G2[1]),
+    // the value of this G2 field is:
     // b5bfd7dd8cdeb128
     // 843bc287230af389
     // 26187075cbfbefa8
@@ -58,6 +60,7 @@ static KZG_G2_SETUP: LazyLock<G2Affine> = LazyLock::new(|| {
     // a36851477ba4c60b
     // 087041de621000ed
     // c98edada20c1def2
+    // extracted from https://github.com/ethereum/c-kzg-4844/blob/81a8949f29d27d225ca74ebb4e9061bdd100560a/src/trusted_setup.txt#L4100
     const KZG_G2_SETUP_BYTES: [u8; 96] = [
         0xb5, 0xbf, 0xd7, 0xdd, 0x8c, 0xde, 0xb1, 0x28, 0x84, 0x3b, 0xc2, 0x87, 0x23, 0x0a, 0xf3,
         0x89, 0x26, 0x18, 0x70, 0x75, 0xcb, 0xfb, 0xef, 0xa8, 0x10, 0x09, 0xa2, 0xce, 0x61, 0x5a,
