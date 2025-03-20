@@ -19,7 +19,7 @@ pub struct ChunkProvingTask {
     /// The on-chain L1 msg queue hash before applying L1 msg txs from the chunk.
     pub prev_msg_queue_hash: B256,
     /// Code version specify
-    pub code_version: Option<u32>,
+    pub codec_version: Option<u32>,
 }
 
 #[derive(Clone, Debug)]
@@ -50,12 +50,12 @@ impl ChunkProvingTask {
         }
     }
 
-    pub fn latest_code_version() -> u32 {
+    pub fn latest_codec_version() -> u32 {
         7
     }
 
-    pub fn get_code_version(&self) -> CodecVersion {
-        match self.code_version {
+    pub fn get_codec_version(&self) -> CodecVersion {
+        match self.codec_version {
             None | Some(3) => CodecVersion::V3,
             Some(7) => CodecVersion::V7,
             Some(_) => unimplemented!("Not a valid code, support 3 or 7 now"),
@@ -87,7 +87,7 @@ impl ProvingTask for ChunkProvingTask {
         let witness = ChunkWitness {
             blocks: self.block_witnesses.to_vec(),
             prev_msg_queue_hash: self.prev_msg_queue_hash,
-            code_version: self.get_code_version(),
+            codec_version: self.get_codec_version(),
         };
 
         let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&witness)?;

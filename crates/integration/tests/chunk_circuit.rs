@@ -46,7 +46,7 @@ fn test_cycle() -> eyre::Result<()> {
         let task = ChunkProvingTask {
             block_witnesses: vec![read_block_witness_from_testdata(blk)?],
             prev_msg_queue_hash: Default::default(),
-            code_version: Some(ChunkProvingTask::latest_code_version()),
+            codec_version: Some(ChunkProvingTask::latest_codec_version()),
         };
         let (exec_result, gas) = exec_chunk(&task)?;
         let cycle_per_gas = exec_result.total_cycle / gas;

@@ -3,6 +3,7 @@ use scroll_zkvm_circuit_input_types::{
     AggCircuit, Circuit,
     batch::BatchInfo,
     bundle::{ArchivedBundleWitness, BundleInfo},
+    chunk::CodecVersion,
     proof::{AggregationInput, ProgramCommitment},
     utils::read_witnesses,
 };
@@ -92,10 +93,24 @@ impl AggCircuit for BundleCircuit {
     }
 
     fn aggregated_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs> {
+        // ensure the code version match current feature
+        let expected_codec_version = if cfg!(feature = "euclidv2") {
+            CodecVersion::V7
+        } else {
+            CodecVersion::V3
+        };
+
         witness
             .batch_infos
             .iter()
             .map(|archived| archived.into())
+            .inspect(|batch_info: &Self::AggregatedPublicInputs| {
+                assert_eq!(
+                    expected_codec_version, batch_info.codec_version,
+                    "code version in batch info not match: expected {:?}, get {:?}",
+                    expected_codec_version, batch_info.codec_version,
+                );
+            })
             .collect()
     }
 

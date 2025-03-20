@@ -1,7 +1,7 @@
 use alloy_primitives::B256;
 use scroll_zkvm_circuit_input_types::{
     batch::{BatchHeader, BatchHeaderV3, BatchInfo, EnvelopeV3, PayloadV3},
-    chunk::ChunkInfo,
+    chunk::{ChunkInfo, CodecVersion},
 };
 
 use crate::blob_consistency::BlobPolynomial;
@@ -43,6 +43,7 @@ impl BatchInfoBuilderV3 {
         let (first, last) = payload.validate(batch_header, chunk_infos);
 
         BatchInfo {
+            codec_version: CodecVersion::V3,
             parent_state_root: first.prev_state_root,
             parent_batch_hash: batch_header.parent_batch_hash,
             state_root: last.post_state_root,

@@ -1,6 +1,6 @@
 use alloy_primitives::B256;
 
-use crate::{PublicInputs, utils::keccak256};
+use crate::{PublicInputs, chunk::CodecVersion, utils::keccak256};
 
 /// Represents public-input values for a batch.
 #[derive(
@@ -14,6 +14,9 @@ use crate::{PublicInputs, utils::keccak256};
 )]
 #[rkyv(derive(Debug))]
 pub struct BatchInfo {
+    /// To indicate which code the batch is base on
+    #[rkyv()]
+    pub codec_version: CodecVersion,
     /// The state root before applying the batch.
     #[rkyv()]
     pub parent_state_root: B256,
@@ -51,7 +54,62 @@ impl From<&ArchivedBatchInfo> for BatchInfo {
             withdraw_root: archived.withdraw_root.into(),
             prev_msg_queue_hash: archived.prev_msg_queue_hash.into(),
             post_msg_queue_hash: archived.post_msg_queue_hash.into(),
+            codec_version: CodecVersion::from(&archived.codec_version),
         }
+    }
+}
+
+impl BatchInfo {
+    /// Public input hash for a batch in euclid v1 is defined as
+    ///
+    /// keccak(
+    ///     parent state root ||
+    ///     parent batch hash ||
+    ///     state root ||
+    ///     batch hash ||
+    ///     chain id ||
+    ///     withdraw root ||
+    /// )
+    fn pi_hash_v3(&self) -> B256 {
+        keccak256(
+            std::iter::empty()
+                .chain(self.parent_state_root.as_slice())
+                .chain(self.parent_batch_hash.as_slice())
+                .chain(self.state_root.as_slice())
+                .chain(self.batch_hash.as_slice())
+                .chain(self.chain_id.to_be_bytes().as_slice())
+                .chain(self.withdraw_root.as_slice())
+                .cloned()
+                .collect::<Vec<u8>>(),
+        )
+    }
+
+    /// Public input hash for a batch is defined as
+    ///
+    /// keccak(
+    ///     parent state root ||
+    ///     parent batch hash ||
+    ///     state root ||
+    ///     batch hash ||
+    ///     chain id ||
+    ///     withdraw root ||
+    ///     prev msg queue hash ||
+    ///     post msg queue hash
+    /// )    
+    fn pi_hash_v7(&self) -> B256 {
+        keccak256(
+            std::iter::empty()
+                .chain(self.parent_state_root.as_slice())
+                .chain(self.parent_batch_hash.as_slice())
+                .chain(self.state_root.as_slice())
+                .chain(self.batch_hash.as_slice())
+                .chain(self.chain_id.to_be_bytes().as_slice())
+                .chain(self.withdraw_root.as_slice())
+                .chain(self.prev_msg_queue_hash.as_slice())
+                .chain(self.post_msg_queue_hash.as_slice())
+                .cloned()
+                .collect::<Vec<u8>>(),
+        )
     }
 }
 
@@ -69,19 +127,10 @@ impl PublicInputs for BatchInfo {
     ///     post msg queue hash
     /// )
     fn pi_hash(&self) -> B256 {
-        keccak256(
-            std::iter::empty()
-                .chain(self.parent_state_root.as_slice())
-                .chain(self.parent_batch_hash.as_slice())
-                .chain(self.state_root.as_slice())
-                .chain(self.batch_hash.as_slice())
-                .chain(self.chain_id.to_be_bytes().as_slice())
-                .chain(self.withdraw_root.as_slice())
-                .chain(self.prev_msg_queue_hash.as_slice())
-                .chain(self.post_msg_queue_hash.as_slice())
-                .cloned()
-                .collect::<Vec<u8>>(),
-        )
+        match self.codec_version {
+            CodecVersion::V3 => self.pi_hash_v3(),
+            CodecVersion::V7 => self.pi_hash_v7(),
+        }
     }
 
     /// Validate public inputs between 2 contiguous batches.
@@ -89,11 +138,14 @@ impl PublicInputs for BatchInfo {
     /// - chain id MUST match
     /// - state roots MUST be chained
     /// - batch hashes MUST be chained
+    ///   (for euclidv2 and post)
     /// - L1 msg queue hashes MUST be chained
     fn validate(&self, prev_pi: &Self) {
         assert_eq!(self.chain_id, prev_pi.chain_id);
         assert_eq!(self.parent_state_root, prev_pi.state_root);
         assert_eq!(self.parent_batch_hash, prev_pi.batch_hash);
-        assert_eq!(self.prev_msg_queue_hash, prev_pi.post_msg_queue_hash);
+        if self.codec_version != CodecVersion::V3 {
+            assert_eq!(self.prev_msg_queue_hash, prev_pi.post_msg_queue_hash);
+        }
     }
 }

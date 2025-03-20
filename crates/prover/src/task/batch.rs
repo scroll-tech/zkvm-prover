@@ -2,9 +2,6 @@ use alloy_primitives::U256;
 use c_kzg::Bytes48;
 use openvm_native_recursion::hints::Hintable;
 use openvm_sdk::StdIn;
-use scroll_zkvm_circuit_input_types::batch::{
-    BatchHeader, BatchInfo, BatchWitness, PointEvalWitness, ReferenceHeader,
-};
 #[cfg(not(feature = "euclidv2"))]
 use scroll_zkvm_circuit_input_types::batch::{
     BatchHeaderV3 as BatchHeaderT, EnvelopeV3 as Envelope,
@@ -12,6 +9,10 @@ use scroll_zkvm_circuit_input_types::batch::{
 #[cfg(feature = "euclidv2")]
 use scroll_zkvm_circuit_input_types::batch::{
     BatchHeaderV7 as BatchHeaderT, EnvelopeV7 as Envelope,
+};
+use scroll_zkvm_circuit_input_types::{
+    batch::{BatchHeader, BatchInfo, BatchWitness, PointEvalWitness, ReferenceHeader},
+    chunk::CodecVersion,
 };
 
 use crate::{
@@ -159,8 +160,15 @@ impl From<&BatchProvingTask> for BatchInfo {
 
         let parent_batch_hash = task.batch_header.parent_batch_hash;
         let batch_hash = task.batch_header.batch_hash();
+        // FIXME: prover has to be dynamic and not controlled by feature
+        let codec_version = if cfg!(feature = "euclidv2") {
+            CodecVersion::V7
+        } else {
+            CodecVersion::V3
+        };
 
         Self {
+            codec_version,
             parent_state_root,
             parent_batch_hash,
             state_root,

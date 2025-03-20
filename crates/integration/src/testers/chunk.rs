@@ -53,7 +53,7 @@ impl ProverTester for ChunkProverTester {
                 .map(read_block_witness)
                 .collect::<eyre::Result<Vec<BlockWitness>>>()?,
             prev_msg_queue_hash: Default::default(),
-            code_version: if cfg!(feature = "euclidv2") {
+            codec_version: if cfg!(feature = "euclidv2") {
                 Some(7)
             } else {
                 None
@@ -113,7 +113,7 @@ impl ProverTester for MultiChunkProverTester {
                 Ok(ChunkProvingTask {
                     block_witnesses,
                     prev_msg_queue_hash: B256::repeat_byte(1u8),
-                    code_version: if cfg!(feature = "euclidv2") {
+                    codec_version: if cfg!(feature = "euclidv2") {
                         Some(7)
                     } else {
                         None

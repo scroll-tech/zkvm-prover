@@ -43,7 +43,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     );
     let pre_state_root = witness.blocks[0].pre_state_root;
 
-    let codec_version = CodecVersion::from(&witness.code_version);
+    let codec_version = CodecVersion::from(&witness.codec_version);
     let chain = Chain::from_id(witness.blocks[0].chain_id());
 
     // SCROLL_DEV_HARDFORKS will enable all forks

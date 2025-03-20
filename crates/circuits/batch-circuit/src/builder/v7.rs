@@ -1,7 +1,7 @@
 use openvm_ecc_guest::halo2curves::bls12_381::G1Affine as Bls12_381_G1;
 use scroll_zkvm_circuit_input_types::{
     batch::{BatchHeader, BatchHeaderV7, BatchInfo, Bytes48, EnvelopeV7, PayloadV7},
-    chunk::ChunkInfo,
+    chunk::{ChunkInfo, CodecVersion},
 };
 
 use crate::blob_consistency::{
@@ -64,6 +64,7 @@ impl BatchInfoBuilderV7 {
         let (first_chunk, last_chunk) = payload.validate(header, chunk_infos);
 
         BatchInfo {
+            codec_version: CodecVersion::V7,
             parent_state_root: first_chunk.prev_state_root,
             parent_batch_hash: header.parent_batch_hash,
             state_root: last_chunk.post_state_root,

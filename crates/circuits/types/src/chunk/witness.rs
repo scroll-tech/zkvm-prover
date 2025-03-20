@@ -20,14 +20,14 @@ pub struct ChunkWitness {
     /// The on-chain rolling L1 message queue hash before enqueueing any L1 msg tx from the chunk.
     pub prev_msg_queue_hash: B256,
     /// The code version specify the chain spec
-    pub code_version: CodecVersion,
+    pub codec_version: CodecVersion,
 }
 
 impl ChunkWitness {
     pub fn new(
         blocks: &[BlockWitness],
         prev_msg_queue_hash: B256,
-        code_version: CodecVersion,
+        codec_version: CodecVersion,
     ) -> Self {
         let num_codes = blocks.iter().map(|w| w.codes.len()).sum();
         let num_states = blocks.iter().map(|w| w.states.len()).sum();
@@ -60,7 +60,7 @@ impl ChunkWitness {
         Self {
             blocks,
             prev_msg_queue_hash,
-            code_version,
+            codec_version,
         }
     }
 
