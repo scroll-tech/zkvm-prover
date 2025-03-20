@@ -1,3 +1,4 @@
+use openvm_stark_sdk::bench::run_with_metric_collection;
 use scroll_zkvm_integration::{
     ProverTester, prove_verify_multi, prove_verify_single,
     testers::chunk::{ChunkProverTester, MultiChunkProverTester, read_block_witness_from_testdata},
@@ -135,9 +136,10 @@ fn guest_profiling() -> eyre::Result<()> {
 fn setup_prove_verify_single() -> eyre::Result<()> {
     ChunkProverTester::setup()?;
 
-    prove_verify_single::<ChunkProverTester>(None)?;
-
-    Ok(())
+    run_with_metric_collection("OUTPUT_PATH", || -> eyre::Result<()> {
+        prove_verify_single::<ChunkProverTester>(None)?;
+        Ok(())
+    })
 }
 
 #[test]
