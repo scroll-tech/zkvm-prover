@@ -22,7 +22,7 @@ use crate::chunk::public_inputs::BlockContextV2;
 
 type Witness = ArchivedChunkWitness;
 
-pub fn execute(witness: &Witness, codec_version: CodecVersion) -> Result<ChunkInfo, String> {
+pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     if witness.blocks.is_empty() {
         return Err("At least one witness must be provided in chunk mode".into());
     }
@@ -43,6 +43,7 @@ pub fn execute(witness: &Witness, codec_version: CodecVersion) -> Result<ChunkIn
     );
     let pre_state_root = witness.blocks[0].pre_state_root;
 
+    let codec_version = CodecVersion::from(&witness.code_version);
     let chain = Chain::from_id(witness.blocks[0].chain_id());
 
     // SCROLL_DEV_HARDFORKS will enable all forks

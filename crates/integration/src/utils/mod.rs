@@ -326,6 +326,11 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
             .map(read_block_witness)
             .collect::<eyre::Result<Vec<BlockWitness>>>()?,
         prev_msg_queue_hash: Default::default(),
+        code_version: if cfg!(feature = "euclidv2") {
+            Some(7)
+        } else {
+            None
+        },
     };
 
     // read chunk proof.

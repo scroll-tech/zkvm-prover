@@ -1,6 +1,6 @@
 use scroll_zkvm_circuit_input_types::{
     Circuit,
-    chunk::{ArchivedChunkWitness, ChunkInfo, CodecVersion, execute},
+    chunk::{ArchivedChunkWitness, ChunkInfo, execute},
     utils::read_witnesses,
 };
 
@@ -54,11 +54,6 @@ impl Circuit for ChunkCircuit {
     }
 
     fn validate(witness: &Self::Witness) -> Self::PublicInputs {
-        let codec_version = if cfg!(feature = "euclidv2") {
-            CodecVersion::V7
-        } else {
-            CodecVersion::V3
-        };
-        execute(witness, codec_version).expect("failed to execute chunk")
+        execute(witness).expect("failed to execute chunk")
     }
 }
