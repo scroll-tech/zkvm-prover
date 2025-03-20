@@ -6,12 +6,7 @@ use crate::{
     task::batch::BatchProvingTask,
 };
 
-#[cfg(feature = "euclidv2")]
 use crate::commitments::batch::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT};
-#[cfg(not(feature = "euclidv2"))]
-use crate::commitments::batch_legacy::{
-    EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT,
-};
 
 /// Prover for [`BatchCircuit`].
 pub type BatchProver = Prover<BatchProverType>;

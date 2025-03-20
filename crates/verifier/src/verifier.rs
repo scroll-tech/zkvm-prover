@@ -11,12 +11,7 @@ use openvm_native_recursion::{
 use openvm_sdk::{F, RootSC, SC};
 use scroll_zkvm_circuit_input_types::proof::ProgramCommitment;
 
-#[cfg(feature = "euclidv2")]
 use crate::commitments::bundle::{
-    EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT,
-};
-#[cfg(not(feature = "euclidv2"))]
-use crate::commitments::bundle_legacy::{
     EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT,
 };
 

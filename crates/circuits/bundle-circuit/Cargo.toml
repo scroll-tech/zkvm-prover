@@ -18,4 +18,3 @@ rkyv.workspace = true
 
 [features]
 default = []
-euclidv2 = []

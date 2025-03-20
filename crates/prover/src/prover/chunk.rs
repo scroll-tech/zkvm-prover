@@ -5,12 +5,7 @@ use crate::{
 };
 use scroll_zkvm_circuit_input_types::chunk::{ArchivedChunkWitness, ChunkWitness, execute};
 
-#[cfg(feature = "euclidv2")]
 use crate::commitments::chunk::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT};
-#[cfg(not(feature = "euclidv2"))]
-use crate::commitments::chunk_legacy::{
-    EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT,
-};
 
 /// Prover for [`ChunkCircuit`].
 pub type ChunkProver = Prover<ChunkProverType>;

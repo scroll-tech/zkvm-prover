@@ -1,14 +1,12 @@
-use alloy_primitives::U256;
+use alloy_primitives::{B256, U256};
 use c_kzg::Bytes48;
 use openvm_native_recursion::hints::Hintable;
 use openvm_sdk::StdIn;
-#[cfg(not(feature = "euclidv2"))]
 use scroll_zkvm_circuit_input_types::batch::{
-    BatchHeaderV3 as BatchHeaderT, EnvelopeV3 as Envelope,
+    BatchHeaderV3, EnvelopeV3,
 };
-#[cfg(feature = "euclidv2")]
 use scroll_zkvm_circuit_input_types::batch::{
-    BatchHeaderV7 as BatchHeaderT, EnvelopeV7 as Envelope,
+    BatchHeaderV7, EnvelopeV7,
 };
 use scroll_zkvm_circuit_input_types::{
     batch::{BatchHeader, BatchInfo, BatchWitness, PointEvalWitness, ReferenceHeader},
@@ -21,6 +19,33 @@ use crate::{
     utils::{base64, point_eval},
 };
 
+/// Define variable batch header type, since BatchHeaderV3 can not
+/// be decoded as V7 we can always has correct deserialization
+#[derive(Clone, serde::Deserialize, serde::Serialize)]
+#[serde(untagged)]
+pub enum BatchHeaderV {
+    V7(BatchHeaderV7),
+    V3(BatchHeaderV3),
+}
+
+impl From<BatchHeaderV> for ReferenceHeader {
+    fn from(value: BatchHeaderV) -> Self {
+        match value {
+            BatchHeaderV::V3(h) => ReferenceHeader::V3(h),
+            BatchHeaderV::V7(h) => ReferenceHeader::V7(h),
+        }
+    }
+}
+
+impl BatchHeaderV {
+    pub fn batch_hash(&self) -> B256 {
+        match self {
+            BatchHeaderV::V3(h) => h.batch_hash(),
+            BatchHeaderV::V7(h) => h.batch_hash(),
+        }        
+    }
+}
+
 /// Defines a proving task for batch proof generation, the format
 /// is compatible with both pre-euclidv2 and euclidv2
 #[derive(Clone, serde::Deserialize, serde::Serialize)]
@@ -28,7 +53,7 @@ pub struct BatchProvingTask {
     /// Chunk proofs for the contiguous list of chunks within the batch.
     pub chunk_proofs: Vec<ChunkProof>,
     /// The [`BatchHeaderV3/V7`], as computed on-chain for this batch.
-    pub batch_header: BatchHeaderT,
+    pub batch_header: BatchHeaderV,
     /// The bytes encoding the batch data that will finally be published on-chain in the form of an
     /// EIP-4844 blob.
     #[serde(with = "base64")]
@@ -39,6 +64,8 @@ pub struct BatchProvingTask {
     pub kzg_commitment: Option<Bytes48>,
     /// KZG proof.
     pub kzg_proof: Option<Bytes48>,
+    /// Code version specify, for sanity check with batch_header and chunk proof
+    pub codec_version: Option<u32>,
 }
 
 impl ProvingTask for BatchProvingTask {
@@ -51,8 +78,16 @@ impl ProvingTask for BatchProvingTask {
         let (kzg_commitment, kzg_proof, challenge_digest) = {
             let blob = point_eval::to_blob(&self.blob_bytes);
             let commitment = point_eval::blob_to_kzg_commitment(&blob);
-            let challenge_digest = Envelope::from(self.blob_bytes.as_slice())
-                .challenge_digest(point_eval::get_versioned_hash(&commitment));
+            let challenge_digest = match &self.batch_header {
+                BatchHeaderV::V3(_) => {
+                    EnvelopeV3::from(self.blob_bytes.as_slice())
+                    .challenge_digest(point_eval::get_versioned_hash(&commitment))
+                }
+                BatchHeaderV::V7(_) => {
+                    EnvelopeV7::from(self.blob_bytes.as_slice())
+                    .challenge_digest(point_eval::get_versioned_hash(&commitment))
+                }
+            };
 
             let (proof, _) = point_eval::get_kzg_proof(&blob, challenge_digest);
 
@@ -76,10 +111,7 @@ impl ProvingTask for BatchProvingTask {
             kzg_proof: *kzg_proof,
         };
 
-        #[cfg(not(feature = "euclidv2"))]
-        let reference_header = ReferenceHeader::V3(self.batch_header);
-        #[cfg(feature = "euclidv2")]
-        let reference_header = ReferenceHeader::V7(self.batch_header);
+        let reference_header = self.batch_header.clone().into();
 
         let witness = BatchWitness {
             chunk_proofs: self
@@ -139,33 +171,32 @@ impl From<&BatchProvingTask> for BatchInfo {
                 .chunk_info
                 .withdraw_root,
         );
-        #[cfg(not(feature = "euclidv2"))]
-        // before euclidv2 there is no msg queue and we simply default the value
-        let (prev_msg_queue_hash, post_msg_queue_hash) = (Default::default(), Default::default());
-        #[cfg(feature = "euclidv2")]
-        let (prev_msg_queue_hash, post_msg_queue_hash) = (
-            task.chunk_proofs
-                .first()
-                .expect("at least one chunk in batch")
-                .metadata
-                .chunk_info
-                .prev_msg_queue_hash,
-            task.chunk_proofs
-                .last()
-                .expect("at least one chunk in batch")
-                .metadata
-                .chunk_info
-                .post_msg_queue_hash,
-        );
-
-        let parent_batch_hash = task.batch_header.parent_batch_hash;
-        let batch_hash = task.batch_header.batch_hash();
-        // FIXME: prover has to be dynamic and not controlled by feature
-        let codec_version = if cfg!(feature = "euclidv2") {
-            CodecVersion::V7
-        } else {
-            CodecVersion::V3
+        let (codec_version, parent_batch_hash, prev_msg_queue_hash, post_msg_queue_hash) = 
+        match task.batch_header {
+            BatchHeaderV::V3(h) => (
+                CodecVersion::V3,
+                h.parent_batch_hash,
+                Default::default(), Default::default(),
+            ),
+            BatchHeaderV::V7(h) => (
+                CodecVersion::V7,
+                h.parent_batch_hash,
+                task.chunk_proofs
+                    .first()
+                    .expect("at least one chunk in batch")
+                    .metadata
+                    .chunk_info
+                    .prev_msg_queue_hash,
+                task.chunk_proofs
+                    .last()
+                    .expect("at least one chunk in batch")
+                    .metadata
+                    .chunk_info
+                    .post_msg_queue_hash,
+            ),
         };
+
+        let batch_hash = task.batch_header.batch_hash();
 
         Self {
             codec_version,

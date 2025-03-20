@@ -31,8 +31,8 @@ pub struct BundleInfo {
     pub withdraw_root: B256,
 }
 
-impl PublicInputs for BundleInfo {
-    /// Public input hash for a bundle is defined as
+impl BundleInfo {
+    /// Public input hash for a bundle of euclid v1 is defined as
     ///
     /// keccak(
     ///     chain id ||
@@ -43,7 +43,7 @@ impl PublicInputs for BundleInfo {
     ///     batch hash ||
     ///     withdraw root
     /// )
-    fn pi_hash(&self) -> B256 {
+    fn pi_hash_euclid_v1(&self) -> B256 {
         keccak256(
             std::iter::empty()
                 .chain(self.chain_id.to_be_bytes().as_slice())
@@ -57,6 +57,52 @@ impl PublicInputs for BundleInfo {
                 .collect::<Vec<u8>>(),
         )
     }
+
+    /// Public input hash for a bundle of euclid v2 is defined as
+    ///
+    /// keccak(
+    ///     chain id ||
+    ///     msg_queue_hash ||
+    ///     num batches ||
+    ///     prev state root ||
+    ///     prev batch hash ||
+    ///     post state root ||
+    ///     batch hash ||
+    ///     withdraw root
+    /// )   
+    fn pi_hash_euclid_v2(&self) -> B256 {
+        keccak256(
+            std::iter::empty()
+                .chain(self.chain_id.to_be_bytes().as_slice())
+                .chain(self.msg_queue_hash.as_slice())
+                .chain(self.num_batches.to_be_bytes().as_slice())
+                .chain(self.prev_state_root.as_slice())
+                .chain(self.prev_batch_hash.as_slice())
+                .chain(self.post_state_root.as_slice())
+                .chain(self.batch_hash.as_slice())
+                .chain(self.withdraw_root.as_slice())
+                .cloned()
+                .collect::<Vec<u8>>(),
+        )
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct BundleInfoV1 (pub BundleInfo);
+
+#[derive(Clone, Debug)]
+pub struct BundleInfoV2 (pub BundleInfo);
+
+impl PublicInputs for BundleInfoV1 {
+    fn pi_hash(&self) -> B256 {self.0.pi_hash_euclid_v1()}
+
+    fn validate(&self, _prev_pi: &Self) {
+        unreachable!("bundle is the last layer and is not aggregated by any other circuit");
+    }
+}
+
+impl PublicInputs for BundleInfoV2 {
+    fn pi_hash(&self) -> B256 {self.0.pi_hash_euclid_v1()}
 
     fn validate(&self, _prev_pi: &Self) {
         unreachable!("bundle is the last layer and is not aggregated by any other circuit");

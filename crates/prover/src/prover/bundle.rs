@@ -7,14 +7,10 @@ use crate::{
     task::{ProvingTask, bundle::BundleProvingTask},
 };
 
-#[cfg(feature = "euclidv2")]
 use crate::commitments::bundle::{
     EXE_COMMIT as BUNDLE_EXE_COMMIT, LEAF_COMMIT as BUNDLE_LEAF_COMMIT,
 };
-#[cfg(not(feature = "euclidv2"))]
-use crate::commitments::bundle_legacy::{
-    EXE_COMMIT as BUNDLE_EXE_COMMIT, LEAF_COMMIT as BUNDLE_LEAF_COMMIT,
-};
+
 
 /// Prover for [`BundleCircuit`].
 pub type BundleProver = Prover<BundleProverType>;
