@@ -6,12 +6,7 @@ use circuit::BundleCircuit as C;
 openvm::entry!(main);
 
 #[rustfmt::skip]
-#[cfg(feature = "euclidv2")]
 mod child_commitments;
-
-#[rustfmt::skip]
-#[cfg(not(feature = "euclidv2"))]
-mod child_commitments_legacy;
 
 fn main() {
     // Setup openvm extensions for the circuit.
@@ -23,16 +18,11 @@ fn main() {
     // Deserialize witness bytes to the witness data type.
     let witness = C::deserialize_witness(&witness_bytes);
 
-    // Get the public-input values of the proofs being aggregated from witness.
-    let agg_pis = C::aggregated_public_inputs(witness);
-
     // Verify the root proofs being aggregated in the circuit.
     let agg_proofs = C::verify_proofs(witness);
 
-    // Verify the commitments
-    for (proof, agg_pi) in agg_proofs.iter().zip(agg_pis.iter()) {
-        C::verify_commitments_with_agg_pi(&proof.commitment, agg_pi);
-    }
+    // Get the public-input values of the proofs being aggregated from witness.
+    let agg_pis = C::aggregated_public_inputs(witness);
 
     // Derive the digests of the public-input values of the proofs being aggregated.
     let agg_pi_hashes = C::aggregated_pi_hashes(&agg_proofs);

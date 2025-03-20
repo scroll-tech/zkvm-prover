@@ -12,16 +12,13 @@ use openvm_sdk::{F, RootSC, SC};
 use scroll_zkvm_circuit_input_types::proof::ProgramCommitment;
 
 #[cfg(feature = "euclidv2")]
+use crate::commitments::bundle::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT};
+#[cfg(not(feature = "euclidv2"))]
+use crate::commitments::bundle_legacy::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT};
+
 use crate::commitments::{
     batch::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT},
-    bundle::{EXE_COMMIT as BUNDLE_EXE_COMMIT, LEAF_COMMIT as BUNDLE_LEAF_COMMIT},
-    chunk::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT},
-};
-#[cfg(not(feature = "euclidv2"))]
-use crate::commitments::{
-    batch_legacy::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT},
-    bundle_legacy::{EXE_COMMIT as BUNDLE_EXE_COMMIT, LEAF_COMMIT as BUNDLE_LEAF_COMMIT},
-    chunk_legacy::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT},
+    chunk::{EXE_COMMIT as BUNDLE_EXE_COMMIT, LEAF_COMMIT as BUNDLE_LEAF_COMMIT},
 };
 
 pub trait VerifierType {
@@ -220,13 +217,7 @@ mod tests {
     #[test]
     fn verify_batch_proof() -> eyre::Result<()> {
         let batch_proof =
-            read_json_deep::<_, BatchProof>(Path::new(PATH_TESTDATA).join("proofs").join(
-                if cfg!(feature = "euclidv2") {
-                    "batch-proof-phase2.json"
-                } else {
-                    "batch-proof-phase1.json"
-                },
-            ))?;
+            read_json_deep::<_, BatchProof>(Path::new(PATH_TESTDATA).join("proofs").join("batch-proof.json"))?;
 
         let verifier = BatchVerifier::setup(
             Path::new(PATH_TESTDATA).join("root-verifier-vm-config"),
