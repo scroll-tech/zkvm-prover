@@ -7,7 +7,6 @@ export RUST_BACKTRACE
 RUST_LOG ?= off,scroll_zkvm_integration=debug,scroll_zkvm_verifier=debug,scroll_zkvm_prover=debug,openvm_circuit=debug
 export RUST_LOG
 
-LEGACY := 1
 ifdef LEGACY
 FEATURE := --no-default-features
 else
@@ -36,7 +35,7 @@ clean-guest:
 	docker rmi build-guest:local
 
 build-guest:
-	FEATURE=$(FEATURE) sh build-guest.sh
+	sh build-guest.sh
 
 clean-build-guest: clean-guest build-guest
 
