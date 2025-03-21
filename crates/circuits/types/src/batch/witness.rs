@@ -1,6 +1,6 @@
 use crate::{
     ProofCarryingWitness,
-    chunk::ChunkInfo,
+    chunk::{ChunkInfo, ForkName},
     proof::{AggregationInput, ProgramCommitment},
 };
 
@@ -39,6 +39,9 @@ pub struct BatchWitness {
     /// Header for reference.
     #[rkyv()]
     pub reference_header: ReferenceHeader,
+    /// The code version specify the chain spec
+    #[rkyv()]
+    pub fork_name: ForkName,
 }
 
 impl ProofCarryingWitness for ArchivedBatchWitness {

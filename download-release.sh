@@ -15,6 +15,9 @@ wget https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/releases/$SC
 # bundle-circuit exe
 wget https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/releases/$SCROLL_ZKVM_VERSION/bundle/app.vmexe -O crates/circuits/bundle-circuit/openvm/app.vmexe
 
+# bundle-circuit exe, legacy version, may not exist
+wget https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/releases/$SCROLL_ZKVM_VERSION/bundle/app_legacy.vmexe -O crates/circuits/bundle-circuit/openvm/app_legacy.vmexe || echo "legacy app not exist for $SCROLL_ZKVM_VERSION"
+
 # assets for verifier-only mode
 wget https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/releases/$SCROLL_ZKVM_VERSION/verifier/root-verifier-vm-config -O crates/verifier/testdata/root-verifier-vm-config
 wget https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/releases/$SCROLL_ZKVM_VERSION/verifier/root-verifier-committed-exe -O crates/verifier/testdata/root-verifier-committed-exe

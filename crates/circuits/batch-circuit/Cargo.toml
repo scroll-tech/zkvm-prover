@@ -26,7 +26,6 @@ tiny-keccak.workspace = true
 
 [features]
 default = []
-euclidv2 = ["scroll-zkvm-circuit-input-types/euclidv2"]
 
 [dev-dependencies]
 c-kzg = "1.0"

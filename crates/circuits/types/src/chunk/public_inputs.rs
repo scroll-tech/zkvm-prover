@@ -8,6 +8,50 @@ use sbv_primitives::types::{
 /// Number of bytes used to serialise [`BlockContextV2`].
 pub const SIZE_BLOCK_CTX: usize = 52;
 
+#[derive(
+    Debug,
+    Copy,
+    Clone,
+    PartialEq,
+    Eq,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    serde::Deserialize,
+    serde::Serialize,
+)]
+#[rkyv(derive(Debug))]
+pub enum ForkName {
+    Euclid,
+    EuclidV2,
+}
+
+impl ForkName {
+    pub fn most_legacy() -> ForkName {
+        ForkName::Euclid
+    }
+}
+
+impl From<&ArchivedForkName> for ForkName {
+    fn from(archived: &ArchivedForkName) -> Self {
+        match archived {
+            ArchivedForkName::Euclid => ForkName::Euclid,
+            ArchivedForkName::EuclidV2 => ForkName::EuclidV2,
+        }
+    }
+}
+
+impl From<Option<&str>> for ForkName {
+    fn from(value: Option<&str>) -> Self {
+        match value {
+            None => ForkName::most_legacy(),
+            Some("euclidv2") => ForkName::EuclidV2,
+            Some("euclid") => ForkName::Euclid,
+            Some(s) => unreachable!("fork name is not accept: {s}"),
+        }
+    }
+}
+
 /// Represents the version 2 of block context.
 ///
 /// The difference between v2 and v1 is that the block number field has been removed since v2.
@@ -104,6 +148,11 @@ pub struct ChunkInfo {
     /// The withdrawals root after applying the chunk.
     #[rkyv()]
     pub withdraw_root: B256,
+    /// Digest of L1 message txs force included in the chunk.
+    /// It is a legacy field and can be omitted in new defination
+    #[rkyv()]
+    #[serde(default)]
+    pub data_hash: B256,
     /// Digest of L2 tx data flattened over all L2 txs in the chunk.
     #[rkyv()]
     pub tx_data_digest: B256,
@@ -124,28 +173,31 @@ pub struct ChunkInfo {
     pub block_ctxs: Vec<BlockContextV2>,
 }
 
-impl From<&ArchivedChunkInfo> for ChunkInfo {
-    fn from(archived: &ArchivedChunkInfo) -> Self {
-        Self {
-            chain_id: archived.chain_id.into(),
-            prev_state_root: archived.prev_state_root.into(),
-            post_state_root: archived.post_state_root.into(),
-            withdraw_root: archived.withdraw_root.into(),
-            tx_data_digest: archived.tx_data_digest.into(),
-            prev_msg_queue_hash: archived.prev_msg_queue_hash.into(),
-            post_msg_queue_hash: archived.post_msg_queue_hash.into(),
-            tx_data_length: archived.tx_data_length.into(),
-            initial_block_number: archived.initial_block_number.into(),
-            block_ctxs: archived
-                .block_ctxs
-                .iter()
-                .map(BlockContextV2::from)
-                .collect(),
-        }
+impl ChunkInfo {
+    /// Public input hash for a given chunk is defined as
+    ///
+    /// keccak(
+    ///     chain id ||
+    ///     prev state root ||
+    ///     post state root ||
+    ///     withdraw root ||
+    ///     chunk data hash ||
+    ///     tx data hash
+    /// )
+    pub fn pi_hash_euclid(&self) -> B256 {
+        keccak256(
+            std::iter::empty()
+                .chain(&self.chain_id.to_be_bytes())
+                .chain(self.prev_state_root.as_slice())
+                .chain(self.post_state_root.as_slice())
+                .chain(self.withdraw_root.as_slice())
+                .chain(self.data_hash.as_slice())
+                .chain(self.tx_data_digest.as_slice())
+                .cloned()
+                .collect::<Vec<u8>>(),
+        )
     }
-}
 
-impl PublicInputs for ChunkInfo {
     /// Public input hash for a given chunk is defined as
     ///
     /// keccak(
@@ -159,7 +211,7 @@ impl PublicInputs for ChunkInfo {
     ///     initial block number ||
     ///     block_ctx for block_ctx in block_ctxs
     /// )
-    fn pi_hash(&self) -> B256 {
+    pub fn pi_hash_euclidv2(&self) -> B256 {
         keccak256(
             std::iter::empty()
                 .chain(&self.chain_id.to_be_bytes())
@@ -181,6 +233,45 @@ impl PublicInputs for ChunkInfo {
                 .collect::<Vec<u8>>(),
         )
     }
+}
+
+impl From<&ArchivedChunkInfo> for ChunkInfo {
+    fn from(archived: &ArchivedChunkInfo) -> Self {
+        Self {
+            chain_id: archived.chain_id.into(),
+            prev_state_root: archived.prev_state_root.into(),
+            post_state_root: archived.post_state_root.into(),
+            withdraw_root: archived.withdraw_root.into(),
+            data_hash: archived.data_hash.into(),
+            tx_data_digest: archived.tx_data_digest.into(),
+            prev_msg_queue_hash: archived.prev_msg_queue_hash.into(),
+            post_msg_queue_hash: archived.post_msg_queue_hash.into(),
+            tx_data_length: archived.tx_data_length.into(),
+            initial_block_number: archived.initial_block_number.into(),
+            block_ctxs: archived
+                .block_ctxs
+                .iter()
+                .map(BlockContextV2::from)
+                .collect(),
+        }
+    }
+}
+
+pub type VersionedChunkInfo = (ChunkInfo, ForkName);
+
+impl PublicInputs for VersionedChunkInfo {
+    /// Compute the public input hash for the chunk.
+    fn pi_hash(&self) -> B256 {
+        // unimplemented!("use pi_hash_v3 or pi_hash_v7");
+        match self.1 {
+            ForkName::Euclid => {
+                // sanity check
+                assert_ne!(self.0.data_hash, B256::ZERO, "v3 must has valid data hash");
+                self.0.pi_hash_euclid()
+            }
+            ForkName::EuclidV2 => self.0.pi_hash_euclidv2(),
+        }
+    }
 
     /// Validate public inputs between 2 contiguous chunks.
     ///
@@ -188,9 +279,13 @@ impl PublicInputs for ChunkInfo {
     /// - state roots MUST be chained
     /// - L1 msg queue hash MUST be chained
     fn validate(&self, prev_pi: &Self) {
-        assert_eq!(self.chain_id, prev_pi.chain_id);
-        assert_eq!(self.prev_state_root, prev_pi.post_state_root);
-        assert_eq!(self.prev_msg_queue_hash, prev_pi.post_msg_queue_hash);
+        assert_eq!(self.1, prev_pi.1);
+        assert_eq!(self.0.chain_id, prev_pi.0.chain_id);
+        assert_eq!(self.0.prev_state_root, prev_pi.0.post_state_root);
+        // For V3, they should always be 0.
+        if self.1 != ForkName::Euclid {
+            assert_eq!(self.0.prev_msg_queue_hash, prev_pi.0.post_msg_queue_hash);
+        }
     }
 }
 

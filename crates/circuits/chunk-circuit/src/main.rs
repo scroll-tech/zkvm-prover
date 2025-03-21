@@ -1,4 +1,4 @@
-use scroll_zkvm_circuit_input_types::Circuit;
+use scroll_zkvm_circuit_input_types::{Circuit, PublicInputs, reveal_pi_hash};
 
 mod circuit;
 use circuit::ChunkCircuit as C;
@@ -14,5 +14,5 @@ fn main() {
 
     let public_inputs = C::validate(witness);
 
-    C::reveal_pi(&public_inputs);
+    reveal_pi_hash(public_inputs.pi_hash());
 }

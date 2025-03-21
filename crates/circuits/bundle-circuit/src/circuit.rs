@@ -1,18 +1,14 @@
 use alloy_primitives::B256;
 use scroll_zkvm_circuit_input_types::{
-    AggCircuit, Circuit,
-    batch::BatchInfo,
-    bundle::{ArchivedBundleWitness, BundleInfo},
+    AggCircuit, Circuit, PublicInputs,
+    batch::VersionedBatchInfo,
+    bundle::{ArchivedBundleWitness, BundleInfo, BundleInfoV1, BundleInfoV2},
+    chunk::ForkName,
     proof::{AggregationInput, ProgramCommitment},
     utils::read_witnesses,
 };
 
-#[cfg(feature = "euclidv2")]
 use crate::child_commitments::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT};
-#[cfg(not(feature = "euclidv2"))]
-use crate::child_commitments_legacy::{
-    EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT,
-};
 
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use openvm_keccak256_guest;
@@ -21,12 +17,13 @@ openvm_algebra_guest::moduli_macros::moduli_init! {
     "52435875175126190479447740508185965837690552500527637822603658699938581184513"
 }
 
-pub struct BundleCircuit;
+#[derive(Default)]
+pub struct BundleCircuit<T>(std::marker::PhantomData<T>);
 
-impl Circuit for BundleCircuit {
+impl<T: PublicInputs + From<BundleInfo>> Circuit for BundleCircuit<T> {
     type Witness = ArchivedBundleWitness;
 
-    type PublicInputs = BundleInfo;
+    type PublicInputs = T;
 
     fn setup() {
         setup_all_moduli();
@@ -77,11 +74,28 @@ impl Circuit for BundleCircuit {
             withdraw_root,
             msg_queue_hash,
         }
+        .into()
     }
 }
 
-impl AggCircuit for BundleCircuit {
-    type AggregatedPublicInputs = BatchInfo;
+pub trait ForkNameInfo {
+    fn fork_name() -> ForkName;
+}
+
+impl ForkNameInfo for BundleInfoV1 {
+    fn fork_name() -> ForkName {
+        ForkName::Euclid
+    }
+}
+
+impl ForkNameInfo for BundleInfoV2 {
+    fn fork_name() -> ForkName {
+        ForkName::EuclidV2
+    }
+}
+
+impl<T: ForkNameInfo + PublicInputs + From<BundleInfo>> AggCircuit for BundleCircuit<T> {
+    type AggregatedPublicInputs = VersionedBatchInfo;
 
     fn verify_commitments(commitment: &ProgramCommitment) {
         assert_eq!(
@@ -100,7 +114,7 @@ impl AggCircuit for BundleCircuit {
         witness
             .batch_infos
             .iter()
-            .map(|archived| archived.into())
+            .map(|archived| (archived.into(), T::fork_name()))
             .collect()
     }
 
