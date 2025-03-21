@@ -26,6 +26,7 @@ impl ProverTester for BundleProverTester {
                 ))?,
             ],
             bundle_info: None,
+            fork_name: None,
         })
     }
 }

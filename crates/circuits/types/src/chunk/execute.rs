@@ -1,5 +1,5 @@
 use crate::{
-    chunk::{ArchivedChunkWitness, ChunkInfo, make_providers, public_inputs::CodecVersion},
+    chunk::{ArchivedChunkWitness, ChunkInfo, ForkName, make_providers},
     manually_drop_on_zkvm,
 };
 use sbv_core::{EvmDatabase, EvmExecutor};
@@ -43,12 +43,13 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     );
     let pre_state_root = witness.blocks[0].pre_state_root;
 
-    let codec_version = CodecVersion::from(&witness.codec_version);
+    let fork_name = ForkName::from(&witness.fork_name);
     let chain = Chain::from_id(witness.blocks[0].chain_id());
 
     // SCROLL_DEV_HARDFORKS will enable all forks
     let mut hardforks = (*SCROLL_DEV_HARDFORKS).clone();
-    if codec_version == CodecVersion::V3 {
+    if fork_name == ForkName::Euclid {
+        // disable EuclidV2 fork for legacy chunk
         use sbv_primitives::{chainspec::ForkCondition, hardforks::ScrollHardfork};
         hardforks.insert(ScrollHardfork::EuclidV2, ForkCondition::Never);
     }
@@ -102,7 +103,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     let sbv_chunk_info = {
         #[allow(unused_mut)]
         let mut builder = ChunkInfoBuilder::new(&chain_spec, pre_state_root.into(), &blocks);
-        if codec_version == CodecVersion::V7 {
+        if fork_name == ForkName::EuclidV2 {
             builder.set_prev_msg_queue_hash(witness.prev_msg_queue_hash.into());
         }
         builder.build(withdraw_root)
@@ -116,7 +117,6 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     }
 
     let chunk_info = ChunkInfo {
-        codec_version,
         chain_id: sbv_chunk_info.chain_id(),
         prev_state_root: sbv_chunk_info.prev_state_root(),
         post_state_root: sbv_chunk_info.post_state_root(),

@@ -1,7 +1,10 @@
-use scroll_zkvm_circuit_input_types::{AggCircuit, Circuit};
+use scroll_zkvm_circuit_input_types::{AggCircuit, Circuit, bundle};
 
 mod circuit;
-use circuit::BundleCircuit as C;
+#[cfg(feature = "euclidv2")]
+type C = circuit::BundleCircuit<bundle::BundleInfoV2>;
+#[cfg(not(feature = "euclidv2"))]
+type C = circuit::BundleCircuit<bundle::BundleInfoV1>;
 
 openvm::entry!(main);
 

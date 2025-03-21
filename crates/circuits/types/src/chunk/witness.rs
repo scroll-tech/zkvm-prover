@@ -1,4 +1,4 @@
-use crate::chunk::CodecVersion;
+use crate::chunk::ForkName;
 use alloy_primitives::B256;
 use sbv_primitives::types::BlockWitness;
 use std::collections::HashSet;
@@ -20,15 +20,11 @@ pub struct ChunkWitness {
     /// The on-chain rolling L1 message queue hash before enqueueing any L1 msg tx from the chunk.
     pub prev_msg_queue_hash: B256,
     /// The code version specify the chain spec
-    pub codec_version: CodecVersion,
+    pub fork_name: ForkName,
 }
 
 impl ChunkWitness {
-    pub fn new(
-        blocks: &[BlockWitness],
-        prev_msg_queue_hash: B256,
-        codec_version: CodecVersion,
-    ) -> Self {
+    pub fn new(blocks: &[BlockWitness], prev_msg_queue_hash: B256, fork_name: ForkName) -> Self {
         let num_codes = blocks.iter().map(|w| w.codes.len()).sum();
         let num_states = blocks.iter().map(|w| w.states.len()).sum();
         let mut codes = HashSet::with_capacity(num_codes);
@@ -60,15 +56,15 @@ impl ChunkWitness {
         Self {
             blocks,
             prev_msg_queue_hash,
-            codec_version,
+            fork_name,
         }
     }
 
     pub fn new_v2(blocks: &[BlockWitness], prev_msg_queue_hash: B256) -> Self {
-        Self::new(blocks, prev_msg_queue_hash, CodecVersion::V7)
+        Self::new(blocks, prev_msg_queue_hash, ForkName::EuclidV2)
     }
 
     pub fn new_legacy(blocks: &[BlockWitness]) -> Self {
-        Self::new(blocks, Default::default(), CodecVersion::V3)
+        Self::new(blocks, Default::default(), ForkName::Euclid)
     }
 }

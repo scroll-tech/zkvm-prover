@@ -174,14 +174,11 @@ mod tests {
     #[ignore = "need release assets"]
     #[test]
     fn verify_chunk_proof() -> eyre::Result<()> {
-        let chunk_proof =
-            read_json_deep::<_, ChunkProof>(Path::new(PATH_TESTDATA).join("proofs").join(
-                if cfg!(feature = "euclidv2") {
-                    "chunk-proof-phase2.json"
-                } else {
-                    "chunk-proof-phase1.json"
-                },
-            ))?;
+        let chunk_proof = read_json_deep::<_, ChunkProof>(
+            Path::new(PATH_TESTDATA)
+                .join("proofs")
+                .join("chunk-proof.json"),
+        )?;
 
         // Note: the committed exe has to match the version of openvm
         // which is used to generate the proof

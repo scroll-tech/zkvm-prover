@@ -21,16 +21,33 @@ pub const SIZE_BLOCK_CTX: usize = 52;
     serde::Serialize,
 )]
 #[rkyv(derive(Debug))]
-pub enum CodecVersion {
-    V3,
-    V7,
+pub enum ForkName {
+    Euclid,
+    EuclidV2,
 }
 
-impl From<&ArchivedCodecVersion> for CodecVersion {
-    fn from(archived: &ArchivedCodecVersion) -> Self {
+impl ForkName {
+    pub fn most_legacy() -> ForkName {
+        ForkName::EuclidV2
+    }
+}
+
+impl From<&ArchivedForkName> for ForkName {
+    fn from(archived: &ArchivedForkName) -> Self {
         match archived {
-            ArchivedCodecVersion::V3 => CodecVersion::V3,
-            ArchivedCodecVersion::V7 => CodecVersion::V7,
+            ArchivedForkName::Euclid => ForkName::Euclid,
+            ArchivedForkName::EuclidV2 => ForkName::EuclidV2,
+        }
+    }
+}
+
+impl From<Option<&str>> for ForkName {
+    fn from(value: Option<&str>) -> Self {
+        match value {
+            None => ForkName::most_legacy(),
+            Some("euclidv2") => ForkName::EuclidV2,
+            Some("euclid") => ForkName::Euclid,
+            Some(s) => unreachable!("fork name is not accept: {s}"),
         }
     }
 }
@@ -119,9 +136,6 @@ impl BlockContextV2 {
 )]
 #[rkyv(derive(Debug))]
 pub struct ChunkInfo {
-    // zhuo: i thought to add this to ChunkInfo, but not fully sure it is ok
-    #[rkyv()]
-    pub codec_version: CodecVersion,
     /// The EIP-155 chain ID for all txs in the chunk.
     #[rkyv()]
     pub chain_id: u64,
@@ -168,7 +182,7 @@ impl ChunkInfo {
     ///     chunk data hash ||
     ///     tx data hash
     /// )
-    pub fn pi_hash_v3(&self) -> B256 {
+    pub fn pi_hash_euclid(&self) -> B256 {
         keccak256(
             std::iter::empty()
                 .chain(&self.chain_id.to_be_bytes())
@@ -195,7 +209,7 @@ impl ChunkInfo {
     ///     initial block number ||
     ///     block_ctx for block_ctx in block_ctxs
     /// )
-    pub fn pi_hash_v7(&self) -> B256 {
+    pub fn pi_hash_euclidv2(&self) -> B256 {
         keccak256(
             std::iter::empty()
                 .chain(&self.chain_id.to_be_bytes())
@@ -222,7 +236,6 @@ impl ChunkInfo {
 impl From<&ArchivedChunkInfo> for ChunkInfo {
     fn from(archived: &ArchivedChunkInfo) -> Self {
         Self {
-            codec_version: CodecVersion::from(&archived.codec_version),
             chain_id: archived.chain_id.into(),
             prev_state_root: archived.prev_state_root.into(),
             post_state_root: archived.post_state_root.into(),
@@ -242,17 +255,19 @@ impl From<&ArchivedChunkInfo> for ChunkInfo {
     }
 }
 
-impl PublicInputs for ChunkInfo {
+pub type VersionedChunkInfo = (ChunkInfo, ForkName);
+
+impl PublicInputs for VersionedChunkInfo {
     /// Compute the public input hash for the chunk.
     fn pi_hash(&self) -> B256 {
         // unimplemented!("use pi_hash_v3 or pi_hash_v7");
-        match self.codec_version {
-            CodecVersion::V3 => {
+        match self.1 {
+            ForkName::Euclid => {
                 // sanity check
-                assert_ne!(self.data_hash, B256::ZERO, "v3 must has valid data hash");
-                self.pi_hash_v3()
+                assert_ne!(self.0.data_hash, B256::ZERO, "v3 must has valid data hash");
+                self.0.pi_hash_euclid()
             }
-            CodecVersion::V7 => self.pi_hash_v7(),
+            ForkName::EuclidV2 => self.0.pi_hash_euclidv2(),
         }
     }
 
@@ -262,10 +277,13 @@ impl PublicInputs for ChunkInfo {
     /// - state roots MUST be chained
     /// - L1 msg queue hash MUST be chained
     fn validate(&self, prev_pi: &Self) {
-        assert_eq!(self.chain_id, prev_pi.chain_id);
-        assert_eq!(self.prev_state_root, prev_pi.post_state_root);
+        assert_eq!(self.1, prev_pi.1);
+        assert_eq!(self.0.chain_id, prev_pi.0.chain_id);
+        assert_eq!(self.0.prev_state_root, prev_pi.0.post_state_root);
         // For V3, they should always be 0.
-        assert_eq!(self.prev_msg_queue_hash, prev_pi.post_msg_queue_hash);
+        if self.1 != ForkName::Euclid {
+            assert_eq!(self.0.prev_msg_queue_hash, prev_pi.0.post_msg_queue_hash);
+        }
     }
 }
 

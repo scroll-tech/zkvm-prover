@@ -2,15 +2,12 @@ use alloy_primitives::{B256, U256};
 use c_kzg::Bytes48;
 use openvm_native_recursion::hints::Hintable;
 use openvm_sdk::StdIn;
-use scroll_zkvm_circuit_input_types::batch::{
-    BatchHeaderV3, EnvelopeV3,
-};
-use scroll_zkvm_circuit_input_types::batch::{
-    BatchHeaderV7, EnvelopeV7,
-};
 use scroll_zkvm_circuit_input_types::{
-    batch::{BatchHeader, BatchInfo, BatchWitness, PointEvalWitness, ReferenceHeader},
-    chunk::CodecVersion,
+    batch::{
+        BatchHeader, BatchHeaderV3, BatchHeaderV7, BatchInfo, BatchWitness, EnvelopeV3, EnvelopeV7,
+        PointEvalWitness, ReferenceHeader,
+    },
+    chunk::ForkName,
 };
 
 use crate::{
@@ -42,7 +39,21 @@ impl BatchHeaderV {
         match self {
             BatchHeaderV::V3(h) => h.batch_hash(),
             BatchHeaderV::V7(h) => h.batch_hash(),
-        }        
+        }
+    }
+
+    pub fn must_v3_header(&self) -> &BatchHeaderV3 {
+        match self {
+            BatchHeaderV::V3(h) => h,
+            BatchHeaderV::V7(_) => panic!("try to pick v7 header"),
+        }
+    }
+
+    pub fn must_v7_header(&self) -> &BatchHeaderV7 {
+        match self {
+            BatchHeaderV::V7(h) => h,
+            BatchHeaderV::V3(_) => panic!("try to pick v3 header"),
+        }
     }
 }
 
@@ -64,8 +75,8 @@ pub struct BatchProvingTask {
     pub kzg_commitment: Option<Bytes48>,
     /// KZG proof.
     pub kzg_proof: Option<Bytes48>,
-    /// Code version specify, for sanity check with batch_header and chunk proof
-    pub codec_version: Option<u32>,
+    /// fork version specify, for sanity check with batch_header and chunk proof
+    pub fork_name: Option<String>,
 }
 
 impl ProvingTask for BatchProvingTask {
@@ -74,18 +85,29 @@ impl ProvingTask for BatchProvingTask {
     }
 
     fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error> {
+        let fork_name = self.fork_name.as_deref().into();
         // calculate point eval needed and compare with task input
         let (kzg_commitment, kzg_proof, challenge_digest) = {
             let blob = point_eval::to_blob(&self.blob_bytes);
             let commitment = point_eval::blob_to_kzg_commitment(&blob);
             let challenge_digest = match &self.batch_header {
                 BatchHeaderV::V3(_) => {
+                    assert_eq!(
+                        fork_name,
+                        ForkName::Euclid,
+                        "v3 header expected euclid fork"
+                    );
                     EnvelopeV3::from(self.blob_bytes.as_slice())
-                    .challenge_digest(point_eval::get_versioned_hash(&commitment))
+                        .challenge_digest(point_eval::get_versioned_hash(&commitment))
                 }
                 BatchHeaderV::V7(_) => {
+                    assert_eq!(
+                        fork_name,
+                        ForkName::Euclid,
+                        "v3 header expected euclid fork"
+                    );
                     EnvelopeV7::from(self.blob_bytes.as_slice())
-                    .challenge_digest(point_eval::get_versioned_hash(&commitment))
+                        .challenge_digest(point_eval::get_versioned_hash(&commitment))
                 }
             };
 
@@ -114,6 +136,7 @@ impl ProvingTask for BatchProvingTask {
         let reference_header = self.batch_header.clone().into();
 
         let witness = BatchWitness {
+            fork_name,
             chunk_proofs: self
                 .chunk_proofs
                 .iter()
@@ -145,6 +168,7 @@ impl ProvingTask for BatchProvingTask {
 
 impl From<&BatchProvingTask> for BatchInfo {
     fn from(task: &BatchProvingTask) -> Self {
+        let fork_name = ForkName::from(task.fork_name.as_deref());
         let (parent_state_root, state_root, chain_id, withdraw_root) = (
             task.chunk_proofs
                 .first()
@@ -171,35 +195,43 @@ impl From<&BatchProvingTask> for BatchInfo {
                 .chunk_info
                 .withdraw_root,
         );
-        let (codec_version, parent_batch_hash, prev_msg_queue_hash, post_msg_queue_hash) = 
-        match task.batch_header {
-            BatchHeaderV::V3(h) => (
-                CodecVersion::V3,
-                h.parent_batch_hash,
-                Default::default(), Default::default(),
-            ),
-            BatchHeaderV::V7(h) => (
-                CodecVersion::V7,
-                h.parent_batch_hash,
-                task.chunk_proofs
-                    .first()
-                    .expect("at least one chunk in batch")
-                    .metadata
-                    .chunk_info
-                    .prev_msg_queue_hash,
-                task.chunk_proofs
-                    .last()
-                    .expect("at least one chunk in batch")
-                    .metadata
-                    .chunk_info
-                    .post_msg_queue_hash,
-            ),
+        let (parent_batch_hash, prev_msg_queue_hash, post_msg_queue_hash) = match task.batch_header
+        {
+            BatchHeaderV::V3(h) => {
+                assert_eq!(
+                    fork_name,
+                    ForkName::Euclid,
+                    "v3 header expected euclid fork"
+                );
+                (h.parent_batch_hash, Default::default(), Default::default())
+            }
+            BatchHeaderV::V7(h) => {
+                assert_eq!(
+                    fork_name,
+                    ForkName::EuclidV2,
+                    "v7 header expected euclid fork"
+                );
+                (
+                    h.parent_batch_hash,
+                    task.chunk_proofs
+                        .first()
+                        .expect("at least one chunk in batch")
+                        .metadata
+                        .chunk_info
+                        .prev_msg_queue_hash,
+                    task.chunk_proofs
+                        .last()
+                        .expect("at least one chunk in batch")
+                        .metadata
+                        .chunk_info
+                        .post_msg_queue_hash,
+                )
+            }
         };
 
         let batch_hash = task.batch_header.batch_hash();
 
         Self {
-            codec_version,
             parent_state_root,
             parent_batch_hash,
             state_root,

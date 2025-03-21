@@ -1,5 +1,5 @@
 use openvm_native_recursion::halo2::EvmProof;
-use scroll_zkvm_circuit_input_types::{PublicInputs, bundle::BundleInfo};
+use scroll_zkvm_circuit_input_types::{bundle::BundleInfo, chunk::ForkName};
 
 use crate::{
     Error, Prover, ProverType,
@@ -10,7 +10,6 @@ use crate::{
 use crate::commitments::bundle::{
     EXE_COMMIT as BUNDLE_EXE_COMMIT, LEAF_COMMIT as BUNDLE_LEAF_COMMIT,
 };
-
 
 /// Prover for [`BundleCircuit`].
 pub type BundleProver = Prover<BundleProverType>;
@@ -89,11 +88,14 @@ impl ProverType for BundleProverType {
             batch_hash,
             withdraw_root,
         };
-        let bundle_pi_hash = bundle_info.pi_hash();
+
+        let fork_name = ForkName::from(task.fork_name.as_deref());
+        let bundle_pi_hash = bundle_info.pi_hash(fork_name);
+
         if let Some(checked_bundle_info) = task.bundle_info.as_ref() {
             assert_eq!(
                 bundle_pi_hash,
-                checked_bundle_info.pi_hash(),
+                checked_bundle_info.pi_hash(fork_name),
                 "our implement has derived different bundle info with ground truth, got {:?}, expect {:?}",
                 bundle_info,
                 checked_bundle_info,

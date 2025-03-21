@@ -25,6 +25,11 @@ fn load_recent_batch_proofs() -> eyre::Result<BundleProvingTask> {
     let task = BundleProvingTask {
         batch_proofs: vec![batch_proof],
         bundle_info: None,
+        fork_name: if cfg!(feature = "euclidv2") {
+            Some(String::from("euclidv2"))
+        } else {
+            None
+        },
     };
     Ok(task)
 }
@@ -49,7 +54,7 @@ fn setup_prove_verify_local_task() -> eyre::Result<()> {
 
 #[test]
 fn verify_bundle_info_pi() {
-    use scroll_zkvm_circuit_input_types::{PublicInputs, bundle::BundleInfo};
+    use scroll_zkvm_circuit_input_types::bundle::BundleInfo;
 
     let info = BundleInfo {
         chain_id: 534352,
@@ -78,7 +83,7 @@ fn verify_bundle_info_pi() {
     };
 
     assert_eq!(
-        info.pi_hash(),
+        info.pi_hash_euclid_v1(),
         B256::from_str("0x5e49fc59ce02b42a2f693c738c582b36bd08e9cfe3acb8cee299216743869bd4")
             .unwrap()
     );
@@ -106,10 +111,16 @@ fn e2e() -> eyre::Result<()> {
     let outcome =
         prove_verify_multi::<MultiBatchProverTester>(Some(&[batch_task_1, batch_task_2]))?;
 
+    let fork_name = if cfg!(feature = "euclidv2") {
+        Some(String::from("euclidv2"))
+    } else {
+        None
+    };
     // Construct bundle task using batch tasks and batch proofs.
     let bundle_task = BundleProvingTask {
         batch_proofs: outcome.proofs,
         bundle_info: None,
+        fork_name: fork_name.clone(),
     };
     let (outcome, verifier, path_assets) =
         prove_verify_single_evm::<BundleProverTester>(Some(bundle_task.clone()))?;
@@ -119,6 +130,7 @@ fn e2e() -> eyre::Result<()> {
     let bundle_task_with_info = BundleProvingTask {
         batch_proofs: outcome.tasks[0].batch_proofs.clone(),
         bundle_info: Some(outcome.proofs[0].metadata.bundle_info.clone()),
+        fork_name,
     };
     // collect batch and bundle task as data example
     write_json(path_assets.join("batch-task.json"), &batch_task_example)?;

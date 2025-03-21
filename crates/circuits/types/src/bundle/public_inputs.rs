@@ -1,6 +1,6 @@
 use alloy_primitives::B256;
 
-use crate::{PublicInputs, utils::keccak256};
+use crate::{PublicInputs, chunk::ForkName, utils::keccak256};
 
 /// Represents fields required to compute the public-inputs digest of a bundle.
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
@@ -43,7 +43,7 @@ impl BundleInfo {
     ///     batch hash ||
     ///     withdraw root
     /// )
-    fn pi_hash_euclid_v1(&self) -> B256 {
+    pub fn pi_hash_euclid_v1(&self) -> B256 {
         keccak256(
             std::iter::empty()
                 .chain(self.chain_id.to_be_bytes().as_slice())
@@ -70,7 +70,7 @@ impl BundleInfo {
     ///     batch hash ||
     ///     withdraw root
     /// )   
-    fn pi_hash_euclid_v2(&self) -> B256 {
+    pub fn pi_hash_euclid_v2(&self) -> B256 {
         keccak256(
             std::iter::empty()
                 .chain(self.chain_id.to_be_bytes().as_slice())
@@ -85,16 +85,37 @@ impl BundleInfo {
                 .collect::<Vec<u8>>(),
         )
     }
+
+    pub fn pi_hash(&self, fork_name: ForkName) -> B256 {
+        match fork_name {
+            ForkName::Euclid => self.pi_hash_euclid_v1(),
+            ForkName::EuclidV2 => self.pi_hash_euclid_v2(),
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
-pub struct BundleInfoV1 (pub BundleInfo);
+pub struct BundleInfoV1(pub BundleInfo);
 
 #[derive(Clone, Debug)]
-pub struct BundleInfoV2 (pub BundleInfo);
+pub struct BundleInfoV2(pub BundleInfo);
+
+impl From<BundleInfo> for BundleInfoV1 {
+    fn from(value: BundleInfo) -> Self {
+        Self(value)
+    }
+}
+
+impl From<BundleInfo> for BundleInfoV2 {
+    fn from(value: BundleInfo) -> Self {
+        Self(value)
+    }
+}
 
 impl PublicInputs for BundleInfoV1 {
-    fn pi_hash(&self) -> B256 {self.0.pi_hash_euclid_v1()}
+    fn pi_hash(&self) -> B256 {
+        self.0.pi_hash_euclid_v1()
+    }
 
     fn validate(&self, _prev_pi: &Self) {
         unreachable!("bundle is the last layer and is not aggregated by any other circuit");
@@ -102,7 +123,9 @@ impl PublicInputs for BundleInfoV1 {
 }
 
 impl PublicInputs for BundleInfoV2 {
-    fn pi_hash(&self) -> B256 {self.0.pi_hash_euclid_v1()}
+    fn pi_hash(&self) -> B256 {
+        self.0.pi_hash_euclid_v2()
+    }
 
     fn validate(&self, _prev_pi: &Self) {
         unreachable!("bundle is the last layer and is not aggregated by any other circuit");

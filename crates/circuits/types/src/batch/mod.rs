@@ -14,7 +14,7 @@ pub use payload::{
 pub use payload::{BLOB_WIDTH, N_BLOB_BYTES, N_DATA_BYTES_PER_COEFFICIENT};
 
 mod public_inputs;
-pub use public_inputs::{ArchivedBatchInfo, BatchInfo};
+pub use public_inputs::{ArchivedBatchInfo, BatchInfo, VersionedBatchInfo};
 
 mod witness;
 pub use witness::{ArchivedBatchWitness, BatchWitness, Bytes48, PointEvalWitness};

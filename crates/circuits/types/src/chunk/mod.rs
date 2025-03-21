@@ -1,6 +1,6 @@
 pub mod public_inputs;
 pub use public_inputs::{
-    ArchivedChunkInfo, BlockContextV2, ChunkInfo, CodecVersion, SIZE_BLOCK_CTX,
+    ArchivedChunkInfo, BlockContextV2, ChunkInfo, ForkName, SIZE_BLOCK_CTX, VersionedChunkInfo,
 };
 
 mod utils;

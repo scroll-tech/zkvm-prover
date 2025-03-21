@@ -1,5 +1,3 @@
-use scroll_zkvm_circuit_input_types::batch::BatchHeader;
-
 use crate::{
     Error, Prover, ProverType,
     proof::{BatchProofMetadata, RootProof},

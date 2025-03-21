@@ -1,6 +1,6 @@
 use alloy_primitives::B256;
 
-use crate::{PublicInputs, chunk::CodecVersion, utils::keccak256};
+use crate::{PublicInputs, chunk::ForkName, utils::keccak256};
 
 /// Represents public-input values for a batch.
 #[derive(
@@ -14,9 +14,6 @@ use crate::{PublicInputs, chunk::CodecVersion, utils::keccak256};
 )]
 #[rkyv(derive(Debug))]
 pub struct BatchInfo {
-    /// To indicate which code the batch is base on
-    #[rkyv()]
-    pub codec_version: CodecVersion,
     /// The state root before applying the batch.
     #[rkyv()]
     pub parent_state_root: B256,
@@ -54,7 +51,6 @@ impl From<&ArchivedBatchInfo> for BatchInfo {
             withdraw_root: archived.withdraw_root.into(),
             prev_msg_queue_hash: archived.prev_msg_queue_hash.into(),
             post_msg_queue_hash: archived.post_msg_queue_hash.into(),
-            codec_version: CodecVersion::from(&archived.codec_version),
         }
     }
 }
@@ -70,7 +66,7 @@ impl BatchInfo {
     ///     chain id ||
     ///     withdraw root ||
     /// )
-    fn pi_hash_v3(&self) -> B256 {
+    fn pi_hash_euclid(&self) -> B256 {
         keccak256(
             std::iter::empty()
                 .chain(self.parent_state_root.as_slice())
@@ -96,7 +92,7 @@ impl BatchInfo {
     ///     prev msg queue hash ||
     ///     post msg queue hash
     /// )    
-    fn pi_hash_v7(&self) -> B256 {
+    fn pi_hash_euclidv2(&self) -> B256 {
         keccak256(
             std::iter::empty()
                 .chain(self.parent_state_root.as_slice())
@@ -113,7 +109,9 @@ impl BatchInfo {
     }
 }
 
-impl PublicInputs for BatchInfo {
+pub type VersionedBatchInfo = (BatchInfo, ForkName);
+
+impl PublicInputs for VersionedBatchInfo {
     /// Public input hash for a batch is defined as
     ///
     /// keccak(
@@ -127,9 +125,9 @@ impl PublicInputs for BatchInfo {
     ///     post msg queue hash
     /// )
     fn pi_hash(&self) -> B256 {
-        match self.codec_version {
-            CodecVersion::V3 => self.pi_hash_v3(),
-            CodecVersion::V7 => self.pi_hash_v7(),
+        match self.1 {
+            ForkName::Euclid => self.0.pi_hash_euclid(),
+            ForkName::EuclidV2 => self.0.pi_hash_euclidv2(),
         }
     }
 
@@ -141,11 +139,12 @@ impl PublicInputs for BatchInfo {
     ///   (for euclidv2 and post)
     /// - L1 msg queue hashes MUST be chained
     fn validate(&self, prev_pi: &Self) {
-        assert_eq!(self.chain_id, prev_pi.chain_id);
-        assert_eq!(self.parent_state_root, prev_pi.state_root);
-        assert_eq!(self.parent_batch_hash, prev_pi.batch_hash);
-        if self.codec_version != CodecVersion::V3 {
-            assert_eq!(self.prev_msg_queue_hash, prev_pi.post_msg_queue_hash);
+        assert_eq!(self.1, prev_pi.1);
+        assert_eq!(self.0.chain_id, prev_pi.0.chain_id);
+        assert_eq!(self.0.parent_state_root, prev_pi.0.state_root);
+        assert_eq!(self.0.parent_batch_hash, prev_pi.0.batch_hash);
+        if self.1 != ForkName::Euclid {
+            assert_eq!(self.0.prev_msg_queue_hash, prev_pi.0.post_msg_queue_hash);
         }
     }
 }
