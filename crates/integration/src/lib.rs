@@ -190,7 +190,7 @@ type ProveVerifyEvmRes<T> = eyre::Result<(
         <<T as ProverTester>::Prover as ProverType>::ProvingTask,
         WrappedProof<<<T as ProverTester>::Prover as ProverType>::ProofMetadata>,
     >,
-    scroll_zkvm_verifier::verifier::Verifier<scroll_zkvm_verifier::verifier::BundleVerifierType>,
+    scroll_zkvm_verifier::verifier::Verifier<scroll_zkvm_verifier::verifier::AnyVerifier>,
     PathBuf,
 )>;
 

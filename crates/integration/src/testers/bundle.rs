@@ -1,8 +1,11 @@
 use std::path::Path;
 
-use scroll_zkvm_prover::{
-    BundleProverType, ProverType, task::bundle::BundleProvingTask, utils::read_json_deep,
-};
+use scroll_zkvm_prover::{ProverType, task::bundle::BundleProvingTask, utils::read_json_deep};
+
+#[cfg(not(feature = "euclidv2"))]
+use scroll_zkvm_prover::BundleProverTypeEuclidV1 as BundleProverType;
+#[cfg(feature = "euclidv2")]
+use scroll_zkvm_prover::BundleProverTypeEuclidV2 as BundleProverType;
 
 use crate::{ProverTester, testers::PATH_TESTDATA};
 

@@ -36,7 +36,10 @@ mod batch;
 pub use batch::{BatchProver, BatchProverType};
 
 mod bundle;
-pub use bundle::{BundleProver, BundleProverType};
+pub use bundle::{
+    BundleProver, BundleProverEuclidV1, BundleProverEuclidV2, BundleProverType,
+    BundleProverTypeEuclidV1, BundleProverTypeEuclidV2,
+};
 
 mod chunk;
 pub use chunk::{ChunkProver, ChunkProverType};

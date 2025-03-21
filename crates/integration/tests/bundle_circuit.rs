@@ -163,7 +163,10 @@ fn e2e() -> eyre::Result<()> {
     for proof in bundle_task.batch_proofs.iter() {
         assert!(verifier.verify_proof(proof.as_proof()));
     }
-    let verifier = verifier.to_bundle_verifier();
+    #[cfg(not(feature = "euclidv2"))]
+    let verifier = verifier.to_bundle_verifier_v1();
+    #[cfg(feature = "euclidv2")]
+    let verifier = verifier.to_bundle_verifier_v2();
     assert!(verifier.verify_proof_evm(&outcome.proofs[0].as_proof()));
 
     let expected_pi_hash = &outcome.proofs[0].metadata.bundle_pi_hash;

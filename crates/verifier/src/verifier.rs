@@ -11,13 +11,10 @@ use openvm_native_recursion::{
 use openvm_sdk::{F, RootSC, SC};
 use scroll_zkvm_circuit_input_types::proof::ProgramCommitment;
 
-use crate::commitments::bundle::{
-    EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT,
-};
-
 use crate::commitments::{
     batch::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT},
-    chunk::{EXE_COMMIT as BUNDLE_EXE_COMMIT, LEAF_COMMIT as BUNDLE_LEAF_COMMIT},
+    bundle, bundle_legacy,
+    chunk::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT},
 };
 
 pub trait VerifierType {
@@ -34,7 +31,8 @@ pub trait VerifierType {
 
 pub struct ChunkVerifierType;
 pub struct BatchVerifierType;
-pub struct BundleVerifierType;
+pub struct BundleVerifierTypeEuclidV1;
+pub struct BundleVerifierTypeEuclidV2;
 
 impl VerifierType for ChunkVerifierType {
     const EXE_COMMIT: [u32; 8] = CHUNK_EXE_COMMIT;
@@ -44,11 +42,14 @@ impl VerifierType for BatchVerifierType {
     const EXE_COMMIT: [u32; 8] = BATCH_EXE_COMMIT;
     const LEAF_COMMIT: [u32; 8] = BATCH_LEAF_COMMIT;
 }
-impl VerifierType for BundleVerifierType {
-    const EXE_COMMIT: [u32; 8] = BUNDLE_EXE_COMMIT;
-    const LEAF_COMMIT: [u32; 8] = BUNDLE_LEAF_COMMIT;
+impl VerifierType for BundleVerifierTypeEuclidV1 {
+    const EXE_COMMIT: [u32; 8] = bundle_legacy::EXE_COMMIT;
+    const LEAF_COMMIT: [u32; 8] = bundle_legacy::LEAF_COMMIT;
 }
-
+impl VerifierType for BundleVerifierTypeEuclidV2 {
+    const EXE_COMMIT: [u32; 8] = bundle::EXE_COMMIT;
+    const LEAF_COMMIT: [u32; 8] = bundle::LEAF_COMMIT;
+}
 pub struct Verifier<Type> {
     pub vm_executor: SingleSegmentVmExecutor<F, NativeConfig>,
     pub root_committed_exe: VmCommittedExe<RootSC>,
@@ -57,9 +58,11 @@ pub struct Verifier<Type> {
     _type: PhantomData<Type>,
 }
 
+pub type AnyVerifier = Verifier<ChunkVerifierType>;
 pub type ChunkVerifier = Verifier<ChunkVerifierType>;
 pub type BatchVerifier = Verifier<BatchVerifierType>;
-pub type BundleVerifier = Verifier<BundleVerifierType>;
+pub type BundleVerifierEuclidV1 = Verifier<BundleVerifierTypeEuclidV1>;
+pub type BundleVerifierEuclidV2 = Verifier<BundleVerifierTypeEuclidV2>;
 
 impl<Type> Verifier<Type> {
     pub fn setup<P: AsRef<Path>>(
@@ -102,7 +105,10 @@ impl<Type> Verifier<Type> {
     pub fn to_batch_verifier(self) -> BatchVerifier {
         self.switch_to()
     }
-    pub fn to_bundle_verifier(self) -> BundleVerifier {
+    pub fn to_bundle_verifier_v1(self) -> BundleVerifierEuclidV1 {
+        self.switch_to()
+    }
+    pub fn to_bundle_verifier_v2(self) -> BundleVerifierEuclidV2 {
         self.switch_to()
     }
 }
@@ -280,12 +286,12 @@ mod tests {
 
         assert_eq!(
             evm_proof.as_proof().instances[0][12],
-            compress_commitment(&super::BUNDLE_EXE_COMMIT),
+            compress_commitment(&super::bundle::EXE_COMMIT),
             "the output is not match with exe commitment in evm proof!"
         );
         assert_eq!(
             evm_proof.as_proof().instances[0][13],
-            compress_commitment(&super::BUNDLE_LEAF_COMMIT),
+            compress_commitment(&super::bundle::LEAF_COMMIT),
             "the output is not match with leaf commitment in evm proof!"
         );
 

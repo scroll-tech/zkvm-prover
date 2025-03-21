@@ -7,25 +7,46 @@ use crate::{
     task::{ProvingTask, bundle::BundleProvingTask},
 };
 
-use crate::commitments::bundle::{
-    EXE_COMMIT as BUNDLE_EXE_COMMIT, LEAF_COMMIT as BUNDLE_LEAF_COMMIT,
-};
+use crate::commitments::{bundle, bundle_legacy};
+
+pub trait CommitMents {
+    const EXE_COMMIT: [u32; 8];
+    const LEAF_COMMIT: [u32; 8];
+}
+
+pub struct BundleCircuitV1;
+pub struct BundleCircuitV2;
+
+impl CommitMents for BundleCircuitV1 {
+    const EXE_COMMIT: [u32; 8] = bundle_legacy::EXE_COMMIT;
+    const LEAF_COMMIT: [u32; 8] = bundle_legacy::LEAF_COMMIT;
+}
+
+impl CommitMents for BundleCircuitV2 {
+    const EXE_COMMIT: [u32; 8] = bundle::EXE_COMMIT;
+    const LEAF_COMMIT: [u32; 8] = bundle::LEAF_COMMIT;
+}
+
+pub type BundleProverTypeEuclidV1 = BundleProverType<BundleCircuitV1>;
+pub type BundleProverTypeEuclidV2 = BundleProverType<BundleCircuitV2>;
 
 /// Prover for [`BundleCircuit`].
-pub type BundleProver = Prover<BundleProverType>;
+pub type BundleProver = Prover<BundleProverTypeEuclidV1>;
+pub type BundleProverEuclidV1 = Prover<BundleProverTypeEuclidV1>;
+pub type BundleProverEuclidV2 = Prover<BundleProverTypeEuclidV2>;
 
-pub struct BundleProverType;
+pub struct BundleProverType<C: CommitMents>(std::marker::PhantomData<C>);
 
-impl ProverType for BundleProverType {
+impl<C: CommitMents> ProverType for BundleProverType<C> {
     const NAME: &'static str = "bundle";
 
     const EVM: bool = true;
 
     const SEGMENT_SIZE: usize = (1 << 22) - 100;
 
-    const EXE_COMMIT: [u32; 8] = BUNDLE_EXE_COMMIT;
+    const EXE_COMMIT: [u32; 8] = C::EXE_COMMIT;
 
-    const LEAF_COMMIT: [u32; 8] = BUNDLE_LEAF_COMMIT;
+    const LEAF_COMMIT: [u32; 8] = C::LEAF_COMMIT;
 
     type ProvingTask = BundleProvingTask;
 
