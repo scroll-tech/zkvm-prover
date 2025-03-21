@@ -90,7 +90,7 @@ impl ForkNameInfo for BundleInfoV1 {
 
 impl ForkNameInfo for BundleInfoV2 {
     fn fork_name() -> ForkName {
-        ForkName::Euclid
+        ForkName::EuclidV2
     }
 }
 
