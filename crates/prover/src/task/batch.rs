@@ -103,8 +103,8 @@ impl ProvingTask for BatchProvingTask {
                 BatchHeaderV::V7(_) => {
                     assert_eq!(
                         fork_name,
-                        ForkName::Euclid,
-                        "v3 header expected euclid fork"
+                        ForkName::EuclidV2,
+                        "v7 header expected euclid fork"
                     );
                     EnvelopeV7::from(self.blob_bytes.as_slice())
                         .challenge_digest(point_eval::get_versioned_hash(&commitment))
