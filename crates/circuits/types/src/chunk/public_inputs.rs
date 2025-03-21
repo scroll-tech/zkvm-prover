@@ -28,7 +28,7 @@ pub enum ForkName {
 
 impl ForkName {
     pub fn most_legacy() -> ForkName {
-        ForkName::EuclidV2
+        ForkName::Euclid
     }
 }
 
