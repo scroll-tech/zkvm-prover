@@ -34,4 +34,5 @@ mkdir -p crates/circuits/bundle-circuit/openvm
 docker cp ${container_id}:/app/crates/circuits/chunk-circuit/openvm/app.vmexe crates/circuits/chunk-circuit/openvm/app.vmexe
 docker cp ${container_id}:/app/crates/circuits/batch-circuit/openvm/app.vmexe crates/circuits/batch-circuit/openvm/app.vmexe
 docker cp ${container_id}:/app/crates/circuits/bundle-circuit/openvm/app.vmexe crates/circuits/bundle-circuit/openvm/app.vmexe
+docker cp ${container_id}:/app/crates/circuits/bundle-circuit/openvm/app_legacy.vmexe crates/circuits/bundle-circuit/openvm/app_legacy.vmexe
 docker rm ${container_id}

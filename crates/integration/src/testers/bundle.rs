@@ -9,6 +9,11 @@ use scroll_zkvm_prover::BundleProverTypeEuclidV2 as BundleProverType;
 
 use crate::{ProverTester, testers::PATH_TESTDATA};
 
+#[cfg(not(feature = "euclidv2"))]
+use openvm_sdk::config::{AppConfig, SdkVmConfig};
+#[cfg(not(feature = "euclidv2"))]
+use std::path::PathBuf;
+
 pub struct BundleProverTester;
 
 impl ProverTester for BundleProverTester {
@@ -32,6 +37,11 @@ impl ProverTester for BundleProverTester {
             fork_name: None,
         })
     }
+
+    #[cfg(not(feature = "euclidv2"))]
+    fn load() -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
+        Self::load_with_exe_fd("app_legacy.vmexe")
+    }
 }
 
 pub struct BundleLocalTaskTester;
@@ -47,5 +57,10 @@ impl ProverTester for BundleLocalTaskTester {
         Ok(read_json_deep(
             Path::new(PATH_TESTDATA).join("bundle-task.json"),
         )?)
+    }
+
+    #[cfg(not(feature = "euclidv2"))]
+    fn load() -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
+        Self::load_with_exe_fd("app_legacy.vmexe")
     }
 }

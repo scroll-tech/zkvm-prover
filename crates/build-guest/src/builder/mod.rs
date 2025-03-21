@@ -37,6 +37,7 @@ pub fn build<S: AsRef<str>>(
 pub fn transpile(
     project_root: &str,
     elf: Elf,
+    fd_app_exe: Option<&str>,
 ) -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf, VmExe<F>)> {
     // Create the assets dir if not already present.
     let path_assets = Path::new(project_root).join("openvm");
@@ -60,7 +61,7 @@ pub fn transpile(
     let app_exe = Sdk.transpile(elf, transpiler)?;
 
     // Write exe to disc.
-    let path_app_exe = path_assets.join(FD_APP_EXE);
+    let path_app_exe = path_assets.join(fd_app_exe.unwrap_or(FD_APP_EXE));
     write_exe_to_file(app_exe.clone(), &path_app_exe)?;
 
     println!("exe written to {path_app_exe:?}");
