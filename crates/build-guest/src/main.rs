@@ -24,7 +24,7 @@ impl BuildConfig {
                 features: vec![],
                 filename_suffix: "_legacy".to_string(),
             },
-            "euclidv2" => Self {
+            "default" | "euclidv2" => Self {
                 features: vec!["euclidv2".to_string()],
                 filename_suffix: "".to_string(),
             },
@@ -44,9 +44,6 @@ pub fn main() {
     let root_verifier = format!("{workspace_dir}/crates/build-guest/root_verifier.asm");
     dump_verifier(&root_verifier);
 
-    // TODO: read it from env var?
-    let specs = &["euclidv2", "euclidv1"];
-
     let project_name_var = std::env::var("BUILD_PROJECT");
     let project_names = project_name_var
         .as_ref()
@@ -56,6 +53,12 @@ pub fn main() {
 
     for (idx, project_name) in project_names.iter().enumerate() {
         let project_dir = format!("{workspace_dir}/crates/circuits/{project_name}-circuit");
+        // TODO: read it from env var?
+        let specs = match *project_name {
+            "bundle" => vec!["euclidv2", "euclidv1"],
+            _ => vec!["default"],
+        };
+
         for spec in specs {
             let start_time = std::time::Instant::now();
             println!("building project: {project_name} for spec {spec}");
