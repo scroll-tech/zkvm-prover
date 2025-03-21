@@ -184,11 +184,16 @@ fn e2e() -> eyre::Result<()> {
         );
     }
 
+    // Sanity check for pi of bundle hash, update the expected hash if block witness changed
+    let pi_str = if cfg!(feature = "euclidv2") {
+        "2028510c403837c6ed77660fd92814ba61d7b746e7268cc8dfc14d163d45e6bd"
+    } else {
+        "004bd600d361ad25ae28af9383f7f102b0ed11e20e571dc1a380621a09f33888"
+    };
     // sanity check for pi of bundle hash, update the expected hash if block witness changed
     assert_eq!(
-        expected_pi_hash,
-        &B256::from_str("0x004bd600d361ad25ae28af9383f7f102b0ed11e20e571dc1a380621a09f33888")
-            .unwrap(),
+        alloy_primitives::hex::encode(expected_pi_hash),
+        pi_str,
         "unexpected pi hash for e2e bundle info, block witness changed?"
     );
 
