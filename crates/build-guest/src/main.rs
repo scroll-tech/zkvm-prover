@@ -20,11 +20,15 @@ pub(crate) struct BuildConfig {
 impl BuildConfig {
     pub(crate) fn get(spec: &str) -> Self {
         match spec {
+            "default" => Self {
+                features: vec![],
+                filename_suffix: "".to_string(),
+            },
             "euclidv1" => Self {
                 features: vec![],
                 filename_suffix: "_legacy".to_string(),
             },
-            "default" | "euclidv2" => Self {
+            "euclidv2" => Self {
                 features: vec!["euclidv2".to_string()],
                 filename_suffix: "".to_string(),
             },
