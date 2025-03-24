@@ -66,8 +66,14 @@ fn verify_batch_hash_invariant() -> eyre::Result<()> {
 
     // verify the two task has the same blob bytes
     assert_eq!(
-        batch_task_1.batch_header.blob_versioned_hash,
-        batch_task_2.batch_header.blob_versioned_hash
+        batch_task_1
+            .batch_header
+            .must_v7_header()
+            .blob_versioned_hash,
+        batch_task_2
+            .batch_header
+            .must_v7_header()
+            .blob_versioned_hash
     );
 
     Ok(())
