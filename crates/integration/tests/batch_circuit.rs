@@ -55,11 +55,15 @@ fn e2e() -> eyre::Result<()> {
 #[cfg(feature = "euclidv2")]
 #[test]
 fn verify_batch_hash_invariant() -> eyre::Result<()> {
-    use scroll_zkvm_integration::testers::chunk::YAMultiChunkProverTester;
+    use scroll_zkvm_integration::testers::chunk::gen_multi_tasks as gen_multi_chunk_tasks;
     BatchProverTester::setup()?;
 
-    let outcome_1 = prove_verify_multi::<MultiChunkProverTester>(None)?;
-    let outcome_2 = prove_verify_multi::<YAMultiChunkProverTester>(None)?;
+    let outcome_1 = prove_verify_multi::<MultiChunkProverTester>(Some(
+        gen_multi_chunk_tasks([vec![1], vec![2], vec![3, 4]])?.as_slice(),
+    ))?;
+    let outcome_2 = prove_verify_multi::<MultiChunkProverTester>(Some(
+        gen_multi_chunk_tasks([vec![1, 2], vec![3], vec![4]])?.as_slice(),
+    ))?;
 
     let batch_task_1 = build_batch_task(&outcome_1.tasks, &outcome_1.proofs, Default::default());
     let batch_task_2 = build_batch_task(&outcome_2.tasks, &outcome_2.proofs, Default::default());

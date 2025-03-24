@@ -71,7 +71,8 @@ impl ProverTester for ChunkProverTester {
     }
 }
 
-fn gen_multi_tasks(
+/// helper func to gen a series of proving tasks, specified by the block number
+pub fn gen_multi_tasks(
     blocks: impl IntoIterator<Item = Vec<i32>>,
 ) -> eyre::Result<Vec<<ChunkProverType as ProverType>::ProvingTask>> {
     let paths: Vec<Vec<PathBuf>> = match std::env::var("TRACE_PATH") {
@@ -137,28 +138,6 @@ impl ProverTester for MultiChunkProverTester {
         let blocks = [vec![12508460], vec![12508461], vec![12508462, 12508463]];
         #[cfg(feature = "euclidv2")]
         let blocks = [vec![1], vec![2], vec![3, 4]];
-        gen_multi_tasks(blocks)
-    }
-}
-pub struct YAMultiChunkProverTester;
-
-#[cfg(feature = "euclidv2")]
-impl ProverTester for YAMultiChunkProverTester {
-    type Prover = ChunkProverType;
-
-    const PATH_PROJECT_ROOT: &str = "./../circuits/chunk-circuit";
-
-    const DIR_ASSETS: &str = "chunk";
-
-    fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask> {
-        unreachable!("Use gen_multi_proving_tasks");
-    }
-
-    /// [block-1-2]
-    /// [block-3]
-    /// [block-4]
-    fn gen_multi_proving_tasks() -> eyre::Result<Vec<<Self::Prover as ProverType>::ProvingTask>> {
-        let blocks = [vec![1, 2], vec![3], vec![4]];
         gen_multi_tasks(blocks)
     }
 }
