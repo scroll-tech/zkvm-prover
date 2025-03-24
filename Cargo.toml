@@ -44,7 +44,6 @@ openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "2
 
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", rev = "46f581fa46db1b61293f12b6fbc092542ad0aa45" }
 
-
 sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "zkvm/euclid-upgrade", features = ["scroll"] }
 sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "zkvm/euclid-upgrade", features = ["scroll"] }
 sbv-kv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "zkvm/euclid-upgrade" }
