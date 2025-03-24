@@ -5692,7 +5692,7 @@ checksum = "28d3b2b1366ec20994f1fd18c3c594f05c5dd4bc44d8bb0c1c632c8d6829481f"
 [[package]]
 name = "sbv-core"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-upgrade#33dc8b37e40973deceb43408bad37d9c4ed0dec8"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-upgrade#6759d7b0893e31782e3a24abaad6be655edffdde"
 dependencies = [
  "reth-evm",
  "reth-evm-ethereum",
@@ -5709,7 +5709,7 @@ dependencies = [
 [[package]]
 name = "sbv-helpers"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-upgrade#33dc8b37e40973deceb43408bad37d9c4ed0dec8"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-upgrade#6759d7b0893e31782e3a24abaad6be655edffdde"
 dependencies = [
  "revm 19.4.0",
 ]
@@ -5717,7 +5717,7 @@ dependencies = [
 [[package]]
 name = "sbv-kv"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-upgrade#33dc8b37e40973deceb43408bad37d9c4ed0dec8"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-upgrade#6759d7b0893e31782e3a24abaad6be655edffdde"
 dependencies = [
  "auto_impl",
  "hashbrown 0.15.2",
@@ -5727,7 +5727,7 @@ dependencies = [
 [[package]]
 name = "sbv-primitives"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-upgrade#33dc8b37e40973deceb43408bad37d9c4ed0dec8"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-upgrade#6759d7b0893e31782e3a24abaad6be655edffdde"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5758,7 +5758,7 @@ dependencies = [
 [[package]]
 name = "sbv-trie"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-upgrade#33dc8b37e40973deceb43408bad37d9c4ed0dec8"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=zkvm%2Feuclid-upgrade#6759d7b0893e31782e3a24abaad6be655edffdde"
 dependencies = [
  "alloy-rlp",
  "alloy-trie",
