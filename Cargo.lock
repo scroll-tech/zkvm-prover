@@ -6857,11 +6857,11 @@ dependencies = [
 [[package]]
 name = "tiny-keccak"
 version = "2.0.2"
-source = "git+https://github.com/scroll-tech/tiny-keccak?branch=scroll-patch-v2.0.2-euclid-upgrade#8fec65c6797916c10b8ed5081b0a20fa3558d097"
+source = "git+https://github.com/scroll-tech/tiny-keccak?branch=scroll-patch-v2.0.2-euclid-upgrade#ec360a3012c94a9c757299a5a6f38601403d9c82"
 dependencies = [
  "cfg-if",
  "crunchy",
- "openvm-platform 1.0.0-rc.2 (git+https://github.com/openvm-org/openvm.git?rev=7f87e1d)",
+ "openvm-platform 1.0.0-rc.2 (git+https://github.com/openvm-org/openvm.git?rev=2bdf9ed)",
 ]
 
 [[package]]
