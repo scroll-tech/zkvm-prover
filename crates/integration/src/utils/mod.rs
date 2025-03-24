@@ -70,7 +70,7 @@ impl Default for LastHeader {
 
         Self {
             batch_index: 123,
-            version: 7,
+            version: if cfg!(feature = "euclidv2") { 7 } else { 6 },
             batch_hash: B256::new([
                 0xab, 0xac, 0xad, 0xae, 0xaf, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0, 0,
