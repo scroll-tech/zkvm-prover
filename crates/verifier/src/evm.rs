@@ -1,5 +1,4 @@
 use openvm_native_recursion::halo2::RawEvmProof;
-// use openvm_sdk::types::EvmProof;
 use revm::{
     Context, Evm, Handler, InMemoryDB,
     primitives::{ExecutionResult, Output, TransactTo, TxEnv, TxKind, specification::CancunSpec},
