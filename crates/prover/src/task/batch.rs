@@ -18,11 +18,13 @@ use crate::{
 
 /// Define variable batch header type, since BatchHeaderV3 can not
 /// be decoded as V7 we can always has correct deserialization
+/// Notice: V3 header MUST be put above V7 since untagged enum
+/// try to decode each defination in order
 #[derive(Clone, serde::Deserialize, serde::Serialize)]
 #[serde(untagged)]
 pub enum BatchHeaderV {
-    V7(BatchHeaderV7),
     V3(BatchHeaderV3),
+    V7(BatchHeaderV7),
 }
 
 impl From<BatchHeaderV> for ReferenceHeader {
@@ -104,7 +106,7 @@ impl ProvingTask for BatchProvingTask {
                     assert_eq!(
                         fork_name,
                         ForkName::EuclidV2,
-                        "v7 header expected euclid fork"
+                        "v7 header expected euclid v2 fork"
                     );
                     EnvelopeV7::from(self.blob_bytes.as_slice())
                         .challenge_digest(point_eval::get_versioned_hash(&commitment))

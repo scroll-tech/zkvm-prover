@@ -45,6 +45,14 @@ fn blks_tx_bytes<'a>(blks: impl Iterator<Item = &'a BlockWitness>) -> Vec<u8> {
         })
 }
 
+pub fn phase_base_directory() -> &'static str {
+    if cfg!(feature = "euclidv2") {
+        "phase2"
+    } else {
+        "phase1"
+    }
+}
+
 #[derive(Debug)]
 pub struct LastHeader {
     pub batch_index: u64,
@@ -62,7 +70,7 @@ impl Default for LastHeader {
 
         Self {
             batch_index: 123,
-            version: 7,
+            version: if cfg!(feature = "euclidv2") { 7 } else { 6 },
             batch_hash: B256::new([
                 0xab, 0xac, 0xad, 0xae, 0xaf, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0, 0,

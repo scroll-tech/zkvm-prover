@@ -1,29 +1,11 @@
 use scroll_zkvm_integration::{
     ProverTester, prove_verify_multi, prove_verify_single,
     testers::{
-        batch::{BatchProverTester, MultiBatchProverTester},
-        chunk::{ChunkProverTester, MultiChunkProverTester},
+        batch::{BatchProverTester, BatchTaskBuildingTester},
+        chunk::MultiChunkProverTester,
     },
     utils::build_batch_task,
 };
-use scroll_zkvm_prover::{ChunkProof, task::batch::BatchProvingTask, utils::read_json_deep};
-
-fn load_recent_chunk_proofs() -> eyre::Result<BatchProvingTask> {
-    let proof_path = glob::glob(if cfg!(feature = "euclidv2") {
-        "testdata/proofs/chunk-1-4.json"
-    } else {
-        "testdata/proofs/chunk-12508460-12508463.json"
-    })?
-    .next()
-    .unwrap()?;
-    println!("proof_path: {:?}", proof_path);
-    let chunk_proof = read_json_deep::<_, ChunkProof>(&proof_path)?;
-
-    let chunk_task = ChunkProverTester::gen_proving_task()?;
-
-    let task = build_batch_task(&[chunk_task], &[chunk_proof], Default::default());
-    Ok(task)
-}
 
 #[test]
 fn test_execute() -> eyre::Result<()> {
@@ -41,31 +23,19 @@ fn test_execute() -> eyre::Result<()> {
 fn test_e2e_execute() -> eyre::Result<()> {
     BatchProverTester::setup()?;
 
-    let (_, app_config, exe_path) = BatchProverTester::load()?;
+    let (_, app_config, exe_path) = BatchTaskBuildingTester::load()?;
 
-    let tasks = vec![load_recent_chunk_proofs()?];
-    for task in tasks {
-        BatchProverTester::execute(app_config.clone(), &task, exe_path.clone())?;
-    }
+    let task = BatchTaskBuildingTester::gen_proving_task()?;
+    BatchTaskBuildingTester::execute(app_config.clone(), &task, exe_path.clone())?;
 
     Ok(())
 }
 
 #[test]
 fn setup_prove_verify_single() -> eyre::Result<()> {
-    BatchProverTester::setup()?;
+    BatchTaskBuildingTester::setup()?;
 
-    let task = load_recent_chunk_proofs()?;
-    prove_verify_single::<BatchProverTester>(Some(task))?;
-
-    Ok(())
-}
-
-#[test]
-fn setup_prove_verify_multi() -> eyre::Result<()> {
-    MultiBatchProverTester::setup()?;
-
-    prove_verify_single::<MultiBatchProverTester>(None)?;
+    prove_verify_single::<BatchTaskBuildingTester>(None)?;
 
     Ok(())
 }
@@ -78,6 +48,37 @@ fn e2e() -> eyre::Result<()> {
 
     let batch_task = build_batch_task(&outcome.tasks, &outcome.proofs, Default::default());
     prove_verify_single::<BatchProverTester>(Some(batch_task))?;
+
+    Ok(())
+}
+
+#[cfg(feature = "euclidv2")]
+#[test]
+fn verify_batch_hash_invariant() -> eyre::Result<()> {
+    use scroll_zkvm_integration::testers::chunk::gen_multi_tasks as gen_multi_chunk_tasks;
+    BatchProverTester::setup()?;
+
+    let outcome_1 = prove_verify_multi::<MultiChunkProverTester>(Some(
+        gen_multi_chunk_tasks([vec![1], vec![2], vec![3, 4]])?.as_slice(),
+    ))?;
+    let outcome_2 = prove_verify_multi::<MultiChunkProverTester>(Some(
+        gen_multi_chunk_tasks([vec![1, 2], vec![3], vec![4]])?.as_slice(),
+    ))?;
+
+    let batch_task_1 = build_batch_task(&outcome_1.tasks, &outcome_1.proofs, Default::default());
+    let batch_task_2 = build_batch_task(&outcome_2.tasks, &outcome_2.proofs, Default::default());
+
+    // verify the two task has the same blob bytes
+    assert_eq!(
+        batch_task_1
+            .batch_header
+            .must_v7_header()
+            .blob_versioned_hash,
+        batch_task_2
+            .batch_header
+            .must_v7_header()
+            .blob_versioned_hash
+    );
 
     Ok(())
 }
