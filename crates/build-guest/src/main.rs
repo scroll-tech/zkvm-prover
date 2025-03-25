@@ -62,7 +62,7 @@ pub fn main() {
             let build_config = BuildConfig::get(spec);
             let elf = builder::build(&project_dir, build_config.features).unwrap();
             let (_app_config_path, app_config, _app_exe_path, app_exe) =
-                builder::transpile(&project_dir, elf).unwrap();
+                builder::transpile(&project_dir, &build_config.filename_suffix, elf).unwrap();
 
             let app_pk = Sdk.app_keygen(app_config).unwrap();
             let app_committed_exe = Sdk

@@ -17,8 +17,8 @@ use tracing::instrument;
 /// File descriptor for app openvm config.
 const FD_APP_CONFIG: &str = "openvm.toml";
 
-/// File descriptor for app exe.
-const FD_APP_EXE: &str = "app.vmexe";
+// File descriptor for app exe.
+// const FD_APP_EXE: &str = "app{}.vmexe";
 
 /// Build the ELF binary from the circuit program.
 #[instrument("BuildGuest::build", fields(project_root), skip(feature_flags))]
@@ -36,6 +36,7 @@ pub fn build<S: AsRef<str>>(
 #[instrument("BuildGuest::transpile", skip_all, fields(project_root))]
 pub fn transpile(
     project_root: &str,
+    filename_suffix: &str,
     elf: Elf,
 ) -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf, VmExe<F>)> {
     // Create the assets dir if not already present.
@@ -60,7 +61,7 @@ pub fn transpile(
     let app_exe = Sdk.transpile(elf, transpiler)?;
 
     // Write exe to disc.
-    let path_app_exe = path_assets.join(FD_APP_EXE);
+    let path_app_exe = path_assets.join(format!("app{}.vmexe", filename_suffix));
     write_exe_to_file(app_exe.clone(), &path_app_exe)?;
 
     println!("exe written to {path_app_exe:?}");
