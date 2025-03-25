@@ -3,7 +3,7 @@ use sbv_primitives::{
     types::{BlockWitness, Transaction, eips::Encodable2718, reth::TransactionSigned},
 };
 use scroll_zkvm_circuit_input_types::{
-    batch::{BatchHeader, BatchHeaderV3, BatchHeaderV7},
+    batch::{BatchHeader, BatchHeaderV6, BatchHeaderV7},
     utils::keccak256,
 };
 use scroll_zkvm_prover::{
@@ -83,14 +83,14 @@ impl Default for LastHeader {
 impl From<&BatchHeaderV> for LastHeader {
     fn from(value: &BatchHeaderV) -> Self {
         match value {
-            BatchHeaderV::V3(h) => h.into(),
+            BatchHeaderV::V6(h) => h.into(),
             BatchHeaderV::V7(h) => h.into(),
         }
     }
 }
 
-impl From<&BatchHeaderV3> for LastHeader {
-    fn from(h: &BatchHeaderV3) -> Self {
+impl From<&BatchHeaderV6> for LastHeader {
+    fn from(h: &BatchHeaderV6) -> Self {
         Self {
             batch_index: h.batch_index,
             version: h.version,
@@ -289,7 +289,7 @@ pub fn build_batch_task(
                 }),
         );
 
-        BatchHeaderV::V3(BatchHeaderV3 {
+        BatchHeaderV::V6(BatchHeaderV6 {
             version: last_header.version,
             batch_index: last_header.batch_index + 1,
             l1_message_popped: last_l1_message_index - last_header.l1_message_index,
@@ -320,7 +320,7 @@ pub fn build_batch_task(
 #[test]
 fn test_build_and_parse_batch_task() -> eyre::Result<()> {
     #[cfg(not(feature = "euclidv2"))]
-    use scroll_zkvm_circuit_input_types::batch::{EnvelopeV3 as Envelope, PayloadV3 as Payload};
+    use scroll_zkvm_circuit_input_types::batch::{EnvelopeV6 as Envelope, PayloadV6 as Payload};
     #[cfg(feature = "euclidv2")]
     use scroll_zkvm_circuit_input_types::batch::{EnvelopeV7 as Envelope, PayloadV7 as Payload};
     use scroll_zkvm_prover::utils::{read_json, read_json_deep, write_json};
@@ -381,7 +381,7 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
     #[cfg(feature = "euclidv2")]
     let header = task.batch_header.must_v7_header();
     #[cfg(not(feature = "euclidv2"))]
-    let header = task.batch_header.must_v3_header();
+    let header = task.batch_header.must_v6_header();
     Payload::from(&enveloped).validate(header, &chunk_infos);
 
     // depressed task output for pre-v2

@@ -1,13 +1,13 @@
 mod header;
 pub use header::{
     ArchivedReferenceHeader, BatchHeader, ReferenceHeader,
-    v3::{ArchivedBatchHeaderV3, BatchHeaderV3},
+    v6::{ArchivedBatchHeaderV6, BatchHeaderV6},
     v7::{ArchivedBatchHeaderV7, BatchHeaderV7},
 };
 
 mod payload;
 pub use payload::{
-    v3::{EnvelopeV3, PayloadV3},
+    v6::{EnvelopeV6, PayloadV6},
     v7::{EnvelopeV7, PayloadV7},
 };
 

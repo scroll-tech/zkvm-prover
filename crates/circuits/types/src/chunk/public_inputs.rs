@@ -262,11 +262,11 @@ pub type VersionedChunkInfo = (ChunkInfo, ForkName);
 impl PublicInputs for VersionedChunkInfo {
     /// Compute the public input hash for the chunk.
     fn pi_hash(&self) -> B256 {
-        // unimplemented!("use pi_hash_v3 or pi_hash_v7");
+        // unimplemented!("use pi_hash_v6 or pi_hash_v7");
         match self.1 {
             ForkName::Euclid => {
                 // sanity check
-                assert_ne!(self.0.data_hash, B256::ZERO, "v3 must has valid data hash");
+                assert_ne!(self.0.data_hash, B256::ZERO, "v6 must has valid data hash");
                 self.0.pi_hash_euclid()
             }
             ForkName::EuclidV2 => self.0.pi_hash_euclidv2(),
@@ -282,7 +282,7 @@ impl PublicInputs for VersionedChunkInfo {
         assert_eq!(self.1, prev_pi.1);
         assert_eq!(self.0.chain_id, prev_pi.0.chain_id);
         assert_eq!(self.0.prev_state_root, prev_pi.0.post_state_root);
-        // For V3, they should always be 0.
+        // For V6, they should always be 0.
         if self.1 != ForkName::Euclid {
             assert_eq!(self.0.prev_msg_queue_hash, prev_pi.0.post_msg_queue_hash);
         }

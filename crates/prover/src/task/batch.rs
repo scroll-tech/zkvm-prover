@@ -4,7 +4,7 @@ use openvm_native_recursion::hints::Hintable;
 use openvm_sdk::StdIn;
 use scroll_zkvm_circuit_input_types::{
     batch::{
-        BatchHeader, BatchHeaderV3, BatchHeaderV7, BatchInfo, BatchWitness, EnvelopeV3, EnvelopeV7,
+        BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchInfo, BatchWitness, EnvelopeV6, EnvelopeV7,
         PointEvalWitness, ReferenceHeader,
     },
     chunk::ForkName,
@@ -16,21 +16,21 @@ use crate::{
     utils::{base64, point_eval},
 };
 
-/// Define variable batch header type, since BatchHeaderV3 can not
+/// Define variable batch header type, since BatchHeaderV6 can not
 /// be decoded as V7 we can always has correct deserialization
-/// Notice: V3 header MUST be put above V7 since untagged enum
+/// Notice: V6 header MUST be put above V7 since untagged enum
 /// try to decode each defination in order
 #[derive(Clone, serde::Deserialize, serde::Serialize)]
 #[serde(untagged)]
 pub enum BatchHeaderV {
-    V3(BatchHeaderV3),
+    V6(BatchHeaderV6),
     V7(BatchHeaderV7),
 }
 
 impl From<BatchHeaderV> for ReferenceHeader {
     fn from(value: BatchHeaderV) -> Self {
         match value {
-            BatchHeaderV::V3(h) => ReferenceHeader::V3(h),
+            BatchHeaderV::V6(h) => ReferenceHeader::V6(h),
             BatchHeaderV::V7(h) => ReferenceHeader::V7(h),
         }
     }
@@ -39,14 +39,14 @@ impl From<BatchHeaderV> for ReferenceHeader {
 impl BatchHeaderV {
     pub fn batch_hash(&self) -> B256 {
         match self {
-            BatchHeaderV::V3(h) => h.batch_hash(),
+            BatchHeaderV::V6(h) => h.batch_hash(),
             BatchHeaderV::V7(h) => h.batch_hash(),
         }
     }
 
-    pub fn must_v3_header(&self) -> &BatchHeaderV3 {
+    pub fn must_v6_header(&self) -> &BatchHeaderV6 {
         match self {
-            BatchHeaderV::V3(h) => h,
+            BatchHeaderV::V6(h) => h,
             BatchHeaderV::V7(_) => panic!("try to pick v7 header"),
         }
     }
@@ -54,7 +54,7 @@ impl BatchHeaderV {
     pub fn must_v7_header(&self) -> &BatchHeaderV7 {
         match self {
             BatchHeaderV::V7(h) => h,
-            BatchHeaderV::V3(_) => panic!("try to pick v3 header"),
+            BatchHeaderV::V6(_) => panic!("try to pick v6 header"),
         }
     }
 }
@@ -65,7 +65,7 @@ impl BatchHeaderV {
 pub struct BatchProvingTask {
     /// Chunk proofs for the contiguous list of chunks within the batch.
     pub chunk_proofs: Vec<ChunkProof>,
-    /// The [`BatchHeaderV3/V7`], as computed on-chain for this batch.
+    /// The [`BatchHeaderV6/V7`], as computed on-chain for this batch.
     pub batch_header: BatchHeaderV,
     /// The bytes encoding the batch data that will finally be published on-chain in the form of an
     /// EIP-4844 blob.
@@ -93,13 +93,13 @@ impl ProvingTask for BatchProvingTask {
             let blob = point_eval::to_blob(&self.blob_bytes);
             let commitment = point_eval::blob_to_kzg_commitment(&blob);
             let challenge_digest = match &self.batch_header {
-                BatchHeaderV::V3(_) => {
+                BatchHeaderV::V6(_) => {
                     assert_eq!(
                         fork_name,
                         ForkName::Euclid,
-                        "v3 header expected euclid fork"
+                        "v6 header expected euclid fork"
                     );
-                    EnvelopeV3::from(self.blob_bytes.as_slice())
+                    EnvelopeV6::from(self.blob_bytes.as_slice())
                         .challenge_digest(point_eval::get_versioned_hash(&commitment))
                 }
                 BatchHeaderV::V7(_) => {
@@ -199,11 +199,11 @@ impl From<&BatchProvingTask> for BatchInfo {
         );
         let (parent_batch_hash, prev_msg_queue_hash, post_msg_queue_hash) = match task.batch_header
         {
-            BatchHeaderV::V3(h) => {
+            BatchHeaderV::V6(h) => {
                 assert_eq!(
                     fork_name,
                     ForkName::Euclid,
-                    "v3 header expected euclid fork"
+                    "v6 header expected euclid fork"
                 );
                 (h.parent_batch_hash, Default::default(), Default::default())
             }

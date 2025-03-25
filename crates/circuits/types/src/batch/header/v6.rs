@@ -2,7 +2,7 @@ use alloy_primitives::B256;
 
 use crate::{batch::BatchHeader, utils::keccak256};
 
-/// Represents the header summarising the batch of chunks as per DA-codec v3.
+/// Represents the header summarising the batch of chunks as per DA-codec v6.
 #[derive(
     Clone,
     Copy,
@@ -15,7 +15,7 @@ use crate::{batch::BatchHeader, utils::keccak256};
     serde::Serialize,
 )]
 #[rkyv(derive(Debug))]
-pub struct BatchHeaderV3 {
+pub struct BatchHeaderV6 {
     /// The DA-codec version for the batch.
     #[rkyv()]
     pub version: u8,
@@ -45,7 +45,7 @@ pub struct BatchHeaderV3 {
     pub blob_data_proof: [B256; 2],
 }
 
-impl BatchHeader for BatchHeaderV3 {
+impl BatchHeader for BatchHeaderV6 {
     fn version(&self) -> u8 {
         self.version
     }
@@ -58,7 +58,7 @@ impl BatchHeader for BatchHeaderV3 {
         self.parent_batch_hash
     }
 
-    /// Batch hash as per DA-codec v3:
+    /// Batch hash as per DA-codec v6:
     ///
     /// keccak(
     ///     version ||
@@ -91,7 +91,7 @@ impl BatchHeader for BatchHeaderV3 {
     }
 }
 
-impl BatchHeader for ArchivedBatchHeaderV3 {
+impl BatchHeader for ArchivedBatchHeaderV6 {
     fn version(&self) -> u8 {
         self.version
     }
@@ -131,8 +131,8 @@ impl BatchHeader for ArchivedBatchHeaderV3 {
     }
 }
 
-impl From<&ArchivedBatchHeaderV3> for BatchHeaderV3 {
-    fn from(archived: &ArchivedBatchHeaderV3) -> Self {
+impl From<&ArchivedBatchHeaderV6> for BatchHeaderV6 {
+    fn from(archived: &ArchivedBatchHeaderV6) -> Self {
         Self {
             version: archived.version,
             batch_index: archived.batch_index.into(),

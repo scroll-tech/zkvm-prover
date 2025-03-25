@@ -1,26 +1,26 @@
 use alloy_primitives::B256;
 use scroll_zkvm_circuit_input_types::{
-    batch::{BatchHeader, BatchHeaderV3, BatchInfo, EnvelopeV3, PayloadV3},
+    batch::{BatchHeader, BatchHeaderV6, BatchInfo, EnvelopeV6, PayloadV6},
     chunk::ChunkInfo,
 };
 
 use crate::blob_consistency::BlobPolynomial;
 
-/// Builder that consumes DA-codec@v3 [`BatchHeader`][BatchHeaderV3] and builds the public-input
+/// Builder that consumes DA-codec@v6 [`BatchHeader`][BatchHeaderV6] and builds the public-input
 /// values [`BatchInfo`] for the batch-circuit.
-pub struct BatchInfoBuilderV3;
+pub struct BatchInfoBuilderV6;
 
-impl BatchInfoBuilderV3 {
+impl BatchInfoBuilderV6 {
     /// Build the public-input values [`BatchInfo`] for the [`BatchCircuit`][crate::circuit::BatchCircuit]
     /// by processing the witness, while making some validations.
     pub fn build(
-        batch_header: &BatchHeaderV3,
+        batch_header: &BatchHeaderV6,
         chunk_infos: &[ChunkInfo],
         blob_bytes: &[u8],
     ) -> BatchInfo {
         // Construct the batch payload using blob bytes.
-        let envelope = EnvelopeV3::from(blob_bytes);
-        let payload = PayloadV3::from(&envelope);
+        let envelope = EnvelopeV6::from(blob_bytes);
+        let payload = PayloadV6::from(&envelope);
 
         // Verify consistency of the EIP-4844 blob.
         //

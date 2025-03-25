@@ -1,4 +1,4 @@
-pub mod v3;
+pub mod v6;
 pub mod v7;
 
 /// The number data bytes we pack each BLS12-381 scalar into. The most-significant byte is 0.

@@ -1,9 +1,9 @@
 use alloy_primitives::B256;
 use itertools::Itertools;
 
-use crate::{batch::BatchHeaderV3, chunk::ChunkInfo, utils::keccak256};
+use crate::{batch::BatchHeaderV6, chunk::ChunkInfo, utils::keccak256};
 
-/// The default max chunks for v3 payload
+/// The default max chunks for v6 payload
 pub const N_MAX_CHUNKS: usize = 45;
 
 /// The number of bytes to encode number of chunks in a batch.
@@ -12,7 +12,7 @@ const N_BYTES_NUM_CHUNKS: usize = 2;
 /// The number of rows to encode chunk size (u32).
 const N_BYTES_CHUNK_SIZE: usize = 4;
 
-impl From<&[u8]> for EnvelopeV3 {
+impl From<&[u8]> for EnvelopeV6 {
     fn from(blob_bytes: &[u8]) -> Self {
         let is_encoded = blob_bytes[0] & 1 == 1;
         Self {
@@ -27,7 +27,7 @@ impl From<&[u8]> for EnvelopeV3 {
 }
 
 #[derive(Debug, Clone)]
-pub struct EnvelopeV3 {
+pub struct EnvelopeV6 {
     /// The original envelope bytes supplied.
     ///
     /// Caching just for re-use later in challenge digest computation.
@@ -36,7 +36,7 @@ pub struct EnvelopeV3 {
     pub is_encoded: bool,
 }
 
-impl EnvelopeV3 {
+impl EnvelopeV6 {
     /// Parse payload bytes and obtain challenge digest
     pub fn challenge_digest(&self, versioned_hash: B256) -> B256 {
         let payload = Payload::from(self);
@@ -44,8 +44,8 @@ impl EnvelopeV3 {
     }
 }
 
-impl From<&EnvelopeV3> for Payload {
-    fn from(envelope: &EnvelopeV3) -> Self {
+impl From<&EnvelopeV6> for Payload {
+    fn from(envelope: &EnvelopeV6) -> Self {
         Self::from_payload(&envelope.envelope_bytes)
     }
 }
@@ -63,7 +63,7 @@ pub struct Payload {
     pub chunk_data_digests: Vec<B256>,
 }
 
-pub type PayloadV3 = Payload;
+pub type PayloadV6 = Payload;
 
 impl Payload {
     /// For raw payload data (read from decompressed enveloped data), which is raw batch bytes
@@ -155,7 +155,7 @@ impl Payload {
     /// Validate the payload contents.
     pub fn validate<'a>(
         &self,
-        header: &BatchHeaderV3,
+        header: &BatchHeaderV6,
         chunk_infos: &'a [ChunkInfo],
     ) -> (&'a ChunkInfo, &'a ChunkInfo) {
         // There should be at least 1 chunk info.
