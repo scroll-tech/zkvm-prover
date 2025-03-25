@@ -12,10 +12,6 @@ pub mod proof;
 
 pub mod utils;
 
-/// The number of bytes (`u8`) chunked together before revealing as openvm public-inputs. Since the
-/// revealed value supported by openvm is `u32`, we chunk `[u8; 4]` together in little-endian order.
-const CHUNK_SIZE: usize = 4;
-
 /// Defines behaviour to be implemented by types representing the public-input values of a circuit.
 pub trait PublicInputs {
     /// Keccak-256 digest of the public inputs. The public-input hash are revealed as public values
@@ -54,11 +50,8 @@ pub trait Circuit {
 
 /// Reveal the public-input values as openvm public values.
 pub fn reveal_pi_hash(pi_hash: B256) {
-    for (i, part) in pi_hash.chunks_exact(CHUNK_SIZE).enumerate() {
-        let value = u32::from_le_bytes(part.try_into().unwrap());
-        openvm::io::println(format!("pi[{i}] = {value:?}"));
-        openvm::io::reveal(value, i)
-    }
+    openvm::io::println(format!("pi_hash = {pi_hash:?}"));
+    openvm::io::reveal_bytes32(*pi_hash);
 }
 
 /// Circuit that additional aggregates proofs from other [`Circuits`][Circuit].

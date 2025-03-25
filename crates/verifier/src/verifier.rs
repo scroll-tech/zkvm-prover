@@ -4,10 +4,7 @@ use itertools::Itertools;
 use openvm_circuit::{arch::SingleSegmentVmExecutor, system::program::trace::VmCommittedExe};
 use openvm_continuations::verifier::root::types::RootVmVerifierInput;
 use openvm_native_circuit::NativeConfig;
-use openvm_native_recursion::{
-    halo2::{EvmProof, wrapper::EvmVerifier},
-    hints::Hintable,
-};
+use openvm_native_recursion::{halo2::RawEvmProof, hints::Hintable};
 use openvm_sdk::{F, RootSC, SC};
 use scroll_zkvm_circuit_input_types::proof::ProgramCommitment;
 
@@ -53,7 +50,7 @@ impl VerifierType for BundleVerifierTypeEuclidV2 {
 pub struct Verifier<Type> {
     pub vm_executor: SingleSegmentVmExecutor<F, NativeConfig>,
     pub root_committed_exe: VmCommittedExe<RootSC>,
-    pub evm_verifier: EvmVerifier,
+    pub evm_verifier: Vec<u8>,
 
     _type: PhantomData<Type>,
 }
@@ -80,7 +77,7 @@ impl<Type> Verifier<Type> {
             .map_err(|e| e.into())
             .and_then(|bytes| bincode_v1::deserialize(&bytes))?;
 
-        let evm_verifier = std::fs::read(path_verifier_code.as_ref()).map(EvmVerifier)?;
+        let evm_verifier = std::fs::read(path_verifier_code.as_ref())?;
 
         Ok(Self {
             vm_executor,
@@ -144,7 +141,7 @@ impl<Type: VerifierType> Verifier<Type> {
         }
     }
 
-    pub fn verify_proof_evm(&self, evm_proof: &EvmProof) -> bool {
+    pub fn verify_proof_evm(&self, evm_proof: &RawEvmProof) -> bool {
         crate::evm::verify_evm_proof(&self.evm_verifier, evm_proof).is_ok()
     }
 
@@ -285,12 +282,12 @@ mod tests {
         )?;
 
         assert_eq!(
-            evm_proof.as_proof().instances[0][12],
+            evm_proof.as_proof().instances[12],
             compress_commitment(&super::bundle::EXE_COMMIT),
             "the output is not match with exe commitment in evm proof!"
         );
         assert_eq!(
-            evm_proof.as_proof().instances[0][13],
+            evm_proof.as_proof().instances[13],
             compress_commitment(&super::bundle::LEAF_COMMIT),
             "the output is not match with leaf commitment in evm proof!"
         );

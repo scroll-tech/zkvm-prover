@@ -8,9 +8,9 @@ use once_cell::sync::Lazy;
 use openvm_circuit::{arch::SingleSegmentVmExecutor, system::program::trace::VmCommittedExe};
 use openvm_native_recursion::{
     halo2::{
-        EvmProof,
+        RawEvmProof,
         utils::{CacheHalo2ParamsReader, Halo2ParamsReader},
-        wrapper::{EvmVerifier, Halo2WrapperProvingKey},
+        wrapper::Halo2WrapperProvingKey,
     },
     hints::Hintable,
 };
@@ -68,7 +68,7 @@ pub struct EvmProverVerifier {
     /// The halo2 proving key.
     pub halo2_pk: Halo2WrapperProvingKey,
     /// The contract bytecode for the EVM verifier contract.
-    pub verifier_contract: EvmVerifier,
+    pub verifier_contract: Vec<u8>,
 }
 
 /// Generic prover.
@@ -381,16 +381,16 @@ impl<Type: ProverType> Prover<Type> {
             .path_app_exe
             .parent()
             .map(|dir| dir.join("verifier.bin"));
-        let verifier_contract = EvmVerifier(scroll_zkvm_verifier::evm::gen_evm_verifier::<
+        let verifier_contract = scroll_zkvm_verifier::evm::gen_evm_verifier::<
             scroll_zkvm_verifier::evm::halo2_aggregation::AggregationCircuit,
         >(
             &halo2_params,
             agg_pk.halo2_pk.wrapper.pinning.pk.get_vk(),
             agg_pk.halo2_pk.wrapper.pinning.metadata.num_pvs.clone(),
             path_verifier_sol.as_deref(),
-        ));
+        );
         if let Some(path) = path_verifier_bin {
-            crate::utils::write(path, &verifier_contract.0)?;
+            crate::utils::write(path, &verifier_contract)?;
         }
 
         let halo2_pk = agg_pk.halo2_pk.wrapper.clone();
@@ -452,26 +452,28 @@ impl<Type: ProverType> Prover<Type> {
     /// Generate an [evm proof][evm_proof].
     ///
     /// [evm_proof][openvm_native_recursion::halo2::EvmProof]
-    fn gen_proof_snark(&self, task: &Type::ProvingTask) -> Result<EvmProof, Error> {
+    fn gen_proof_snark(&self, task: &Type::ProvingTask) -> Result<RawEvmProof, Error> {
         let stdin = task
             .build_guest_input()
             .map_err(|e| Error::GenProof(e.to_string()))?;
 
-        let evm_proof = self
+        let evm_proof: RawEvmProof = self
             .evm_prover
             .as_ref()
             .expect("Prover::gen_proof_snark expects EVM-prover setup")
             .continuation_prover
-            .generate_proof_for_evm(stdin);
+            .generate_proof_for_evm(stdin)
+            .try_into()
+            .map_err(|e| Error::GenProof(format!("{}", e)))?;
 
         // sanity check
         assert_eq!(
-            evm_proof.instances[0][12],
+            evm_proof.instances[12],
             crate::utils::compress_commitment(&Type::EXE_COMMIT),
             "commitment is not match in generate evm proof",
         );
         assert_eq!(
-            evm_proof.instances[0][13],
+            evm_proof.instances[13],
             crate::utils::compress_commitment(&Type::LEAF_COMMIT),
             "commitment is not match in generate evm proof",
         );

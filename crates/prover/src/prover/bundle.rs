@@ -1,4 +1,4 @@
-use openvm_native_recursion::halo2::EvmProof;
+use openvm_native_recursion::halo2::RawEvmProof;
 use scroll_zkvm_circuit_input_types::{bundle::BundleInfo, chunk::ForkName};
 
 use crate::{
@@ -50,7 +50,7 @@ impl<C: CommitMents> ProverType for BundleProverType<C> {
 
     type ProvingTask = BundleProvingTask;
 
-    type ProofType = EvmProof;
+    type ProofType = RawEvmProof;
 
     type ProofMetadata = BundleProofMetadata;
 
