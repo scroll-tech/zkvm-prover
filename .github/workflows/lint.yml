@@ -35,10 +35,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
       - uses: dtolnay/rust-toolchain@56f84321dbccf38fb67ce29ab63e4754056677e0
         with:
           toolchain: "nightly-2024-12-06"
           components: rustfmt
+
       - name: Cargo fmt
         run: cargo fmt --all -- --check
 
@@ -52,9 +56,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
       - uses: dtolnay/rust-toolchain@56f84321dbccf38fb67ce29ab63e4754056677e0
         with:
           toolchain: "nightly-2024-12-06"
           components: clippy
+
       - name: Clippy
         run: make clippy
