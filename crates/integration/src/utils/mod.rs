@@ -310,9 +310,9 @@ pub fn build_batch_task(
         kzg_commitment: Some(kzg_commitment.to_bytes()),
         kzg_proof: Some(kzg_proof.to_bytes()),
         fork_name: if cfg!(feature = "euclidv2") {
-            Some(String::from("euclidv2"))
+            String::from("euclidv2")
         } else {
-            None
+            String::from("euclidv1")
         },
     }
 }
@@ -352,9 +352,9 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
             .collect::<eyre::Result<Vec<BlockWitness>>>()?,
         prev_msg_queue_hash: Default::default(),
         fork_name: if cfg!(feature = "euclidv2") {
-            Some(String::from("euclidv2"))
+            String::from("euclidv2")
         } else {
-            None
+            String::from("euclidv1")
         },
     };
 

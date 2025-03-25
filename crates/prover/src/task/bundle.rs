@@ -15,7 +15,7 @@ pub struct BundleProvingTask {
     /// for sanity check
     pub bundle_info: Option<BundleInfo>,
     /// Fork name specify
-    pub fork_name: Option<String>,
+    pub fork_name: String,
 }
 
 impl ProvingTask for BundleProvingTask {

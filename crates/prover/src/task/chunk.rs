@@ -19,7 +19,7 @@ pub struct ChunkProvingTask {
     /// The on-chain L1 msg queue hash before applying L1 msg txs from the chunk.
     pub prev_msg_queue_hash: B256,
     /// Fork name specify
-    pub fork_name: Option<String>,
+    pub fork_name: String,
 }
 
 #[derive(Clone, Debug)]
@@ -75,7 +75,7 @@ impl ProvingTask for ChunkProvingTask {
         let witness = ChunkWitness {
             blocks: self.block_witnesses.to_vec(),
             prev_msg_queue_hash: self.prev_msg_queue_hash,
-            fork_name: self.fork_name.as_deref().into(),
+            fork_name: self.fork_name.as_str().into(),
         };
 
         let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&witness)?;

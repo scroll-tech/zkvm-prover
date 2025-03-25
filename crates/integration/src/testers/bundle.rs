@@ -34,7 +34,7 @@ impl ProverTester for BundleProverTester {
                 ))?,
             ],
             bundle_info: None,
-            fork_name: None,
+            fork_name: "euclidv1".to_string(),
         })
     }
 

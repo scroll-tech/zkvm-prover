@@ -63,9 +63,9 @@ impl ProverTester for ChunkProverTester {
                 .collect::<eyre::Result<Vec<BlockWitness>>>()?,
             prev_msg_queue_hash: Default::default(),
             fork_name: if cfg!(feature = "euclidv2") {
-                Some(String::from("euclidv2"))
+                String::from("euclidv2")
             } else {
-                None
+                String::from("euclidv1")
             },
         })
     }
@@ -107,9 +107,9 @@ pub fn gen_multi_tasks(
                 block_witnesses,
                 prev_msg_queue_hash: B256::repeat_byte(1u8),
                 fork_name: if cfg!(feature = "euclidv2") {
-                    Some(String::from("euclidv2"))
+                    String::from("euclidv2")
                 } else {
-                    None
+                    String::from("euclidv1")
                 },
             })
         })

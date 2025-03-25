@@ -110,7 +110,7 @@ impl<C: CommitMents> ProverType for BundleProverType<C> {
             withdraw_root,
         };
 
-        let fork_name = ForkName::from(task.fork_name.as_deref());
+        let fork_name = ForkName::from(task.fork_name.as_str());
         let bundle_pi_hash = bundle_info.pi_hash(fork_name);
 
         if let Some(checked_bundle_info) = task.bundle_info.as_ref() {

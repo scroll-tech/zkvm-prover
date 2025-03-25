@@ -42,8 +42,18 @@ impl From<Option<&str>> for ForkName {
         match value {
             None => Default::default(),
             Some("euclidv2") => ForkName::EuclidV2,
-            Some("euclid") => ForkName::Euclid,
+            Some("euclid") | Some("euclidv1") => ForkName::Euclid,
             Some(s) => unreachable!("fork name is not accept: {s}"),
+        }
+    }
+}
+
+impl From<&str> for ForkName {
+    fn from(value: &str) -> Self {
+        match value {
+            "euclidv2" => ForkName::EuclidV2,
+            "euclid" | "euclidv1" => ForkName::Euclid,
+            s => unreachable!("fork name is not accept: {s}"),
         }
     }
 }

@@ -78,7 +78,7 @@ pub struct BatchProvingTask {
     /// KZG proof.
     pub kzg_proof: Option<Bytes48>,
     /// fork version specify, for sanity check with batch_header and chunk proof
-    pub fork_name: Option<String>,
+    pub fork_name: String,
 }
 
 impl ProvingTask for BatchProvingTask {
@@ -87,7 +87,7 @@ impl ProvingTask for BatchProvingTask {
     }
 
     fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error> {
-        let fork_name = self.fork_name.as_deref().into();
+        let fork_name = self.fork_name.as_str().into();
         // calculate point eval needed and compare with task input
         let (kzg_commitment, kzg_proof, challenge_digest) = {
             let blob = point_eval::to_blob(&self.blob_bytes);
@@ -170,7 +170,7 @@ impl ProvingTask for BatchProvingTask {
 
 impl From<&BatchProvingTask> for BatchInfo {
     fn from(task: &BatchProvingTask) -> Self {
-        let fork_name = ForkName::from(task.fork_name.as_deref());
+        let fork_name = ForkName::from(task.fork_name.as_str());
         let (parent_state_root, state_root, chain_id, withdraw_root) = (
             task.chunk_proofs
                 .first()

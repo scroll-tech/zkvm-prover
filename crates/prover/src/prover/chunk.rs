@@ -44,7 +44,7 @@ impl ProverType for ChunkProverType {
         let chunk_witness = ChunkWitness::new(
             &task.block_witnesses,
             task.prev_msg_queue_hash,
-            task.fork_name.as_deref().into(),
+            task.fork_name.as_str().into(),
         );
         let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&chunk_witness).map_err(|e| {
             Error::GenProof(format!(

@@ -26,9 +26,9 @@ fn load_recent_batch_proofs() -> eyre::Result<BundleProvingTask> {
         batch_proofs: vec![batch_proof],
         bundle_info: None,
         fork_name: if cfg!(feature = "euclidv2") {
-            Some(String::from("euclidv2"))
+            String::from("euclidv2")
         } else {
-            None
+            String::from("euclidv1")
         },
     };
     Ok(task)
@@ -111,9 +111,9 @@ fn e2e() -> eyre::Result<()> {
     let outcome = prove_verify_multi::<BatchProverTester>(Some(&[batch_task_1, batch_task_2]))?;
 
     let fork_name = if cfg!(feature = "euclidv2") {
-        Some(String::from("euclidv2"))
+        String::from("euclidv2")
     } else {
-        None
+        String::from("euclidv1")
     };
     // Construct bundle task using batch tasks and batch proofs.
     let bundle_task = BundleProvingTask {
