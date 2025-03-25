@@ -30,7 +30,10 @@ const DIR_PROOFS: &str = "proofs";
 const FD_APP_CONFIG: &str = "openvm.toml";
 
 /// File descriptor for app exe.
+#[cfg(feature = "euclidv2")]
 const FD_APP_EXE: &str = "app.vmexe";
+#[cfg(not(feature = "euclidv2"))]
+const FD_APP_EXE: &str = "app_legacy.vmexe";
 
 /// Environment variable used to set the test-run's output directory for assets.
 const ENV_OUTPUT_DIR: &str = "OUTPUT_DIR";
