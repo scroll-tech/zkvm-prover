@@ -131,8 +131,8 @@ fn e2e() -> eyre::Result<()> {
     //
     // We write the 2 digests to disc.
     let evm_proof = outcome.proofs[0].as_proof();
-    let digest_1 = evm_proof.instances[0][12];
-    let digest_2 = evm_proof.instances[0][13];
+    let digest_1 = evm_proof.instances[12];
+    let digest_2 = evm_proof.instances[13];
     scroll_zkvm_prover::utils::write(
         path_assets.join("digest_1"),
         &digest_1.to_bytes().into_iter().rev().collect::<Vec<u8>>(),
@@ -155,7 +155,7 @@ fn e2e() -> eyre::Result<()> {
     assert!(verifier.verify_proof_evm(&outcome.proofs[0].as_proof()));
 
     let expected_pi_hash = &outcome.proofs[0].metadata.bundle_pi_hash;
-    let observed_instances = &outcome.proofs[0].as_proof().instances[0];
+    let observed_instances = &outcome.proofs[0].as_proof().instances;
 
     for (i, (&expected, &observed)) in expected_pi_hash
         .iter()
@@ -169,11 +169,16 @@ fn e2e() -> eyre::Result<()> {
         );
     }
 
+    // Sanity check for pi of bundle hash, update the expected hash if block witness changed
+    let pi_str = if cfg!(feature = "euclidv2") {
+        "2028510c403837c6ed77660fd92814ba61d7b746e7268cc8dfc14d163d45e6bd"
+    } else {
+        "004bd600d361ad25ae28af9383f7f102b0ed11e20e571dc1a380621a09f33888"
+    };
     // sanity check for pi of bundle hash, update the expected hash if block witness changed
     assert_eq!(
-        expected_pi_hash,
-        &B256::from_str("0x004bd600d361ad25ae28af9383f7f102b0ed11e20e571dc1a380621a09f33888")
-            .unwrap(),
+        alloy_primitives::hex::encode(expected_pi_hash),
+        pi_str,
         "unexpected pi hash for e2e bundle info, block witness changed?"
     );
 

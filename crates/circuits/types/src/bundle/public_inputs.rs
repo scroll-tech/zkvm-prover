@@ -44,18 +44,20 @@ impl PublicInputs for BundleInfo {
     ///     withdraw root
     /// )
     fn pi_hash(&self) -> B256 {
-        keccak256(
-            std::iter::empty()
-                .chain(self.chain_id.to_be_bytes().as_slice())
-                .chain(self.num_batches.to_be_bytes().as_slice())
-                .chain(self.prev_state_root.as_slice())
-                .chain(self.prev_batch_hash.as_slice())
-                .chain(self.post_state_root.as_slice())
-                .chain(self.batch_hash.as_slice())
-                .chain(self.withdraw_root.as_slice())
-                .cloned()
-                .collect::<Vec<u8>>(),
-        )
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(self.chain_id.to_be_bytes().as_slice());
+
+        #[cfg(feature = "euclidv2")]
+        bytes.extend_from_slice(self.msg_queue_hash.as_slice());
+
+        bytes.extend_from_slice(self.num_batches.to_be_bytes().as_slice());
+        bytes.extend_from_slice(self.prev_state_root.as_slice());
+        bytes.extend_from_slice(self.prev_batch_hash.as_slice());
+        bytes.extend_from_slice(self.post_state_root.as_slice());
+        bytes.extend_from_slice(self.batch_hash.as_slice());
+        bytes.extend_from_slice(self.withdraw_root.as_slice());
+
+        keccak256(bytes)
     }
 
     fn validate(&self, _prev_pi: &Self) {
