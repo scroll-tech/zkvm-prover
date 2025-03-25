@@ -36,6 +36,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: chunk commitments (prover)
         id: commitments-chunk-prover
@@ -110,31 +112,31 @@ jobs:
           } >> $GITHUB_OUTPUT
 
       - name: Sanity check for chunk-commitments (prover vs verifier)
-        uses: nick-fields/assert-action@v1
+        uses: nick-fields/assert-action@aa0067e01f0f6545c31755d6ca128c5a3a14f6bf # v2.0.0
         with:
           expected: ${{ steps.commitments-chunk-prover.outputs.commitments }}
           actual: ${{ steps.commitments-chunk-verifier.outputs.commitments }}
 
       - name: Sanity check for chunk-commitments (prover vs circuits)
-        uses: nick-fields/assert-action@v1
+        uses: nick-fields/assert-action@aa0067e01f0f6545c31755d6ca128c5a3a14f6bf # v2.0.0
         with:
           expected: ${{ steps.commitments-chunk-prover.outputs.commitments }}
           actual: ${{ steps.commitments-chunk-circuits.outputs.commitments }}
 
       - name: Sanity check for batch-commitments (prover vs verifier)
-        uses: nick-fields/assert-action@v1
+        uses: nick-fields/assert-action@aa0067e01f0f6545c31755d6ca128c5a3a14f6bf # v2.0.0
         with:
           expected: ${{ steps.commitments-batch-prover.outputs.commitments }}
           actual: ${{ steps.commitments-batch-verifier.outputs.commitments }}
 
       - name: Sanity check for batch-commitments (prover vs circuits)
-        uses: nick-fields/assert-action@v1
+        uses: nick-fields/assert-action@aa0067e01f0f6545c31755d6ca128c5a3a14f6bf #v2.0.0
         with:
           expected: ${{ steps.commitments-batch-prover.outputs.commitments }}
           actual: ${{ steps.commitments-batch-circuits.outputs.commitments }}
 
       - name: Sanity check for bundle-commitments (prover vs verifier)
-        uses: nick-fields/assert-action@v1
+        uses: nick-fields/assert-action@aa0067e01f0f6545c31755d6ca128c5a3a14f6bf #v2.0.0
         with:
           expected: ${{ steps.commitments-bundle-prover.outputs.commitments }}
           actual: ${{ steps.commitments-bundle-verifier.outputs.commitments }}
@@ -146,7 +148,7 @@ jobs:
           git diff --quiet && echo "no diff" || (echo "diff"; exit 1)
 
       - name: Upload artifact (chunk app.vmexe)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2
         with:
           name: chunk-app-vmexe
           path: ./crates/circuits/chunk-circuit/openvm/app.vmexe
