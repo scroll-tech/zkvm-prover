@@ -40,7 +40,7 @@ impl ProverTester for BundleProverTester {
 
     #[cfg(not(feature = "euclidv2"))]
     fn load() -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
-        Self::load_with_exe_fd("app_legacy.vmexe")
+        Self::load_with_exe_fd("app_euclidv1.vmexe")
     }
 }
 
@@ -61,6 +61,6 @@ impl ProverTester for BundleLocalTaskTester {
 
     #[cfg(not(feature = "euclidv2"))]
     fn load() -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
-        Self::load_with_exe_fd("app_legacy.vmexe")
+        Self::load_with_exe_fd("app_euclidv1.vmexe")
     }
 }

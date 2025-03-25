@@ -26,7 +26,7 @@ impl BuildConfig {
             },
             "euclidv1" => Self {
                 features: vec![],
-                filename_suffix: "_legacy".to_string(),
+                filename_suffix: "_euclidv1".to_string(),
             },
             "euclidv2" => Self {
                 features: vec!["euclidv2".to_string()],

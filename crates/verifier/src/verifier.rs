@@ -10,7 +10,7 @@ use scroll_zkvm_circuit_input_types::proof::ProgramCommitment;
 
 use crate::commitments::{
     batch::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT},
-    bundle, bundle_legacy,
+    bundle, bundle_euclidv1,
     chunk::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT},
 };
 
@@ -40,8 +40,8 @@ impl VerifierType for BatchVerifierType {
     const LEAF_COMMIT: [u32; 8] = BATCH_LEAF_COMMIT;
 }
 impl VerifierType for BundleVerifierTypeEuclidV1 {
-    const EXE_COMMIT: [u32; 8] = bundle_legacy::EXE_COMMIT;
-    const LEAF_COMMIT: [u32; 8] = bundle_legacy::LEAF_COMMIT;
+    const EXE_COMMIT: [u32; 8] = bundle_euclidv1::EXE_COMMIT;
+    const LEAF_COMMIT: [u32; 8] = bundle_euclidv1::LEAF_COMMIT;
 }
 impl VerifierType for BundleVerifierTypeEuclidV2 {
     const EXE_COMMIT: [u32; 8] = bundle::EXE_COMMIT;

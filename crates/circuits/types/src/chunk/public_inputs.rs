@@ -9,6 +9,7 @@ use sbv_primitives::types::{
 pub const SIZE_BLOCK_CTX: usize = 52;
 
 #[derive(
+    Default,
     Debug,
     Copy,
     Clone,
@@ -22,14 +23,9 @@ pub const SIZE_BLOCK_CTX: usize = 52;
 )]
 #[rkyv(derive(Debug))]
 pub enum ForkName {
+    #[default]
     Euclid,
     EuclidV2,
-}
-
-impl ForkName {
-    pub fn most_legacy() -> ForkName {
-        ForkName::Euclid
-    }
 }
 
 impl From<&ArchivedForkName> for ForkName {
@@ -44,7 +40,7 @@ impl From<&ArchivedForkName> for ForkName {
 impl From<Option<&str>> for ForkName {
     fn from(value: Option<&str>) -> Self {
         match value {
-            None => ForkName::most_legacy(),
+            None => Default::default(),
             Some("euclidv2") => ForkName::EuclidV2,
             Some("euclid") => ForkName::Euclid,
             Some(s) => unreachable!("fork name is not accept: {s}"),

@@ -7,7 +7,7 @@ use crate::{
     task::{ProvingTask, bundle::BundleProvingTask},
 };
 
-use crate::commitments::{bundle, bundle_legacy};
+use crate::commitments::{bundle, bundle_euclidv1};
 
 pub trait CommitMents {
     const EXE_COMMIT: [u32; 8];
@@ -18,8 +18,8 @@ pub struct BundleCircuitV1;
 pub struct BundleCircuitV2;
 
 impl CommitMents for BundleCircuitV1 {
-    const EXE_COMMIT: [u32; 8] = bundle_legacy::EXE_COMMIT;
-    const LEAF_COMMIT: [u32; 8] = bundle_legacy::LEAF_COMMIT;
+    const EXE_COMMIT: [u32; 8] = bundle_euclidv1::EXE_COMMIT;
+    const LEAF_COMMIT: [u32; 8] = bundle_euclidv1::LEAF_COMMIT;
 }
 
 impl CommitMents for BundleCircuitV2 {
