@@ -12,8 +12,10 @@ const BUNDLE_SANITY_MSG: &str = "bundle must have at least one batch";
 #[derive(Clone, serde::Deserialize, serde::Serialize)]
 pub struct BundleProvingTask {
     pub batch_proofs: Vec<BatchProof>,
-    // for sanity check
+    /// for sanity check
     pub bundle_info: Option<BundleInfo>,
+    /// Fork name specify
+    pub fork_name: String,
 }
 
 impl ProvingTask for BundleProvingTask {

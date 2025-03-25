@@ -1,17 +1,10 @@
-use scroll_zkvm_circuit_input_types::batch::BatchHeader;
-
 use crate::{
     Error, Prover, ProverType,
     proof::{BatchProofMetadata, RootProof},
     task::batch::BatchProvingTask,
 };
 
-#[cfg(feature = "euclidv2")]
 use crate::commitments::batch::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT};
-#[cfg(not(feature = "euclidv2"))]
-use crate::commitments::batch_legacy::{
-    EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT,
-};
 
 /// Prover for [`BatchCircuit`].
 pub type BatchProver = Prover<BatchProverType>;

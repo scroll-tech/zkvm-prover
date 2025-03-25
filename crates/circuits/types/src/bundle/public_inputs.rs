@@ -1,6 +1,6 @@
 use alloy_primitives::B256;
 
-use crate::{PublicInputs, utils::keccak256};
+use crate::{PublicInputs, chunk::ForkName, utils::keccak256};
 
 /// Represents fields required to compute the public-inputs digest of a bundle.
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
@@ -31,8 +31,8 @@ pub struct BundleInfo {
     pub withdraw_root: B256,
 }
 
-impl PublicInputs for BundleInfo {
-    /// Public input hash for a bundle is defined as
+impl BundleInfo {
+    /// Public input hash for a bundle of euclid v1 is defined as
     ///
     /// keccak(
     ///     chain id ||
@@ -43,21 +43,88 @@ impl PublicInputs for BundleInfo {
     ///     batch hash ||
     ///     withdraw root
     /// )
+    pub fn pi_hash_euclid_v1(&self) -> B256 {
+        keccak256(
+            std::iter::empty()
+                .chain(self.chain_id.to_be_bytes().as_slice())
+                .chain(self.num_batches.to_be_bytes().as_slice())
+                .chain(self.prev_state_root.as_slice())
+                .chain(self.prev_batch_hash.as_slice())
+                .chain(self.post_state_root.as_slice())
+                .chain(self.batch_hash.as_slice())
+                .chain(self.withdraw_root.as_slice())
+                .cloned()
+                .collect::<Vec<u8>>(),
+        )
+    }
+
+    /// Public input hash for a bundle of euclid v2 is defined as
+    ///
+    /// keccak(
+    ///     chain id ||
+    ///     msg_queue_hash ||
+    ///     num batches ||
+    ///     prev state root ||
+    ///     prev batch hash ||
+    ///     post state root ||
+    ///     batch hash ||
+    ///     withdraw root
+    /// )   
+    pub fn pi_hash_euclid_v2(&self) -> B256 {
+        keccak256(
+            std::iter::empty()
+                .chain(self.chain_id.to_be_bytes().as_slice())
+                .chain(self.msg_queue_hash.as_slice())
+                .chain(self.num_batches.to_be_bytes().as_slice())
+                .chain(self.prev_state_root.as_slice())
+                .chain(self.prev_batch_hash.as_slice())
+                .chain(self.post_state_root.as_slice())
+                .chain(self.batch_hash.as_slice())
+                .chain(self.withdraw_root.as_slice())
+                .cloned()
+                .collect::<Vec<u8>>(),
+        )
+    }
+
+    pub fn pi_hash(&self, fork_name: ForkName) -> B256 {
+        match fork_name {
+            ForkName::Euclid => self.pi_hash_euclid_v1(),
+            ForkName::EuclidV2 => self.pi_hash_euclid_v2(),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct BundleInfoV1(pub BundleInfo);
+
+#[derive(Clone, Debug)]
+pub struct BundleInfoV2(pub BundleInfo);
+
+impl From<BundleInfo> for BundleInfoV1 {
+    fn from(value: BundleInfo) -> Self {
+        Self(value)
+    }
+}
+
+impl From<BundleInfo> for BundleInfoV2 {
+    fn from(value: BundleInfo) -> Self {
+        Self(value)
+    }
+}
+
+impl PublicInputs for BundleInfoV1 {
     fn pi_hash(&self) -> B256 {
-        let mut bytes = Vec::new();
-        bytes.extend_from_slice(self.chain_id.to_be_bytes().as_slice());
+        self.0.pi_hash_euclid_v1()
+    }
 
-        #[cfg(feature = "euclidv2")]
-        bytes.extend_from_slice(self.msg_queue_hash.as_slice());
+    fn validate(&self, _prev_pi: &Self) {
+        unreachable!("bundle is the last layer and is not aggregated by any other circuit");
+    }
+}
 
-        bytes.extend_from_slice(self.num_batches.to_be_bytes().as_slice());
-        bytes.extend_from_slice(self.prev_state_root.as_slice());
-        bytes.extend_from_slice(self.prev_batch_hash.as_slice());
-        bytes.extend_from_slice(self.post_state_root.as_slice());
-        bytes.extend_from_slice(self.batch_hash.as_slice());
-        bytes.extend_from_slice(self.withdraw_root.as_slice());
-
-        keccak256(bytes)
+impl PublicInputs for BundleInfoV2 {
+    fn pi_hash(&self) -> B256 {
+        self.0.pi_hash_euclid_v2()
     }
 
     fn validate(&self, _prev_pi: &Self) {

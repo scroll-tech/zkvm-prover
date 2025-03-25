@@ -20,9 +20,13 @@ pub(crate) struct BuildConfig {
 impl BuildConfig {
     pub(crate) fn get(spec: &str) -> Self {
         match spec {
+            "default" => Self {
+                features: vec![],
+                filename_suffix: "".to_string(),
+            },
             "euclidv1" => Self {
                 features: vec![],
-                filename_suffix: "_legacy".to_string(),
+                filename_suffix: "_euclidv1".to_string(),
             },
             "euclidv2" => Self {
                 features: vec!["euclidv2".to_string()],
@@ -44,9 +48,6 @@ pub fn main() {
     let root_verifier = format!("{workspace_dir}/crates/build-guest/root_verifier.asm");
     dump_verifier(&root_verifier);
 
-    // TODO: read it from env var?
-    let specs = &["euclidv2", "euclidv1"];
-
     let project_name_var = std::env::var("BUILD_PROJECT");
     let project_names = project_name_var
         .as_ref()
@@ -56,13 +57,20 @@ pub fn main() {
 
     for (idx, project_name) in project_names.iter().enumerate() {
         let project_dir = format!("{workspace_dir}/crates/circuits/{project_name}-circuit");
+        // TODO: read it from env var?
+        let specs = match *project_name {
+            "bundle" => vec!["euclidv2", "euclidv1"],
+            _ => vec!["default"],
+        };
+
         for spec in specs {
             let start_time = std::time::Instant::now();
             println!("building project: {project_name} for spec {spec}");
             let build_config = BuildConfig::get(spec);
             let elf = builder::build(&project_dir, build_config.features).unwrap();
+            let fd_app_exe = format!("app{}.vmexe", build_config.filename_suffix);
             let (_app_config_path, app_config, _app_exe_path, app_exe) =
-                builder::transpile(&project_dir, elf).unwrap();
+                builder::transpile(&project_dir, elf, Some(fd_app_exe.as_str())).unwrap();
 
             let app_pk = Sdk.app_keygen(app_config).unwrap();
             let app_committed_exe = Sdk

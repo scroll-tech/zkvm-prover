@@ -86,12 +86,19 @@ pub trait ProverTester {
     }
 
     /// Load the app config.
-    fn load() -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
+    fn load_with_exe_fd(
+        app_exe_fd: &str,
+    ) -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
         let path_app_config = Path::new(Self::PATH_PROJECT_ROOT).join(FD_APP_CONFIG);
         let app_config = read_app_config(&path_app_config)?;
         let path_assets = Path::new(Self::PATH_PROJECT_ROOT).join("openvm");
-        let path_app_exe = path_assets.join(FD_APP_EXE);
+        let path_app_exe = path_assets.join(app_exe_fd);
         Ok((path_app_config, app_config, path_app_exe))
+    }
+
+    /// Load the app config.
+    fn load() -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
+        Self::load_with_exe_fd(FD_APP_EXE)
     }
 
     /// Generate proving task for test purposes.
@@ -190,7 +197,7 @@ type ProveVerifyEvmRes<T> = eyre::Result<(
         <<T as ProverTester>::Prover as ProverType>::ProvingTask,
         WrappedProof<<<T as ProverTester>::Prover as ProverType>::ProofMetadata>,
     >,
-    scroll_zkvm_verifier::verifier::Verifier<scroll_zkvm_verifier::verifier::BundleVerifierType>,
+    scroll_zkvm_verifier::verifier::Verifier<scroll_zkvm_verifier::verifier::AnyVerifier>,
     PathBuf,
 )>;
 

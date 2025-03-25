@@ -1,18 +1,13 @@
 use alloy_primitives::B256;
 use scroll_zkvm_circuit_input_types::{
     AggCircuit, Circuit,
-    batch::{ArchivedBatchWitness, BatchInfo},
-    chunk::ChunkInfo,
+    batch::{ArchivedBatchWitness, VersionedBatchInfo},
+    chunk::VersionedChunkInfo,
     proof::{AggregationInput, ProgramCommitment},
     utils::read_witnesses,
 };
 
-#[cfg(feature = "euclidv2")]
 use crate::child_commitments::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT};
-#[cfg(not(feature = "euclidv2"))]
-use crate::child_commitments_legacy::{
-    EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT,
-};
 
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use {
@@ -42,7 +37,7 @@ pub struct BatchCircuit;
 impl Circuit for BatchCircuit {
     type Witness = ArchivedBatchWitness;
 
-    type PublicInputs = BatchInfo;
+    type PublicInputs = VersionedBatchInfo;
 
     fn setup() {
         setup_all_complex_extensions();
@@ -61,12 +56,15 @@ impl Circuit for BatchCircuit {
     }
 
     fn validate(witness: &Self::Witness) -> Self::PublicInputs {
-        crate::execute::execute(witness)
+        (
+            crate::execute::execute(witness),
+            (&witness.fork_name).into(),
+        )
     }
 }
 
 impl AggCircuit for BatchCircuit {
-    type AggregatedPublicInputs = ChunkInfo;
+    type AggregatedPublicInputs = VersionedChunkInfo;
 
     fn verify_commitments(commitment: &ProgramCommitment) {
         assert_eq!(
@@ -82,10 +80,11 @@ impl AggCircuit for BatchCircuit {
     }
 
     fn aggregated_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs> {
+        let fork_name = (&witness.fork_name).into();
         witness
             .chunk_infos
             .iter()
-            .map(|archived| archived.into())
+            .map(|archived| (archived.into(), fork_name))
             .collect()
     }
 

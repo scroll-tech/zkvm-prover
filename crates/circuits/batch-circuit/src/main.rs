@@ -8,12 +8,7 @@ mod circuit;
 use circuit::BatchCircuit as C;
 
 #[rustfmt::skip]
-#[cfg(feature = "euclidv2")]
 mod child_commitments;
-
-#[rustfmt::skip]
-#[cfg(not(feature = "euclidv2"))]
-mod child_commitments_legacy;
 
 mod execute;
 

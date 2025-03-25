@@ -44,12 +44,14 @@ pub trait Circuit {
 
     /// Reveal the public inputs.
     fn reveal_pi(pi: &Self::PublicInputs) {
-        reveal_pi(pi)
+        reveal_pi_hash(pi.pi_hash())
     }
 }
 
-pub(crate) fn reveal_pi<T: PublicInputs>(pi: &T) {
-    openvm::io::reveal_bytes32(*pi.pi_hash());
+/// Reveal the public-input values as openvm public values.
+pub fn reveal_pi_hash(pi_hash: B256) {
+    openvm::io::println(format!("pi_hash = {pi_hash:?}"));
+    openvm::io::reveal_bytes32(*pi_hash);
 }
 
 /// Circuit that additional aggregates proofs from other [`Circuits`][Circuit].
