@@ -187,7 +187,7 @@ fn e2e() -> eyre::Result<()> {
     let pi_str = if cfg!(feature = "euclidv2") {
         "2028510c403837c6ed77660fd92814ba61d7b746e7268cc8dfc14d163d45e6bd"
     } else {
-        "004bd600d361ad25ae28af9383f7f102b0ed11e20e571dc1a380621a09f33888"
+        "3cc70faf6b5a4bd565694a4c64de59befb735f4aac2a4b9e6a6fc2ee950b8a72"
     };
     // sanity check for pi of bundle hash, update the expected hash if block witness changed
     assert_eq!(
