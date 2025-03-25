@@ -1,4 +1,4 @@
-use openvm_native_recursion::halo2::EvmProof;
+use openvm_native_recursion::halo2::RawEvmProof;
 use scroll_zkvm_circuit_input_types::{PublicInputs, bundle::BundleInfo};
 
 use crate::{
@@ -34,7 +34,7 @@ impl ProverType for BundleProverType {
 
     type ProvingTask = BundleProvingTask;
 
-    type ProofType = EvmProof;
+    type ProofType = RawEvmProof;
 
     type ProofMetadata = BundleProofMetadata;
 

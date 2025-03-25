@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use openvm_continuations::verifier::root::types::RootVmVerifierInput;
-use openvm_native_recursion::halo2::EvmProof as OpenVmEvmProof;
+use openvm_native_recursion::halo2::RawEvmProof as OpenVmEvmProof;
 use openvm_stark_sdk::{openvm_stark_backend::proof::Proof, p3_baby_bear::BabyBear};
 use sbv_primitives::B256;
 use scroll_zkvm_circuit_input_types::{batch::BatchInfo, bundle::BundleInfo, chunk::ChunkInfo};
@@ -31,13 +31,8 @@ pub struct EvmProof {
 
 impl From<&OpenVmEvmProof> for EvmProof {
     fn from(value: &OpenVmEvmProof) -> Self {
-        assert_eq!(
-            value.instances.len(),
-            1,
-            "OpenVmEvmProof: Into<EvmProof>: expected 1 instance column"
-        );
-
-        let instances = value.instances[0]
+        let instances = value
+            .instances
             .iter()
             .flat_map(|fr| {
                 let mut be_bytes = fr.to_bytes();
@@ -61,22 +56,20 @@ impl From<&EvmProof> for OpenVmEvmProof {
             "expect len(instances) % 32 == 0"
         );
 
-        let instances = vec![
-            value
-                .instances
-                .chunks_exact(32)
-                .map(|be_bytes| {
-                    Fr::from_repr({
-                        let mut le_bytes: [u8; 32] = be_bytes
-                            .try_into()
-                            .expect("instances.len() % 32 == 0 has already been asserted");
-                        le_bytes.reverse();
-                        le_bytes
-                    })
-                    .expect("Fr::from_repr failed")
+        let instances = value
+            .instances
+            .chunks_exact(32)
+            .map(|be_bytes| {
+                Fr::from_repr({
+                    let mut le_bytes: [u8; 32] = be_bytes
+                        .try_into()
+                        .expect("instances.len() % 32 == 0 has already been asserted");
+                    le_bytes.reverse();
+                    le_bytes
                 })
-                .collect::<Vec<Fr>>(),
-        ];
+                .expect("Fr::from_repr failed")
+            })
+            .collect::<Vec<Fr>>();
 
         Self {
             proof: value.proof.to_vec(),
@@ -300,7 +293,7 @@ impl BundleProof {
 mod tests {
     use alloy_primitives::B256;
     use base64::{Engine, prelude::BASE64_STANDARD};
-    use openvm_native_recursion::halo2::EvmProof;
+    use openvm_native_recursion::halo2::RawEvmProof;
     use scroll_zkvm_circuit_input_types::{PublicInputs, bundle::BundleInfo};
     use snark_verifier_sdk::snark_verifier::halo2_base::halo2_proofs::halo2curves::bn256::Fr;
 
@@ -365,10 +358,10 @@ mod tests {
 
         // 3. Instances
         let (instances, instances_base64) = {
-            let instances = vec![vec![
+            let instances = vec![
                 Fr::from(0x123456),   // LE: [0x56, 0x34, 0x12, 0x00, 0x00, ..., 0x00]
                 Fr::from(0x98765432), // LE: [0x32, 0x54, 0x76, 0x98, 0x00, ..., 0x00]
-            ]];
+            ];
             let instances_flattened = std::iter::empty()
                 .chain(std::iter::repeat(0x00).take(29))
                 .chain(std::iter::once(0x12))
@@ -401,7 +394,7 @@ mod tests {
             (vk, vk_base64)
         };
 
-        let evm_proof = EvmProof { instances, proof };
+        let evm_proof = RawEvmProof { instances, proof };
         let bundle_proof = BundleProof::new(metadata, evm_proof, Some(vk.as_slice()));
         let bundle_proof_json = serde_json::to_value(&bundle_proof)?;
 

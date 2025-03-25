@@ -131,8 +131,8 @@ fn e2e() -> eyre::Result<()> {
     //
     // We write the 2 digests to disc.
     let evm_proof = outcome.proofs[0].as_proof();
-    let digest_1 = evm_proof.instances[0][12];
-    let digest_2 = evm_proof.instances[0][13];
+    let digest_1 = evm_proof.instances[12];
+    let digest_2 = evm_proof.instances[13];
     scroll_zkvm_prover::utils::write(
         path_assets.join("digest_1"),
         &digest_1.to_bytes().into_iter().rev().collect::<Vec<u8>>(),
@@ -155,7 +155,7 @@ fn e2e() -> eyre::Result<()> {
     assert!(verifier.verify_proof_evm(&outcome.proofs[0].as_proof()));
 
     let expected_pi_hash = &outcome.proofs[0].metadata.bundle_pi_hash;
-    let observed_instances = &outcome.proofs[0].as_proof().instances[0];
+    let observed_instances = &outcome.proofs[0].as_proof().instances;
 
     for (i, (&expected, &observed)) in expected_pi_hash
         .iter()
