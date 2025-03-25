@@ -32,7 +32,7 @@ cp ./crates/circuits/batch-circuit/openvm.toml $DIR_OUTPUT/batch/openvm.toml
 
 # copy bundle-program related assets
 cp ./crates/circuits/bundle-circuit/openvm/app.vmexe $DIR_OUTPUT/bundle/app.vmexe
-cp ./crates/circuits/bundle-circuit/openvm/app_legacy.vmexe $DIR_OUTPUT/bundle/app_legacy.vmexe
+cp ./crates/circuits/bundle-circuit/openvm/app_euclidv1.vmexe $DIR_OUTPUT/bundle/app_euclidv1.vmexe
 cp ./crates/circuits/bundle-circuit/openvm.toml $DIR_OUTPUT/bundle/openvm.toml
 cp ./crates/circuits/bundle-circuit/openvm/verifier.bin $DIR_OUTPUT/bundle/verifier.bin
 cp ./crates/circuits/bundle-circuit/openvm/verifier.sol $DIR_OUTPUT/bundle/verifier.sol

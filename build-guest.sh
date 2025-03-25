@@ -12,13 +12,13 @@ rm ./build-guest.cid
 docker cp ${container_id}:/app/crates/prover/src/commitments/chunk.rs crates/prover/src/commitments/chunk.rs
 docker cp ${container_id}:/app/crates/prover/src/commitments/batch.rs crates/prover/src/commitments/batch.rs
 docker cp ${container_id}:/app/crates/prover/src/commitments/bundle.rs crates/prover/src/commitments/bundle.rs
-docker cp ${container_id}:/app/crates/prover/src/commitments/bundle_legacy.rs crates/prover/src/commitments/bundle_legacy.rs
+docker cp ${container_id}:/app/crates/prover/src/commitments/bundle_euclidv1.rs crates/prover/src/commitments/bundle_euclidv1.rs
 
 # copy commitments to local (verifier)
 cp crates/prover/src/commitments/chunk.rs crates/verifier/src/commitments/chunk.rs
 cp crates/prover/src/commitments/batch.rs crates/verifier/src/commitments/batch.rs
 cp crates/prover/src/commitments/bundle.rs crates/verifier/src/commitments/bundle.rs
-cp crates/prover/src/commitments/bundle_legacy.rs crates/verifier/src/commitments/bundle_legacy.rs
+cp crates/prover/src/commitments/bundle_euclidv1.rs crates/verifier/src/commitments/bundle_euclidv1.rs
 
 # copy commitments to local (circuits)
 cp crates/prover/src/commitments/chunk.rs crates/circuits/batch-circuit/src/child_commitments.rs
@@ -34,5 +34,5 @@ mkdir -p crates/circuits/bundle-circuit/openvm
 docker cp ${container_id}:/app/crates/circuits/chunk-circuit/openvm/app.vmexe crates/circuits/chunk-circuit/openvm/app.vmexe
 docker cp ${container_id}:/app/crates/circuits/batch-circuit/openvm/app.vmexe crates/circuits/batch-circuit/openvm/app.vmexe
 docker cp ${container_id}:/app/crates/circuits/bundle-circuit/openvm/app.vmexe crates/circuits/bundle-circuit/openvm/app.vmexe
-docker cp ${container_id}:/app/crates/circuits/bundle-circuit/openvm/app_legacy.vmexe crates/circuits/bundle-circuit/openvm/app_legacy.vmexe
+docker cp ${container_id}:/app/crates/circuits/bundle-circuit/openvm/app_euclidv1.vmexe crates/circuits/bundle-circuit/openvm/app_euclidv1.vmexe
 docker rm ${container_id}
