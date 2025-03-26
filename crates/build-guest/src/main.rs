@@ -12,29 +12,10 @@ fn write_commitments(commitments: [[u32; 8]; 2], output: &str) {
     std::fs::write(output, content).unwrap();
 }
 
+#[derive(Debug)]
 pub(crate) struct BuildConfig {
     pub(crate) features: Vec<String>,
     pub(crate) filename_suffix: String,
-}
-
-impl BuildConfig {
-    pub(crate) fn get(spec: &str) -> Self {
-        match spec {
-            "default" => Self {
-                features: vec![],
-                filename_suffix: "".to_string(),
-            },
-            "euclidv1" => Self {
-                features: vec![],
-                filename_suffix: "_euclidv1".to_string(),
-            },
-            "euclidv2" => Self {
-                features: vec!["euclidv2".to_string()],
-                filename_suffix: "".to_string(),
-            },
-            _ => panic!("Unknown spec"),
-        }
-    }
 }
 
 pub fn main() {
@@ -57,17 +38,38 @@ pub fn main() {
 
     for (idx, project_name) in project_names.iter().enumerate() {
         let project_dir = format!("{workspace_dir}/crates/circuits/{project_name}-circuit");
-        // TODO: read it from env var?
-        let specs = match *project_name {
-            "bundle" => vec!["euclidv2", "euclidv1"],
-            _ => vec!["default"],
+        let build_configs = match *project_name {
+            "chunk" => vec![
+                BuildConfig {
+                    features: vec![],
+                    filename_suffix: "_rv32".to_string(),
+                },
+                BuildConfig {
+                    features: vec!["openvm".to_string()],
+                    filename_suffix: "".to_string(),
+                },
+            ],
+            "batch" => vec![BuildConfig {
+                features: vec![],
+                filename_suffix: "".to_string(),
+            }],
+            "bundle" => vec![
+                BuildConfig {
+                    features: vec![],
+                    filename_suffix: "_euclidv1".to_string(),
+                },
+                BuildConfig {
+                    features: vec!["euclidv2".to_string()],
+                    filename_suffix: "".to_string(),
+                },
+            ],
+            _ => panic!("unknown project name: {project_name}"),
         };
 
-        for spec in specs {
+        for build_config in build_configs {
             let start_time = std::time::Instant::now();
-            println!("building project: {project_name} for spec {spec}");
-            let build_config = BuildConfig::get(spec);
-            let elf = builder::build(&project_dir, build_config.features).unwrap();
+            println!("building project: {project_name} for spec {build_config:?}");
+            let elf = builder::build(&project_dir, &build_config.features).unwrap();
             let fd_app_exe = format!("app{}.vmexe", build_config.filename_suffix);
             let (_app_config_path, app_config, _app_exe_path, app_exe) =
                 builder::transpile(&project_dir, elf, Some(fd_app_exe.as_str())).unwrap();
@@ -93,7 +95,7 @@ pub fn main() {
 
             let commitments = [exe_commit, leaf_commit];
 
-            let filename_suffix = build_config.filename_suffix;
+            let filename_suffix = &build_config.filename_suffix;
             let flname = format!(
                 "{workspace_dir}/crates/prover/src/commitments/{project_name}{filename_suffix}.rs"
             );
@@ -113,7 +115,7 @@ pub fn main() {
                 write_commitments(commitments, &child_commitment_file);
             }
             println!(
-                "finished building project: {project_name} for spec {spec} in {:?}",
+                "finished building project: {project_name} for config {build_config:?} in {:?}",
                 start_time.elapsed()
             );
         }
