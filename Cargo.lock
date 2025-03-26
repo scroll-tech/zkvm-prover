@@ -3852,7 +3852,7 @@ dependencies = [
 [[package]]
 name = "openvm-stark-backend"
 version = "1.0.0-rc.2"
-source = "git+ssh://git@github.com/scroll-tech/openvm-stark-gpu.git?tag=v1.0.0-rc.2#482d7c8e3751d651fa0cda6de49b61c47d13a686"
+source = "git+ssh://git@github.com/scroll-tech/openvm-stark-gpu.git?branch=main#f9c6b4c74d28debcab45ac4eb699c3a194beb307"
 dependencies = [
  "bitcode",
  "cfg-if",
@@ -3881,7 +3881,7 @@ dependencies = [
 [[package]]
 name = "openvm-stark-sdk"
 version = "1.0.0-rc.2"
-source = "git+ssh://git@github.com/scroll-tech/openvm-stark-gpu.git?tag=v1.0.0-rc.2#482d7c8e3751d651fa0cda6de49b61c47d13a686"
+source = "git+ssh://git@github.com/scroll-tech/openvm-stark-gpu.git?branch=main#f9c6b4c74d28debcab45ac4eb699c3a194beb307"
 dependencies = [
  "derivative",
  "derive_more 0.99.19",
