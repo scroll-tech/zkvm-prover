@@ -10,7 +10,8 @@ use scroll_zkvm_prover::{
 };
 
 fn exec_chunk(task: &ChunkProvingTask) -> eyre::Result<(ExecutionResult, u64)> {
-    let (_path_app_config, app_config, path_exe) = ChunkProverTester::load()?;
+    let (_path_app_config, app_config, path_exe) =
+        ChunkProverTester::load_with_exe_fd("app.vmexe")?;
     let config = app_config.app_vm_config;
     let app_exe = read_app_exe(path_exe)?;
 

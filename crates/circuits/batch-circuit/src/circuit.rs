@@ -7,8 +7,6 @@ use scroll_zkvm_circuit_input_types::{
     utils::read_witnesses,
 };
 
-use crate::child_commitments::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT};
-
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use {
     openvm_algebra_guest::{IntMod, field::FieldExtension},
@@ -67,15 +65,24 @@ impl AggCircuit for BatchCircuit {
     type AggregatedPublicInputs = VersionedChunkInfo;
 
     fn verify_commitments(commitment: &ProgramCommitment) {
-        assert_eq!(
-            commitment.exe, CHUNK_EXE_COMMIT,
-            "mismatch chunk-proof exe commitment: expected={:?}, got={:?}",
-            CHUNK_EXE_COMMIT, commitment.exe,
-        );
-        assert_eq!(
-            commitment.leaf, CHUNK_LEAF_COMMIT,
-            "mismatch chunk-proof leaf commitment: expected={:?}, got={:?}",
-            CHUNK_EXE_COMMIT, commitment.leaf,
+        let match_rv32 = commitment.exe == crate::child_commitments_rv32::EXE_COMMIT
+            && commitment.leaf == crate::child_commitments_rv32::LEAF_COMMIT;
+        let match_openvm = commitment.exe == crate::child_commitments::EXE_COMMIT
+            && commitment.leaf == crate::child_commitments::LEAF_COMMIT;
+        assert!(
+            match_rv32 || match_openvm,
+            "mismatch chunk-proof commitments: expected={:?}, got={:?}",
+            (
+                (
+                    crate::child_commitments_rv32::EXE_COMMIT,
+                    crate::child_commitments_rv32::LEAF_COMMIT
+                ),
+                (
+                    crate::child_commitments::EXE_COMMIT,
+                    crate::child_commitments::LEAF_COMMIT
+                )
+            ),
+            (commitment.exe, commitment.leaf),
         );
     }
 
