@@ -36,10 +36,12 @@ jobs:
 
       - name: Update PR Description
         uses: actions/github-script@v6
+        env:
+          TOTAL_CYCLES: ${{ steps.guest-profiling.outputs.total_cycles }}
         with:
           script: |
             const prNumber = context.payload.pull_request.number;
-            const totalCycles = '${{ steps.guest-profiling.outputs.total_cycles }}';
+            const totalCycles = '${TOTAL_CYCLES}';
             const currentBody = context.payload.pull_request.body;
 
             // Update the PR description with the total cycles
