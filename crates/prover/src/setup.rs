@@ -63,10 +63,11 @@ pub fn compute_commitments(
 /// Generate STARK aggregation [proving key][`openvm_sdk::keygen::AggProvingKey`].
 pub fn gen_agg_pk(params_dir: &str) -> Result<AggProvingKey, Error> {
     let halo2_params_reader = CacheHalo2ParamsReader::new(params_dir);
-    Sdk::new().agg_keygen(
-        AggConfig::default(),
-        &halo2_params_reader,
-        &DefaultStaticVerifierPvHandler,
-    )
-    .map_err(|e| Error::Keygen(e.to_string()))
+    Sdk::new()
+        .agg_keygen(
+            AggConfig::default(),
+            &halo2_params_reader,
+            &DefaultStaticVerifierPvHandler,
+        )
+        .map_err(|e| Error::Keygen(e.to_string()))
 }
