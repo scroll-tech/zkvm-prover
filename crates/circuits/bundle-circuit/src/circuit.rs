@@ -13,10 +13,6 @@ use crate::child_commitments::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BA
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use openvm_keccak256_guest;
 
-openvm_algebra_guest::moduli_macros::moduli_init! {
-    "52435875175126190479447740508185965837690552500527637822603658699938581184513"
-}
-
 #[derive(Default)]
 pub struct BundleCircuit<T>(std::marker::PhantomData<T>);
 
@@ -25,9 +21,7 @@ impl<T: PublicInputs + From<BundleInfo>> Circuit for BundleCircuit<T> {
 
     type PublicInputs = T;
 
-    fn setup() {
-        setup_all_moduli();
-    }
+    fn setup() {}
 
     fn read_witness_bytes() -> Vec<u8> {
         read_witnesses()
