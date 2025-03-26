@@ -23,6 +23,10 @@ pub fn read_block_witness<P>(path_witness: P) -> eyre::Result<BlockWitness>
 where
     P: AsRef<Path>,
 {
+    if !path_witness.as_ref().exists() {
+        println!("File not found: {:?}", path_witness.as_ref());
+        return Err(eyre::eyre!("File not found: {:?}", path_witness.as_ref()));
+    }
     let witness = File::open(path_witness)?;
     Ok(serde_json::from_reader::<_, BlockWitness>(witness)?)
 }
@@ -39,7 +43,13 @@ impl ProverTester for ChunkProverTester {
     /// [block-1, block-2, block-3, block-4]
     fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask> {
         let paths: Vec<PathBuf> = match std::env::var("TRACE_PATH") {
-            Ok(paths) => glob::glob(&paths)?.filter_map(|entry| entry.ok()).collect(),
+            Ok(paths) => {
+                let paths: Vec<_> = glob::glob(&paths)?.filter_map(|entry| entry.ok()).collect();
+                if paths.is_empty() {
+                    return Err(eyre::eyre!("No files found in the given path"));
+                }
+                paths
+            }
             Err(_) => {
                 #[cfg(not(feature = "euclidv2"))]
                 let blocks = 12508460usize..=12508463usize;
@@ -56,6 +66,7 @@ impl ProverTester for ChunkProverTester {
                     .collect()
             }
         };
+        println!("paths: {:?}", paths);
         Ok(ChunkProvingTask {
             block_witnesses: paths
                 .iter()

@@ -118,7 +118,7 @@ pub trait ProverTester {
     ) -> eyre::Result<Vec<F>> {
         let stdin = task.build_guest_input()?;
 
-        Ok(Sdk.execute(read_app_exe(exe_path)?, app_config.app_vm_config, stdin)?)
+        Ok(Sdk::new().execute(read_app_exe(exe_path)?, app_config.app_vm_config, stdin)?)
     }
 
     fn execute_with_proving_task(

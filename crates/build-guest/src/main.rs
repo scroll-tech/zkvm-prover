@@ -72,8 +72,8 @@ pub fn main() {
             let (_app_config_path, app_config, _app_exe_path, app_exe) =
                 builder::transpile(&project_dir, elf, Some(fd_app_exe.as_str())).unwrap();
 
-            let app_pk = Sdk.app_keygen(app_config).unwrap();
-            let app_committed_exe = Sdk
+            let app_pk = Sdk::new().app_keygen(app_config).unwrap();
+            let app_committed_exe = Sdk::new()
                 .commit_app_exe(app_pk.app_fri_params(), app_exe)
                 .unwrap();
 

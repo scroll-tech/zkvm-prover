@@ -142,10 +142,11 @@ impl<Type: ProverType> Prover<Type> {
             .config
             .with_max_segment_len(segment_len);
 
-        let app_pk = Sdk
+        let sdk = Sdk::new();
+        let app_pk = sdk
             .app_keygen(app_config)
             .map_err(|e| Error::Keygen(e.to_string()))?;
-        let app_committed_exe = Sdk
+        let app_committed_exe = sdk
             .commit_app_exe(app_pk.app_fri_params(), app_exe)
             .map_err(|e| Error::Commit(e.to_string()))?;
 
@@ -274,7 +275,7 @@ impl<Type: ProverType> Prover<Type> {
     }
 
     /// Verify a [root proof][root_proof].
-    ///
+    /// TODO: currently this method is only used in testing. Move it else
     /// [root_proof][RootProof]
     #[instrument("Prover::verify_proof", skip_all, fields(?metadata = proof.metadata))]
     pub fn verify_proof(&self, proof: &WrappedProof<Type::ProofMetadata>) -> Result<(), Error> {
@@ -360,7 +361,7 @@ impl<Type: ProverType> Prover<Type> {
             .unwrap_or(Path::new(DEFAULT_PARAMS_DIR).to_path_buf());
 
         let halo2_params_reader = CacheHalo2ParamsReader::new(&dir_halo2_params);
-        let agg_pk = Sdk
+        let agg_pk = Sdk::new()
             .agg_keygen(
                 AggConfig::default(),
                 &halo2_params_reader,

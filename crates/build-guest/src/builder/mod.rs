@@ -29,7 +29,7 @@ pub fn build<S: AsRef<str>>(
     let guest_opts = GuestOptions::default();
     let guest_opts = guest_opts.with_features(feature_flags);
     let guest_opts = guest_opts.with_profile("maxperf".to_string());
-    Sdk.build(guest_opts, project_root, &Default::default())
+    Sdk::new().build(guest_opts, project_root, &Default::default())
 }
 
 /// Transpile the ELF into a VmExe.
@@ -58,7 +58,7 @@ pub fn transpile(
         .app_vm_config
         .transpiler()
         .with_extension(openvm_native_transpiler::LongFormTranspilerExtension);
-    let app_exe = Sdk.transpile(elf, transpiler)?;
+    let app_exe = Sdk::new().transpile(elf, transpiler)?;
 
     // Write exe to disc.
     let path_app_exe = path_assets.join(fd_app_exe.unwrap_or(FD_APP_EXE));

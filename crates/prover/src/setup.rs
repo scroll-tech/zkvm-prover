@@ -50,7 +50,7 @@ pub fn compute_commitments(
     app_exe: VmExe<F>,
     app_pk: AppProvingKey<SdkVmConfig>,
 ) -> Result<AppExecutionCommit<F>, Error> {
-    let committed_exe = Sdk
+    let committed_exe = Sdk::new()
         .commit_app_exe(app_pk.app_fri_params(), app_exe)
         .map_err(|e| Error::Commit(e.to_string()))?;
     Ok(AppExecutionCommit::compute(
@@ -63,7 +63,7 @@ pub fn compute_commitments(
 /// Generate STARK aggregation [proving key][`openvm_sdk::keygen::AggProvingKey`].
 pub fn gen_agg_pk(params_dir: &str) -> Result<AggProvingKey, Error> {
     let halo2_params_reader = CacheHalo2ParamsReader::new(params_dir);
-    Sdk.agg_keygen(
+    Sdk::new().agg_keygen(
         AggConfig::default(),
         &halo2_params_reader,
         &DefaultStaticVerifierPvHandler,
