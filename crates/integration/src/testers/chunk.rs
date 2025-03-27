@@ -68,13 +68,17 @@ impl ProverTester for ChunkProverTester {
                     .collect()
             }
         };
-        println!("paths: {:?}", paths);
+
         Ok(ChunkProvingTask {
             block_witnesses: paths
                 .iter()
                 .map(read_block_witness)
                 .collect::<eyre::Result<Vec<BlockWitness>>>()?,
-            prev_msg_queue_hash: Default::default(),
+            prev_msg_queue_hash: if cfg!(feature = "euclidv2") {
+                B256::repeat_byte(1u8)
+            } else {
+                B256::ZERO
+            },
             fork_name: if cfg!(feature = "euclidv2") {
                 String::from("euclidv2")
             } else {
@@ -137,7 +141,11 @@ pub fn gen_multi_tasks(
                 .collect::<eyre::Result<Vec<BlockWitness>>>()?;
             Ok(ChunkProvingTask {
                 block_witnesses,
-                prev_msg_queue_hash: B256::repeat_byte(1u8),
+                prev_msg_queue_hash: if cfg!(feature = "euclidv2") {
+                    B256::repeat_byte(1u8)
+                } else {
+                    B256::ZERO
+                },
                 fork_name: if cfg!(feature = "euclidv2") {
                     String::from("euclidv2")
                 } else {
@@ -146,6 +154,7 @@ pub fn gen_multi_tasks(
             })
         })
         .collect::<eyre::Result<Vec<ChunkProvingTask>>>()?;
+
     Ok(tasks)
 }
 
