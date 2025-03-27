@@ -346,15 +346,15 @@ mod tests {
         // 2. Proof
         let (proof, proof_base64) = {
             let proof = std::iter::empty()
-                .chain(std::iter::repeat(1).take(1))
-                .chain(std::iter::repeat(2).take(2))
-                .chain(std::iter::repeat(3).take(3))
-                .chain(std::iter::repeat(4).take(4))
-                .chain(std::iter::repeat(5).take(5))
-                .chain(std::iter::repeat(6).take(6))
-                .chain(std::iter::repeat(7).take(7))
-                .chain(std::iter::repeat(8).take(8))
-                .chain(std::iter::repeat(9).take(9))
+                .chain(std::iter::repeat_n(1, 1))
+                .chain(std::iter::repeat_n(2, 2))
+                .chain(std::iter::repeat_n(3, 3))
+                .chain(std::iter::repeat_n(4, 4))
+                .chain(std::iter::repeat_n(5, 5))
+                .chain(std::iter::repeat_n(6, 6))
+                .chain(std::iter::repeat_n(7, 7))
+                .chain(std::iter::repeat_n(8, 8))
+                .chain(std::iter::repeat_n(9, 9))
                 .collect::<Vec<u8>>();
             let proof_base64 = BASE64_STANDARD.encode(&proof);
             (proof, proof_base64)
@@ -367,11 +367,11 @@ mod tests {
                 Fr::from(0x98765432), // LE: [0x32, 0x54, 0x76, 0x98, 0x00, ..., 0x00]
             ];
             let instances_flattened = std::iter::empty()
-                .chain(std::iter::repeat(0x00).take(29))
+                .chain(std::iter::repeat_n(0x00, 29))
                 .chain(std::iter::once(0x12))
                 .chain(std::iter::once(0x34))
                 .chain(std::iter::once(0x56))
-                .chain(std::iter::repeat(0x00).take(28))
+                .chain(std::iter::repeat_n(0x00, 28))
                 .chain(std::iter::once(0x98))
                 .chain(std::iter::once(0x76))
                 .chain(std::iter::once(0x54))
@@ -384,15 +384,15 @@ mod tests {
         // 4. VK
         let (vk, vk_base64) = {
             let vk = std::iter::empty()
-                .chain(std::iter::repeat(1).take(9))
-                .chain(std::iter::repeat(2).take(8))
-                .chain(std::iter::repeat(3).take(7))
-                .chain(std::iter::repeat(4).take(6))
-                .chain(std::iter::repeat(5).take(5))
-                .chain(std::iter::repeat(6).take(4))
-                .chain(std::iter::repeat(7).take(3))
-                .chain(std::iter::repeat(8).take(2))
-                .chain(std::iter::repeat(9).take(1))
+                .chain(std::iter::repeat_n(1, 9))
+                .chain(std::iter::repeat_n(2, 8))
+                .chain(std::iter::repeat_n(3, 7))
+                .chain(std::iter::repeat_n(4, 6))
+                .chain(std::iter::repeat_n(5, 5))
+                .chain(std::iter::repeat_n(6, 4))
+                .chain(std::iter::repeat_n(7, 3))
+                .chain(std::iter::repeat_n(8, 2))
+                .chain(std::iter::repeat_n(9, 1))
                 .collect::<Vec<u8>>();
             let vk_base64 = BASE64_STANDARD.encode(&vk);
             (vk, vk_base64)
