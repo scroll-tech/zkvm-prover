@@ -211,7 +211,7 @@ mod tests {
     use scroll_zkvm_circuit_input_types::proof::ProgramCommitment;
     use scroll_zkvm_prover::{BatchProof, BundleProof, ChunkProof, utils::read_json_deep};
 
-    use super::{BatchVerifier, ChunkVerifier};
+    use super::{BatchVerifier, BundleVerifierEuclidV2, ChunkVerifier};
 
     const PATH_TESTDATA: &str = "./testdata";
 
@@ -298,7 +298,7 @@ mod tests {
                 .join("bundle-proof-phase2.json"),
         )?;
 
-        let verifier = BatchVerifier::setup(
+        let verifier = BundleVerifierEuclidV2::setup(
             Path::new(PATH_TESTDATA).join("root-verifier-vm-config"),
             Path::new(PATH_TESTDATA).join("root-verifier-committed-exe"),
             Path::new(PATH_TESTDATA).join("verifier.bin"),

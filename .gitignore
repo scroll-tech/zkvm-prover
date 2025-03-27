@@ -8,10 +8,6 @@
 
 root_verifier.asm
 
-crates/verifier/testdata/euclidv1/root-verifier-vm-config
-crates/verifier/testdata/euclidv1/root-verifier-committed-exe
-crates/verifier/testdata/euclidv1/verifier.bin
-
-crates/verifier/testdata/euclidv2/root-verifier-vm-config
-crates/verifier/testdata/euclidv2/root-verifier-committed-exe
-crates/verifier/testdata/euclidv2/verifier.bin
+root-verifier-vm-config
+root-verifier-committed-exe
+verifier.bin

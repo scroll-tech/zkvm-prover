@@ -112,7 +112,7 @@ fn test_verify_evm_proof() -> eyre::Result<()> {
     let evm_proof = read_json_deep::<_, BundleProof>(
         Path::new(PATH_TESTDATA)
             .join("proofs")
-            .join("evm-proof.json"),
+            .join("bundle-proof-phase2.json"),
     )?;
 
     let evm_verifier: Vec<u8> =
