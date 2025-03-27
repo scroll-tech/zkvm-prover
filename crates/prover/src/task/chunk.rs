@@ -1,7 +1,7 @@
 use alloy_primitives::B256;
 use openvm_sdk::StdIn;
 use sbv_primitives::types::BlockWitness;
-use scroll_zkvm_circuit_input_types::chunk::ChunkWitness;
+use scroll_zkvm_circuit_input_types::chunk::{ChunkWitness, ForkName};
 
 use crate::task::ProvingTask;
 
@@ -69,6 +69,10 @@ impl ProvingTask for ChunkProvingTask {
         );
 
         format!("{first}-{last}")
+    }
+
+    fn fork_name(&self) -> ForkName {
+        ForkName::from(self.fork_name.as_str())
     }
 
     fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error> {

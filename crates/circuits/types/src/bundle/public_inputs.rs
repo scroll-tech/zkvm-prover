@@ -1,6 +1,10 @@
 use alloy_primitives::B256;
 
-use crate::{PublicInputs, chunk::ForkName, utils::keccak256};
+use crate::{
+    PublicInputs,
+    chunk::{ForkName, MultiVersionPublicInputs},
+    utils::keccak256,
+};
 
 /// Represents fields required to compute the public-inputs digest of a bundle.
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
@@ -91,6 +95,19 @@ impl BundleInfo {
             ForkName::EuclidV1 => self.pi_hash_euclidv1(),
             ForkName::EuclidV2 => self.pi_hash_euclidv2(),
         }
+    }
+}
+
+impl MultiVersionPublicInputs for BundleInfo {
+    fn pi_hash_by_fork(&self, fork_name: ForkName) -> B256 {
+        match fork_name {
+            ForkName::EuclidV1 => self.pi_hash_euclidv1(),
+            ForkName::EuclidV2 => self.pi_hash_euclidv2(),
+        }
+    }
+
+    fn validate(&self, _prev_pi: &Self, _fork_name: ForkName) {
+        unreachable!("bundle is the last layer and is not aggregated by any other circuit");
     }
 }
 

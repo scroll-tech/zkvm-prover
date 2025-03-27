@@ -1,6 +1,9 @@
 use openvm_sdk::StdIn;
 use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
-use scroll_zkvm_circuit_input_types::proof::{AggregationInput, ProgramCommitment};
+use scroll_zkvm_circuit_input_types::{
+    chunk::ForkName,
+    proof::{AggregationInput, ProgramCommitment},
+};
 
 use crate::proof::WrappedProof;
 
@@ -16,6 +19,8 @@ pub trait ProvingTask: serde::de::DeserializeOwned {
     fn identifier(&self) -> String;
 
     fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error>;
+
+    fn fork_name(&self) -> ForkName;
 }
 
 /// Flatten a [`WrappedProof`] and split the proof from the public values. We also split out the

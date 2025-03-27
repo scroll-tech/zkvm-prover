@@ -1,6 +1,9 @@
 use alloy_primitives::B256;
 
-use crate::{PublicInputs, chunk::ForkName, utils::keccak256};
+use crate::{
+    chunk::{ForkName, MultiVersionPublicInputs},
+    utils::keccak256,
+};
 
 /// Represents public-input values for a batch.
 #[derive(
@@ -111,23 +114,11 @@ impl BatchInfo {
 
 pub type VersionedBatchInfo = (BatchInfo, ForkName);
 
-impl PublicInputs for VersionedBatchInfo {
-    /// Public input hash for a batch is defined as
-    ///
-    /// keccak(
-    ///     parent state root ||
-    ///     parent batch hash ||
-    ///     state root ||
-    ///     batch hash ||
-    ///     chain id ||
-    ///     withdraw root ||
-    ///     prev msg queue hash ||
-    ///     post msg queue hash
-    /// )
-    fn pi_hash(&self) -> B256 {
-        match self.1 {
-            ForkName::EuclidV1 => self.0.pi_hash_euclidv1(),
-            ForkName::EuclidV2 => self.0.pi_hash_euclidv2(),
+impl MultiVersionPublicInputs for BatchInfo {
+    fn pi_hash_by_fork(&self, fork_name: ForkName) -> B256 {
+        match fork_name {
+            ForkName::EuclidV1 => self.pi_hash_euclidv1(),
+            ForkName::EuclidV2 => self.pi_hash_euclidv2(),
         }
     }
 
@@ -137,18 +128,12 @@ impl PublicInputs for VersionedBatchInfo {
     /// - state roots MUST be chained
     /// - batch hashes MUST be chained
     /// - L1 msg queue hashes MUST be chained
-    fn validate(&self, prev_pi: &Self) {
-        assert_eq!(self.1, prev_pi.1);
-        assert_eq!(self.0.chain_id, prev_pi.0.chain_id);
-        assert_eq!(self.0.parent_state_root, prev_pi.0.state_root);
-        assert_eq!(self.0.parent_batch_hash, prev_pi.0.batch_hash);
-        assert_eq!(self.0.prev_msg_queue_hash, prev_pi.0.post_msg_queue_hash);
-
-        if self.1 == ForkName::EuclidV1 {
-            assert_eq!(self.0.prev_msg_queue_hash, B256::ZERO);
-            assert_eq!(prev_pi.0.prev_msg_queue_hash, B256::ZERO);
-            assert_eq!(self.0.post_msg_queue_hash, B256::ZERO);
-            assert_eq!(prev_pi.0.post_msg_queue_hash, B256::ZERO);
+    fn validate(&self, prev_pi: &Self, fork_name: ForkName) {
+        assert_eq!(self.chain_id, prev_pi.chain_id);
+        assert_eq!(self.parent_state_root, prev_pi.state_root);
+        assert_eq!(self.parent_batch_hash, prev_pi.batch_hash);
+        if fork_name != ForkName::EuclidV1 {
+            assert_eq!(self.prev_msg_queue_hash, prev_pi.post_msg_queue_hash);
         }
     }
 }

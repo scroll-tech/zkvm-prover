@@ -1,6 +1,9 @@
 use openvm_native_recursion::hints::Hintable;
 use openvm_sdk::StdIn;
-use scroll_zkvm_circuit_input_types::bundle::{BundleInfo, BundleWitness};
+use scroll_zkvm_circuit_input_types::{
+    bundle::{BundleInfo, BundleWitness},
+    chunk::ForkName,
+};
 
 use crate::{
     BatchProof,
@@ -37,6 +40,10 @@ impl ProvingTask for BundleProvingTask {
         );
 
         format!("{first}-{last}")
+    }
+
+    fn fork_name(&self) -> ForkName {
+        ForkName::from(self.fork_name.as_str())
     }
 
     fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error> {

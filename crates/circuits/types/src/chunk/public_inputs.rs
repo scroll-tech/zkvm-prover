@@ -59,6 +59,23 @@ impl From<&str> for ForkName {
     }
 }
 
+/// helper trait to extend PublicInputs
+pub trait MultiVersionPublicInputs {
+    fn pi_hash_by_fork(&self, fork_name: ForkName) -> B256;
+    fn validate(&self, prev_pi: &Self, fork_name: ForkName);
+}
+
+impl<T: MultiVersionPublicInputs> PublicInputs for (T, ForkName) {
+    fn pi_hash(&self) -> B256 {
+        self.0.pi_hash_by_fork(self.1)
+    }
+
+    fn validate(&self, prev_pi: &Self) {
+        assert_eq!(self.1, prev_pi.1);
+        self.0.validate(&prev_pi.0, self.1)
+    }
+}
+
 /// Represents the version 2 of block context.
 ///
 /// The difference between v2 and v1 is that the block number field has been removed since v2.
@@ -266,21 +283,17 @@ impl From<&ArchivedChunkInfo> for ChunkInfo {
 
 pub type VersionedChunkInfo = (ChunkInfo, ForkName);
 
-impl PublicInputs for VersionedChunkInfo {
+impl MultiVersionPublicInputs for ChunkInfo {
     /// Compute the public input hash for the chunk.
-    fn pi_hash(&self) -> B256 {
+    fn pi_hash_by_fork(&self, fork_name: ForkName) -> B256 {
         // unimplemented!("use pi_hash_v6 or pi_hash_v7");
-        match self.1 {
+        match fork_name {
             ForkName::EuclidV1 => {
                 // sanity check
-                assert_ne!(
-                    self.0.data_hash,
-                    B256::ZERO,
-                    "euclidv1 (da-codec@v6) must have a non-zero dataHash"
-                );
-                self.0.pi_hash_euclidv1()
+                assert_ne!(self.data_hash, B256::ZERO, "v6 must has valid data hash");
+                self.pi_hash_euclidv1()
             }
-            ForkName::EuclidV2 => self.0.pi_hash_euclidv2(),
+            ForkName::EuclidV2 => self.pi_hash_euclidv2(),
         }
     }
 
@@ -289,18 +302,12 @@ impl PublicInputs for VersionedChunkInfo {
     /// - chain id MUST match
     /// - state roots MUST be chained
     /// - L1 msg queue hash MUST be chained
-    fn validate(&self, prev_pi: &Self) {
-        assert_eq!(self.1, prev_pi.1);
-        assert_eq!(self.0.chain_id, prev_pi.0.chain_id);
-        assert_eq!(self.0.prev_state_root, prev_pi.0.post_state_root);
-        assert_eq!(self.0.prev_msg_queue_hash, prev_pi.0.post_msg_queue_hash);
-
-        // message queue hash is used only after euclidv2 (da-codec@v7)
-        if self.1 == ForkName::EuclidV1 {
-            assert_eq!(self.0.prev_msg_queue_hash, B256::ZERO);
-            assert_eq!(prev_pi.0.prev_msg_queue_hash, B256::ZERO);
-            assert_eq!(self.0.post_msg_queue_hash, B256::ZERO);
-            assert_eq!(prev_pi.0.post_msg_queue_hash, B256::ZERO);
+    fn validate(&self, prev_pi: &Self, fork_name: ForkName) {
+        assert_eq!(self.chain_id, prev_pi.chain_id);
+        assert_eq!(self.prev_state_root, prev_pi.post_state_root);
+        // For V6, they should always be 0.
+        if fork_name != ForkName::EuclidV1 {
+            assert_eq!(self.prev_msg_queue_hash, prev_pi.post_msg_queue_hash);
         }
     }
 }
