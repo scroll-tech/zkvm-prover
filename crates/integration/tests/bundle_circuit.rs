@@ -1,16 +1,16 @@
 use sbv_primitives::B256;
 use scroll_zkvm_integration::{
-    ProverTester, prove_verify_multi, prove_verify_single_evm,
+    ProverTester, prove_verify_multi, prove_verify_single, prove_verify_single_evm,
     testers::{
         batch::BatchProverTester,
         bundle::{BundleLocalTaskTester, BundleProverTester},
-        chunk::MultiChunkProverTester,
+        chunk::{ChunkProverRv32Tester, ChunkProverTester, MultiChunkProverTester},
     },
     utils::{LastHeader, build_batch_task},
 };
 use scroll_zkvm_prover::{
-    BatchProof,
-    task::bundle::BundleProvingTask,
+    BatchProof, ChunkProof,
+    task::{bundle::BundleProvingTask, chunk::ChunkProvingTask},
     utils::{read_json_deep, write_json},
 };
 use std::str::FromStr;
@@ -89,12 +89,32 @@ fn verify_bundle_info_pi() {
     );
 }
 
+fn build_chunk_outcome() -> eyre::Result<(Vec<ChunkProvingTask>, Vec<ChunkProof>)> {
+    let rv32_hybrid = true;
+    if rv32_hybrid {
+        let mut proofs = Vec::new();
+        let tasks = MultiChunkProverTester::gen_multi_proving_tasks()?;
+        for (idx, task) in tasks.iter().enumerate() {
+            if idx % 2 == 0 {
+                let outcome = prove_verify_single::<ChunkProverTester>(Some(task.clone()))?;
+                proofs.push(outcome.proofs[0].clone());
+            } else {
+                let outcome = prove_verify_single::<ChunkProverRv32Tester>(Some(task.clone()))?;
+                proofs.push(outcome.proofs[0].clone());
+            }
+        }
+        Ok((tasks, proofs))
+    } else {
+        let outcome = prove_verify_multi::<MultiChunkProverTester>(None)?;
+        Ok((outcome.tasks, outcome.proofs))
+    }
+}
+
 #[test]
 fn e2e() -> eyre::Result<()> {
     BundleProverTester::setup()?;
 
-    let outcome = prove_verify_multi::<MultiChunkProverTester>(None)?;
-    let (chunk_tasks, chunk_proofs) = (outcome.tasks, outcome.proofs);
+    let (chunk_tasks, chunk_proofs) = build_chunk_outcome()?;
     assert_eq!(chunk_tasks.len(), chunk_proofs.len());
     assert_eq!(chunk_tasks.len(), 3);
 

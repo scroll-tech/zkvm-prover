@@ -12,7 +12,7 @@ pub fn read_witnesses_rkyv_raw() -> Vec<u8> {
     openvm_rv32im_guest::hint_input();
     let mut len: u32 = 0;
     openvm_rv32im_guest::hint_store_u32!((&mut len) as *mut u32 as u32);
-    let num_words = (len + 3) / 4;
+    let num_words = len.div_ceil(4);
     let size = (num_words * 4) as usize;
     let layout = Layout::from_size_align(size, 16).unwrap();
     let ptr_start = unsafe { System.alloc(layout) };

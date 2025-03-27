@@ -14,7 +14,7 @@ pub const GIT_VERSION: &str = git_version!(args = ["--abbrev=7", "--always"]);
 
 /// Shortened git commit ref from [`scroll_zkvm_prover`].
 pub fn short_git_version() -> String {
-    let commit_version = GIT_VERSION.split('-').last().unwrap();
+    let commit_version = GIT_VERSION.split('-').next_back().unwrap();
 
     // Check if use commit object as fallback.
     if commit_version.len() < 8 {

@@ -9,10 +9,7 @@ use crate::{
 
 use crate::commitments::{bundle, bundle_euclidv1};
 
-pub trait CommitMents {
-    const EXE_COMMIT: [u32; 8];
-    const LEAF_COMMIT: [u32; 8];
-}
+use super::CommitMents;
 
 pub struct BundleCircuitV1;
 pub struct BundleCircuitV2;
@@ -27,17 +24,16 @@ impl CommitMents for BundleCircuitV2 {
     const LEAF_COMMIT: [u32; 8] = bundle::LEAF_COMMIT;
 }
 
-pub type BundleProverTypeEuclidV1 = BundleProverType<BundleCircuitV1>;
-pub type BundleProverTypeEuclidV2 = BundleProverType<BundleCircuitV2>;
+pub type BundleProverTypeEuclidV1 = GenericBundleProverType<BundleCircuitV1>;
+pub type BundleProverTypeEuclidV2 = GenericBundleProverType<BundleCircuitV2>;
 
 /// Prover for [`BundleCircuit`].
-pub type BundleProver = Prover<BundleProverTypeEuclidV1>;
 pub type BundleProverEuclidV1 = Prover<BundleProverTypeEuclidV1>;
 pub type BundleProverEuclidV2 = Prover<BundleProverTypeEuclidV2>;
 
-pub struct BundleProverType<C: CommitMents>(std::marker::PhantomData<C>);
+pub struct GenericBundleProverType<C: CommitMents>(std::marker::PhantomData<C>);
 
-impl<C: CommitMents> ProverType for BundleProverType<C> {
+impl<C: CommitMents> ProverType for GenericBundleProverType<C> {
     const NAME: &'static str = "bundle";
 
     const EVM: bool = true;
