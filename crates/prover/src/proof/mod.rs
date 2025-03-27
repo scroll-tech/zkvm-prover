@@ -4,7 +4,11 @@ use openvm_continuations::verifier::root::types::RootVmVerifierInput;
 use openvm_native_recursion::halo2::RawEvmProof as OpenVmEvmProof;
 use openvm_stark_sdk::{openvm_stark_backend::proof::Proof, p3_baby_bear::BabyBear};
 use sbv_primitives::B256;
-use scroll_zkvm_circuit_input_types::{batch::BatchInfo, bundle::BundleInfo, chunk::ChunkInfo};
+use scroll_zkvm_circuit_input_types::{
+    batch::BatchInfo,
+    bundle::BundleInfo,
+    chunk::{ChunkInfo, MultiVersionPublicInputs},
+};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use snark_verifier_sdk::snark_verifier::{
     halo2_base::halo2_proofs::halo2curves::bn256::Fr, util::arithmetic::PrimeField,
@@ -191,11 +195,26 @@ pub type BatchProof = WrappedProof<BatchProofMetadata>;
 /// Alias for convenience.
 pub type BundleProof = WrappedProof<BundleProofMetadata>;
 
+/// Trait to enable operations in metadata
+pub trait ProofMetadata: Serialize + DeserializeOwned + std::fmt::Debug {
+    type PublicInputs: MultiVersionPublicInputs;
+
+    fn pi_hash_info(&self) -> &Self::PublicInputs;
+}
+
 /// Metadata attached to [`ChunkProof`].
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ChunkProofMetadata {
     /// The chunk information describing the list of blocks contained within the chunk.
     pub chunk_info: ChunkInfo,
+}
+
+impl ProofMetadata for ChunkProofMetadata {
+    type PublicInputs = ChunkInfo;
+
+    fn pi_hash_info(&self) -> &Self::PublicInputs {
+        &self.chunk_info
+    }
 }
 
 /// Metadata attached to [`BatchProof`].
@@ -207,6 +226,14 @@ pub struct BatchProofMetadata {
     pub batch_hash: B256,
 }
 
+impl ProofMetadata for BatchProofMetadata {
+    type PublicInputs = BatchInfo;
+
+    fn pi_hash_info(&self) -> &Self::PublicInputs {
+        &self.batch_info
+    }
+}
+
 /// Metadata attached to [`BundleProof`].
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BundleProofMetadata {
@@ -214,6 +241,14 @@ pub struct BundleProofMetadata {
     pub bundle_info: BundleInfo,
     /// The public-input digest for the bundle.
     pub bundle_pi_hash: B256,
+}
+
+impl ProofMetadata for BundleProofMetadata {
+    type PublicInputs = BundleInfo;
+
+    fn pi_hash_info(&self) -> &Self::PublicInputs {
+        &self.bundle_info
+    }
 }
 
 impl<Metadata> WrappedProof<Metadata>
