@@ -39,4 +39,12 @@ docker cp ${container_id}:/app/crates/circuits/chunk-circuit/openvm/app_rv32.vme
 docker cp ${container_id}:/app/crates/circuits/batch-circuit/openvm/app.vmexe crates/circuits/batch-circuit/openvm/app.vmexe
 docker cp ${container_id}:/app/crates/circuits/bundle-circuit/openvm/app.vmexe crates/circuits/bundle-circuit/openvm/app.vmexe
 docker cp ${container_id}:/app/crates/circuits/bundle-circuit/openvm/app_euclidv1.vmexe crates/circuits/bundle-circuit/openvm/app_euclidv1.vmexe
+
+# copy digests from container to local
+docker cp ${container_id}:/app/crates/circuits/bundle-circuit/digest_1 crates/circuits/bundle-circuit/digest_1
+docker cp ${container_id}:/app/crates/circuits/bundle-circuit/digest_2 crates/circuits/bundle-circuit/digest_2
+docker cp ${container_id}:/app/crates/circuits/bundle-circuit/digest_1_euclidv1 crates/circuits/bundle-circuit/digest_1_euclidv1
+docker cp ${container_id}:/app/crates/circuits/bundle-circuit/digest_2_euclidv1 crates/circuits/bundle-circuit/digest_2_euclidv1
+
+# remove docker container
 docker rm ${container_id}
