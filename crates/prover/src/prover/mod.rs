@@ -203,6 +203,24 @@ impl<Type: ProverType> Prover<Type> {
             .unwrap_or_default()
     }
 
+    fn sanity_check_expected_pi(
+        proof: &WrappedProof<Type::ProofMetadata>,
+        task: &Type::ProvingTask,
+    ) -> bool {
+        let proof_pi = flatten_wrapped_proof(proof).public_values;
+        let expected_pi = proof
+            .metadata
+            .pi_hash_info()
+            .pi_hash_by_fork(task.fork_name())
+            .0
+            .as_ref()
+            .iter()
+            .map(|&v| v as u32)
+            .collect::<Vec<_>>();
+
+        expected_pi == proof_pi
+    }
+
     /// Early-return if a proof is found in disc, otherwise generate and return the proof after
     /// writing to disc.
     #[instrument("Prover::gen_proof", skip_all, fields(task_id, prover_name = Type::NAME))]
@@ -229,21 +247,9 @@ impl<Type: ProverType> Prover<Type> {
         let proof = self.gen_proof_stark(task)?;
         let wrapped_proof = WrappedProof::new(metadata, proof, Some(self.get_app_vk().as_slice()));
 
-        // sanity check for pi
-        let proof_pi = flatten_wrapped_proof(&wrapped_proof).public_values;
-        let expected_pi = wrapped_proof
-            .metadata
-            .pi_hash_info()
-            .pi_hash_by_fork(task.fork_name());
-        assert_eq!(
-            expected_pi
-                .0
-                .as_ref()
-                .iter()
-                .map(|&v| v as u32)
-                .collect::<Vec<_>>(),
-            proof_pi,
-            "pi from proof is not expected, wrong pi implement for circuit?"
+        assert!(
+            Self::sanity_check_expected_pi(&wrapped_proof, task),
+            "pi from proof is not expected, wrong pi implement for circuit?",
         );
 
         // Write proof to disc if caching was enabled.
@@ -283,21 +289,9 @@ impl<Type: ProverType> Prover<Type> {
         let proof = self.gen_proof_snark(task)?;
         let wrapped_proof = WrappedProof::new(metadata, proof, Some(self.get_evm_vk().as_slice()));
 
-        // sanity check for pi
-        let proof_pi = flatten_wrapped_proof(&wrapped_proof).public_values;
-        let expected_pi = wrapped_proof
-            .metadata
-            .pi_hash_info()
-            .pi_hash_by_fork(task.fork_name());
-        assert_eq!(
-            expected_pi
-                .0
-                .as_ref()
-                .iter()
-                .map(|&v| v as u32)
-                .collect::<Vec<_>>(),
-            proof_pi,
-            "pi from evm proof is not expected, wrong pi implement for circuit?"
+        assert!(
+            Self::sanity_check_expected_pi(&wrapped_proof, task),
+            "pi from evm proof is not expected, wrong pi implement for circuit?",
         );
 
         // Write proof to disc if caching was enabled.

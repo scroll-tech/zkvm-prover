@@ -133,7 +133,10 @@ impl MultiVersionPublicInputs for BatchInfo {
         assert_eq!(self.parent_state_root, prev_pi.state_root);
         assert_eq!(self.parent_batch_hash, prev_pi.batch_hash);
         if fork_name != ForkName::EuclidV1 {
-            assert_eq!(self.prev_msg_queue_hash, prev_pi.post_msg_queue_hash);
+            assert_eq!(self.prev_msg_queue_hash, B256::ZERO);
+            assert_eq!(prev_pi.prev_msg_queue_hash, B256::ZERO);
+            assert_eq!(self.post_msg_queue_hash, B256::ZERO);
+            assert_eq!(prev_pi.post_msg_queue_hash, B256::ZERO);
         }
     }
 }

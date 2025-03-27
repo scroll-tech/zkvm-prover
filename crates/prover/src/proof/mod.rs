@@ -197,9 +197,9 @@ pub type BundleProof = WrappedProof<BundleProofMetadata>;
 
 /// Trait to enable operations in metadata
 pub trait ProofMetadata: Serialize + DeserializeOwned + std::fmt::Debug {
-    type PIType: MultiVersionPublicInputs;
+    type PublicInputs: MultiVersionPublicInputs;
 
-    fn pi_hash_info(&self) -> &Self::PIType;
+    fn pi_hash_info(&self) -> &Self::PublicInputs;
 }
 
 /// Metadata attached to [`ChunkProof`].
@@ -210,9 +210,9 @@ pub struct ChunkProofMetadata {
 }
 
 impl ProofMetadata for ChunkProofMetadata {
-    type PIType = ChunkInfo;
+    type PublicInputs = ChunkInfo;
 
-    fn pi_hash_info(&self) -> &Self::PIType {
+    fn pi_hash_info(&self) -> &Self::PublicInputs {
         &self.chunk_info
     }
 }
@@ -227,9 +227,9 @@ pub struct BatchProofMetadata {
 }
 
 impl ProofMetadata for BatchProofMetadata {
-    type PIType = BatchInfo;
+    type PublicInputs = BatchInfo;
 
-    fn pi_hash_info(&self) -> &Self::PIType {
+    fn pi_hash_info(&self) -> &Self::PublicInputs {
         &self.batch_info
     }
 }
@@ -244,9 +244,9 @@ pub struct BundleProofMetadata {
 }
 
 impl ProofMetadata for BundleProofMetadata {
-    type PIType = BundleInfo;
+    type PublicInputs = BundleInfo;
 
-    fn pi_hash_info(&self) -> &Self::PIType {
+    fn pi_hash_info(&self) -> &Self::PublicInputs {
         &self.bundle_info
     }
 }
