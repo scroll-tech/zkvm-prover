@@ -37,12 +37,12 @@ pub use batch::{BatchProver, BatchProverType};
 
 mod bundle;
 pub use bundle::{
-    BundleProver, BundleProverEuclidV1, BundleProverEuclidV2, BundleProverType,
-    BundleProverTypeEuclidV1, BundleProverTypeEuclidV2,
+    BundleProverEuclidV1, BundleProverEuclidV2, BundleProverTypeEuclidV1, BundleProverTypeEuclidV2,
+    GenericBundleProverType,
 };
 
 mod chunk;
-pub use chunk::{ChunkProver, ChunkProverType};
+pub use chunk::{ChunkProver, ChunkProverType, ChunkProverTypeRv32, GenericChunkProverType};
 /// Proving key for STARK aggregation. Primarily used to aggregate
 /// [continuation proofs][openvm_sdk::prover::vm::ContinuationVmProof].
 static AGG_STARK_PROVING_KEY: Lazy<AggStarkProvingKey> =
@@ -60,6 +60,11 @@ const FD_ROOT_VERIFIER_VM_CONFIG: &str = "root-verifier-vm-config";
 
 /// File descriptor for the root verifier's committed exe.
 const FD_ROOT_VERIFIER_COMMITTED_EXE: &str = "root-verifier-committed-exe";
+
+pub trait CommitMents {
+    const EXE_COMMIT: [u32; 8];
+    const LEAF_COMMIT: [u32; 8];
+}
 
 /// Types used in the outermost proof construction and verification, i.e. the EVM-compatible layer.
 pub struct EvmProverVerifier {

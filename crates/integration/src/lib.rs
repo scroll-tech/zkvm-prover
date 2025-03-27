@@ -98,7 +98,12 @@ pub trait ProverTester {
 
     /// Load the app config.
     fn load() -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
-        Self::load_with_exe_fd(FD_APP_EXE)
+        Self::load_with_exe_fd(&Self::fd_app_exe())
+    }
+
+    /// Get the path to the app exe.
+    fn fd_app_exe() -> String {
+        FD_APP_EXE.to_string()
     }
 
     /// Generate proving task for test purposes.

@@ -69,6 +69,10 @@ impl AggCircuit for BatchCircuit {
             && commitment.leaf == crate::child_commitments_rv32::LEAF_COMMIT;
         let match_openvm = commitment.exe == crate::child_commitments::EXE_COMMIT
             && commitment.leaf == crate::child_commitments::LEAF_COMMIT;
+        println!(
+            "verify_commitments: rv32 {}, openvm {}",
+            match_rv32, match_openvm
+        );
         assert!(
             match_rv32 || match_openvm,
             "mismatch chunk-proof commitments: expected={:?}, got={:?}",

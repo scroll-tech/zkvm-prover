@@ -4,7 +4,9 @@ use std::{
 };
 
 use sbv_primitives::{B256, types::BlockWitness};
-use scroll_zkvm_prover::{ChunkProverType, ProverType, task::chunk::ChunkProvingTask};
+use scroll_zkvm_prover::{
+    ChunkProverType, ChunkProverTypeRv32, ProverType, task::chunk::ChunkProvingTask,
+};
 
 use crate::{ProverTester, testers::PATH_TESTDATA, utils::phase_base_directory};
 
@@ -79,6 +81,25 @@ impl ProverTester for ChunkProverTester {
                 String::from("euclidv1")
             },
         })
+    }
+}
+
+pub struct ChunkProverRv32Tester;
+
+impl ProverTester for ChunkProverRv32Tester {
+    type Prover = ChunkProverTypeRv32;
+
+    const PATH_PROJECT_ROOT: &str = "./../circuits/chunk-circuit";
+
+    const DIR_ASSETS: &str = "chunk";
+
+    fn fd_app_exe() -> String {
+        "app_rv32.vmexe".to_string()
+    }
+
+    fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask> {
+        // Reuse the same implementation as ChunkProverTester
+        ChunkProverTester::gen_proving_task()
     }
 }
 
