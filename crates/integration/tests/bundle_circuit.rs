@@ -90,7 +90,7 @@ fn verify_bundle_info_pi() {
 }
 
 fn build_chunk_outcome() -> eyre::Result<(Vec<ChunkProvingTask>, Vec<ChunkProof>)> {
-    let rv32_hybrid = true;
+    let rv32_hybrid = false;
     if rv32_hybrid {
         let mut proofs = Vec::new();
         let tasks = MultiChunkProverTester::gen_multi_proving_tasks()?;
