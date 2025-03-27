@@ -4,6 +4,7 @@ use revm::{
     primitives::{ExecutionResult, Output, TransactTo, TxEnv, TxKind, specification::CancunSpec},
 };
 
+// Re-export from snark_verifier_sdk.
 pub use snark_verifier_sdk::{
     evm::gen_evm_verifier_shplonk as gen_evm_verifier,
     halo2::aggregation as halo2_aggregation,

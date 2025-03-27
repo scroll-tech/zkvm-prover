@@ -87,7 +87,8 @@ impl ProvingTask for BatchProvingTask {
     }
 
     fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error> {
-        let fork_name = self.fork_name.as_str().into();
+        let fork_name = self.fork_name.to_lowercase().as_str().into();
+
         // calculate point eval needed and compare with task input
         let (kzg_commitment, kzg_proof, challenge_digest) = {
             let blob = point_eval::to_blob(&self.blob_bytes);
@@ -96,8 +97,9 @@ impl ProvingTask for BatchProvingTask {
                 BatchHeaderV::V6(_) => {
                     assert_eq!(
                         fork_name,
-                        ForkName::Euclid,
-                        "v6 header expected euclid fork"
+                        ForkName::EuclidV1,
+                        "hardfork mismatch for da-codec@v6 header: found={fork_name:?}, expected={:?}",
+                        ForkName::EuclidV1,
                     );
                     EnvelopeV6::from(self.blob_bytes.as_slice())
                         .challenge_digest(point_eval::get_versioned_hash(&commitment))
@@ -106,7 +108,8 @@ impl ProvingTask for BatchProvingTask {
                     assert_eq!(
                         fork_name,
                         ForkName::EuclidV2,
-                        "v7 header expected euclid v2 fork"
+                        "hardfork mismatch for da-codec@v7 header: found={fork_name:?}, expected={:?}",
+                        ForkName::EuclidV2,
                     );
                     EnvelopeV7::from(self.blob_bytes.as_slice())
                         .challenge_digest(point_eval::get_versioned_hash(&commitment))
@@ -202,8 +205,9 @@ impl From<&BatchProvingTask> for BatchInfo {
             BatchHeaderV::V6(h) => {
                 assert_eq!(
                     fork_name,
-                    ForkName::Euclid,
-                    "v6 header expected euclid fork"
+                    ForkName::EuclidV1,
+                    "hardfork mismatch for da-codec@v6 header: found={fork_name:?}, expected={:?}",
+                    ForkName::EuclidV1,
                 );
                 (h.parent_batch_hash, Default::default(), Default::default())
             }
@@ -211,7 +215,8 @@ impl From<&BatchProvingTask> for BatchInfo {
                 assert_eq!(
                     fork_name,
                     ForkName::EuclidV2,
-                    "v7 header expected euclid fork"
+                    "hardfork mismatch for da-codec@v7 header: found={fork_name:?}, expected={:?}",
+                    ForkName::EuclidV2,
                 );
                 (
                     h.parent_batch_hash,

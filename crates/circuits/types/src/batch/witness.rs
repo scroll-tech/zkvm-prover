@@ -1,10 +1,9 @@
 use crate::{
     ProofCarryingWitness,
+    batch::ReferenceHeader,
     chunk::{ChunkInfo, ForkName},
     proof::{AggregationInput, ProgramCommitment},
 };
-
-use super::ReferenceHeader;
 
 /// Simply rewrap byte48 to avoid unnecessary dep
 pub type Bytes48 = [u8; 48];

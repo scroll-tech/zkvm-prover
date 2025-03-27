@@ -14,7 +14,6 @@ use openvm_native_recursion::{
     },
     hints::Hintable,
 };
-pub use openvm_sdk::{self, F, SC};
 use openvm_sdk::{
     DefaultStaticVerifierPvHandler, NonRootCommittedExe, Sdk, StdIn,
     commit::AppExecutionCommit,
@@ -24,6 +23,9 @@ use openvm_sdk::{
 };
 use serde::{Serialize, de::DeserializeOwned};
 use tracing::{debug, instrument};
+
+// Re-export from openvm_sdk.
+pub use openvm_sdk::{self, F, SC};
 
 use crate::{
     Error, WrappedProof,
@@ -43,6 +45,7 @@ pub use bundle::{
 
 mod chunk;
 pub use chunk::{ChunkProver, ChunkProverType, ChunkProverTypeRv32, GenericChunkProverType};
+
 /// Proving key for STARK aggregation. Primarily used to aggregate
 /// [continuation proofs][openvm_sdk::prover::vm::ContinuationVmProof].
 static AGG_STARK_PROVING_KEY: Lazy<AggStarkProvingKey> =
@@ -61,7 +64,7 @@ const FD_ROOT_VERIFIER_VM_CONFIG: &str = "root-verifier-vm-config";
 /// File descriptor for the root verifier's committed exe.
 const FD_ROOT_VERIFIER_COMMITTED_EXE: &str = "root-verifier-committed-exe";
 
-pub trait CommitMents {
+pub trait Commitments {
     const EXE_COMMIT: [u32; 8];
     const LEAF_COMMIT: [u32; 8];
 }

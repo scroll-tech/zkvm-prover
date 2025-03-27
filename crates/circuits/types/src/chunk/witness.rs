@@ -1,7 +1,8 @@
-use crate::chunk::ForkName;
 use alloy_primitives::B256;
 use sbv_primitives::types::BlockWitness;
 use std::collections::HashSet;
+
+use crate::chunk::ForkName;
 
 /// The witness type accepted by the chunk-circuit.
 #[derive(
@@ -60,11 +61,11 @@ impl ChunkWitness {
         }
     }
 
-    pub fn new_v2(blocks: &[BlockWitness], prev_msg_queue_hash: B256) -> Self {
-        Self::new(blocks, prev_msg_queue_hash, ForkName::EuclidV2)
+    pub fn new_v1(blocks: &[BlockWitness]) -> Self {
+        Self::new(blocks, Default::default(), ForkName::EuclidV1)
     }
 
-    pub fn new_legacy(blocks: &[BlockWitness]) -> Self {
-        Self::new(blocks, Default::default(), ForkName::Euclid)
+    pub fn new_v2(blocks: &[BlockWitness], prev_msg_queue_hash: B256) -> Self {
+        Self::new(blocks, prev_msg_queue_hash, ForkName::EuclidV2)
     }
 }

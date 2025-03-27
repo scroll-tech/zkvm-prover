@@ -3,23 +3,22 @@ use scroll_zkvm_circuit_input_types::{bundle::BundleInfo, chunk::ForkName};
 
 use crate::{
     Error, Prover, ProverType,
+    commitments::{bundle, bundle_euclidv1},
     proof::BundleProofMetadata,
     task::{ProvingTask, bundle::BundleProvingTask},
 };
 
-use crate::commitments::{bundle, bundle_euclidv1};
-
-use super::CommitMents;
+use super::Commitments;
 
 pub struct BundleCircuitV1;
 pub struct BundleCircuitV2;
 
-impl CommitMents for BundleCircuitV1 {
+impl Commitments for BundleCircuitV1 {
     const EXE_COMMIT: [u32; 8] = bundle_euclidv1::EXE_COMMIT;
     const LEAF_COMMIT: [u32; 8] = bundle_euclidv1::LEAF_COMMIT;
 }
 
-impl CommitMents for BundleCircuitV2 {
+impl Commitments for BundleCircuitV2 {
     const EXE_COMMIT: [u32; 8] = bundle::EXE_COMMIT;
     const LEAF_COMMIT: [u32; 8] = bundle::LEAF_COMMIT;
 }
@@ -31,9 +30,9 @@ pub type BundleProverTypeEuclidV2 = GenericBundleProverType<BundleCircuitV2>;
 pub type BundleProverEuclidV1 = Prover<BundleProverTypeEuclidV1>;
 pub type BundleProverEuclidV2 = Prover<BundleProverTypeEuclidV2>;
 
-pub struct GenericBundleProverType<C: CommitMents>(std::marker::PhantomData<C>);
+pub struct GenericBundleProverType<C: Commitments>(std::marker::PhantomData<C>);
 
-impl<C: CommitMents> ProverType for GenericBundleProverType<C> {
+impl<C: Commitments> ProverType for GenericBundleProverType<C> {
     const NAME: &'static str = "bundle";
 
     const EVM: bool = true;

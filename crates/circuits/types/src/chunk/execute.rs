@@ -1,7 +1,3 @@
-use crate::{
-    chunk::{ArchivedChunkWitness, ChunkInfo, ForkName, make_providers},
-    manually_drop_on_zkvm,
-};
 use sbv_core::{EvmDatabase, EvmExecutor};
 use sbv_primitives::{
     BlockWitness,
@@ -18,7 +14,12 @@ use sbv_primitives::{
     },
 };
 
-use crate::chunk::public_inputs::BlockContextV2;
+use crate::{
+    chunk::{
+        ArchivedChunkWitness, ChunkInfo, ForkName, make_providers, public_inputs::BlockContextV2,
+    },
+    manually_drop_on_zkvm,
+};
 
 type Witness = ArchivedChunkWitness;
 
@@ -48,7 +49,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
 
     // SCROLL_DEV_HARDFORKS will enable all forks
     let mut hardforks = (*SCROLL_DEV_HARDFORKS).clone();
-    if fork_name == ForkName::Euclid {
+    if fork_name == ForkName::EuclidV1 {
         // disable EuclidV2 fork for legacy chunk
         use sbv_primitives::{chainspec::ForkCondition, hardforks::ScrollHardfork};
         hardforks.insert(ScrollHardfork::EuclidV2, ForkCondition::Never);

@@ -83,7 +83,7 @@ fn verify_bundle_info_pi() {
     };
 
     assert_eq!(
-        info.pi_hash_euclid_v1(),
+        info.pi_hash_euclidv1(),
         B256::from_str("0x5e49fc59ce02b42a2f693c738c582b36bd08e9cfe3acb8cee299216743869bd4")
             .unwrap()
     );

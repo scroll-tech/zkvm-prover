@@ -78,7 +78,7 @@ pub trait ForkNameInfo {
 
 impl ForkNameInfo for BundleInfoV1 {
     fn fork_name() -> ForkName {
-        ForkName::Euclid
+        ForkName::EuclidV1
     }
 }
 
@@ -100,7 +100,7 @@ impl<T: ForkNameInfo + PublicInputs + From<BundleInfo>> AggCircuit for BundleCir
         assert_eq!(
             commitment.leaf, BATCH_LEAF_COMMIT,
             "mismatch batch-proof leaf commitment: expected={:?}, got={:?}",
-            BATCH_EXE_COMMIT, commitment.leaf,
+            BATCH_LEAF_COMMIT, commitment.leaf,
         );
     }
 

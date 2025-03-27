@@ -1,23 +1,23 @@
+use scroll_zkvm_circuit_input_types::chunk::{ArchivedChunkWitness, ChunkWitness, execute};
+
 use crate::{
     Error, Prover, ProverType,
+    commitments::{chunk, chunk_rv32},
     proof::{ChunkProofMetadata, RootProof},
     task::{ProvingTask, chunk::ChunkProvingTask},
 };
-use scroll_zkvm_circuit_input_types::chunk::{ArchivedChunkWitness, ChunkWitness, execute};
 
-use crate::commitments::{chunk, chunk_rv32};
-
-use super::CommitMents;
+use super::Commitments;
 
 pub struct ChunkCircuit;
 pub struct ChunkCircuitRv32;
 
-impl CommitMents for ChunkCircuit {
+impl Commitments for ChunkCircuit {
     const EXE_COMMIT: [u32; 8] = chunk::EXE_COMMIT;
     const LEAF_COMMIT: [u32; 8] = chunk::LEAF_COMMIT;
 }
 
-impl CommitMents for ChunkCircuitRv32 {
+impl Commitments for ChunkCircuitRv32 {
     const EXE_COMMIT: [u32; 8] = chunk_rv32::EXE_COMMIT;
     const LEAF_COMMIT: [u32; 8] = chunk_rv32::LEAF_COMMIT;
 }
@@ -30,9 +30,9 @@ pub type ChunkProver = Prover<ChunkProverType>;
 #[allow(dead_code)]
 pub type ChunkProverRv32 = Prover<ChunkProverTypeRv32>;
 
-pub struct GenericChunkProverType<C: CommitMents>(std::marker::PhantomData<C>);
+pub struct GenericChunkProverType<C: Commitments>(std::marker::PhantomData<C>);
 
-impl<C: CommitMents> ProverType for GenericChunkProverType<C> {
+impl<C: Commitments> ProverType for GenericChunkProverType<C> {
     const NAME: &'static str = "chunk";
 
     const EVM: bool = false;

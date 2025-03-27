@@ -1,9 +1,10 @@
-use crate::{PublicInputs, utils::keccak256};
 use alloy_primitives::{B256, U256};
 use sbv_primitives::types::{
     consensus::BlockHeader,
     reth::{Block, RecoveredBlock},
 };
+
+use crate::{PublicInputs, utils::keccak256};
 
 /// Number of bytes used to serialise [`BlockContextV2`].
 pub const SIZE_BLOCK_CTX: usize = 52;
@@ -24,14 +25,14 @@ pub const SIZE_BLOCK_CTX: usize = 52;
 #[rkyv(derive(Debug))]
 pub enum ForkName {
     #[default]
-    Euclid,
+    EuclidV1,
     EuclidV2,
 }
 
 impl From<&ArchivedForkName> for ForkName {
     fn from(archived: &ArchivedForkName) -> Self {
         match archived {
-            ArchivedForkName::Euclid => ForkName::Euclid,
+            ArchivedForkName::EuclidV1 => ForkName::EuclidV1,
             ArchivedForkName::EuclidV2 => ForkName::EuclidV2,
         }
     }
@@ -41,9 +42,9 @@ impl From<Option<&str>> for ForkName {
     fn from(value: Option<&str>) -> Self {
         match value {
             None => Default::default(),
+            Some("euclidv1") => ForkName::EuclidV1,
             Some("euclidv2") => ForkName::EuclidV2,
-            Some("euclid") | Some("euclidv1") => ForkName::Euclid,
-            Some(s) => unreachable!("fork name is not accept: {s}"),
+            Some(s) => unreachable!("hardfork not accepted: {s}"),
         }
     }
 }
@@ -51,9 +52,9 @@ impl From<Option<&str>> for ForkName {
 impl From<&str> for ForkName {
     fn from(value: &str) -> Self {
         match value {
+            "euclidv1" => ForkName::EuclidV1,
             "euclidv2" => ForkName::EuclidV2,
-            "euclid" | "euclidv1" => ForkName::Euclid,
-            s => unreachable!("fork name is not accept: {s}"),
+            s => unreachable!("hardfork not accepted: {s}"),
         }
     }
 }
@@ -180,7 +181,7 @@ pub struct ChunkInfo {
 }
 
 impl ChunkInfo {
-    /// Public input hash for a given chunk is defined as
+    /// Public input hash for a given chunk (euclidv1 or da-codec@v6) is defined as
     ///
     /// keccak(
     ///     chain id ||
@@ -190,7 +191,7 @@ impl ChunkInfo {
     ///     chunk data hash ||
     ///     tx data hash
     /// )
-    pub fn pi_hash_euclid(&self) -> B256 {
+    pub fn pi_hash_euclidv1(&self) -> B256 {
         keccak256(
             std::iter::empty()
                 .chain(&self.chain_id.to_be_bytes())
@@ -204,7 +205,7 @@ impl ChunkInfo {
         )
     }
 
-    /// Public input hash for a given chunk is defined as
+    /// Public input hash for a given chunk (euclidv2 or da-codec@v7) is defined as
     ///
     /// keccak(
     ///     chain id ||
@@ -270,10 +271,14 @@ impl PublicInputs for VersionedChunkInfo {
     fn pi_hash(&self) -> B256 {
         // unimplemented!("use pi_hash_v6 or pi_hash_v7");
         match self.1 {
-            ForkName::Euclid => {
+            ForkName::EuclidV1 => {
                 // sanity check
-                assert_ne!(self.0.data_hash, B256::ZERO, "v6 must has valid data hash");
-                self.0.pi_hash_euclid()
+                assert_ne!(
+                    self.0.data_hash,
+                    B256::ZERO,
+                    "euclidv1 (da-codec@v6) must have a non-zero dataHash"
+                );
+                self.0.pi_hash_euclidv1()
             }
             ForkName::EuclidV2 => self.0.pi_hash_euclidv2(),
         }
@@ -288,9 +293,14 @@ impl PublicInputs for VersionedChunkInfo {
         assert_eq!(self.1, prev_pi.1);
         assert_eq!(self.0.chain_id, prev_pi.0.chain_id);
         assert_eq!(self.0.prev_state_root, prev_pi.0.post_state_root);
-        // For V6, they should always be 0.
-        if self.1 != ForkName::Euclid {
-            assert_eq!(self.0.prev_msg_queue_hash, prev_pi.0.post_msg_queue_hash);
+        assert_eq!(self.0.prev_msg_queue_hash, prev_pi.0.post_msg_queue_hash);
+
+        // message queue hash is used only after euclidv2 (da-codec@v7)
+        if self.1 == ForkName::EuclidV1 {
+            assert_eq!(self.0.prev_msg_queue_hash, B256::ZERO);
+            assert_eq!(prev_pi.0.prev_msg_queue_hash, B256::ZERO);
+            assert_eq!(self.0.post_msg_queue_hash, B256::ZERO);
+            assert_eq!(prev_pi.0.post_msg_queue_hash, B256::ZERO);
         }
     }
 }

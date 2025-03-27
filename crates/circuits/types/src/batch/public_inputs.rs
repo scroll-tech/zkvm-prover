@@ -56,7 +56,7 @@ impl From<&ArchivedBatchInfo> for BatchInfo {
 }
 
 impl BatchInfo {
-    /// Public input hash for a batch in euclid v1 is defined as
+    /// Public input hash for a batch (euclidv1 or da-codec@v6) is defined as
     ///
     /// keccak(
     ///     parent state root ||
@@ -66,7 +66,7 @@ impl BatchInfo {
     ///     chain id ||
     ///     withdraw root ||
     /// )
-    fn pi_hash_euclid(&self) -> B256 {
+    fn pi_hash_euclidv1(&self) -> B256 {
         keccak256(
             std::iter::empty()
                 .chain(self.parent_state_root.as_slice())
@@ -80,7 +80,7 @@ impl BatchInfo {
         )
     }
 
-    /// Public input hash for a batch is defined as
+    /// Public input hash for a batch (euclidv2 or da-codec@v7) is defined as
     ///
     /// keccak(
     ///     parent state root ||
@@ -126,7 +126,7 @@ impl PublicInputs for VersionedBatchInfo {
     /// )
     fn pi_hash(&self) -> B256 {
         match self.1 {
-            ForkName::Euclid => self.0.pi_hash_euclid(),
+            ForkName::EuclidV1 => self.0.pi_hash_euclidv1(),
             ForkName::EuclidV2 => self.0.pi_hash_euclidv2(),
         }
     }
@@ -136,15 +136,19 @@ impl PublicInputs for VersionedBatchInfo {
     /// - chain id MUST match
     /// - state roots MUST be chained
     /// - batch hashes MUST be chained
-    ///   (for euclidv2 and post)
     /// - L1 msg queue hashes MUST be chained
     fn validate(&self, prev_pi: &Self) {
         assert_eq!(self.1, prev_pi.1);
         assert_eq!(self.0.chain_id, prev_pi.0.chain_id);
         assert_eq!(self.0.parent_state_root, prev_pi.0.state_root);
         assert_eq!(self.0.parent_batch_hash, prev_pi.0.batch_hash);
-        if self.1 != ForkName::Euclid {
-            assert_eq!(self.0.prev_msg_queue_hash, prev_pi.0.post_msg_queue_hash);
+        assert_eq!(self.0.prev_msg_queue_hash, prev_pi.0.post_msg_queue_hash);
+
+        if self.1 == ForkName::EuclidV1 {
+            assert_eq!(self.0.prev_msg_queue_hash, B256::ZERO);
+            assert_eq!(prev_pi.0.prev_msg_queue_hash, B256::ZERO);
+            assert_eq!(self.0.post_msg_queue_hash, B256::ZERO);
+            assert_eq!(prev_pi.0.post_msg_queue_hash, B256::ZERO);
         }
     }
 }

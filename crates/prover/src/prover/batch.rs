@@ -1,10 +1,9 @@
 use crate::{
     Error, Prover, ProverType,
+    commitments::batch::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT},
     proof::{BatchProofMetadata, RootProof},
     task::batch::BatchProvingTask,
 };
-
-use crate::commitments::batch::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT};
 
 /// Prover for [`BatchCircuit`].
 pub type BatchProver = Prover<BatchProverType>;

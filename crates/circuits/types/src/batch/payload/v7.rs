@@ -1,9 +1,10 @@
+use alloy_primitives::B256;
+
 use crate::{
     batch::BatchHeaderV7,
     chunk::{BlockContextV2, ChunkInfo, SIZE_BLOCK_CTX},
     utils::keccak256,
 };
-use alloy_primitives::B256;
 
 use super::N_BLOB_BYTES;
 
