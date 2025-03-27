@@ -306,7 +306,7 @@ impl MultiVersionPublicInputs for ChunkInfo {
         assert_eq!(self.chain_id, prev_pi.chain_id);
         assert_eq!(self.prev_state_root, prev_pi.post_state_root);
         // For V6, they should always be 0.
-        if fork_name != ForkName::EuclidV1 {
+        if fork_name == ForkName::EuclidV1 {
             assert_eq!(self.prev_msg_queue_hash, B256::ZERO);
             assert_eq!(prev_pi.prev_msg_queue_hash, B256::ZERO);
             assert_eq!(self.post_msg_queue_hash, B256::ZERO);
