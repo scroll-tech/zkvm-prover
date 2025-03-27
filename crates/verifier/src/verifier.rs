@@ -1,18 +1,33 @@
 use std::{marker::PhantomData, path::Path};
 
-use itertools::Itertools;
 use openvm_circuit::{arch::SingleSegmentVmExecutor, system::program::trace::VmCommittedExe};
 use openvm_continuations::verifier::root::types::RootVmVerifierInput;
 use openvm_native_circuit::NativeConfig;
 use openvm_native_recursion::{halo2::RawEvmProof, hints::Hintable};
 use openvm_sdk::{F, RootSC, SC};
 use scroll_zkvm_circuit_input_types::proof::ProgramCommitment;
+use snark_verifier_sdk::snark_verifier::halo2_base::halo2_proofs::halo2curves::bn256::Fr;
 
 use crate::commitments::{
     batch::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT},
     bundle, bundle_euclidv1,
     chunk::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT},
+    chunk_rv32,
 };
+
+fn compress_commitment(commitment: &[u32; 8]) -> Fr {
+    use openvm_stark_sdk::{openvm_stark_backend::p3_field::PrimeField32, p3_baby_bear::BabyBear};
+    let order = Fr::from(BabyBear::ORDER_U32 as u64);
+    let mut base = Fr::one();
+    let mut ret = Fr::zero();
+
+    for v in commitment {
+        ret += Fr::from(*v as u64) * base;
+        base *= order;
+    }
+
+    ret
+}
 
 pub trait VerifierType {
     const EXE_COMMIT: [u32; 8];
@@ -24,8 +39,21 @@ pub trait VerifierType {
         }
         .serialize()
     }
+    fn match_exe_commitment_with_pi(pi: &[Option<u32>]) -> bool {
+        &pi[..8] == Self::EXE_COMMIT.map(Some).as_slice()
+    }
+    fn match_leaf_commitment_with_pi(pi: &[Option<u32>]) -> bool {
+        &pi[8..16] == Self::LEAF_COMMIT.map(Some).as_slice()
+    }
+    fn match_exe_commitment_with_evm_ins(ins: &[Fr]) -> bool {
+        ins[12] == compress_commitment(&Self::EXE_COMMIT)
+    }
+    fn match_leaf_commitment_with_evm_ins(ins: &[Fr]) -> bool {
+        ins[13] == compress_commitment(&Self::LEAF_COMMIT)
+    }
 }
 
+pub struct Rv32ChunkVerifierType;
 pub struct ChunkVerifierType;
 pub struct BatchVerifierType;
 pub struct BundleVerifierTypeEuclidV1;
@@ -34,6 +62,19 @@ pub struct BundleVerifierTypeEuclidV2;
 impl VerifierType for ChunkVerifierType {
     const EXE_COMMIT: [u32; 8] = CHUNK_EXE_COMMIT;
     const LEAF_COMMIT: [u32; 8] = CHUNK_LEAF_COMMIT;
+    fn match_exe_commitment_with_pi(pi: &[Option<u32>]) -> bool {
+        &pi[..8] == Self::EXE_COMMIT.map(Some).as_slice()
+            || Rv32ChunkVerifierType::match_exe_commitment_with_pi(pi)
+    }
+    fn match_leaf_commitment_with_pi(pi: &[Option<u32>]) -> bool {
+        &pi[8..16] == Self::LEAF_COMMIT.map(Some).as_slice()
+            || Rv32ChunkVerifierType::match_leaf_commitment_with_pi(pi)
+    }
+}
+
+impl VerifierType for Rv32ChunkVerifierType {
+    const EXE_COMMIT: [u32; 8] = chunk_rv32::EXE_COMMIT;
+    const LEAF_COMMIT: [u32; 8] = chunk_rv32::LEAF_COMMIT;
 }
 impl VerifierType for BatchVerifierType {
     const EXE_COMMIT: [u32; 8] = BATCH_EXE_COMMIT;
@@ -120,19 +161,11 @@ impl<Type: VerifierType> Verifier<Type> {
             Ok(pi) => {
                 assert!(pi.len() >= 16, "unexpected len(pi)<16");
                 assert!(
-                    pi.iter().take(8).zip_eq(Type::EXE_COMMIT.iter()).all(
-                        |(op_found, &expected)| op_found.is_some_and(|found| found == expected)
-                    ),
+                    Type::match_exe_commitment_with_pi(&pi),
                     "mismatch EXE commitment"
                 );
                 assert!(
-                    pi.iter()
-                        .skip(8)
-                        .take(8)
-                        .zip_eq(Type::LEAF_COMMIT.iter())
-                        .all(
-                            |(op_found, &expected)| op_found.is_some_and(|found| found == expected)
-                        ),
+                    Type::match_leaf_commitment_with_pi(&pi),
                     "mismatch LEAF commitment"
                 );
                 true
@@ -142,6 +175,14 @@ impl<Type: VerifierType> Verifier<Type> {
     }
 
     pub fn verify_proof_evm(&self, evm_proof: &RawEvmProof) -> bool {
+        assert!(
+            Type::match_exe_commitment_with_evm_ins(&evm_proof.instances),
+            "mismatch EXE commitment"
+        );
+        assert!(
+            Type::match_leaf_commitment_with_evm_ins(&evm_proof.instances),
+            "mismatch LEAF commitment"
+        );
         crate::evm::verify_evm_proof(&self.evm_verifier, evm_proof).is_ok()
     }
 
