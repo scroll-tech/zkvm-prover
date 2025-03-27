@@ -1,40 +1,51 @@
-use openvm_native_recursion::halo2::EvmProof;
-use scroll_zkvm_circuit_input_types::{PublicInputs, bundle::BundleInfo};
+use openvm_native_recursion::halo2::RawEvmProof;
+use scroll_zkvm_circuit_input_types::{bundle::BundleInfo, chunk::ForkName};
 
 use crate::{
     Error, Prover, ProverType,
+    commitments::{bundle, bundle_euclidv1},
     proof::BundleProofMetadata,
     task::{ProvingTask, bundle::BundleProvingTask},
 };
 
-#[cfg(feature = "euclidv2")]
-use crate::commitments::bundle::{
-    EXE_COMMIT as BUNDLE_EXE_COMMIT, LEAF_COMMIT as BUNDLE_LEAF_COMMIT,
-};
-#[cfg(not(feature = "euclidv2"))]
-use crate::commitments::bundle_legacy::{
-    EXE_COMMIT as BUNDLE_EXE_COMMIT, LEAF_COMMIT as BUNDLE_LEAF_COMMIT,
-};
+use super::Commitments;
+
+pub struct BundleCircuitV1;
+pub struct BundleCircuitV2;
+
+impl Commitments for BundleCircuitV1 {
+    const EXE_COMMIT: [u32; 8] = bundle_euclidv1::EXE_COMMIT;
+    const LEAF_COMMIT: [u32; 8] = bundle_euclidv1::LEAF_COMMIT;
+}
+
+impl Commitments for BundleCircuitV2 {
+    const EXE_COMMIT: [u32; 8] = bundle::EXE_COMMIT;
+    const LEAF_COMMIT: [u32; 8] = bundle::LEAF_COMMIT;
+}
+
+pub type BundleProverTypeEuclidV1 = GenericBundleProverType<BundleCircuitV1>;
+pub type BundleProverTypeEuclidV2 = GenericBundleProverType<BundleCircuitV2>;
 
 /// Prover for [`BundleCircuit`].
-pub type BundleProver = Prover<BundleProverType>;
+pub type BundleProverEuclidV1 = Prover<BundleProverTypeEuclidV1>;
+pub type BundleProverEuclidV2 = Prover<BundleProverTypeEuclidV2>;
 
-pub struct BundleProverType;
+pub struct GenericBundleProverType<C: Commitments>(std::marker::PhantomData<C>);
 
-impl ProverType for BundleProverType {
+impl<C: Commitments> ProverType for GenericBundleProverType<C> {
     const NAME: &'static str = "bundle";
 
     const EVM: bool = true;
 
     const SEGMENT_SIZE: usize = (1 << 22) - 100;
 
-    const EXE_COMMIT: [u32; 8] = BUNDLE_EXE_COMMIT;
+    const EXE_COMMIT: [u32; 8] = C::EXE_COMMIT;
 
-    const LEAF_COMMIT: [u32; 8] = BUNDLE_LEAF_COMMIT;
+    const LEAF_COMMIT: [u32; 8] = C::LEAF_COMMIT;
 
     type ProvingTask = BundleProvingTask;
 
-    type ProofType = EvmProof;
+    type ProofType = RawEvmProof;
 
     type ProofMetadata = BundleProofMetadata;
 
@@ -93,7 +104,19 @@ impl ProverType for BundleProverType {
             batch_hash,
             withdraw_root,
         };
-        let bundle_pi_hash = bundle_info.pi_hash();
+
+        let fork_name = ForkName::from(task.fork_name.as_str());
+        let bundle_pi_hash = bundle_info.pi_hash(fork_name);
+
+        if let Some(checked_bundle_info) = task.bundle_info.as_ref() {
+            assert_eq!(
+                bundle_pi_hash,
+                checked_bundle_info.pi_hash(fork_name),
+                "our implement has derived different bundle info with ground truth, got {:?}, expect {:?}",
+                bundle_info,
+                checked_bundle_info,
+            )
+        }
 
         Ok(BundleProofMetadata {
             bundle_info,

@@ -86,12 +86,24 @@ pub trait ProverTester {
     }
 
     /// Load the app config.
-    fn load() -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
+    fn load_with_exe_fd(
+        app_exe_fd: &str,
+    ) -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
         let path_app_config = Path::new(Self::PATH_PROJECT_ROOT).join(FD_APP_CONFIG);
         let app_config = read_app_config(&path_app_config)?;
         let path_assets = Path::new(Self::PATH_PROJECT_ROOT).join("openvm");
-        let path_app_exe = path_assets.join(FD_APP_EXE);
+        let path_app_exe = path_assets.join(app_exe_fd);
         Ok((path_app_config, app_config, path_app_exe))
+    }
+
+    /// Load the app config.
+    fn load() -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
+        Self::load_with_exe_fd(&Self::fd_app_exe())
+    }
+
+    /// Get the path to the app exe.
+    fn fd_app_exe() -> String {
+        FD_APP_EXE.to_string()
     }
 
     /// Generate proving task for test purposes.
@@ -111,7 +123,7 @@ pub trait ProverTester {
     ) -> eyre::Result<Vec<F>> {
         let stdin = task.build_guest_input()?;
 
-        Ok(Sdk.execute(read_app_exe(exe_path)?, app_config.app_vm_config, stdin)?)
+        Ok(Sdk::new().execute(read_app_exe(exe_path)?, app_config.app_vm_config, stdin)?)
     }
 
     fn execute_with_proving_task(
@@ -190,7 +202,7 @@ type ProveVerifyEvmRes<T> = eyre::Result<(
         <<T as ProverTester>::Prover as ProverType>::ProvingTask,
         WrappedProof<<<T as ProverTester>::Prover as ProverType>::ProofMetadata>,
     >,
-    scroll_zkvm_verifier::verifier::Verifier<scroll_zkvm_verifier::verifier::BundleVerifierType>,
+    scroll_zkvm_verifier::verifier::Verifier<scroll_zkvm_verifier::verifier::AnyVerifier>,
     PathBuf,
 )>;
 
@@ -205,7 +217,7 @@ where
     <T::Prover as ProverType>::ProofMetadata: Clone,
     <T::Prover as ProverType>::ProofType: Clone,
 {
-    let (path_app_config, _, path_exe) = T::load()?;
+    let (path_app_config, _, path_app_exe) = T::load()?;
 
     let cache_dir = DIR_TESTRUN
         .get()
@@ -222,12 +234,13 @@ where
     };
 
     // Setup prover.
-    let prover = scroll_zkvm_prover::Prover::<T::Prover>::setup(
-        &path_exe,
-        &path_app_config,
-        Some(&cache_dir),
-        Default::default(),
-    )?;
+    let config = scroll_zkvm_prover::ProverConfig {
+        path_app_exe,
+        path_app_config,
+        dir_cache: Some(cache_dir),
+        ..Default::default()
+    };
+    let prover = scroll_zkvm_prover::Prover::<T::Prover>::setup(config)?;
 
     // Construct root proof for the circuit.
     let proof = prover.gen_proof(&task)?;
@@ -249,7 +262,7 @@ where
     <T::Prover as ProverType>::ProofMetadata: Clone,
     <T::Prover as ProverType>::ProofType: Clone,
 {
-    let (path_app_config, _, path_exe) = T::load()?;
+    let (path_app_config, _, path_app_exe) = T::load()?;
 
     // Setup prover.
     let cache_dir = DIR_TESTRUN
@@ -258,12 +271,13 @@ where
         .join(T::DIR_ASSETS)
         .join(DIR_PROOFS);
     std::fs::create_dir_all(&cache_dir)?;
-    let prover = scroll_zkvm_prover::Prover::<T::Prover>::setup(
-        &path_exe,
-        &path_app_config,
-        Some(&cache_dir),
-        Default::default(),
-    )?;
+    let config = scroll_zkvm_prover::ProverConfig {
+        path_app_exe,
+        path_app_config,
+        dir_cache: Some(cache_dir),
+        ..Default::default()
+    };
+    let prover = scroll_zkvm_prover::Prover::<T::Prover>::setup(config)?;
 
     // Generate proving task for the circuit.
     let tasks = tasks.map_or_else(|| T::gen_multi_proving_tasks(), |tasks| Ok(tasks.to_vec()))?;
@@ -292,7 +306,7 @@ where
     <T::Prover as ProverType>::ProofMetadata: Clone,
     <T::Prover as ProverType>::ProofType: Clone,
 {
-    let (path_app_config, _, path_exe) = T::load()?;
+    let (path_app_config, _, path_app_exe) = T::load()?;
 
     // Setup prover.
     let path_assets = DIR_TESTRUN
@@ -301,12 +315,13 @@ where
         .join(T::DIR_ASSETS);
     let cache_dir = path_assets.join(DIR_PROOFS);
     std::fs::create_dir_all(&cache_dir)?;
-    let prover = scroll_zkvm_prover::Prover::<T::Prover>::setup(
-        &path_exe,
-        &path_app_config,
-        Some(&cache_dir),
-        Default::default(),
-    )?;
+    let config = scroll_zkvm_prover::ProverConfig {
+        path_app_exe,
+        path_app_config,
+        dir_cache: Some(cache_dir),
+        ..Default::default()
+    };
+    let prover = scroll_zkvm_prover::Prover::<T::Prover>::setup(config)?;
 
     // Dump verifier-only assets to disk.
     let (path_vm_config, path_root_committed_exe) = prover.dump_verifier(&path_assets)?;

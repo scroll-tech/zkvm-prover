@@ -1,6 +1,6 @@
 use alloy_primitives::B256;
 
-pub mod v3;
+pub mod v6;
 
 pub mod v7;
 
@@ -23,8 +23,8 @@ pub trait BatchHeader {
 #[derive(Clone, Debug, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 #[rkyv(derive(Debug))]
 pub enum ReferenceHeader {
-    /// Represents DA-codec v3.
-    V3(v3::BatchHeaderV3),
+    /// Represents DA-codec v6.
+    V6(v6::BatchHeaderV6),
     /// Represents DA-codec v7.
     V7(v7::BatchHeaderV7),
 }

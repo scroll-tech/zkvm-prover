@@ -1,10 +1,17 @@
 use std::path::Path;
 
 use openvm_continuations::verifier::root::types::RootVmVerifierInput;
-use openvm_native_recursion::halo2::EvmProof as OpenVmEvmProof;
-use openvm_stark_sdk::{openvm_stark_backend::proof::Proof, p3_baby_bear::BabyBear};
+use openvm_native_recursion::halo2::RawEvmProof as OpenVmEvmProof;
+use openvm_stark_sdk::{
+    openvm_stark_backend::{p3_field::PrimeField32, proof::Proof},
+    p3_baby_bear::BabyBear,
+};
 use sbv_primitives::B256;
-use scroll_zkvm_circuit_input_types::{batch::BatchInfo, bundle::BundleInfo, chunk::ChunkInfo};
+use scroll_zkvm_circuit_input_types::{
+    batch::BatchInfo,
+    bundle::BundleInfo,
+    chunk::{ChunkInfo, ForkName, MultiVersionPublicInputs},
+};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use snark_verifier_sdk::snark_verifier::{
     halo2_base::halo2_proofs::halo2curves::bn256::Fr, util::arithmetic::PrimeField,
@@ -31,13 +38,8 @@ pub struct EvmProof {
 
 impl From<&OpenVmEvmProof> for EvmProof {
     fn from(value: &OpenVmEvmProof) -> Self {
-        assert_eq!(
-            value.instances.len(),
-            1,
-            "OpenVmEvmProof: Into<EvmProof>: expected 1 instance column"
-        );
-
-        let instances = value.instances[0]
+        let instances = value
+            .instances
             .iter()
             .flat_map(|fr| {
                 let mut be_bytes = fr.to_bytes();
@@ -61,22 +63,20 @@ impl From<&EvmProof> for OpenVmEvmProof {
             "expect len(instances) % 32 == 0"
         );
 
-        let instances = vec![
-            value
-                .instances
-                .chunks_exact(32)
-                .map(|be_bytes| {
-                    Fr::from_repr({
-                        let mut le_bytes: [u8; 32] = be_bytes
-                            .try_into()
-                            .expect("instances.len() % 32 == 0 has already been asserted");
-                        le_bytes.reverse();
-                        le_bytes
-                    })
-                    .expect("Fr::from_repr failed")
+        let instances = value
+            .instances
+            .chunks_exact(32)
+            .map(|be_bytes| {
+                Fr::from_repr({
+                    let mut le_bytes: [u8; 32] = be_bytes
+                        .try_into()
+                        .expect("instances.len() % 32 == 0 has already been asserted");
+                    le_bytes.reverse();
+                    le_bytes
                 })
-                .collect::<Vec<Fr>>(),
-        ];
+                .expect("Fr::from_repr failed")
+            })
+            .collect::<Vec<Fr>>();
 
         Self {
             proof: value.proof.to_vec(),
@@ -160,6 +160,36 @@ impl ProofEnum {
             _ => None,
         }
     }
+
+    /// Derive public inputs from the proof.
+    pub fn public_values(&self) -> Vec<u32> {
+        match self {
+            Self::Root(root_proof) => root_proof
+                .public_values
+                .iter()
+                .map(|x| x.as_canonical_u32())
+                .collect::<Vec<u32>>(),
+            Self::Evm(evm_proof) => {
+                // The first 12 scalars are accumulators.
+                // The next 2 scalars are digests.
+                // The next 32 scalars are the public input hash.
+                let pi_hash_bytes = evm_proof
+                    .instances
+                    .iter()
+                    .skip(14 * 32)
+                    .take(32 * 32)
+                    .cloned()
+                    .collect::<Vec<u8>>();
+
+                // The 32 scalars of public input hash actually only have the LSB that is the
+                // meaningful byte.
+                pi_hash_bytes
+                    .chunks_exact(32)
+                    .map(|bytes32_chunk| bytes32_chunk[31] as u32)
+                    .collect::<Vec<u32>>()
+            }
+        }
+    }
 }
 
 /// A wrapper around the actual inner proof.
@@ -198,11 +228,26 @@ pub type BatchProof = WrappedProof<BatchProofMetadata>;
 /// Alias for convenience.
 pub type BundleProof = WrappedProof<BundleProofMetadata>;
 
+/// Trait to enable operations in metadata
+pub trait ProofMetadata: Serialize + DeserializeOwned + std::fmt::Debug {
+    type PublicInputs: MultiVersionPublicInputs;
+
+    fn pi_hash_info(&self) -> &Self::PublicInputs;
+}
+
 /// Metadata attached to [`ChunkProof`].
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ChunkProofMetadata {
     /// The chunk information describing the list of blocks contained within the chunk.
     pub chunk_info: ChunkInfo,
+}
+
+impl ProofMetadata for ChunkProofMetadata {
+    type PublicInputs = ChunkInfo;
+
+    fn pi_hash_info(&self) -> &Self::PublicInputs {
+        &self.chunk_info
+    }
 }
 
 /// Metadata attached to [`BatchProof`].
@@ -214,6 +259,14 @@ pub struct BatchProofMetadata {
     pub batch_hash: B256,
 }
 
+impl ProofMetadata for BatchProofMetadata {
+    type PublicInputs = BatchInfo;
+
+    fn pi_hash_info(&self) -> &Self::PublicInputs {
+        &self.batch_info
+    }
+}
+
 /// Metadata attached to [`BundleProof`].
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BundleProofMetadata {
@@ -223,7 +276,15 @@ pub struct BundleProofMetadata {
     pub bundle_pi_hash: B256,
 }
 
-impl<Metadata> WrappedProof<Metadata>
+impl ProofMetadata for BundleProofMetadata {
+    type PublicInputs = BundleInfo;
+
+    fn pi_hash_info(&self) -> &Self::PublicInputs {
+        &self.bundle_info
+    }
+}
+
+impl<Metadata: ProofMetadata> WrappedProof<Metadata>
 where
     Metadata: DeserializeOwned + Serialize,
 {
@@ -235,6 +296,28 @@ where
             vk: vk.map(Vec::from).unwrap_or_default(),
             git_version: short_git_version(),
         }
+    }
+
+    /// Sanity checks on the wrapped proof:
+    ///
+    /// - pi_hash computed in host does in fact match pi_hash computed in guest
+    pub fn sanity_check(&self, fork_name: ForkName) {
+        let proof_pi = self.proof.public_values();
+
+        let expected_pi = self
+            .metadata
+            .pi_hash_info()
+            .pi_hash_by_fork(fork_name)
+            .0
+            .as_ref()
+            .iter()
+            .map(|&v| v as u32)
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            expected_pi, proof_pi,
+            "pi mismatch: expected={expected_pi:?}, found={proof_pi:?}"
+        );
     }
 
     /// Read and deserialize the proof.
@@ -300,8 +383,11 @@ impl BundleProof {
 mod tests {
     use alloy_primitives::B256;
     use base64::{Engine, prelude::BASE64_STANDARD};
-    use openvm_native_recursion::halo2::EvmProof;
-    use scroll_zkvm_circuit_input_types::{PublicInputs, bundle::BundleInfo};
+    use openvm_native_recursion::halo2::RawEvmProof;
+    use scroll_zkvm_circuit_input_types::{
+        PublicInputs,
+        bundle::{BundleInfo, BundleInfoV1},
+    };
     use snark_verifier_sdk::snark_verifier::halo2_base::halo2_proofs::halo2curves::bn256::Fr;
 
     use super::{BatchProof, BundleProof, BundleProofMetadata, ChunkProof};
@@ -329,7 +415,7 @@ mod tests {
     fn test_dummy_proof() -> eyre::Result<()> {
         // 1. Metadata
         let metadata = {
-            let bundle_info = BundleInfo {
+            let bundle_info: BundleInfoV1 = BundleInfo {
                 chain_id: 12345,
                 num_batches: 12,
                 prev_state_root: B256::repeat_byte(1),
@@ -338,10 +424,11 @@ mod tests {
                 batch_hash: B256::repeat_byte(4),
                 withdraw_root: B256::repeat_byte(5),
                 msg_queue_hash: B256::repeat_byte(6),
-            };
+            }
+            .into();
             let bundle_pi_hash = bundle_info.pi_hash();
             BundleProofMetadata {
-                bundle_info,
+                bundle_info: bundle_info.0,
                 bundle_pi_hash,
             }
         };
@@ -349,15 +436,15 @@ mod tests {
         // 2. Proof
         let (proof, proof_base64) = {
             let proof = std::iter::empty()
-                .chain(std::iter::repeat(1).take(1))
-                .chain(std::iter::repeat(2).take(2))
-                .chain(std::iter::repeat(3).take(3))
-                .chain(std::iter::repeat(4).take(4))
-                .chain(std::iter::repeat(5).take(5))
-                .chain(std::iter::repeat(6).take(6))
-                .chain(std::iter::repeat(7).take(7))
-                .chain(std::iter::repeat(8).take(8))
-                .chain(std::iter::repeat(9).take(9))
+                .chain(std::iter::repeat_n(1, 1))
+                .chain(std::iter::repeat_n(2, 2))
+                .chain(std::iter::repeat_n(3, 3))
+                .chain(std::iter::repeat_n(4, 4))
+                .chain(std::iter::repeat_n(5, 5))
+                .chain(std::iter::repeat_n(6, 6))
+                .chain(std::iter::repeat_n(7, 7))
+                .chain(std::iter::repeat_n(8, 8))
+                .chain(std::iter::repeat_n(9, 9))
                 .collect::<Vec<u8>>();
             let proof_base64 = BASE64_STANDARD.encode(&proof);
             (proof, proof_base64)
@@ -365,16 +452,16 @@ mod tests {
 
         // 3. Instances
         let (instances, instances_base64) = {
-            let instances = vec![vec![
+            let instances = vec![
                 Fr::from(0x123456),   // LE: [0x56, 0x34, 0x12, 0x00, 0x00, ..., 0x00]
                 Fr::from(0x98765432), // LE: [0x32, 0x54, 0x76, 0x98, 0x00, ..., 0x00]
-            ]];
+            ];
             let instances_flattened = std::iter::empty()
-                .chain(std::iter::repeat(0x00).take(29))
+                .chain(std::iter::repeat_n(0x00, 29))
                 .chain(std::iter::once(0x12))
                 .chain(std::iter::once(0x34))
                 .chain(std::iter::once(0x56))
-                .chain(std::iter::repeat(0x00).take(28))
+                .chain(std::iter::repeat_n(0x00, 28))
                 .chain(std::iter::once(0x98))
                 .chain(std::iter::once(0x76))
                 .chain(std::iter::once(0x54))
@@ -387,21 +474,21 @@ mod tests {
         // 4. VK
         let (vk, vk_base64) = {
             let vk = std::iter::empty()
-                .chain(std::iter::repeat(1).take(9))
-                .chain(std::iter::repeat(2).take(8))
-                .chain(std::iter::repeat(3).take(7))
-                .chain(std::iter::repeat(4).take(6))
-                .chain(std::iter::repeat(5).take(5))
-                .chain(std::iter::repeat(6).take(4))
-                .chain(std::iter::repeat(7).take(3))
-                .chain(std::iter::repeat(8).take(2))
-                .chain(std::iter::repeat(9).take(1))
+                .chain(std::iter::repeat_n(1, 9))
+                .chain(std::iter::repeat_n(2, 8))
+                .chain(std::iter::repeat_n(3, 7))
+                .chain(std::iter::repeat_n(4, 6))
+                .chain(std::iter::repeat_n(5, 5))
+                .chain(std::iter::repeat_n(6, 4))
+                .chain(std::iter::repeat_n(7, 3))
+                .chain(std::iter::repeat_n(8, 2))
+                .chain(std::iter::repeat_n(9, 1))
                 .collect::<Vec<u8>>();
             let vk_base64 = BASE64_STANDARD.encode(&vk);
             (vk, vk_base64)
         };
 
-        let evm_proof = EvmProof { instances, proof };
+        let evm_proof = RawEvmProof { instances, proof };
         let bundle_proof = BundleProof::new(metadata, evm_proof, Some(vk.as_slice()));
         let bundle_proof_json = serde_json::to_value(&bundle_proof)?;
 

@@ -10,7 +10,8 @@ use scroll_zkvm_prover::{
 };
 
 fn exec_chunk(task: &ChunkProvingTask) -> eyre::Result<(ExecutionResult, u64)> {
-    let (_path_app_config, app_config, path_exe) = ChunkProverTester::load()?;
+    let (_path_app_config, app_config, path_exe) =
+        ChunkProverTester::load_with_exe_fd("app.vmexe")?;
     let config = app_config.app_vm_config;
     let app_exe = read_app_exe(path_exe)?;
 
@@ -46,6 +47,11 @@ fn test_cycle() -> eyre::Result<()> {
         let task = ChunkProvingTask {
             block_witnesses: vec![read_block_witness_from_testdata(blk)?],
             prev_msg_queue_hash: Default::default(),
+            fork_name: if cfg!(feature = "euclidv2") {
+                String::from("euclidv2")
+            } else {
+                String::from("euclidv1")
+            },
         };
         let (exec_result, gas) = exec_chunk(&task)?;
         let cycle_per_gas = exec_result.total_cycle / gas;
@@ -109,14 +115,15 @@ fn test_execute_multi() -> eyre::Result<()> {
 fn guest_profiling() -> eyre::Result<()> {
     ChunkProverTester::setup()?;
 
-    let (path_app_config, _, path_exe) = ChunkProverTester::load()?;
+    let (path_app_config, _, path_app_exe) = ChunkProverTester::load()?;
 
-    let chunk_prover = scroll_zkvm_prover::Prover::<scroll_zkvm_prover::ChunkProverType>::setup(
-        &path_exe,
-        &path_app_config,
-        None,
-        Default::default(),
-    )?;
+    let config = scroll_zkvm_prover::ProverConfig {
+        path_app_exe,
+        path_app_config,
+        ..Default::default()
+    };
+    let chunk_prover =
+        scroll_zkvm_prover::Prover::<scroll_zkvm_prover::ChunkProverType>::setup(config)?;
 
     let task = ChunkProverTester::gen_proving_task()?;
     let stdin = task.build_guest_input()?;

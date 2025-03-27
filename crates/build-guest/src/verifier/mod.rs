@@ -23,9 +23,8 @@ fn load_root_program(agg_stark_pk: &AggStarkProvingKey) -> Program<F> {
     // println!("root program: {}", root_program.program);
     let program = root_exe.program.clone();
     println!(
-        "total instructions count: {}, {}",
+        "total instructions count: {}",
         program.instructions_and_debug_infos.len(),
-        program.defined_instructions().len(),
     );
     program
 }

@@ -9,11 +9,16 @@ export RUST_LOG
 
 ifdef LEGACY
 FEATURE := --no-default-features
+TESTDATA_PATH := crates/integration/testdata/phase1
+CHUNK_PROOF := 12508460-12508463
 else
 FEATURE := 
+TESTDATA_PATH := crates/integration/testdata/phase2
+CHUNK_PROOF := 1-4
 endif
 
 $(info FEATURE set to: $(FEATURE))
+$(info TESTDATA_PATH set to: $(TESTDATA_PATH))
 
 download-release:
 	sh download-release.sh
@@ -30,14 +35,19 @@ clippy:
 	@cargo clippy --tests --all-features --manifest-path crates/build-guest/Cargo.toml -- -D warnings
 
 clean-guest:
-	docker stop build-guest
-	docker rm build-guest
 	docker rmi build-guest:local
 
 build-guest:
-	FEATURE=$(FEATURE) sh build-guest.sh
+	sh build-guest.sh
 
 clean-build-guest: clean-guest build-guest
+
+clean-test-cache:
+	@rm -f $(TESTDATA_PATH)/proofs/*.json
+
+$(TESTDATA_PATH)/proofs/chunk-%.json:
+	@OUTPUT_DIR=$(realpath $(TESTDATA_PATH)/proofs) $(MAKE) test-single-chunk
+	cp -f $(TESTDATA_PATH)/proofs/chunk/proofs/*.json $(TESTDATA_PATH)/proofs
 
 profile-chunk:
 	@GUEST_PROFILING=true cargo test --release -p scroll-zkvm-integration --test chunk_circuit guest_profiling -- --exact --nocapture
@@ -51,7 +61,10 @@ test-execute-chunk-multi:
 test-cycle:
 	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test chunk_circuit test_cycle -- --exact --nocapture
 
-test-execute-batch:
+test-execute-batch: $(TESTDATA_PATH)/proofs/chunk-$(CHUNK_PROOF).json
+	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test batch_circuit test_e2e_execute -- --exact --nocapture
+
+test-execute-batch-fast: $(TESTDATA_PATH)/tasks/batch-task.json
 	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test batch_circuit test_execute -- --exact --nocapture
 
 test-execute-bundle:
@@ -63,17 +76,17 @@ test-single-chunk:
 test-multi-chunk:
 	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test chunk_circuit setup_prove_verify_multi -- --exact --nocapture
 
-test-single-batch:
+test-single-batch: $(TESTDATA_PATH)/tasks/batch-task.json
 	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test batch_circuit setup_prove_verify_single -- --exact --nocapture
-
-test-multi-batch:
-	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test batch_circuit setup_prove_verify_multi -- --exact --nocapture
 
 test-e2e-batch:
 	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test batch_circuit e2e -- --exact --nocapture
 
 test-bundle:
 	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test bundle_circuit setup_prove_verify -- --exact --nocapture
+
+test-bundle-local:
+	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test bundle_circuit setup_prove_verify_local_task -- --exact --nocapture
 
 test-e2e-bundle:
 	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test bundle_circuit e2e -- --exact --nocapture

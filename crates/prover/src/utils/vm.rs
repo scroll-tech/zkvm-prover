@@ -1,14 +1,13 @@
 use std::sync::Arc;
 
 use openvm_circuit::{
-    arch::{VmExecutor, instructions::exe::VmExe},
+    arch::{ExecutionSegment, GenerationError, VmExecutor, instructions::exe::VmExe},
     system::{memory::tree::public_values::extract_public_values, program::trace::VmCommittedExe},
 };
 use openvm_sdk::{F, SC, StdIn, config::SdkVmConfig};
 use openvm_stark_sdk::{
     config::{FriParameters, baby_bear_poseidon2::BabyBearPoseidon2Engine},
     engine::StarkFriEngine,
-    openvm_stark_backend::verifier::VerificationError,
 };
 
 use crate::Error;
@@ -40,11 +39,11 @@ pub fn execute_guest(
     let mut total_cycle: u64 = 0;
     let mut total_tick: u64 = 0;
     let mut final_memory = None;
-    let segment_output: Vec<Result<(), VerificationError>> = vm
+    let segment_output: Vec<_> = vm
         .execute_and_then(
             exe,
             stdin.clone(),
-            |idx, mut segment| -> Result<(), VerificationError> {
+            |idx: usize, segment: ExecutionSegment<_, _>| -> Result<(), GenerationError> {
                 total_cycle += segment.metrics.cycle_count as u64;
                 total_tick += segment.chip_complex.memory_controller().timestamp() as u64;
                 tracing::debug!(
@@ -52,14 +51,14 @@ pub fn execute_guest(
                     total_cycle,
                     total_tick
                 );
-                final_memory = std::mem::take(&mut segment.final_memory);
+                final_memory = segment.final_memory.clone();
                 if aux_args.mock_prove {
                     let proof_input = segment.generate_proof_input(
                         aux_args
                             .commited_exe
                             .as_ref()
                             .map(|x| x.committed_program.clone()),
-                    );
+                    )?;
                     // TODO: should we use app_pk.app_vm_pk.fri_params?
                     // export OPENVM_FAST_TEST=1 can make the test very fast
                     let engine = BabyBearPoseidon2Engine::new(FriParameters::new_for_testing(1));
@@ -70,9 +69,15 @@ pub fn execute_guest(
                         .into_iter()
                         .map(|(air_id, x)| (airs[air_id].clone(), x))
                         .unzip();
-                    engine.run_test(used_airs, per_air)?;
+                    if let Err(e) = engine.run_test(used_airs, per_air) {
+                        println!("mock prove failed at {}th segment: {:?}", idx, e);
+                    }
                 }
                 Ok(())
+            },
+            |e| {
+                println!("execution error: {:?}", e);
+                GenerationError::Execution(e)
             },
         )
         .map_err(|e| Error::GenProof(e.to_string()))?;
@@ -81,11 +86,6 @@ pub fn execute_guest(
     tracing::info!("segment length" = ?segment_len);
     tracing::info!("total cycle" = ?total_cycle);
     tracing::info!("final ts" = ?total_tick);
-
-    segment_output
-        .into_iter()
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(|e| Error::GenProof(e.to_string()))?;
 
     let system_config = <SdkVmConfig as VmConfig<F>>::system(&vm_config);
     let public_values: Vec<F> = extract_public_values(

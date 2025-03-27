@@ -1,9 +1,10 @@
-use openvm_native_recursion::halo2::{EvmProof, wrapper::EvmVerifier};
+use openvm_native_recursion::halo2::RawEvmProof;
 use revm::{
     Context, Evm, Handler, InMemoryDB,
     primitives::{ExecutionResult, Output, TransactTo, TxEnv, TxKind, specification::CancunSpec},
 };
 
+// Re-export from snark_verifier_sdk.
 pub use snark_verifier_sdk::{
     evm::gen_evm_verifier_shplonk as gen_evm_verifier,
     halo2::aggregation as halo2_aggregation,
@@ -39,9 +40,10 @@ pub fn deserialize_vk<C: Circuit<Fr, Params = ()>>(raw_vk: &[u8]) -> VerifyingKe
 /// This approach essentially simulates 2 txs:
 /// - Deploy [`EvmVerifier`].
 /// - Verify [`EvmProof`] encoded as calldata.
-pub fn verify_evm_proof(evm_verifier: &EvmVerifier, evm_proof: &EvmProof) -> Result<u64, String> {
-    let calldata = snark_verifier_sdk::evm::encode_calldata(&evm_proof.instances, &evm_proof.proof);
-    deploy_and_call(evm_verifier.0.clone(), calldata)
+pub fn verify_evm_proof(evm_verifier: &[u8], evm_proof: &RawEvmProof) -> Result<u64, String> {
+    let calldata =
+        snark_verifier_sdk::evm::encode_calldata(&[evm_proof.instances.clone()], &evm_proof.proof);
+    deploy_and_call(evm_verifier.to_vec(), calldata)
 }
 
 fn deploy_and_call(deployment_code: Vec<u8>, calldata: Vec<u8>) -> Result<u64, String> {
@@ -110,12 +112,11 @@ fn test_verify_evm_proof() -> eyre::Result<()> {
     let evm_proof = read_json_deep::<_, BundleProof>(
         Path::new(PATH_TESTDATA)
             .join("proofs")
-            .join("evm-proof.json"),
+            .join("bundle-proof-phase2.json"),
     )?;
 
-    let evm_verifier = EvmVerifier(scroll_zkvm_prover::utils::read(
-        Path::new(PATH_TESTDATA).join("verifier.bin"),
-    )?);
+    let evm_verifier: Vec<u8> =
+        scroll_zkvm_prover::utils::read(Path::new(PATH_TESTDATA).join("verifier.bin"))?;
 
     let gas_cost = verify_evm_proof(&evm_verifier, &evm_proof.as_proof())
         .map_err(|e| eyre::eyre!("evm-proof verification failed: {e}"))?;

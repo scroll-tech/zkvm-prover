@@ -1,10 +1,9 @@
 use crate::{
     ProofCarryingWitness,
-    chunk::ChunkInfo,
+    batch::ReferenceHeader,
+    chunk::{ChunkInfo, ForkName},
     proof::{AggregationInput, ProgramCommitment},
 };
-
-use super::ReferenceHeader;
 
 /// Simply rewrap byte48 to avoid unnecessary dep
 pub type Bytes48 = [u8; 48];
@@ -39,6 +38,9 @@ pub struct BatchWitness {
     /// Header for reference.
     #[rkyv()]
     pub reference_header: ReferenceHeader,
+    /// The code version specify the chain spec
+    #[rkyv()]
+    pub fork_name: ForkName,
 }
 
 impl ProofCarryingWitness for ArchivedBatchWitness {

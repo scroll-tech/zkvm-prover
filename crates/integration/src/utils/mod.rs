@@ -3,12 +3,15 @@ use sbv_primitives::{
     types::{BlockWitness, Transaction, eips::Encodable2718, reth::TransactionSigned},
 };
 use scroll_zkvm_circuit_input_types::{
-    batch::{BatchHeader, BatchHeaderV3, BatchHeaderV7},
+    batch::{BatchHeader, BatchHeaderV6, BatchHeaderV7},
     utils::keccak256,
 };
 use scroll_zkvm_prover::{
     ChunkProof,
-    task::{batch::BatchProvingTask, chunk::ChunkProvingTask},
+    task::{
+        batch::{BatchHeaderV, BatchProvingTask},
+        chunk::ChunkProvingTask,
+    },
     utils::point_eval,
 };
 use vm_zstd::zstd_encode;
@@ -42,6 +45,14 @@ fn blks_tx_bytes<'a>(blks: impl Iterator<Item = &'a BlockWitness>) -> Vec<u8> {
         })
 }
 
+pub fn phase_base_directory() -> &'static str {
+    if cfg!(feature = "euclidv2") {
+        "phase2"
+    } else {
+        "phase1"
+    }
+}
+
 #[derive(Debug)]
 pub struct LastHeader {
     pub batch_index: u64,
@@ -59,7 +70,7 @@ impl Default for LastHeader {
 
         Self {
             batch_index: 123,
-            version: 7,
+            version: if cfg!(feature = "euclidv2") { 7 } else { 6 },
             batch_hash: B256::new([
                 0xab, 0xac, 0xad, 0xae, 0xaf, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -69,8 +80,17 @@ impl Default for LastHeader {
     }
 }
 
-impl From<&BatchHeaderV3> for LastHeader {
-    fn from(h: &BatchHeaderV3) -> Self {
+impl From<&BatchHeaderV> for LastHeader {
+    fn from(value: &BatchHeaderV) -> Self {
+        match value {
+            BatchHeaderV::V6(h) => h.into(),
+            BatchHeaderV::V7(h) => h.into(),
+        }
+    }
+}
+
+impl From<&BatchHeaderV6> for LastHeader {
+    fn from(h: &BatchHeaderV6) -> Self {
         Self {
             batch_index: h.batch_index,
             version: h.version,
@@ -228,12 +248,12 @@ pub fn build_batch_task(
     let batch_header = {
         // avoid unused variant warning
         let _ = x + z;
-        BatchHeaderV7 {
+        BatchHeaderV::V7(BatchHeaderV7 {
             version: last_header.version,
             batch_index: last_header.batch_index + 1,
             parent_batch_hash: last_header.batch_hash,
             blob_versioned_hash,
-        }
+        })
     };
 
     #[cfg(not(feature = "euclidv2"))]
@@ -269,7 +289,7 @@ pub fn build_batch_task(
                 }),
         );
 
-        BatchHeaderV3 {
+        BatchHeaderV::V6(BatchHeaderV6 {
             version: last_header.version,
             batch_index: last_header.batch_index + 1,
             l1_message_popped: last_l1_message_index - last_header.l1_message_index,
@@ -279,7 +299,7 @@ pub fn build_batch_task(
             data_hash,
             blob_versioned_hash,
             blob_data_proof: point_evaluations.map(|u| B256::new(u.to_be_bytes())),
-        }
+        })
     };
 
     BatchProvingTask {
@@ -289,13 +309,18 @@ pub fn build_batch_task(
         challenge_digest: Some(U256::from_be_bytes(challenge_digest.0)),
         kzg_commitment: Some(kzg_commitment.to_bytes()),
         kzg_proof: Some(kzg_proof.to_bytes()),
+        fork_name: if cfg!(feature = "euclidv2") {
+            String::from("euclidv2")
+        } else {
+            String::from("euclidv1")
+        },
     }
 }
 
 #[test]
 fn test_build_and_parse_batch_task() -> eyre::Result<()> {
     #[cfg(not(feature = "euclidv2"))]
-    use scroll_zkvm_circuit_input_types::batch::{EnvelopeV3 as Envelope, PayloadV3 as Payload};
+    use scroll_zkvm_circuit_input_types::batch::{EnvelopeV6 as Envelope, PayloadV6 as Payload};
     #[cfg(feature = "euclidv2")]
     use scroll_zkvm_circuit_input_types::batch::{EnvelopeV7 as Envelope, PayloadV7 as Payload};
     use scroll_zkvm_prover::utils::{read_json, read_json_deep, write_json};
@@ -326,6 +351,11 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
             .map(read_block_witness)
             .collect::<eyre::Result<Vec<BlockWitness>>>()?,
         prev_msg_queue_hash: Default::default(),
+        fork_name: if cfg!(feature = "euclidv2") {
+            String::from("euclidv2")
+        } else {
+            String::from("euclidv1")
+        },
     };
 
     // read chunk proof.
@@ -348,7 +378,11 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
 
     let enveloped = Envelope::from(task.blob_bytes.as_slice());
 
-    Payload::from(&enveloped).validate(&task.batch_header, &chunk_infos);
+    #[cfg(feature = "euclidv2")]
+    let header = task.batch_header.must_v7_header();
+    #[cfg(not(feature = "euclidv2"))]
+    let header = task.batch_header.must_v6_header();
+    Payload::from(&enveloped).validate(header, &chunk_infos);
 
     // depressed task output for pre-v2
     #[cfg(feature = "euclidv2")]
@@ -380,7 +414,7 @@ fn test_batch_task_payload() -> eyre::Result<()> {
         .map(|proof| proof.metadata.chunk_info.clone())
         .collect::<Vec<_>>();
 
-    PayloadV7::from(&enveloped).validate(&task.batch_header, &chunk_infos);
+    PayloadV7::from(&enveloped).validate(task.batch_header.must_v7_header(), &chunk_infos);
 
     Ok(())
 }

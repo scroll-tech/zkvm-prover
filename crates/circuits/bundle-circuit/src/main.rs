@@ -1,16 +1,15 @@
-use scroll_zkvm_circuit_input_types::{AggCircuit, Circuit};
+use scroll_zkvm_circuit_input_types::{AggCircuit, Circuit, bundle};
 
 mod circuit;
-use circuit::BundleCircuit as C;
+#[cfg(feature = "euclidv2")]
+type C = circuit::BundleCircuit<bundle::BundleInfoV2>;
+#[cfg(not(feature = "euclidv2"))]
+type C = circuit::BundleCircuit<bundle::BundleInfoV1>;
 
 openvm::entry!(main);
 
-#[allow(dead_code)]
 #[rustfmt::skip]
 mod child_commitments;
-#[allow(dead_code)]
-#[rustfmt::skip]
-mod child_commitments_legacy;
 
 fn main() {
     // Setup openvm extensions for the circuit.
@@ -22,10 +21,10 @@ fn main() {
     // Deserialize witness bytes to the witness data type.
     let witness = C::deserialize_witness(&witness_bytes);
 
-    // Verify the root proofs being aggregated in this circuit.
+    // Verify the root proofs being aggregated in the circuit.
     let agg_proofs = C::verify_proofs(witness);
 
-    // Get the public-input values of the aggregated proofs from witness.
+    // Get the public-input values of the proofs being aggregated from witness.
     let agg_pis = C::aggregated_public_inputs(witness);
 
     // Derive the digests of the public-input values of the proofs being aggregated.

@@ -1,6 +1,9 @@
 use alloy_primitives::B256;
 
-use crate::{PublicInputs, utils::keccak256};
+use crate::{
+    chunk::{ForkName, MultiVersionPublicInputs},
+    utils::keccak256,
+};
 
 /// Represents public-input values for a batch.
 #[derive(
@@ -55,8 +58,32 @@ impl From<&ArchivedBatchInfo> for BatchInfo {
     }
 }
 
-impl PublicInputs for BatchInfo {
-    /// Public input hash for a batch is defined as
+impl BatchInfo {
+    /// Public input hash for a batch (euclidv1 or da-codec@v6) is defined as
+    ///
+    /// keccak(
+    ///     parent state root ||
+    ///     parent batch hash ||
+    ///     state root ||
+    ///     batch hash ||
+    ///     chain id ||
+    ///     withdraw root ||
+    /// )
+    fn pi_hash_euclidv1(&self) -> B256 {
+        keccak256(
+            std::iter::empty()
+                .chain(self.parent_state_root.as_slice())
+                .chain(self.parent_batch_hash.as_slice())
+                .chain(self.state_root.as_slice())
+                .chain(self.batch_hash.as_slice())
+                .chain(self.chain_id.to_be_bytes().as_slice())
+                .chain(self.withdraw_root.as_slice())
+                .cloned()
+                .collect::<Vec<u8>>(),
+        )
+    }
+
+    /// Public input hash for a batch (euclidv2 or da-codec@v7) is defined as
     ///
     /// keccak(
     ///     parent state root ||
@@ -67,8 +94,8 @@ impl PublicInputs for BatchInfo {
     ///     withdraw root ||
     ///     prev msg queue hash ||
     ///     post msg queue hash
-    /// )
-    fn pi_hash(&self) -> B256 {
+    /// )    
+    fn pi_hash_euclidv2(&self) -> B256 {
         keccak256(
             std::iter::empty()
                 .chain(self.parent_state_root.as_slice())
@@ -83,6 +110,17 @@ impl PublicInputs for BatchInfo {
                 .collect::<Vec<u8>>(),
         )
     }
+}
+
+pub type VersionedBatchInfo = (BatchInfo, ForkName);
+
+impl MultiVersionPublicInputs for BatchInfo {
+    fn pi_hash_by_fork(&self, fork_name: ForkName) -> B256 {
+        match fork_name {
+            ForkName::EuclidV1 => self.pi_hash_euclidv1(),
+            ForkName::EuclidV2 => self.pi_hash_euclidv2(),
+        }
+    }
 
     /// Validate public inputs between 2 contiguous batches.
     ///
@@ -90,10 +128,17 @@ impl PublicInputs for BatchInfo {
     /// - state roots MUST be chained
     /// - batch hashes MUST be chained
     /// - L1 msg queue hashes MUST be chained
-    fn validate(&self, prev_pi: &Self) {
+    fn validate(&self, prev_pi: &Self, fork_name: ForkName) {
         assert_eq!(self.chain_id, prev_pi.chain_id);
         assert_eq!(self.parent_state_root, prev_pi.state_root);
         assert_eq!(self.parent_batch_hash, prev_pi.batch_hash);
         assert_eq!(self.prev_msg_queue_hash, prev_pi.post_msg_queue_hash);
+
+        if fork_name == ForkName::EuclidV1 {
+            assert_eq!(self.prev_msg_queue_hash, B256::ZERO);
+            assert_eq!(prev_pi.prev_msg_queue_hash, B256::ZERO);
+            assert_eq!(self.post_msg_queue_hash, B256::ZERO);
+            assert_eq!(prev_pi.post_msg_queue_hash, B256::ZERO);
+        }
     }
 }

@@ -1,28 +1,33 @@
 use std::{marker::PhantomData, path::Path};
 
-use itertools::Itertools;
 use openvm_circuit::{arch::SingleSegmentVmExecutor, system::program::trace::VmCommittedExe};
 use openvm_continuations::verifier::root::types::RootVmVerifierInput;
 use openvm_native_circuit::NativeConfig;
-use openvm_native_recursion::{
-    halo2::{EvmProof, wrapper::EvmVerifier},
-    hints::Hintable,
-};
+use openvm_native_recursion::{halo2::RawEvmProof, hints::Hintable};
 use openvm_sdk::{F, RootSC, SC};
 use scroll_zkvm_circuit_input_types::proof::ProgramCommitment;
+use snark_verifier_sdk::snark_verifier::halo2_base::halo2_proofs::halo2curves::bn256::Fr;
 
-#[cfg(feature = "euclidv2")]
 use crate::commitments::{
     batch::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT},
-    bundle::{EXE_COMMIT as BUNDLE_EXE_COMMIT, LEAF_COMMIT as BUNDLE_LEAF_COMMIT},
+    bundle, bundle_euclidv1,
     chunk::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT},
+    chunk_rv32,
 };
-#[cfg(not(feature = "euclidv2"))]
-use crate::commitments::{
-    batch_legacy::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT},
-    bundle_legacy::{EXE_COMMIT as BUNDLE_EXE_COMMIT, LEAF_COMMIT as BUNDLE_LEAF_COMMIT},
-    chunk_legacy::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT},
-};
+
+fn compress_commitment(commitment: &[u32; 8]) -> Fr {
+    use openvm_stark_sdk::{openvm_stark_backend::p3_field::PrimeField32, p3_baby_bear::BabyBear};
+    let order = Fr::from(BabyBear::ORDER_U32 as u64);
+    let mut base = Fr::one();
+    let mut ret = Fr::zero();
+
+    for v in commitment {
+        ret += Fr::from(*v as u64) * base;
+        base *= order;
+    }
+
+    ret
+}
 
 pub trait VerifierType {
     const EXE_COMMIT: [u32; 8];
@@ -34,36 +39,68 @@ pub trait VerifierType {
         }
         .serialize()
     }
+    fn match_exe_commitment_with_pi(pi: &[Option<u32>]) -> bool {
+        &pi[..8] == Self::EXE_COMMIT.map(Some).as_slice()
+    }
+    fn match_leaf_commitment_with_pi(pi: &[Option<u32>]) -> bool {
+        &pi[8..16] == Self::LEAF_COMMIT.map(Some).as_slice()
+    }
+    fn match_exe_commitment_with_evm_ins(ins: &[Fr]) -> bool {
+        ins[12] == compress_commitment(&Self::EXE_COMMIT)
+    }
+    fn match_leaf_commitment_with_evm_ins(ins: &[Fr]) -> bool {
+        ins[13] == compress_commitment(&Self::LEAF_COMMIT)
+    }
 }
 
+pub struct Rv32ChunkVerifierType;
 pub struct ChunkVerifierType;
 pub struct BatchVerifierType;
-pub struct BundleVerifierType;
+pub struct BundleVerifierTypeEuclidV1;
+pub struct BundleVerifierTypeEuclidV2;
 
 impl VerifierType for ChunkVerifierType {
     const EXE_COMMIT: [u32; 8] = CHUNK_EXE_COMMIT;
     const LEAF_COMMIT: [u32; 8] = CHUNK_LEAF_COMMIT;
+    fn match_exe_commitment_with_pi(pi: &[Option<u32>]) -> bool {
+        &pi[..8] == Self::EXE_COMMIT.map(Some).as_slice()
+            || Rv32ChunkVerifierType::match_exe_commitment_with_pi(pi)
+    }
+    fn match_leaf_commitment_with_pi(pi: &[Option<u32>]) -> bool {
+        &pi[8..16] == Self::LEAF_COMMIT.map(Some).as_slice()
+            || Rv32ChunkVerifierType::match_leaf_commitment_with_pi(pi)
+    }
+}
+
+impl VerifierType for Rv32ChunkVerifierType {
+    const EXE_COMMIT: [u32; 8] = chunk_rv32::EXE_COMMIT;
+    const LEAF_COMMIT: [u32; 8] = chunk_rv32::LEAF_COMMIT;
 }
 impl VerifierType for BatchVerifierType {
     const EXE_COMMIT: [u32; 8] = BATCH_EXE_COMMIT;
     const LEAF_COMMIT: [u32; 8] = BATCH_LEAF_COMMIT;
 }
-impl VerifierType for BundleVerifierType {
-    const EXE_COMMIT: [u32; 8] = BUNDLE_EXE_COMMIT;
-    const LEAF_COMMIT: [u32; 8] = BUNDLE_LEAF_COMMIT;
+impl VerifierType for BundleVerifierTypeEuclidV1 {
+    const EXE_COMMIT: [u32; 8] = bundle_euclidv1::EXE_COMMIT;
+    const LEAF_COMMIT: [u32; 8] = bundle_euclidv1::LEAF_COMMIT;
 }
-
+impl VerifierType for BundleVerifierTypeEuclidV2 {
+    const EXE_COMMIT: [u32; 8] = bundle::EXE_COMMIT;
+    const LEAF_COMMIT: [u32; 8] = bundle::LEAF_COMMIT;
+}
 pub struct Verifier<Type> {
     pub vm_executor: SingleSegmentVmExecutor<F, NativeConfig>,
     pub root_committed_exe: VmCommittedExe<RootSC>,
-    pub evm_verifier: EvmVerifier,
+    pub evm_verifier: Vec<u8>,
 
     _type: PhantomData<Type>,
 }
 
+pub type AnyVerifier = Verifier<ChunkVerifierType>;
 pub type ChunkVerifier = Verifier<ChunkVerifierType>;
 pub type BatchVerifier = Verifier<BatchVerifierType>;
-pub type BundleVerifier = Verifier<BundleVerifierType>;
+pub type BundleVerifierEuclidV1 = Verifier<BundleVerifierTypeEuclidV1>;
+pub type BundleVerifierEuclidV2 = Verifier<BundleVerifierTypeEuclidV2>;
 
 impl<Type> Verifier<Type> {
     pub fn setup<P: AsRef<Path>>(
@@ -81,7 +118,7 @@ impl<Type> Verifier<Type> {
             .map_err(|e| e.into())
             .and_then(|bytes| bincode_v1::deserialize(&bytes))?;
 
-        let evm_verifier = std::fs::read(path_verifier_code.as_ref()).map(EvmVerifier)?;
+        let evm_verifier = std::fs::read(path_verifier_code.as_ref())?;
 
         Ok(Self {
             vm_executor,
@@ -106,7 +143,10 @@ impl<Type> Verifier<Type> {
     pub fn to_batch_verifier(self) -> BatchVerifier {
         self.switch_to()
     }
-    pub fn to_bundle_verifier(self) -> BundleVerifier {
+    pub fn to_bundle_verifier_v1(self) -> BundleVerifierEuclidV1 {
+        self.switch_to()
+    }
+    pub fn to_bundle_verifier_v2(self) -> BundleVerifierEuclidV2 {
         self.switch_to()
     }
 }
@@ -121,19 +161,11 @@ impl<Type: VerifierType> Verifier<Type> {
             Ok(pi) => {
                 assert!(pi.len() >= 16, "unexpected len(pi)<16");
                 assert!(
-                    pi.iter().take(8).zip_eq(Type::EXE_COMMIT.iter()).all(
-                        |(op_found, &expected)| op_found.is_some_and(|found| found == expected)
-                    ),
+                    Type::match_exe_commitment_with_pi(&pi),
                     "mismatch EXE commitment"
                 );
                 assert!(
-                    pi.iter()
-                        .skip(8)
-                        .take(8)
-                        .zip_eq(Type::LEAF_COMMIT.iter())
-                        .all(
-                            |(op_found, &expected)| op_found.is_some_and(|found| found == expected)
-                        ),
+                    Type::match_leaf_commitment_with_pi(&pi),
                     "mismatch LEAF commitment"
                 );
                 true
@@ -142,7 +174,15 @@ impl<Type: VerifierType> Verifier<Type> {
         }
     }
 
-    pub fn verify_proof_evm(&self, evm_proof: &EvmProof) -> bool {
+    pub fn verify_proof_evm(&self, evm_proof: &RawEvmProof) -> bool {
+        assert!(
+            Type::match_exe_commitment_with_evm_ins(&evm_proof.instances),
+            "mismatch EXE commitment"
+        );
+        assert!(
+            Type::match_leaf_commitment_with_evm_ins(&evm_proof.instances),
+            "mismatch LEAF commitment"
+        );
         crate::evm::verify_evm_proof(&self.evm_verifier, evm_proof).is_ok()
     }
 
@@ -171,21 +211,18 @@ mod tests {
     use scroll_zkvm_circuit_input_types::proof::ProgramCommitment;
     use scroll_zkvm_prover::{BatchProof, BundleProof, ChunkProof, utils::read_json_deep};
 
-    use super::{BatchVerifier, ChunkVerifier};
+    use super::{BatchVerifier, BundleVerifierEuclidV2, ChunkVerifier};
 
     const PATH_TESTDATA: &str = "./testdata";
 
     #[ignore = "need release assets"]
     #[test]
     fn verify_chunk_proof() -> eyre::Result<()> {
-        let chunk_proof =
-            read_json_deep::<_, ChunkProof>(Path::new(PATH_TESTDATA).join("proofs").join(
-                if cfg!(feature = "euclidv2") {
-                    "chunk-proof-phase2.json"
-                } else {
-                    "chunk-proof-phase1.json"
-                },
-            ))?;
+        let chunk_proof = read_json_deep::<_, ChunkProof>(
+            Path::new(PATH_TESTDATA)
+                .join("proofs")
+                .join("chunk-proof-phase2.json"),
+        )?;
 
         // Note: the committed exe has to match the version of openvm
         // which is used to generate the proof
@@ -219,14 +256,11 @@ mod tests {
     #[ignore = "need release assets"]
     #[test]
     fn verify_batch_proof() -> eyre::Result<()> {
-        let batch_proof =
-            read_json_deep::<_, BatchProof>(Path::new(PATH_TESTDATA).join("proofs").join(
-                if cfg!(feature = "euclidv2") {
-                    "batch-proof-phase2.json"
-                } else {
-                    "batch-proof-phase1.json"
-                },
-            ))?;
+        let batch_proof = read_json_deep::<_, BatchProof>(
+            Path::new(PATH_TESTDATA)
+                .join("proofs")
+                .join("batch-proof-phase2.json"),
+        )?;
 
         let verifier = BatchVerifier::setup(
             Path::new(PATH_TESTDATA).join("root-verifier-vm-config"),
@@ -258,46 +292,17 @@ mod tests {
     #[ignore = "need released assets"]
     #[test]
     fn verify_bundle_proof() -> eyre::Result<()> {
-        use openvm_stark_sdk::{
-            openvm_stark_backend::p3_field::PrimeField32, p3_baby_bear::BabyBear,
-        };
-        use snark_verifier_sdk::snark_verifier::halo2_base::halo2_proofs::halo2curves::bn256::Fr;
-
-        let compress_commitment = |commitment: &[u32; 8]| -> Fr {
-            let order = Fr::from(BabyBear::ORDER_U32 as u64);
-            let mut base = Fr::one();
-            let mut ret = Fr::zero();
-
-            for v in commitment {
-                ret += Fr::from(*v as u64) * base;
-                base *= order;
-            }
-
-            ret
-        };
-
         let evm_proof = read_json_deep::<_, BundleProof>(
             Path::new(PATH_TESTDATA)
                 .join("proofs")
-                .join("evm-proof.json"),
+                .join("bundle-proof-phase2.json"),
         )?;
 
-        let verifier = BatchVerifier::setup(
+        let verifier = BundleVerifierEuclidV2::setup(
             Path::new(PATH_TESTDATA).join("root-verifier-vm-config"),
             Path::new(PATH_TESTDATA).join("root-verifier-committed-exe"),
             Path::new(PATH_TESTDATA).join("verifier.bin"),
         )?;
-
-        assert_eq!(
-            evm_proof.as_proof().instances[0][12],
-            compress_commitment(&super::BUNDLE_EXE_COMMIT),
-            "the output is not match with exe commitment in evm proof!"
-        );
-        assert_eq!(
-            evm_proof.as_proof().instances[0][13],
-            compress_commitment(&super::BUNDLE_LEAF_COMMIT),
-            "the output is not match with leaf commitment in evm proof!"
-        );
 
         assert!(verifier.verify_proof_evm(&evm_proof.as_proof()));
 

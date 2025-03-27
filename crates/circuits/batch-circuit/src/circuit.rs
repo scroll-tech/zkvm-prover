@@ -1,17 +1,10 @@
 use alloy_primitives::B256;
 use scroll_zkvm_circuit_input_types::{
     AggCircuit, Circuit,
-    batch::{ArchivedBatchWitness, BatchInfo},
-    chunk::ChunkInfo,
+    batch::{ArchivedBatchWitness, VersionedBatchInfo},
+    chunk::VersionedChunkInfo,
     proof::{AggregationInput, ProgramCommitment},
     utils::read_witnesses,
-};
-
-#[cfg(feature = "euclidv2")]
-use crate::child_commitments::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT};
-#[cfg(not(feature = "euclidv2"))]
-use crate::child_commitments_legacy::{
-    EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT,
 };
 
 #[allow(unused_imports, clippy::single_component_path_imports)]
@@ -42,7 +35,7 @@ pub struct BatchCircuit;
 impl Circuit for BatchCircuit {
     type Witness = ArchivedBatchWitness;
 
-    type PublicInputs = BatchInfo;
+    type PublicInputs = VersionedBatchInfo;
 
     fn setup() {
         setup_all_complex_extensions();
@@ -61,33 +54,48 @@ impl Circuit for BatchCircuit {
     }
 
     fn validate(witness: &Self::Witness) -> Self::PublicInputs {
-        crate::execute::execute(witness)
+        (
+            crate::execute::execute(witness),
+            (&witness.fork_name).into(),
+        )
     }
 }
 
 impl AggCircuit for BatchCircuit {
-    type AggregatedPublicInputs = ChunkInfo;
+    type AggregatedPublicInputs = VersionedChunkInfo;
 
     fn verify_commitments(commitment: &ProgramCommitment) {
-        if commitment.exe != CHUNK_EXE_COMMIT {
-            panic!(
-                "mismatch chunk-proof exe commitment: expected={:?}, got={:?}",
-                CHUNK_EXE_COMMIT, commitment.exe,
-            );
-        }
-        if commitment.leaf != CHUNK_LEAF_COMMIT {
-            panic!(
-                "mismatch chunk-proof leaf commitment: expected={:?}, got={:?}",
-                CHUNK_EXE_COMMIT, commitment.leaf,
-            );
-        }
+        let match_rv32 = commitment.exe == crate::child_commitments_rv32::EXE_COMMIT
+            && commitment.leaf == crate::child_commitments_rv32::LEAF_COMMIT;
+        let match_openvm = commitment.exe == crate::child_commitments::EXE_COMMIT
+            && commitment.leaf == crate::child_commitments::LEAF_COMMIT;
+        println!(
+            "verify_commitments: rv32 {}, openvm {}",
+            match_rv32, match_openvm
+        );
+        assert!(
+            match_rv32 || match_openvm,
+            "mismatch chunk-proof commitments: expected={:?}, got={:?}",
+            (
+                (
+                    crate::child_commitments_rv32::EXE_COMMIT,
+                    crate::child_commitments_rv32::LEAF_COMMIT
+                ),
+                (
+                    crate::child_commitments::EXE_COMMIT,
+                    crate::child_commitments::LEAF_COMMIT
+                )
+            ),
+            (commitment.exe, commitment.leaf),
+        );
     }
 
     fn aggregated_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs> {
+        let fork_name = (&witness.fork_name).into();
         witness
             .chunk_infos
             .iter()
-            .map(|archived| archived.into())
+            .map(|archived| (archived.into(), fork_name))
             .collect()
     }
 

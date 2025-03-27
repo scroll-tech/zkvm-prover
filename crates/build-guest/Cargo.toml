@@ -33,7 +33,5 @@ toml.workspace = true
 
 cargo_metadata = "0.19.1"
 
-
 [features]
-default = ["euclidv2"]
-euclidv2 = []
+default = []

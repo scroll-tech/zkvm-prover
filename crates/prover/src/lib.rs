@@ -10,8 +10,10 @@ pub use proof::{BatchProof, BundleProof, ChunkProof, WrappedProof};
 
 mod prover;
 pub use prover::{
-    BatchProver, BatchProverType, BundleProver, BundleProverType, ChunkProver, ChunkProverType,
-    Prover, ProverType, SC,
+    BatchProver, BatchProverType, BundleProverEuclidV1, BundleProverEuclidV2,
+    BundleProverTypeEuclidV1, BundleProverTypeEuclidV2, ChunkProver, ChunkProverType,
+    ChunkProverTypeRv32, GenericBundleProverType, GenericChunkProverType, Prover, ProverConfig,
+    ProverType, SC,
 };
 
 pub mod setup;

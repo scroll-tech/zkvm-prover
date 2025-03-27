@@ -1,5 +1,6 @@
 #![feature(lazy_get)]
 use alloy_primitives::B256;
+use itertools::Itertools;
 
 pub mod batch;
 
@@ -10,10 +11,6 @@ pub mod chunk;
 pub mod proof;
 
 pub mod utils;
-
-/// The number of bytes (`u8`) chunked together before revealing as openvm public-inputs. Since the
-/// revealed value supported by openvm is `u32`, we chunk `[u8; 4]` together in little-endian order.
-const CHUNK_SIZE: usize = 4;
 
 /// Defines behaviour to be implemented by types representing the public-input values of a circuit.
 pub trait PublicInputs {
@@ -47,16 +44,14 @@ pub trait Circuit {
 
     /// Reveal the public inputs.
     fn reveal_pi(pi: &Self::PublicInputs) {
-        reveal_pi(pi)
+        reveal_pi_hash(pi.pi_hash())
     }
 }
 
-pub(crate) fn reveal_pi<T: PublicInputs>(pi: &T) {
-    for (i, part) in pi.pi_hash().chunks_exact(CHUNK_SIZE).enumerate() {
-        let value = u32::from_le_bytes(part.try_into().unwrap());
-        openvm::io::println(format!("pi[{i}] = {value:?}"));
-        openvm::io::reveal(value, i)
-    }
+/// Reveal the public-input values as openvm public values.
+pub fn reveal_pi_hash(pi_hash: B256) {
+    openvm::io::println(format!("pi_hash = {pi_hash:?}"));
+    openvm::io::reveal_bytes32(*pi_hash);
 }
 
 /// Circuit that additional aggregates proofs from other [`Circuits`][Circuit].
@@ -96,13 +91,16 @@ where
     /// - That the public-inputs of contiguous chunks/batches are valid
     /// - That the public-input values in fact hash to the pi_hash values from the root proofs.
     fn validate_aggregated_pi(agg_pis: &[Self::AggregatedPublicInputs], agg_pi_hashes: &[B256]) {
+        // There should be at least a single proof being aggregated.
+        assert!(!agg_pis.is_empty(), "at least 1 pi to aggregate");
+
         // Validation for the contiguous public-input values.
         for w in agg_pis.windows(2) {
             w[1].validate(&w[0]);
         }
 
         // Validation for public-input values hash being the pi_hash from root proof.
-        for (agg_pi, &agg_pi_hash) in agg_pis.iter().zip(agg_pi_hashes.iter()) {
+        for (agg_pi, &agg_pi_hash) in agg_pis.iter().zip_eq(agg_pi_hashes.iter()) {
             assert_eq!(
                 agg_pi.pi_hash(),
                 agg_pi_hash,
