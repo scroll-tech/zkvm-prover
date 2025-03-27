@@ -33,7 +33,6 @@ use crate::{
     setup::{read_app_config, read_app_exe},
     task::{ProvingTask, flatten_wrapped_proof},
 };
-use scroll_zkvm_circuit_input_types::chunk::MultiVersionPublicInputs;
 
 mod batch;
 pub use batch::{BatchProver, BatchProverType};
@@ -203,24 +202,6 @@ impl<Type: ProverType> Prover<Type> {
             .unwrap_or_default()
     }
 
-    fn sanity_check_expected_pi(
-        proof: &WrappedProof<Type::ProofMetadata>,
-        task: &Type::ProvingTask,
-    ) -> bool {
-        let proof_pi = flatten_wrapped_proof(proof).public_values;
-        let expected_pi = proof
-            .metadata
-            .pi_hash_info()
-            .pi_hash_by_fork(task.fork_name())
-            .0
-            .as_ref()
-            .iter()
-            .map(|&v| v as u32)
-            .collect::<Vec<_>>();
-
-        expected_pi == proof_pi
-    }
-
     /// Early-return if a proof is found in disc, otherwise generate and return the proof after
     /// writing to disc.
     #[instrument("Prover::gen_proof", skip_all, fields(task_id, prover_name = Type::NAME))]
@@ -247,10 +228,7 @@ impl<Type: ProverType> Prover<Type> {
         let proof = self.gen_proof_stark(task)?;
         let wrapped_proof = WrappedProof::new(metadata, proof, Some(self.get_app_vk().as_slice()));
 
-        assert!(
-            Self::sanity_check_expected_pi(&wrapped_proof, task),
-            "pi from proof is not expected, wrong pi implement for circuit?",
-        );
+        wrapped_proof.sanity_check(task.fork_name());
 
         // Write proof to disc if caching was enabled.
         if let Some(dir) = &self.cache_dir {
@@ -289,10 +267,7 @@ impl<Type: ProverType> Prover<Type> {
         let proof = self.gen_proof_snark(task)?;
         let wrapped_proof = WrappedProof::new(metadata, proof, Some(self.get_evm_vk().as_slice()));
 
-        assert!(
-            Self::sanity_check_expected_pi(&wrapped_proof, task),
-            "pi from evm proof is not expected, wrong pi implement for circuit?",
-        );
+        wrapped_proof.sanity_check(task.fork_name());
 
         // Write proof to disc if caching was enabled.
         if let Some(dir) = &self.cache_dir {

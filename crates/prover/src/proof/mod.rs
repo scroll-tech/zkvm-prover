@@ -2,12 +2,15 @@ use std::path::Path;
 
 use openvm_continuations::verifier::root::types::RootVmVerifierInput;
 use openvm_native_recursion::halo2::RawEvmProof as OpenVmEvmProof;
-use openvm_stark_sdk::{openvm_stark_backend::proof::Proof, p3_baby_bear::BabyBear};
+use openvm_stark_sdk::{
+    openvm_stark_backend::{p3_field::PrimeField32, proof::Proof},
+    p3_baby_bear::BabyBear,
+};
 use sbv_primitives::B256;
 use scroll_zkvm_circuit_input_types::{
     batch::BatchInfo,
     bundle::BundleInfo,
-    chunk::{ChunkInfo, MultiVersionPublicInputs},
+    chunk::{ChunkInfo, ForkName, MultiVersionPublicInputs},
 };
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use snark_verifier_sdk::snark_verifier::{
@@ -157,6 +160,36 @@ impl ProofEnum {
             _ => None,
         }
     }
+
+    /// Derive public inputs from the proof.
+    pub fn public_values(&self) -> Vec<u32> {
+        match self {
+            Self::Root(root_proof) => root_proof
+                .public_values
+                .iter()
+                .map(|x| x.as_canonical_u32())
+                .collect::<Vec<u32>>(),
+            Self::Evm(evm_proof) => {
+                // The first 12 scalars are accumulators.
+                // The next 2 scalars are digests.
+                // The next 32 scalars are the public input hash.
+                let pi_hash_bytes = evm_proof
+                    .instances
+                    .iter()
+                    .skip(14 * 32)
+                    .take(32 * 32)
+                    .cloned()
+                    .collect::<Vec<u8>>();
+
+                // The 32 scalars of public input hash actually only have the LSB that is the
+                // meaningful byte.
+                pi_hash_bytes
+                    .chunks_exact(32)
+                    .map(|bytes32_chunk| bytes32_chunk[31] as u32)
+                    .collect::<Vec<u32>>()
+            }
+        }
+    }
 }
 
 /// A wrapper around the actual inner proof.
@@ -251,7 +284,7 @@ impl ProofMetadata for BundleProofMetadata {
     }
 }
 
-impl<Metadata> WrappedProof<Metadata>
+impl<Metadata: ProofMetadata> WrappedProof<Metadata>
 where
     Metadata: DeserializeOwned + Serialize,
 {
@@ -263,6 +296,28 @@ where
             vk: vk.map(Vec::from).unwrap_or_default(),
             git_version: short_git_version(),
         }
+    }
+
+    /// Sanity checks on the wrapped proof:
+    ///
+    /// - pi_hash computed in host does in fact match pi_hash computed in guest
+    pub fn sanity_check(&self, fork_name: ForkName) {
+        let proof_pi = self.proof.public_values();
+
+        let expected_pi = self
+            .metadata
+            .pi_hash_info()
+            .pi_hash_by_fork(fork_name)
+            .0
+            .as_ref()
+            .iter()
+            .map(|&v| v as u32)
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            expected_pi, proof_pi,
+            "pi mismatch: expected={expected_pi:?}, found={proof_pi:?}"
+        );
     }
 
     /// Read and deserialize the proof.

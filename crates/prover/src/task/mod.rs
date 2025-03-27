@@ -25,6 +25,8 @@ pub trait ProvingTask: serde::de::DeserializeOwned {
 
 /// Flatten a [`WrappedProof`] and split the proof from the public values. We also split out the
 /// program commitments.
+///
+/// Panics if the inner proof is not [`RootProof`].
 pub fn flatten_wrapped_proof<Metadata>(wrapped_proof: &WrappedProof<Metadata>) -> AggregationInput {
     let public_values = wrapped_proof
         .proof
