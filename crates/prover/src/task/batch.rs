@@ -5,7 +5,7 @@ use openvm_sdk::StdIn;
 use scroll_zkvm_circuit_input_types::{
     batch::{
         BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchInfo, BatchWitness, EnvelopeV6, EnvelopeV7,
-        PointEvalWitness, ReferenceHeader,
+        N_BLOB_BYTES, PointEvalWitness, ReferenceHeader,
     },
     chunk::ForkName,
 };
@@ -93,6 +93,7 @@ impl ProvingTask for BatchProvingTask {
         let (kzg_commitment, kzg_proof, challenge_digest) = {
             let blob = point_eval::to_blob(&self.blob_bytes);
             let commitment = point_eval::blob_to_kzg_commitment(&blob);
+            let versioned_hash = point_eval::get_versioned_hash(&commitment);
             let challenge_digest = match &self.batch_header {
                 BatchHeaderV::V6(_) => {
                     assert_eq!(
@@ -101,8 +102,7 @@ impl ProvingTask for BatchProvingTask {
                         "hardfork mismatch for da-codec@v6 header: found={fork_name:?}, expected={:?}",
                         ForkName::EuclidV1,
                     );
-                    EnvelopeV6::from(self.blob_bytes.as_slice())
-                        .challenge_digest(point_eval::get_versioned_hash(&commitment))
+                    EnvelopeV6::from(self.blob_bytes.as_slice()).challenge_digest(versioned_hash)
                 }
                 BatchHeaderV::V7(_) => {
                     assert_eq!(
@@ -111,8 +111,12 @@ impl ProvingTask for BatchProvingTask {
                         "hardfork mismatch for da-codec@v7 header: found={fork_name:?}, expected={:?}",
                         ForkName::EuclidV2,
                     );
-                    EnvelopeV7::from(self.blob_bytes.as_slice())
-                        .challenge_digest(point_eval::get_versioned_hash(&commitment))
+                    let padded_blob_bytes = {
+                        let mut padded_blob_bytes = self.blob_bytes.to_vec();
+                        padded_blob_bytes.resize(N_BLOB_BYTES, 0);
+                        padded_blob_bytes
+                    };
+                    EnvelopeV7::from(padded_blob_bytes.as_slice()).challenge_digest(versioned_hash)
                 }
             };
 
@@ -121,21 +125,21 @@ impl ProvingTask for BatchProvingTask {
             (commitment.to_bytes(), proof.to_bytes(), challenge_digest)
         };
 
-        if let Some(k) = &self.kzg_commitment {
-            assert_eq!(k, &kzg_commitment);
+        if let Some(k) = self.kzg_commitment {
+            assert_eq!(k, kzg_commitment);
         }
 
-        if let Some(c) = &self.challenge_digest {
-            assert_eq!(*c, U256::from_be_bytes(challenge_digest.0));
+        if let Some(c) = self.challenge_digest {
+            assert_eq!(c, U256::from_be_bytes(challenge_digest.0));
         }
 
-        if let Some(p) = &self.kzg_proof {
-            assert_eq!(p, &kzg_proof);
+        if let Some(p) = self.kzg_proof {
+            assert_eq!(p, kzg_proof);
         }
 
         let point_eval_witness = PointEvalWitness {
-            kzg_commitment: *kzg_commitment,
-            kzg_proof: *kzg_proof,
+            kzg_commitment: kzg_commitment.into_inner(),
+            kzg_proof: kzg_proof.into_inner(),
         };
 
         let reference_header = self.batch_header.clone().into();
