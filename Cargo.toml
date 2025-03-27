@@ -20,29 +20,29 @@ repository = "https://github.com/scroll-tech/zkvm-prover"
 version = "0.1.0-rc.11"
 
 [workspace.dependencies]
-openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "de2d3a0", default-features = false }
-openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "de2d3a0", default-features = false }
-openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "de2d3a0", default-features = false }
-openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "de2d3a0", default-features = false }
-openvm-build = { git = "https://github.com/openvm-org/openvm.git", rev = "de2d3a0", default-features = false }
-openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", rev = "de2d3a0", default-features = false }
-openvm-custom-insn = { git = "https://github.com/openvm-org/openvm.git", rev = "de2d3a0", default-features = false }
-openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", rev = "de2d3a0", default-features = false }
-openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "de2d3a0", default-features = false }
-openvm-instructions ={ git = "https://github.com/openvm-org/openvm.git", rev = "de2d3a0", default-features = false }
-openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "de2d3a0", default-features = false }
-openvm-native-circuit = { git = "https://github.com/openvm-org/openvm.git", rev = "de2d3a0", default-features = false }
-openvm-native-compiler = { git = "https://github.com/openvm-org/openvm.git", rev = "de2d3a0", default-features = false }
-openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", rev = "de2d3a0", default-features = false }
-openvm-native-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "de2d3a0", default-features = false }
-openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "de2d3a0", default-features = false }
-openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "de2d3a0", default-features = false }
-openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "de2d3a0", default-features = false }
-openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", rev = "de2d3a0", default-features = false, features = ["parallel", "bench-metrics"] }
-openvm-sha256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "de2d3a0", default-features = false }
-openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "de2d3a0", default-features = false }
+openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f", default-features = false }
+openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f", default-features = false }
+openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f", default-features = false }
+openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f", default-features = false }
+openvm-build = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f", default-features = false }
+openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f", default-features = false }
+openvm-custom-insn = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f", default-features = false }
+openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f", default-features = false }
+openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f", default-features = false }
+openvm-instructions ={ git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f", default-features = false }
+openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f", default-features = false }
+openvm-native-circuit = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f", default-features = false }
+openvm-native-compiler = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f", default-features = false }
+openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f", default-features = false }
+openvm-native-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f", default-features = false }
+openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f", default-features = false }
+openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f", default-features = false }
+openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f", default-features = false }
+openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f", default-features = false, features = ["parallel", "bench-metrics"] }
+openvm-sha256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f", default-features = false }
+openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f", default-features = false }
 
-openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", rev = "4a223981722e75bf97c6807e4d56935196d86edf" }
+openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", rev = "b051e8978da9c829a76b262abf4a9736c8d1681e" }
 
 sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "zkvm/euclid-upgrade", features = ["scroll"] }
 sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "zkvm/euclid-upgrade", features = ["scroll"] }
@@ -67,7 +67,7 @@ rkyv = "0.8"
 serde = { version = "1", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0" }
 serde_with = "3.11.0"
-snark-verifier-sdk = { git = "https://github.com/axiom-crypto/snark-verifier", branch = "zkvm-v0.1", default-features = false, features = [
+snark-verifier-sdk = { version = "0.2.0", default-features = false, features = [
     "loader_halo2",
     "halo2-axiom",
     "display",
