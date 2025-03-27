@@ -155,24 +155,6 @@ fn e2e() -> eyre::Result<()> {
     write_json(path_assets.join("batch-task.json"), &batch_task_example)?;
     write_json(path_assets.join("bundle-task.json"), &bundle_task_with_info)?;
 
-    // The structure of the halo2-proof's instances is:
-    // - 12 instances for accumulator
-    // - 2 instances for digests (MUST be checked on-chain)
-    // - 32 instances for pi_hash (bundle_pi_hash)
-    //
-    // We write the 2 digests to disc.
-    let evm_proof = outcome.proofs[0].as_proof();
-    let digest_1 = evm_proof.instances[12];
-    let digest_2 = evm_proof.instances[13];
-    scroll_zkvm_prover::utils::write(
-        path_assets.join("digest_1"),
-        &digest_1.to_bytes().into_iter().rev().collect::<Vec<u8>>(),
-    )?;
-    scroll_zkvm_prover::utils::write(
-        path_assets.join("digest_2"),
-        &digest_2.to_bytes().into_iter().rev().collect::<Vec<u8>>(),
-    )?;
-
     // Verifier all above proofs with the verifier-only mode.
     let verifier = verifier.to_chunk_verifier();
     for proof in chunk_proofs.iter() {
