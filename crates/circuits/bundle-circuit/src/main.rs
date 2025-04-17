@@ -8,7 +8,6 @@ type C = circuit::BundleCircuit<bundle::BundleInfoV1>;
 
 openvm::entry!(main);
 
-#[rustfmt::skip]
 mod child_commitments;
 
 fn main() {

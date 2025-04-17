@@ -8,24 +8,17 @@ docker run --cidfile ./build-guest.cid --platform linux/amd64 -e FEATURE=${FEATU
 container_id=$(cat ./build-guest.cid)
 rm ./build-guest.cid
 
-# copy commitments from container to local (prover)
-docker cp ${container_id}:/app/crates/prover/src/commitments/chunk.rs crates/prover/src/commitments/chunk.rs
-docker cp ${container_id}:/app/crates/prover/src/commitments/chunk_rv32.rs crates/prover/src/commitments/chunk_rv32.rs
-docker cp ${container_id}:/app/crates/prover/src/commitments/batch.rs crates/prover/src/commitments/batch.rs
-docker cp ${container_id}:/app/crates/prover/src/commitments/bundle.rs crates/prover/src/commitments/bundle.rs
-docker cp ${container_id}:/app/crates/prover/src/commitments/bundle_euclidv1.rs crates/prover/src/commitments/bundle_euclidv1.rs
-
-# copy commitments to local (verifier)
-cp crates/prover/src/commitments/chunk.rs crates/verifier/src/commitments/chunk.rs
-cp crates/prover/src/commitments/chunk_rv32.rs crates/verifier/src/commitments/chunk_rv32.rs
-cp crates/prover/src/commitments/batch.rs crates/verifier/src/commitments/batch.rs
-cp crates/prover/src/commitments/bundle.rs crates/verifier/src/commitments/bundle.rs
-cp crates/prover/src/commitments/bundle_euclidv1.rs crates/verifier/src/commitments/bundle_euclidv1.rs
-
-# copy commitments to local (circuits)
-cp crates/prover/src/commitments/chunk.rs crates/circuits/batch-circuit/src/child_commitments.rs
-cp crates/prover/src/commitments/chunk_rv32.rs crates/circuits/batch-circuit/src/child_commitments_rv32.rs
-cp crates/prover/src/commitments/batch.rs crates/circuits/bundle-circuit/src/child_commitments.rs
+# copy commitments from container to local
+for f in chunk-circuit/chunk_exe_commit.rs \
+         chunk-circuit/chunk_exe_rv32_commit.rs \
+         chunk-circuit/chunk_leaf_commit.rs \
+         batch-circuit/batch_exe_commit.rs \
+         batch-circuit/batch_leaf_commit.rs \
+         bundle-circuit/bundle_exe_commit.rs \
+         bundle-circuit/bundle_euclidv1_commit.rs \
+         bundle-circuit/bundle_leaf_commit.rs; do
+    docker cp ${container_id}:/app/crates/circuits/${f} crates/circuits/${f}
+done
 
 # copy root verifier
 docker cp ${container_id}:/app/crates/build-guest/root_verifier.asm crates/build-guest/root_verifier.asm
