@@ -1464,6 +1464,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "dotenv"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77c90badedccf4105eca100756a0b1289e191f6fcbdadd3cee1d2f614f97da8f"
+
+[[package]]
 name = "downcast-rs"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5754,6 +5760,7 @@ version = "0.2.0"
 dependencies = [
  "bitcode",
  "cargo_metadata 0.19.2",
+ "dotenv",
  "eyre",
  "halo2curves-axiom 0.5.3",
  "hex-literal",
