@@ -196,16 +196,16 @@ fn run_stage3_exe_commits(project_names: &[&str], workspace_dir: &Path) -> Resul
             println!("{LOG_PREFIX} Starting build for config: {build_config:?}...");
 
             let project_dir = project_dir.to_str().expect("Invalid path");
-            let app_config = builder::load_app_config(&project_dir)?;
+            let app_config = builder::load_app_config(project_dir)?;
 
             // 1. Build ELF
-            let elf = builder::build(&project_dir, &build_config.features)?;
+            let elf = builder::build(project_dir, &build_config.features)?;
             println!("{LOG_PREFIX} Built ELF");
 
             // 2. Transpile ELF to VM Executable
             let vmexe_filename = format!("app{}.vmexe", build_config.filename_suffix);
             let app_exe = builder::transpile(
-                &project_dir,
+                project_dir,
                 elf,
                 Some(&vmexe_filename), // Pass filename directly
                 app_config.clone(),
