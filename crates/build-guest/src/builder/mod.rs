@@ -32,26 +32,29 @@ pub fn build<S: AsRef<str>>(
     Sdk::new().build(guest_opts, project_root, &Default::default())
 }
 
+pub fn load_app_config(project_root: &str) -> eyre::Result<AppConfig<SdkVmConfig>> {
+    // First read the app config specified in the project's root directory.
+    let path_app_config = Path::new(project_root).join(FD_APP_CONFIG);
+    let app_config: AppConfig<SdkVmConfig> =
+        toml::from_str(&read_to_string(&path_app_config).unwrap()).unwrap();
+    println!(
+        "{project_root} app config: {}",
+        toml::to_string_pretty(&app_config).unwrap()
+    );
+    Ok(app_config)
+}
+
 /// Transpile the ELF into a VmExe.
 #[instrument("BuildGuest::transpile", skip_all, fields(project_root))]
 pub fn transpile(
     project_root: &str,
     elf: Elf,
     fd_app_exe: Option<&str>,
-) -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf, VmExe<F>)> {
+    app_config: AppConfig<SdkVmConfig>,
+) -> eyre::Result<VmExe<F>> {
     // Create the assets dir if not already present.
     let path_assets = Path::new(project_root).join("openvm");
     std::fs::create_dir_all(&path_assets)?;
-
-    // First read the app config specified in the project's root directory.
-    let path_app_config = Path::new(project_root).join(FD_APP_CONFIG);
-    let app_config: AppConfig<SdkVmConfig> =
-        toml::from_str(&read_to_string(&path_app_config).unwrap()).unwrap();
-
-    println!(
-        "{project_root} app config: {}",
-        toml::to_string_pretty(&app_config).unwrap()
-    );
 
     // Transpile ELF to openvm executable.
     let transpiler = app_config
@@ -66,5 +69,5 @@ pub fn transpile(
 
     println!("exe written to {path_app_exe:?}");
 
-    Ok((path_app_config, app_config, path_app_exe, app_exe))
+    Ok(app_exe)
 }

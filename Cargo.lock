@@ -5759,6 +5759,7 @@ dependencies = [
  "hex-literal",
  "openvm-algebra-guest",
  "openvm-build",
+ "openvm-circuit",
  "openvm-ecc-guest",
  "openvm-instructions",
  "openvm-native-circuit",

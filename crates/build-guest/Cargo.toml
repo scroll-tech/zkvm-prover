@@ -15,7 +15,8 @@ openvm-transpiler = { workspace = true, default-features = false }
 openvm-native-circuit = { workspace = true, default-features = false }
 openvm-native-transpiler = { workspace = true, default-features = false }
 openvm-ecc-guest = { workspace = true, features = ["p256", "k256"]}
-openvm-algebra-guest ={ workspace = true, default-features = false }
+openvm-algebra-guest = { workspace = true, default-features = false }
+openvm-circuit = { workspace = true }
 
 tracing.workspace = true
 tracing-subscriber.workspace = true

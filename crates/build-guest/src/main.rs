@@ -1,6 +1,8 @@
 use std::env;
 
-use openvm_sdk::{Sdk, commit::AppExecutionCommit};
+use eyre::Ok;
+use openvm_native_compiler::ir::DIGEST_SIZE;
+use openvm_sdk::{commit::AppExecutionCommit, config::SdkVmConfig, Sdk, F};
 use openvm_stark_sdk::{openvm_stark_backend::p3_field::PrimeField32, p3_baby_bear::BabyBear};
 use snark_verifier_sdk::snark_verifier::loader::halo2::halo2_ecc::halo2_base::halo2_proofs::halo2curves::bn256::Fr;
 
@@ -18,6 +20,7 @@ fn write_commitments(commitments: [[u32; 8]; 2], output: &str) -> eyre::Result<(
     Ok(())
 }
 
+// python: import json; compress = lambda p: sum(v * pow(2013265921, i) for i, v in enumerate(json.loads(open(p).read()))).to_bytes(32, 'little').hex()
 fn compress_commitment(commitment: &[u32; 8]) -> Fr {
     let order = Fr::from(BabyBear::ORDER_U32 as u64);
     let mut base = Fr::one();
@@ -37,19 +40,43 @@ pub(crate) struct BuildConfig {
     pub(crate) filename_suffix: String,
 }
 
+fn get_build_config(project_name: &str) -> Vec<BuildConfig> {
+    match project_name {
+        "chunk" => vec![
+            BuildConfig {
+                features: vec![],
+                filename_suffix: "_rv32".to_string(),
+            },
+            BuildConfig {
+                features: vec!["openvm".to_string()],
+                filename_suffix: "".to_string(),
+            },
+        ],
+        "batch" => vec![BuildConfig {
+            features: vec![],
+            filename_suffix: "".to_string(),
+        }],
+        "bundle" => vec![
+            BuildConfig {
+                features: vec![],
+                filename_suffix: "_euclidv1".to_string(),
+            },
+            BuildConfig {
+                features: vec!["euclidv2".to_string()],
+                filename_suffix: "".to_string(),
+            },
+        ],
+        _ => unreachable!("[BUILD-GUEST] unsupported project name: {project_name}"),
+    }
+}
+
 pub fn main() -> eyre::Result<()> {
     // cwd to manifest_dir
     env::set_current_dir(env::var("CARGO_MANIFEST_DIR")?)?;
 
-    // dump root_verifier in workspace directory.
-    let dir_workspace = {
-        let dir_workspace = cargo_metadata::MetadataCommand::new()
-            .exec()?
-            .workspace_root;
-        let root_verifier = format!("{dir_workspace}/crates/build-guest/root_verifier.asm");
-        dump_verifier(&root_verifier);
-        dir_workspace
-    };
+    let dir_workspace = cargo_metadata::MetadataCommand::new()
+        .exec()?
+        .workspace_root;
 
     let project_names_var = env::var("BUILD_PROJECT");
     let project_names = project_names_var
@@ -59,35 +86,41 @@ pub fn main() -> eyre::Result<()> {
 
     println!("[BUILD-GUEST] projects={:#?}", project_names);
 
-    for (idx, &project_name) in project_names.iter().enumerate() {
+    // Step1: generate leaf commitments
+    for project_name in &project_names {
         let dir_project = format!("{dir_workspace}/crates/circuits/{project_name}-circuit");
-        let build_configs = match project_name {
-            "chunk" => vec![
-                BuildConfig {
-                    features: vec![],
-                    filename_suffix: "_rv32".to_string(),
-                },
-                BuildConfig {
-                    features: vec!["openvm".to_string()],
-                    filename_suffix: "".to_string(),
-                },
-            ],
-            "batch" => vec![BuildConfig {
-                features: vec![],
-                filename_suffix: "".to_string(),
-            }],
-            "bundle" => vec![
-                BuildConfig {
-                    features: vec![],
-                    filename_suffix: "_euclidv1".to_string(),
-                },
-                BuildConfig {
-                    features: vec!["euclidv2".to_string()],
-                    filename_suffix: "".to_string(),
-                },
-            ],
-            _ => unreachable!("[BUILD-GUEST] unsupported project name: {project_name}"),
-        };
+        let app_config = builder::load_app_config(&dir_project)?;
+        let app_pk = Sdk::new().app_keygen(app_config.clone())?;
+        let leaf_vm_verifier_commit: [F; DIGEST_SIZE] = app_pk
+            .leaf_committed_exe
+            .committed_program
+            .commitment
+            .into();
+        let leaf_vm_verifier_commit = leaf_vm_verifier_commit.map(|x| x.as_canonical_u32());
+        std::fs::write(
+            format!("{dir_project}/leaf.commit"),
+            format!("{:?}", leaf_vm_verifier_commit),
+        )?;
+    }
+    println!("Leaf commitments generated");
+    return Ok(());
+
+    // Step2: export the babybear native proof verifier.
+    // dump root_verifier in workspace directory.
+    // if project_names includes "batch" or "bundle", then generate the root_verifier
+    if project_names
+        .iter()
+        .any(|&name| name == "batch" || name == "bundle")
+    {
+        let root_verifier = format!("{dir_workspace}/crates/build-guest/root_verifier.asm");
+        dump_verifier(&root_verifier);
+        println!("root verifier generated: {}", root_verifier);
+    }
+
+    // Step3: generate exes and exe commits
+    for project_name in &project_names {
+        let dir_project = format!("{dir_workspace}/crates/circuits/{project_name}-circuit");
+        let build_configs = get_build_config(project_name);
 
         for build_config in build_configs {
             println!(
@@ -95,86 +128,69 @@ pub fn main() -> eyre::Result<()> {
             );
             let start_time = std::time::Instant::now();
 
-            let commitments = {
-                let fd_app_exe = format!("app{}.vmexe", build_config.filename_suffix);
-                let elf = builder::build(&dir_project, &build_config.features)?;
-                let (_, app_config, _, app_exe) =
-                    builder::transpile(&dir_project, elf, Some(fd_app_exe.as_str()))?;
-                let app_pk = Sdk::new().app_keygen(app_config)?;
-                let app_committed_exe =
-                    Sdk::new().commit_app_exe(app_pk.app_fri_params(), app_exe)?;
+            let app_config = builder::load_app_config(&dir_project)?;
 
-                let commits = AppExecutionCommit::compute(
-                    &app_pk.app_vm_pk.vm_config,
-                    &app_committed_exe,
-                    &app_pk.leaf_committed_exe,
-                );
+            let fd_app_exe = format!("app{}.vmexe", build_config.filename_suffix);
+            let elf = builder::build(&dir_project, &build_config.features)?;
+            let app_exe = builder::transpile(
+                &dir_project,
+                elf,
+                Some(fd_app_exe.as_str()),
+                app_config.clone(),
+            )?;
+            let app_committed_exe =
+                Sdk::new().commit_app_exe(app_config.app_fri_params.fri_params.clone(), app_exe)?;
 
-                [
-                    commits.exe_commit.map(|x| x.as_canonical_u32()),
-                    commits
-                        .leaf_vm_verifier_commit
-                        .map(|x| x.as_canonical_u32()),
-                ]
-            };
-
-            // write commitments to scroll-zkvm-prover
-            {
-                let filename = format!(
-                    "{dir_workspace}/crates/prover/src/commitments/{project_name}{}.rs",
-                    build_config.filename_suffix,
-                );
-                write_commitments(commitments, &filename)?;
-            }
-
-            // write commitments to scroll-zkvm-verifier
-            {
-                let filename = format!(
-                    "{dir_workspace}/crates/verifier/src/commitments/{project_name}{}.rs",
-                    build_config.filename_suffix,
-                );
-                write_commitments(commitments, &filename)?;
-            }
-
-            // write child commitments to parent circuit
-            if let Some(parent) = project_names.get(idx + 1) {
-                let child_commitment_file = format!(
-                    "{dir_workspace}/crates/circuits/{}-circuit/src/child_commitments{}.rs",
-                    parent, build_config.filename_suffix,
-                );
-                write_commitments(commitments, &child_commitment_file)?;
-            }
-
-            // write digests
-            if project_name == "bundle" {
-                let digest_1 = compress_commitment(&commitments[0])
-                    .to_bytes()
-                    .into_iter()
-                    .rev()
-                    .collect::<Vec<u8>>();
-                let filename = format!(
-                    "{dir_workspace}/crates/circuits/bundle-circuit/digest_1{}",
-                    build_config.filename_suffix,
-                );
-                std::fs::write(&filename, &digest_1)?;
-
-                let digest_2 = compress_commitment(&commitments[1])
-                    .to_bytes()
-                    .into_iter()
-                    .rev()
-                    .collect::<Vec<u8>>();
-                let filename = format!(
-                    "{dir_workspace}/crates/circuits/bundle-circuit/digest_2{}",
-                    build_config.filename_suffix,
-                );
-                std::fs::write(&filename, &digest_2)?;
-            }
+            use openvm_circuit::arch::VmConfig;
+            let exe_commit: [F; DIGEST_SIZE] = app_committed_exe
+                .compute_exe_commit(
+                    &<SdkVmConfig as VmConfig<F>>::system(&app_config.app_vm_config).memory_config,
+                )
+                .into();
+            let exe_commit: [u32; DIGEST_SIZE] = exe_commit.map(|x| x.as_canonical_u32());
+            std::fs::write(
+                format!("{dir_project}/exe{}.commit", build_config.filename_suffix),
+                format!("{:?}", exe_commit),
+            )?;
 
             println!(
                 "[BUILD-GUEST] OK build project={project_name} with build-config={build_config:?} in time={:?}",
                 start_time.elapsed(),
             );
         }
+    }
+
+    // Step4: generate the onchain bn254 commitments
+    for build_config in get_build_config("bundle") {
+        let dir_project = format!("{dir_workspace}/crates/circuits/bundle-circuit");
+        let leaf_comm = std::fs::read_to_string(format!("{dir_project}/leaf.commit"))?;
+        let leaf_comm: [u32; DIGEST_SIZE] = serde_json::from_str(&leaf_comm)?;
+        let exe_comm = std::fs::read_to_string(format!(
+            "{dir_project}/exe{}.commit",
+            build_config.filename_suffix
+        ))?;
+        let exe_comm: [u32; DIGEST_SIZE] = serde_json::from_str(&exe_comm)?;
+        let digest_1 = compress_commitment(&exe_comm)
+            .to_bytes()
+            .into_iter()
+            .rev()
+            .collect::<Vec<u8>>();
+        let filename = format!(
+            "{dir_workspace}/crates/circuits/bundle-circuit/digest_1{}",
+            build_config.filename_suffix,
+        );
+        std::fs::write(&filename, &digest_1)?;
+
+        let digest_2 = compress_commitment(&leaf_comm)
+            .to_bytes()
+            .into_iter()
+            .rev()
+            .collect::<Vec<u8>>();
+        let filename = format!(
+            "{dir_workspace}/crates/circuits/bundle-circuit/digest_2{}",
+            build_config.filename_suffix,
+        );
+        std::fs::write(&filename, &digest_2)?;
     }
 
     println!("[BUILD-GUEST] OK");
