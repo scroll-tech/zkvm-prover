@@ -1,8 +1,5 @@
 use openvm_build::GuestOptions;
-use std::{
-    fs::read_to_string,
-    path::Path,
-};
+use std::{fs::read_to_string, path::Path};
 
 use openvm_instructions::exe::VmExe;
 use openvm_sdk::{
