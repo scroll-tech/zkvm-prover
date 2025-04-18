@@ -265,13 +265,14 @@ fn run_stage3_exe_commits(project_names: &[&str], workspace_dir: &Path) -> Resul
 }
 
 pub fn main() -> Result<()> {
-    // Load .env file if present
-    dotenv().ok();
 
     // Set current directory to the crate's root
     let manifest_dir = env::var("CARGO_MANIFEST_DIR")?;
     env::set_current_dir(&manifest_dir)?;
     println!("{LOG_PREFIX} Running in directory: {}", manifest_dir);
+
+    // Load .env file if present
+    dotenv().ok();
 
     // Determine workspace root
     let metadata = cargo_metadata::MetadataCommand::new().exec()?;
