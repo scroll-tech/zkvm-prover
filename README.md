@@ -1,3 +1,9 @@
+# Chunk proving benchmark guide
+
++ ensure `make test-single-chunk` can pass
++ under `crates/integration/testdata`, extract the package of sample datas, ensure there are directories named "flight1"-"flight5" under `testdata`
++ launch `bash benchmark_60M.sh` for test chunks with 60M gas (for gas limits of 10M, 20M, 30M, 40M, call `bash benchmark.sh`)   
+
 # Scroll zkVM
 
 **zkVM-based Circuits (Guest Programs) with a complete Scroll Prover implementation**
