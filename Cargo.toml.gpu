@@ -17,7 +17,7 @@ edition = "2021"
 homepage = "https://github.com/scroll-tech/zkvm-prover"
 readme = "README.md"
 repository = "https://github.com/scroll-tech/zkvm-prover"
-version = "0.2.0"
+version = "0.3.0"
 
 [workspace.dependencies]
 openvm = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", rev = "dfa10b4", default-features = false }

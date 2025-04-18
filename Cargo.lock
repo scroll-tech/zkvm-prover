@@ -5918,7 +5918,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-build-guest"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "bitcode",
  "cargo_metadata 0.19.2",
@@ -6002,7 +6002,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-integration"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "alloy-primitives",
  "chrono",
@@ -6035,7 +6035,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-prover"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "alloy-primitives",
  "base64",
@@ -6071,7 +6071,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-verifier"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "bincode",
  "eyre",
