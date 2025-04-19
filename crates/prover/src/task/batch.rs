@@ -19,7 +19,7 @@ use crate::{
 /// Define variable batch header type, since BatchHeaderV6 can not
 /// be decoded as V7 we can always has correct deserialization
 /// Notice: V6 header MUST be put above V7 since untagged enum
-/// try to decode each defination in order
+/// try to decode each definition in order
 #[derive(Clone, serde::Deserialize, serde::Serialize)]
 #[serde(untagged)]
 pub enum BatchHeaderV {
