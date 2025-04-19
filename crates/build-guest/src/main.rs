@@ -265,7 +265,6 @@ fn run_stage3_exe_commits(project_names: &[&str], workspace_dir: &Path) -> Resul
 }
 
 pub fn main() -> Result<()> {
-
     // Set current directory to the crate's root
     let manifest_dir = env::var("CARGO_MANIFEST_DIR")?;
     env::set_current_dir(&manifest_dir)?;
