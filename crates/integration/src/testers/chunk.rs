@@ -74,16 +74,18 @@ impl ProverTester for ChunkProverTester {
                 .iter()
                 .map(read_block_witness)
                 .collect::<eyre::Result<Vec<BlockWitness>>>()?,
-            prev_msg_queue_hash: if cfg!(feature = "euclidv2") {
-                B256::repeat_byte(1u8)
-            } else {
-                B256::ZERO
-            },
-            fork_name: if cfg!(feature = "euclidv2") {
-                String::from("euclidv2")
-            } else {
-                String::from("euclidv1")
-            },
+            // prev_msg_queue_hash: if cfg!(feature = "euclidv2") {
+            //     B256::repeat_byte(1u8)
+            // } else {
+            //     B256::ZERO
+            // },
+            // fork_name: if cfg!(feature = "euclidv2") {
+            //     String::from("euclidv2")
+            // } else {
+            //     String::from("euclidv1")
+            // },
+            prev_msg_queue_hash: sbv_primitives::b256!("0x973e2d2d7f6b386ab7a3ce3cc07c09b386d55e859bbfdf88e08294d700000000"),
+            fork_name: String::from("euclidv2"),
         })
     }
 }
