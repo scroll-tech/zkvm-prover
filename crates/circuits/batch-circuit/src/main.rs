@@ -7,10 +7,7 @@ mod builder;
 mod circuit;
 use circuit::BatchCircuit as C;
 
-#[rustfmt::skip]
 mod child_commitments;
-#[rustfmt::skip]
-mod child_commitments_rv32;
 
 mod execute;
 

@@ -65,10 +65,10 @@ impl AggCircuit for BatchCircuit {
     type AggregatedPublicInputs = VersionedChunkInfo;
 
     fn verify_commitments(commitment: &ProgramCommitment) {
-        let match_rv32 = commitment.exe == crate::child_commitments_rv32::EXE_COMMIT
-            && commitment.leaf == crate::child_commitments_rv32::LEAF_COMMIT;
-        let match_openvm = commitment.exe == crate::child_commitments::EXE_COMMIT
-            && commitment.leaf == crate::child_commitments::LEAF_COMMIT;
+        let match_rv32 = commitment.exe == crate::child_commitments::rv32::EXE_COMMIT
+            && commitment.leaf == crate::child_commitments::rv32::LEAF_COMMIT;
+        let match_openvm = commitment.exe == crate::child_commitments::openvm::EXE_COMMIT
+            && commitment.leaf == crate::child_commitments::openvm::LEAF_COMMIT;
         println!(
             "verify_commitments: rv32 {}, openvm {}",
             match_rv32, match_openvm
@@ -78,12 +78,12 @@ impl AggCircuit for BatchCircuit {
             "mismatch chunk-proof commitments: expected={:?}, got={:?}",
             (
                 (
-                    crate::child_commitments_rv32::EXE_COMMIT,
-                    crate::child_commitments_rv32::LEAF_COMMIT
+                    crate::child_commitments::rv32::EXE_COMMIT,
+                    crate::child_commitments::rv32::LEAF_COMMIT
                 ),
                 (
-                    crate::child_commitments::EXE_COMMIT,
-                    crate::child_commitments::LEAF_COMMIT
+                    crate::child_commitments::openvm::EXE_COMMIT,
+                    crate::child_commitments::openvm::LEAF_COMMIT
                 )
             ),
             (commitment.exe, commitment.leaf),
