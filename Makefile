@@ -88,7 +88,7 @@ test-bundle:
 	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test bundle_circuit setup_prove_verify -- --exact --nocapture
 
 test-bundle-local:
-	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test bundle_circuit setup_prove_verify_local_task -- --exact --nocapture
+	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test bundle_circuit setup_prove_verify_local_task -- --exact --nocapture 2>&1 | tee bundle.log
 
 test-e2e-bundle:
 	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test bundle_circuit e2e -- --exact --nocapture

@@ -55,7 +55,7 @@ impl ProverTester for BundleLocalTaskTester {
 
     fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask> {
         Ok(read_json_deep(
-            Path::new(PATH_TESTDATA).join("bundle-task-too-long.json"),
+            Path::new(PATH_TESTDATA).join("bundle-task-7451.json"),
         )?)
     }
 
