@@ -13,6 +13,7 @@ use scroll_zkvm_prover::{
     task::{bundle::BundleProvingTask, chunk::ChunkProvingTask},
     utils::{read_json_deep, write_json},
 };
+use openvm_stark_sdk::bench::run_with_metric_collection;
 use std::str::FromStr;
 
 fn load_recent_batch_proofs() -> eyre::Result<BundleProvingTask> {
@@ -46,10 +47,12 @@ fn setup_prove_verify() -> eyre::Result<()> {
 
 #[test]
 fn setup_prove_verify_local_task() -> eyre::Result<()> {
-    BundleLocalTaskTester::setup()?;
-    prove_verify_single_evm::<BundleLocalTaskTester>(None)?;
+    run_with_metric_collection("OUTPUT_PATH", || {
+        BundleLocalTaskTester::setup()?;
+        prove_verify_single_evm::<BundleLocalTaskTester>(None)?;
 
-    Ok(())
+        Ok(())
+    })
 }
 
 #[test]

@@ -21,6 +21,7 @@ openvm-native-recursion = { workspace = true, default-features = false }
 openvm-native-transpiler = { workspace = true, default-features = false }
 openvm-transpiler = { workspace = true, default-features = false }
 
+openvm-stark-sdk.workspace = true
 alloy-primitives.workspace = true
 eyre.workspace = true
 tiny-keccak.workspace = true
