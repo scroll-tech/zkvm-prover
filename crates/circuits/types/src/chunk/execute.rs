@@ -1,7 +1,5 @@
 use crate::{
-    chunk::{
-        ChunkInfo, ForkName, make_providers, public_inputs::BlockContextV2,
-    },
+    chunk::{ChunkInfo, ForkName, make_providers, public_inputs::BlockContextV2},
     manually_drop_on_zkvm,
 };
 use alloy_primitives::SignatureError;

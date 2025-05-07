@@ -1,9 +1,8 @@
-use std::str::FromStr;
-use std::sync::LazyLock;
 use alloy_primitives::B256;
+use scroll_zkvm_circuit_input_types::chunk::{ArchivedChunkWitness, ChunkWitness, execute};
 use serde::Serialize;
 use serde_json::json;
-use scroll_zkvm_circuit_input_types::chunk::{ArchivedChunkWitness, ChunkWitness, execute};
+use std::{str::FromStr, sync::LazyLock};
 
 use crate::{
     Error, Prover, ProverType,
@@ -71,16 +70,17 @@ impl<C: Commitments> ProverType for GenericChunkProverType<C> {
         let chunk_info = loop {
             match execute(&task.block_witnesses, task.prev_msg_queue_hash, fork_name) {
                 Ok(chunk_info) => break chunk_info,
-                Err(e) => if let Some(hash) = e.as_blinded_node_err() {
-                    let node = fetch_missing_node(hash).map_err(|e| {
-                        Error::GenProof(format!(
-                            "{err_prefix}: failed to fetch missing node: {e}",
-                        ))
-                    })?;
-                    task.block_witnesses[0].states.push(node)
-
-                } else {
-                   return Err(Error::GenProof(format!("{}: {}", err_prefix, e)))
+                Err(e) => {
+                    if let Some(hash) = e.as_blinded_node_err() {
+                        let node = fetch_missing_node(hash).map_err(|e| {
+                            Error::GenProof(format!(
+                                "{err_prefix}: failed to fetch missing node: {e}",
+                            ))
+                        })?;
+                        task.block_witnesses[0].states.push(node)
+                    } else {
+                        return Err(Error::GenProof(format!("{}: {}", err_prefix, e)));
+                    }
                 }
             }
         };
@@ -89,21 +89,21 @@ impl<C: Commitments> ProverType for GenericChunkProverType<C> {
         {
             let chunk_witness =
                 ChunkWitness::new(&task.block_witnesses, task.prev_msg_queue_hash, fork_name);
-            let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&chunk_witness).map_err(|e| {
-                Error::GenProof(format!(
-                    "{}: failed to serialize chunk witness: {}",
-                    err_prefix, e
-                ))
-            })?;
-            let _chunk_witness = rkyv::access::<ArchivedChunkWitness, rkyv::rancor::BoxedError>(
-                &serialized,
-            )
-                .map_err(|e| {
+            let serialized =
+                rkyv::to_bytes::<rkyv::rancor::Error>(&chunk_witness).map_err(|e| {
                     Error::GenProof(format!(
-                        "{}: rkyv deserialisation of chunk witness bytes failed: {}",
+                        "{}: failed to serialize chunk witness: {}",
                         err_prefix, e
                     ))
                 })?;
+            let _chunk_witness =
+                rkyv::access::<ArchivedChunkWitness, rkyv::rancor::BoxedError>(&serialized)
+                    .map_err(|e| {
+                        Error::GenProof(format!(
+                            "{}: rkyv deserialisation of chunk witness bytes failed: {}",
+                            err_prefix, e
+                        ))
+                    })?;
         }
 
         Ok(ChunkProofMetadata { chunk_info })
@@ -130,7 +130,10 @@ fn fetch_missing_node(hash: B256) -> Result<sbv_primitives::Bytes, String> {
                 // 2. method not supported: {"jsonrpc":"2.0","id":1,"error":{"code":-32604,"message":"this request method is not supported"}}
                 // 3. node not found: {"jsonrpc":"2.0","id":1,"error":{"code":-32000,"message":"leveldb: not found"}}
                 if let Some(error) = res.get("error") {
-                    let message = error.get("message").and_then(|v| v.as_str()).unwrap_or("unknown");
+                    let message = error
+                        .get("message")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("unknown");
                     return Err(format!("error from RPC: {message}"));
                 }
                 if let Some(node) = res.get("result").and_then(|v| v.as_str()) {
@@ -152,7 +155,6 @@ fn fetch_missing_node(hash: B256) -> Result<sbv_primitives::Bytes, String> {
             }
         }
     }
-
 }
 
 fn fetch_missing_node_inner<T: Serialize + ?Sized>(body: &T) -> reqwest::Result<serde_json::Value> {
@@ -171,7 +173,8 @@ fn fetch_missing_node_inner<T: Serialize + ?Sized>(body: &T) -> reqwest::Result<
             .expect("Failed to create reqwest client")
     });
 
-    CLIENT.post(RPC_ENDPOINT.as_str())
+    CLIENT
+        .post(RPC_ENDPOINT.as_str())
         .json(body)
         .send()?
         .error_for_status()?

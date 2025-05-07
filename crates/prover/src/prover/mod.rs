@@ -282,7 +282,9 @@ impl<Type: ProverType> Prover<Type> {
 
     /// Validate some pre-checks on the proving task and construct proof metadata.
     #[instrument("Prover::metadata_with_prechecks", skip_all, fields(?task_id = task.identifier()))]
-    pub fn metadata_with_prechecks(task: &mut Type::ProvingTask) -> Result<Type::ProofMetadata, Error> {
+    pub fn metadata_with_prechecks(
+        task: &mut Type::ProvingTask,
+    ) -> Result<Type::ProofMetadata, Error> {
         Type::metadata_with_prechecks(task)
     }
 

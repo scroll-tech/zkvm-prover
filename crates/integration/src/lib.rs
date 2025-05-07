@@ -280,7 +280,8 @@ where
     let prover = scroll_zkvm_prover::Prover::<T::Prover>::setup(config)?;
 
     // Generate proving task for the circuit.
-    let mut tasks = tasks.map_or_else(|| T::gen_multi_proving_tasks(), |tasks| Ok(tasks.to_vec()))?;
+    let mut tasks =
+        tasks.map_or_else(|| T::gen_multi_proving_tasks(), |tasks| Ok(tasks.to_vec()))?;
 
     // For each of the tasks, generate and verify proof.
     let proofs = tasks
