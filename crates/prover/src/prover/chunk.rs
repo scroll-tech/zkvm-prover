@@ -3,7 +3,7 @@ use scroll_zkvm_circuit_input_types::chunk::{ArchivedChunkWitness, ChunkWitness,
 use serde::Serialize;
 use serde_json::json;
 use std::{str::FromStr, sync::LazyLock};
-
+use std::time::Duration;
 use crate::{
     Error, Prover, ProverType,
     commitments::{chunk, chunk_rv32},
@@ -113,6 +113,7 @@ impl<C: Commitments> ProverType for GenericChunkProverType<C> {
 #[tracing::instrument]
 fn fetch_missing_node(hash: B256) -> Result<sbv_primitives::Bytes, String> {
     const MAX_RETRIES: usize = 3;
+    const INITIAL_BACKOFF: Duration = Duration::from_millis(100);
 
     let body = json!({
         "jsonrpc": "2.0",
@@ -123,6 +124,7 @@ fn fetch_missing_node(hash: B256) -> Result<sbv_primitives::Bytes, String> {
     tracing::debug!("request_body: {body:?}");
 
     let mut retries = 0;
+    let mut backoff = INITIAL_BACKOFF;
     loop {
         match fetch_missing_node_inner(&body) {
             Ok(res) => {
@@ -151,6 +153,8 @@ fn fetch_missing_node(hash: B256) -> Result<sbv_primitives::Bytes, String> {
                     tracing::error!("max retries reached, last err: {e}");
                     return Err(format!("failed after {MAX_RETRIES} retries, last err: {e}"));
                 }
+                std::thread::sleep(backoff);
+                backoff *= 2; // exponential backoff
                 continue;
             }
         }
