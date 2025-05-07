@@ -1,6 +1,6 @@
 use scroll_zkvm_circuit_input_types::{
     Circuit,
-    chunk::{ArchivedChunkWitness, ForkName, VersionedChunkInfo, execute},
+    chunk::{ArchivedChunkWitness, VersionedChunkInfo, execute},
     utils::read_witnesses,
 };
 
@@ -55,12 +55,7 @@ impl Circuit for ChunkCircuit {
 
     fn validate(witness: &Self::Witness) -> Self::PublicInputs {
         (
-            execute(
-                witness.blocks.as_slice(),
-                witness.prev_msg_queue_hash.into(),
-                ForkName::from(&witness.fork_name),
-            )
-            .expect("failed to execute chunk"),
+            execute(witness).expect("failed to execute chunk"),
             (&witness.fork_name).into(),
         )
     }

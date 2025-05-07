@@ -1,5 +1,7 @@
 use crate::{
-    chunk::{ChunkInfo, ForkName, make_providers, public_inputs::BlockContextV2},
+    chunk::{
+        ArchivedChunkWitness, ChunkInfo, ForkName, make_providers, public_inputs::BlockContextV2,
+    },
     manually_drop_on_zkvm,
 };
 use alloy_primitives::SignatureError;
@@ -41,33 +43,32 @@ pub enum ChunkExecutionError {
     PostRootMismatch { expected: B256, found: B256 },
 }
 
-pub fn execute<B: BlockWitness + BlockWitnessRethExt>(
-    block_witnesses: &[B],
-    prev_msg_queue_hash: B256,
-    fork_name: ForkName,
-) -> Result<ChunkInfo, ChunkExecutionError> {
+type Witness = ArchivedChunkWitness;
+pub fn execute(witness: &Witness) -> Result<ChunkInfo, ChunkExecutionError> {
     use ChunkExecutionError::*;
 
-    if block_witnesses.is_empty() {
+    if witness.blocks.is_empty() {
         return Err(EmptyChunk);
     }
-    if !block_witnesses.has_same_chain_id() {
+    if !witness.blocks.has_same_chain_id() {
         return Err(DifferentChainId);
     }
-    if !block_witnesses.has_seq_block_number() {
+    if !witness.blocks.has_seq_block_number() {
         return Err(DiscontinuousBlockNumber);
     }
     // Get the blocks to build the basic chunk-info.
     let blocks = manually_drop_on_zkvm!(
-        block_witnesses
+        witness
+            .blocks
             .iter()
             .map(|w| w.build_reth_block())
             .collect::<Result<Vec<RecoveredBlock<Block>>, _>>()
             .map_err(BuildRethBlock)?
     );
-    let pre_state_root = block_witnesses[0].pre_state_root();
+    let pre_state_root = witness.blocks[0].pre_state_root();
 
-    let chain = Chain::from_id(block_witnesses[0].chain_id());
+    let fork_name = ForkName::from(&witness.fork_name);
+    let chain = Chain::from_id(witness.blocks[0].chain_id());
 
     // SCROLL_DEV_HARDFORKS will enable all forks
     let mut hardforks = (*SCROLL_DEV_HARDFORKS).clone();
@@ -92,10 +93,10 @@ pub fn execute<B: BlockWitness + BlockWitnessRethExt>(
     let config = ScrollChainConfig::mainnet();
     let chain_spec: ScrollChainSpec = ScrollChainSpec { inner, config };
 
-    let (code_db, nodes_provider, block_hashes) = make_providers(block_witnesses);
+    let (code_db, nodes_provider, block_hashes) = make_providers(&witness.blocks);
     let nodes_provider = manually_drop_on_zkvm!(nodes_provider);
 
-    let prev_state_root = block_witnesses[0].pre_state_root();
+    let prev_state_root = witness.blocks[0].pre_state_root();
     let mut db = manually_drop_on_zkvm!(
         EvmDatabase::new_from_root(code_db, prev_state_root, &nodes_provider, block_hashes)
             .map_err(DatabaseCreation)?
@@ -125,7 +126,7 @@ pub fn execute<B: BlockWitness + BlockWitnessRethExt>(
         #[allow(unused_mut)]
         let mut builder = ChunkInfoBuilder::new(&chain_spec, pre_state_root, &blocks);
         if fork_name == ForkName::EuclidV2 {
-            builder.set_prev_msg_queue_hash(prev_msg_queue_hash);
+            builder.set_prev_msg_queue_hash(witness.prev_msg_queue_hash.into());
         }
         builder.build(withdraw_root)
     };
@@ -149,7 +150,7 @@ pub fn execute<B: BlockWitness + BlockWitnessRethExt>(
         tx_data_digest,
         tx_data_length: u64::try_from(tx_data_length).expect("tx_data_length: u64"),
         initial_block_number: blocks[0].header().number,
-        prev_msg_queue_hash,
+        prev_msg_queue_hash: witness.prev_msg_queue_hash.into(),
         post_msg_queue_hash: sbv_chunk_info
             .into_euclid_v2()
             .map(|x| x.post_msg_queue_hash)

@@ -35,6 +35,13 @@ pub type ChunkProverRv32 = Prover<ChunkProverTypeRv32>;
 
 pub struct GenericChunkProverType<C: Commitments>(std::marker::PhantomData<C>);
 
+static PROVER_DB_GET_ENDPOINT: LazyLock<Option<String>> = LazyLock::new(|| {
+    std::env::var("PROVER_DB_GET_ENDPOINT")
+        .as_deref()
+        .ok()
+        .map(|s| s.trim_end_matches("/").to_string())
+});
+
 impl<C: Commitments> ProverType for GenericChunkProverType<C> {
     const NAME: &'static str = "chunk";
 
@@ -66,26 +73,9 @@ impl<C: Commitments> ProverType for GenericChunkProverType<C> {
 
         let fork_name = task.fork_name.as_str().into();
 
+        const MAX_FETCH_NODES_ATTEMPTS: usize = 100;
+        let mut attempts = 0;
         let chunk_info = loop {
-            match execute(&task.block_witnesses, task.prev_msg_queue_hash, fork_name) {
-                Ok(chunk_info) => break chunk_info,
-                Err(e) => {
-                    if let Some(hash) = e.as_blinded_node_err() {
-                        let node = fetch_missing_node(hash).map_err(|e| {
-                            Error::GenProof(format!(
-                                "{err_prefix}: failed to fetch missing node: {e}",
-                            ))
-                        })?;
-                        task.block_witnesses[0].states.push(node)
-                    } else {
-                        return Err(Error::GenProof(format!("{}: {}", err_prefix, e)));
-                    }
-                }
-            }
-        };
-
-        // rkyv check
-        {
             let chunk_witness =
                 ChunkWitness::new(&task.block_witnesses, task.prev_msg_queue_hash, fork_name);
             let serialized =
@@ -95,7 +85,7 @@ impl<C: Commitments> ProverType for GenericChunkProverType<C> {
                         err_prefix, e
                     ))
                 })?;
-            let _chunk_witness =
+            let chunk_witness =
                 rkyv::access::<ArchivedChunkWitness, rkyv::rancor::BoxedError>(&serialized)
                     .map_err(|e| {
                         Error::GenProof(format!(
@@ -103,7 +93,32 @@ impl<C: Commitments> ProverType for GenericChunkProverType<C> {
                             err_prefix, e
                         ))
                     })?;
-        }
+
+            match execute(chunk_witness) {
+                Ok(chunk_info) => break chunk_info,
+                Err(e) => {
+                    if let Some(hash) = e.as_blinded_node_err() {
+                        if PROVER_DB_GET_ENDPOINT.is_some() {
+                            let node = fetch_missing_node(hash).map_err(|e| {
+                                Error::GenProof(format!(
+                                    "{err_prefix}: failed to fetch missing node: {e}",
+                                ))
+                            })?;
+                            task.block_witnesses[0].states.push(node);
+                            attempts += 1;
+                            if attempts > MAX_FETCH_NODES_ATTEMPTS {
+                                return Err(Error::GenProof(format!(
+                                    "{err_prefix}: max attempts reached for fetching missing nodes",
+                                )));
+                            }
+                            continue;
+                        }
+                        tracing::warn!("PROVER_DB_GET_ENDPOINT not set, won't fetch missing nodes");
+                    }
+                    return Err(Error::GenProof(format!("{}: {}", err_prefix, e)));
+                }
+            }
+        };
 
         Ok(ChunkProofMetadata { chunk_info })
     }
@@ -161,23 +176,15 @@ fn fetch_missing_node(hash: B256) -> Result<sbv_primitives::Bytes, String> {
 }
 
 fn fetch_missing_node_inner<T: Serialize + ?Sized>(body: &T) -> reqwest::Result<serde_json::Value> {
-    static RPC_ENDPOINT: LazyLock<String> = LazyLock::new(|| {
-        std::env::var("RPC_ENDPOINT")
-            .as_deref()
-            .unwrap_or("http://localhost:8545")
-            .trim_end_matches("/")
-            .to_string()
-    });
-
     static CLIENT: LazyLock<reqwest::blocking::Client> = LazyLock::new(|| {
         reqwest::blocking::ClientBuilder::new()
-            .timeout(std::time::Duration::from_secs(10))
+            .timeout(Duration::from_secs(10))
             .build()
             .expect("Failed to create reqwest client")
     });
 
     CLIENT
-        .post(RPC_ENDPOINT.as_str())
+        .post(PROVER_DB_GET_ENDPOINT.as_ref().unwrap())
         .json(body)
         .send()?
         .error_for_status()?
