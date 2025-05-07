@@ -161,7 +161,7 @@ fn fetch_missing_node_inner<T: Serialize + ?Sized>(body: &T) -> reqwest::Result<
     static RPC_ENDPOINT: LazyLock<String> = LazyLock::new(|| {
         std::env::var("RPC_ENDPOINT")
             .as_deref()
-            .unwrap_or_else(|_| "http://localhost:8545")
+            .unwrap_or("http://localhost:8545")
             .trim_end_matches("/")
             .to_string()
     });

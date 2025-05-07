@@ -92,7 +92,7 @@ pub fn execute<B: BlockWitness + BlockWitnessRethExt>(
     let config = ScrollChainConfig::mainnet();
     let chain_spec: ScrollChainSpec = ScrollChainSpec { inner, config };
 
-    let (code_db, nodes_provider, block_hashes) = make_providers(&block_witnesses);
+    let (code_db, nodes_provider, block_hashes) = make_providers(block_witnesses);
     let nodes_provider = manually_drop_on_zkvm!(nodes_provider);
 
     let prev_state_root = block_witnesses[0].pre_state_root();
@@ -123,7 +123,7 @@ pub fn execute<B: BlockWitness + BlockWitnessRethExt>(
 
     let sbv_chunk_info = {
         #[allow(unused_mut)]
-        let mut builder = ChunkInfoBuilder::new(&chain_spec, pre_state_root.into(), &blocks);
+        let mut builder = ChunkInfoBuilder::new(&chain_spec, pre_state_root, &blocks);
         if fork_name == ForkName::EuclidV2 {
             builder.set_prev_msg_queue_hash(prev_msg_queue_hash);
         }
