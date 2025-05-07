@@ -1,6 +1,13 @@
-use sbv_core::{EvmDatabase, EvmExecutor};
+use crate::{
+    chunk::{
+        ChunkInfo, ForkName, make_providers, public_inputs::BlockContextV2,
+    },
+    manually_drop_on_zkvm,
+};
+use alloy_primitives::SignatureError;
+use sbv_core::{DatabaseError, EvmDatabase, EvmExecutor, VerificationError};
 use sbv_primitives::{
-    BlockWitness,
+    B256, BlockWitness,
     chainspec::{
         BaseFeeParams, BaseFeeParamsKind, Chain, MAINNET,
         reth_chainspec::ChainSpec,
@@ -14,38 +21,55 @@ use sbv_primitives::{
     },
 };
 
-use crate::{
-    chunk::{
-        ArchivedChunkWitness, ChunkInfo, ForkName, make_providers, public_inputs::BlockContextV2,
-    },
-    manually_drop_on_zkvm,
-};
+#[derive(thiserror::Error, Debug)]
+pub enum ChunkExecutionError {
+    #[error("At least one witness must be provided in chunk mode.")]
+    EmptyChunk,
+    #[error("All witnesses must have the same chain id in chunk mode")]
+    DifferentChainId,
+    #[error("All witnesses must have sequential block numbers in chunk mode")]
+    DiscontinuousBlockNumber,
+    #[error("Failed to build reth block: {0}")]
+    BuildRethBlock(SignatureError),
+    #[error("failed to create db: {0}")]
+    DatabaseCreation(DatabaseError),
+    #[error("failed to execute block: {0}")]
+    BlockExecution(VerificationError),
+    #[error("failed to update db: {0}")]
+    DatabaseUpdate(DatabaseError),
+    #[error("failed to get withdraw root: {0}")]
+    GetWithdrawRoot(DatabaseError),
+    #[error("state root mismatch: expected={expected}, found={found}")]
+    PostRootMismatch { expected: B256, found: B256 },
+}
 
-type Witness = ArchivedChunkWitness;
+pub fn execute<B: BlockWitness + BlockWitnessRethExt>(
+    block_witnesses: &[B],
+    prev_msg_queue_hash: B256,
+    fork_name: ForkName,
+) -> Result<ChunkInfo, ChunkExecutionError> {
+    use ChunkExecutionError::*;
 
-pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
-    if witness.blocks.is_empty() {
-        return Err("At least one witness must be provided in chunk mode".into());
+    if block_witnesses.is_empty() {
+        return Err(EmptyChunk);
     }
-    if !witness.blocks.has_same_chain_id() {
-        return Err("All witnesses must have the same chain id in chunk mode".into());
+    if !block_witnesses.has_same_chain_id() {
+        return Err(DifferentChainId);
     }
-    if !witness.blocks.has_seq_block_number() {
-        return Err("All witnesses must have sequential block numbers in chunk mode".into());
+    if !block_witnesses.has_seq_block_number() {
+        return Err(DiscontinuousBlockNumber);
     }
     // Get the blocks to build the basic chunk-info.
     let blocks = manually_drop_on_zkvm!(
-        witness
-            .blocks
+        block_witnesses
             .iter()
             .map(|w| w.build_reth_block())
             .collect::<Result<Vec<RecoveredBlock<Block>>, _>>()
-            .map_err(|e| e.to_string())?
+            .map_err(BuildRethBlock)?
     );
-    let pre_state_root = witness.blocks[0].pre_state_root;
+    let pre_state_root = block_witnesses[0].pre_state_root();
 
-    let fork_name = ForkName::from(&witness.fork_name);
-    let chain = Chain::from_id(witness.blocks[0].chain_id());
+    let chain = Chain::from_id(block_witnesses[0].chain_id());
 
     // SCROLL_DEV_HARDFORKS will enable all forks
     let mut hardforks = (*SCROLL_DEV_HARDFORKS).clone();
@@ -70,29 +94,27 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     let config = ScrollChainConfig::mainnet();
     let chain_spec: ScrollChainSpec = ScrollChainSpec { inner, config };
 
-    let (code_db, nodes_provider, block_hashes) = make_providers(&witness.blocks);
+    let (code_db, nodes_provider, block_hashes) = make_providers(&block_witnesses);
     let nodes_provider = manually_drop_on_zkvm!(nodes_provider);
 
-    let prev_state_root = witness.blocks[0].pre_state_root();
+    let prev_state_root = block_witnesses[0].pre_state_root();
     let mut db = manually_drop_on_zkvm!(
         EvmDatabase::new_from_root(code_db, prev_state_root, &nodes_provider, block_hashes)
-            .map_err(|e| format!("failed to create EvmDatabase: {}", e))?
+            .map_err(DatabaseCreation)?
     );
     for block in blocks.iter() {
         let output = manually_drop_on_zkvm!(
             EvmExecutor::new(std::sync::Arc::new(chain_spec.clone()), &db, block)
                 .execute()
-                .map_err(|e| format!("failed to execute block: {}", e))?
+                .map_err(BlockExecution)?
         );
         db.update(&nodes_provider, output.state.state.iter())
-            .map_err(|e| format!("failed to update db: {}", e))?;
+            .map_err(DatabaseUpdate)?;
     }
 
     let post_state_root = db.commit_changes();
 
-    let withdraw_root = db
-        .withdraw_root()
-        .map_err(|e| format!("failed to get withdraw root: {}", e))?;
+    let withdraw_root = db.withdraw_root().map_err(GetWithdrawRoot)?;
 
     let mut rlp_buffer = manually_drop_on_zkvm!(Vec::with_capacity(2048));
     let (tx_data_length, tx_data_digest) = blocks
@@ -105,16 +127,15 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
         #[allow(unused_mut)]
         let mut builder = ChunkInfoBuilder::new(&chain_spec, pre_state_root.into(), &blocks);
         if fork_name == ForkName::EuclidV2 {
-            builder.set_prev_msg_queue_hash(witness.prev_msg_queue_hash.into());
+            builder.set_prev_msg_queue_hash(prev_msg_queue_hash);
         }
         builder.build(withdraw_root)
     };
     if post_state_root != sbv_chunk_info.post_state_root() {
-        return Err(format!(
-            "state root mismatch: expected={}, found={}",
-            sbv_chunk_info.post_state_root(),
-            post_state_root
-        ));
+        return Err(PostRootMismatch {
+            expected: sbv_chunk_info.post_state_root(),
+            found: post_state_root,
+        });
     }
 
     let chunk_info = ChunkInfo {
@@ -130,7 +151,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
         tx_data_digest,
         tx_data_length: u64::try_from(tx_data_length).expect("tx_data_length: u64"),
         initial_block_number: blocks[0].header().number,
-        prev_msg_queue_hash: witness.prev_msg_queue_hash.into(),
+        prev_msg_queue_hash,
         post_msg_queue_hash: sbv_chunk_info
             .into_euclid_v2()
             .map(|x| x.post_msg_queue_hash)
@@ -145,4 +166,22 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     assert!(std::sync::LazyLock::get(&MAINNET).is_none());
 
     Ok(chunk_info)
+}
+
+impl ChunkExecutionError {
+    /// Return the hash of the blinded node if the error is a blinded node error.
+    pub fn as_blinded_node_err(&self) -> Option<B256> {
+        use ChunkExecutionError::*;
+        use DatabaseError::PartialStateTrie;
+        use VerificationError::Database;
+        use sbv_trie::PartialStateTrieError::BlindedNode;
+
+        match self {
+            DatabaseCreation(PartialStateTrie(BlindedNode { hash, .. }))
+            | DatabaseUpdate(PartialStateTrie(BlindedNode { hash, .. }))
+            | GetWithdrawRoot(PartialStateTrie(BlindedNode { hash, .. }))
+            | BlockExecution(Database(PartialStateTrie(BlindedNode { hash, .. }))) => Some(*hash),
+            _ => None,
+        }
+    }
 }

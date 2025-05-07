@@ -18,6 +18,7 @@ sbv-kv = { workspace = true }
 vm-zstd = { workspace = true }
 serde.workspace = true
 itertools.workspace = true
+thiserror.workspace = true
 tiny-keccak = { workspace = true }
 
 openvm = { workspace = true, features = ["std"] }

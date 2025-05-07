@@ -49,7 +49,7 @@ impl<C: Commitments> ProverType for GenericBundleProverType<C> {
 
     type ProofMetadata = BundleProofMetadata;
 
-    fn metadata_with_prechecks(task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error> {
+    fn metadata_with_prechecks(task: &mut Self::ProvingTask) -> Result<Self::ProofMetadata, Error> {
         let err_prefix = format!("metadata_with_prechecks for task_id={}", task.identifier());
 
         for w in task.batch_proofs.windows(2) {

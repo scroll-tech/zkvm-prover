@@ -227,7 +227,7 @@ where
     std::fs::create_dir_all(&cache_dir)?;
 
     // Generate proving task for the circuit.
-    let task = if let Some(t) = task {
+    let mut task = if let Some(t) = task {
         t
     } else {
         T::gen_proving_task()?
@@ -243,7 +243,7 @@ where
     let prover = scroll_zkvm_prover::Prover::<T::Prover>::setup(config)?;
 
     // Construct root proof for the circuit.
-    let proof = prover.gen_proof(&task)?;
+    let proof = prover.gen_proof(&mut task)?;
 
     // Verify proof.
     prover.verify_proof(&proof)?;
@@ -280,11 +280,11 @@ where
     let prover = scroll_zkvm_prover::Prover::<T::Prover>::setup(config)?;
 
     // Generate proving task for the circuit.
-    let tasks = tasks.map_or_else(|| T::gen_multi_proving_tasks(), |tasks| Ok(tasks.to_vec()))?;
+    let mut tasks = tasks.map_or_else(|| T::gen_multi_proving_tasks(), |tasks| Ok(tasks.to_vec()))?;
 
     // For each of the tasks, generate and verify proof.
     let proofs = tasks
-        .iter()
+        .iter_mut()
         .map(|task| {
             let proof = prover.gen_proof(task)?;
             prover.verify_proof(&proof)?;
@@ -335,10 +335,10 @@ where
     )?;
 
     // Generate proving task for the circuit.
-    let task = task.map_or_else(|| T::gen_proving_task(), Ok)?;
+    let mut task = task.map_or_else(|| T::gen_proving_task(), Ok)?;
 
     // Construct root proof for the circuit.
-    let proof = prover.gen_proof_evm(&task)?;
+    let proof = prover.gen_proof_evm(&mut task)?;
 
     // Verify proof.
     prover.verify_proof_evm(&proof)?;

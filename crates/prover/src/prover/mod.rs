@@ -207,7 +207,7 @@ impl<Type: ProverType> Prover<Type> {
     #[instrument("Prover::gen_proof", skip_all, fields(task_id, prover_name = Type::NAME))]
     pub fn gen_proof(
         &self,
-        task: &Type::ProvingTask,
+        task: &mut Type::ProvingTask,
     ) -> Result<WrappedProof<Type::ProofMetadata>, Error> {
         let task_id = task.identifier();
 
@@ -246,7 +246,7 @@ impl<Type: ProverType> Prover<Type> {
     #[instrument("Prover::gen_proof_evm", skip_all, fields(task_id))]
     pub fn gen_proof_evm(
         &self,
-        task: &Type::ProvingTask,
+        task: &mut Type::ProvingTask,
     ) -> Result<WrappedProof<Type::ProofMetadata>, Error> {
         let task_id = task.identifier();
 
@@ -282,7 +282,7 @@ impl<Type: ProverType> Prover<Type> {
 
     /// Validate some pre-checks on the proving task and construct proof metadata.
     #[instrument("Prover::metadata_with_prechecks", skip_all, fields(?task_id = task.identifier()))]
-    pub fn metadata_with_prechecks(task: &Type::ProvingTask) -> Result<Type::ProofMetadata, Error> {
+    pub fn metadata_with_prechecks(task: &mut Type::ProvingTask) -> Result<Type::ProofMetadata, Error> {
         Type::metadata_with_prechecks(task)
     }
 
@@ -562,5 +562,5 @@ pub trait ProverType {
     type ProofMetadata: ProofMetadata;
 
     /// Provided the proving task, computes the proof metadata.
-    fn metadata_with_prechecks(task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error>;
+    fn metadata_with_prechecks(task: &mut Self::ProvingTask) -> Result<Self::ProofMetadata, Error>;
 }

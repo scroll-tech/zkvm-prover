@@ -27,8 +27,8 @@ impl ProverType for BatchProverType {
 
     type ProofMetadata = BatchProofMetadata;
 
-    fn metadata_with_prechecks(task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error> {
-        let batch_info = task.into();
+    fn metadata_with_prechecks(task: &mut Self::ProvingTask) -> Result<Self::ProofMetadata, Error> {
+        let batch_info = (&*task).into();
         let batch_hash = task.batch_header.batch_hash();
 
         Ok(BatchProofMetadata {
