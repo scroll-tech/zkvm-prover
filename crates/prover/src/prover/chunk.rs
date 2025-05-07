@@ -104,6 +104,7 @@ impl<C: Commitments> ProverType for GenericChunkProverType<C> {
                                     "{err_prefix}: failed to fetch missing node: {e}",
                                 ))
                             })?;
+                            tracing::warn!("missing node fetched: {node}");
                             task.block_witnesses[0].states.push(node);
                             attempts += 1;
                             if attempts > MAX_FETCH_NODES_ATTEMPTS {
