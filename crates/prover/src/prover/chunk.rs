@@ -1,15 +1,14 @@
-use alloy_primitives::B256;
-use scroll_zkvm_circuit_input_types::chunk::{ArchivedChunkWitness, ChunkWitness, execute};
-use serde::Serialize;
-use serde_json::json;
-use std::{str::FromStr, sync::LazyLock};
-use std::time::Duration;
 use crate::{
     Error, Prover, ProverType,
     commitments::{chunk, chunk_rv32},
     proof::{ChunkProofMetadata, RootProof},
     task::{ProvingTask, chunk::ChunkProvingTask},
 };
+use alloy_primitives::B256;
+use scroll_zkvm_circuit_input_types::chunk::{ArchivedChunkWitness, ChunkWitness, execute};
+use serde::Serialize;
+use serde_json::json;
+use std::{str::FromStr, sync::LazyLock, time::Duration};
 
 use super::Commitments;
 
