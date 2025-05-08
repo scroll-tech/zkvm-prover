@@ -19,8 +19,9 @@ use openvm_sdk::{
     commit::AppExecutionCommit,
     config::{AggConfig, AggStarkConfig, SdkVmConfig},
     keygen::{AggStarkProvingKey, AppProvingKey},
-    prover::{AggStarkProver, AppProver, ContinuationProver},
+    prover::{AggStarkProver, AppProver, EvmHalo2Prover},
 };
+use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Engine;
 use serde::{Serialize, de::DeserializeOwned};
 use tracing::{debug, instrument};
 
@@ -72,7 +73,7 @@ pub trait Commitments {
 /// Types used in the outermost proof construction and verification, i.e. the EVM-compatible layer.
 pub struct EvmProverVerifier {
     /// This is required only for [BundleProver].
-    pub continuation_prover: ContinuationProver<SdkVmConfig>,
+    pub halo2_prover: EvmHalo2Prover<SdkVmConfig, BabyBearPoseidon2Engine>,
     /// The halo2 proving key.
     pub halo2_pk: Halo2WrapperProvingKey,
     /// The contract bytecode for the EVM verifier contract.
@@ -407,15 +408,16 @@ impl<Type: ProverType> Prover<Type> {
         }
 
         let halo2_pk = agg_pk.halo2_pk.wrapper.clone();
-        let continuation_prover = ContinuationProver::new(
+        let halo2_prover = EvmHalo2Prover::new(
             &halo2_params_reader,
             Arc::clone(app_pk),
             Arc::clone(app_committed_exe),
             agg_pk,
+            Default::default(),
         );
 
         Ok(EvmProverVerifier {
-            continuation_prover,
+            halo2_prover,
             halo2_pk,
             verifier_contract,
         })
@@ -447,16 +449,17 @@ impl<Type: ProverType> Prover<Type> {
         let _ = Self::get_verify_program_commitment(&self.app_committed_exe, &self.app_pk, false);
 
         tracing::debug!(name: "generate_root_verifier_input", ?task_id);
-        let app_prover = AppProver::new(
+        let app_prover = AppProver::<_, BabyBearPoseidon2Engine>::new(
             self.app_pk.app_vm_pk.clone(),
             self.app_committed_exe.clone(),
         );
         // TODO: should we cache the app_proof?
         let app_proof = app_prover.generate_app_proof(stdin);
         tracing::info!("app proof generated for {} task {task_id}", Type::NAME);
-        let agg_prover = AggStarkProver::new(
+        let agg_prover = AggStarkProver::<BabyBearPoseidon2Engine>::new(
             AGG_STARK_PROVING_KEY.clone(),
             self.app_pk.leaf_committed_exe.clone(),
+            Default::default(),
         );
         let proof = agg_prover.generate_root_verifier_input(app_proof);
         Ok(proof)
@@ -474,7 +477,7 @@ impl<Type: ProverType> Prover<Type> {
             .evm_prover
             .as_ref()
             .expect("Prover::gen_proof_snark expects EVM-prover setup")
-            .continuation_prover
+            .halo2_prover
             .generate_proof_for_evm(stdin)
             .try_into()
             .map_err(|e| Error::GenProof(format!("{}", e)))?;
