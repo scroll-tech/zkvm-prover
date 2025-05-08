@@ -6,9 +6,7 @@ use crate::{
 };
 use alloy_primitives::B256;
 use scroll_zkvm_circuit_input_types::chunk::{ArchivedChunkWitness, ChunkWitness, execute};
-use serde::Serialize;
-use serde_json::json;
-use std::{str::FromStr, sync::LazyLock, time::Duration};
+use std::{sync::LazyLock, time::Duration};
 
 use super::Commitments;
 
@@ -127,56 +125,13 @@ impl<C: Commitments> ProverType for GenericChunkProverType<C> {
 
 #[tracing::instrument]
 fn fetch_missing_node(hash: B256) -> Result<sbv_primitives::Bytes, String> {
-    const MAX_RETRIES: usize = 3;
-    const INITIAL_BACKOFF: Duration = Duration::from_millis(100);
+    use backon::{BlockingRetryableWithContext, ExponentialBuilder};
 
-    let body = json!({
-        "jsonrpc": "2.0",
-        "id": 1,
-        "method": "debug_dbGet",
-        "params": [hash],
-    });
-    tracing::debug!("request_body: {body:?}");
+    const RETRY_POLICY: ExponentialBuilder = ExponentialBuilder::new()
+        .with_min_delay(Duration::from_millis(100))
+        .with_max_delay(Duration::from_secs(10))
+        .with_max_times(3);
 
-    let mut retries = 0;
-    let mut backoff = INITIAL_BACKOFF;
-    loop {
-        match fetch_missing_node_inner(&body) {
-            Ok(res) => {
-                // 1. success: {"jsonrpc":"2.0","id":1,"result":"0xe19f3c8dfeea98e16e7fcafcce43929240f3ff23ad27fc7a81d5368b0e9eb6876a32"}
-                // 2. method not supported: {"jsonrpc":"2.0","id":1,"error":{"code":-32604,"message":"this request method is not supported"}}
-                // 3. node not found: {"jsonrpc":"2.0","id":1,"error":{"code":-32000,"message":"leveldb: not found"}}
-                if let Some(error) = res.get("error") {
-                    let message = error
-                        .get("message")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("unknown");
-                    return Err(format!("error from RPC: {message}"));
-                }
-                if let Some(node) = res.get("result").and_then(|v| v.as_str()) {
-                    return sbv_primitives::Bytes::from_str(node).map_err(|e| {
-                        tracing::error!("failed to parse hex: {e}");
-                        format!("failed to parse hex: {e}")
-                    });
-                }
-                return Err(format!("invalid response: {res:?}"));
-            }
-            Err(e) => {
-                tracing::debug!("retry#{retries}, error: {e:?}");
-                retries += 1;
-                if retries > MAX_RETRIES {
-                    tracing::error!("max retries reached, last err: {e}");
-                    return Err(format!("failed after {MAX_RETRIES} retries, last err: {e}"));
-                }
-                std::thread::sleep(backoff);
-                backoff *= 2; // exponential backoff
-                continue;
-            }
-        }
-    }
-}
-
-fn fetch_missing_node_inner<T: Serialize + ?Sized>(body: &T) -> reqwest::Result<serde_json::Value> {
     static CLIENT: LazyLock<reqwest::blocking::Client> = LazyLock::new(|| {
         reqwest::blocking::ClientBuilder::new()
             .timeout(Duration::from_secs(10))
@@ -184,10 +139,44 @@ fn fetch_missing_node_inner<T: Serialize + ?Sized>(body: &T) -> reqwest::Result<
             .expect("Failed to create reqwest client")
     });
 
-    CLIENT
-        .post(PROVER_DB_GET_ENDPOINT.as_ref().unwrap())
-        .json(body)
-        .send()?
-        .error_for_status()?
-        .json()
+    let body = serde_json::json!({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "debug_dbGet",
+        "params": [hash],
+    });
+    tracing::debug!("request_body: {body:?}");
+
+    #[derive(serde::Deserialize)]
+    enum Response {
+        Result(sbv_primitives::Bytes),
+        Error { code: i64, message: String },
+    }
+
+    let (_, result) = {
+        |body| {
+            let result = CLIENT
+                .post(PROVER_DB_GET_ENDPOINT.as_ref().unwrap())
+                .json(body)
+                .send()
+                .and_then(|r| r.error_for_status())
+                .and_then(|r| r.json::<Response>());
+            (body, result)
+        }
+    }
+    .retry(RETRY_POLICY)
+    .notify(|err, dur| {
+        tracing::debug!("retrying {err:?} after {dur:?}");
+    })
+    .context(&body)
+    .call();
+
+    match result {
+        // 1. success: {"jsonrpc":"2.0","id":1,"result":"0xe19f3c8dfeea98e16e7fcafcce43929240f3ff23ad27fc7a81d5368b0e9eb6876a32"}
+        Ok(Response::Result(bytes)) => Ok(bytes),
+        // 2. method not supported: {"jsonrpc":"2.0","id":1,"error":{"code":-32604,"message":"this request method is not supported"}}
+        // 3. node not found: {"jsonrpc":"2.0","id":1,"error":{"code":-32000,"message":"leveldb: not found"}}
+        Ok(Response::Error { code, message }) => Err(format!("error from RPC: {code} {message}")),
+        Err(e) => Err(format!("failed after max retries, last err: {e}")),
+    }
 }
