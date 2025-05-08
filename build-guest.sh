@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -ex
 
-. crates/build-guest/.env
+[ -f "crates/build-guest/.env" ] && . crates/build-guest/.env
 
 # if BUILD_STAGES if empty, set it to stage1,stage2,stage3
 if [ -z "${BUILD_STAGES}" ]; then
