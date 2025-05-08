@@ -9,7 +9,7 @@ use scroll_zkvm_prover::{
     utils::{self, vm::ExecutionResult},
 };
 
-fn exec_chunk(task: &ChunkProvingTask) -> eyre::Result<(ExecutionResult, u64)> {
+fn exec_chunk(task: &mut ChunkProvingTask) -> eyre::Result<(ExecutionResult, u64)> {
     let (_path_app_config, app_config, path_exe) =
         ChunkProverTester::load_with_exe_fd("app.vmexe")?;
     let config = app_config.app_vm_config;
@@ -44,7 +44,7 @@ fn test_cycle() -> eyre::Result<()> {
 
     let blocks = 1..=8;
     blocks.into_iter().try_for_each(|blk| -> eyre::Result<()> {
-        let task = ChunkProvingTask {
+        let mut task = ChunkProvingTask {
             block_witnesses: vec![read_block_witness_from_testdata(blk)?],
             prev_msg_queue_hash: Default::default(),
             fork_name: if cfg!(feature = "euclidv2") {
@@ -53,7 +53,7 @@ fn test_cycle() -> eyre::Result<()> {
                 String::from("euclidv1")
             },
         };
-        let (exec_result, gas) = exec_chunk(&task)?;
+        let (exec_result, gas) = exec_chunk(&mut task)?;
         let cycle_per_gas = exec_result.total_cycle / gas;
         assert!(cycle_per_gas < 30);
         Ok(())
@@ -65,8 +65,8 @@ fn test_cycle() -> eyre::Result<()> {
 fn test_execute() -> eyre::Result<()> {
     ChunkProverTester::setup()?;
 
-    let task = ChunkProverTester::gen_proving_task()?;
-    exec_chunk(&task)?;
+    let mut task = ChunkProverTester::gen_proving_task()?;
+    exec_chunk(&mut task)?;
 
     Ok(())
 }
@@ -88,8 +88,8 @@ fn test_execute_multi() -> eyre::Result<()> {
         let tasks = MultiChunkProverTester::gen_multi_proving_tasks().unwrap();
         tasks
             .into_par_iter()
-            .map(|task| -> (u64, u64, u64) {
-                let (exec_result, gas) = exec_chunk(&task).unwrap();
+            .map(|mut task| -> (u64, u64, u64) {
+                let (exec_result, gas) = exec_chunk(&mut task).unwrap();
                 (gas, exec_result.total_cycle, exec_result.total_tick)
             })
             .reduce(
