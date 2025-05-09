@@ -24,7 +24,7 @@ impl ProverTester for BatchProverTester {
             Path::new(PATH_TESTDATA)
                 .join(phase_base_directory())
                 .join("tasks")
-                .join("batch-task.json"),
+                .join("batch_task_358587.json"),
         )?)
     }
 }

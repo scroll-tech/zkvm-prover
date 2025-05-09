@@ -33,9 +33,9 @@ fn test_e2e_execute() -> eyre::Result<()> {
 
 #[test]
 fn setup_prove_verify_single() -> eyre::Result<()> {
-    BatchTaskBuildingTester::setup()?;
+    BatchProverTester::setup()?;
 
-    prove_verify_single::<BatchTaskBuildingTester>(None)?;
+    prove_verify_single::<BatchProverTester>(None)?;
 
     Ok(())
 }
