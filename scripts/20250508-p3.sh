@@ -7,22 +7,24 @@ function patch_crates() {
 
 function stage1_stage2() {
   patch_crates
-  echo 'BUILD_STAGES=stage1,stage2' > crates/build-guest/.env
+  echo 'BUILD_STAGES=stage1,stage2' >crates/build-guest/.env
   bash build-guest-actions-entrypoint.sh
   git checkout Cargo.toml Cargo.lock
 }
 
 function stage3() {
-  echo 'BUILD_STAGES=stage3' > crates/build-guest/.env
+  echo 'BUILD_STAGES=stage3' >crates/build-guest/.env
   make build-guest
 }
 
 if ! git diff --quiet || ! git diff --cached --quiet; then
-    echo "Error: Git has modified tracked files (dirty working tree)." >&2
-    echo "Either commit, stash, or discard them before proceeding." >&2
-    exit 1
+  echo "Error: Git has modified tracked files (dirty working tree)." >&2
+  echo "Either commit, stash, or discard them before proceeding." >&2
+  exit 1
 fi
-git checkout origin/master Cargo.toml 
-stage1_stage2
+git checkout origin/master Cargo.toml
+if [ "$BUILD_MODE" = "full" ]; then
+  stage1_stage2
+fi
 stage3
 #patch_crates
