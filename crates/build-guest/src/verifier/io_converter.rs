@@ -5,7 +5,7 @@ use p3_field::FieldAlgebra;
 
 use super::asm_utils::*;
 
-// This function assumes the pi is published in sequencial order
+// This function assumes the pi is published in sequential order
 // `convert_publish_v1` was a more general version, but now `castf` cannot write to register,
 // so I have to use the `idx` here.
 pub fn convert_publish(op: Instruction<F>, idx: usize) -> Vec<Instruction<F>> {

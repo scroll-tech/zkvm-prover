@@ -173,7 +173,7 @@ pub struct ChunkInfo {
     #[rkyv()]
     pub withdraw_root: B256,
     /// Digest of L1 message txs force included in the chunk.
-    /// It is a legacy field and can be omitted in new defination
+    /// It is a legacy field and can be omitted in new definition
     #[rkyv()]
     #[serde(default)]
     pub data_hash: B256,
