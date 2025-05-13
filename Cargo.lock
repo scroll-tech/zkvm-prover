@@ -2245,7 +2245,7 @@ dependencies = [
  "js-sys",
  "log",
  "wasm-bindgen",
- "windows-core 0.61.0",
+ "windows-core",
 ]
 
 [[package]]
@@ -3055,25 +3055,12 @@ dependencies = [
 
 [[package]]
 name = "openvm"
-version = "1.1.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=a0ae88f#a0ae88f2c4d98b651c653a1e9b7598d3ad15455e"
-dependencies = [
- "bytemuck",
- "num-bigint 0.4.6",
- "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?rev=a0ae88f)",
- "openvm-platform 1.1.1",
- "openvm-rv32im-guest 1.1.1",
- "serde",
-]
-
-[[package]]
-name = "openvm"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "bytemuck",
  "num-bigint 0.4.6",
- "openvm-custom-insn 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0)",
+ "openvm-custom-insn",
  "openvm-platform 1.2.0",
  "openvm-rv32im-guest 1.2.0",
  "serde",
@@ -3082,7 +3069,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-circuit"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -3110,19 +3097,9 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-complex-macros"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "openvm-macros-common 1.2.0",
- "quote",
- "syn 2.0.101",
-]
-
-[[package]]
-name = "openvm-algebra-complex-macros"
-version = "0.1.0"
-source = "git+https://github.com/openvm-org/openvm.git?rev=a0ae88f#a0ae88f2c4d98b651c653a1e9b7598d3ad15455e"
-dependencies = [
- "openvm-macros-common 1.1.1",
  "quote",
  "syn 2.0.101",
 ]
@@ -3134,7 +3111,7 @@ source = "git+https://github.com/openvm-org/openvm.git?rev=a0ae88f#a0ae88f2c4d98
 dependencies = [
  "halo2curves-axiom 0.7.0",
  "num-bigint 0.4.6",
- "openvm-algebra-complex-macros 0.1.0 (git+https://github.com/openvm-org/openvm.git?rev=a0ae88f)",
+ "openvm-algebra-complex-macros",
  "openvm-algebra-moduli-macros 1.1.1",
  "serde-big-array",
  "strum_macros 0.26.4",
@@ -3143,11 +3120,11 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-guest"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "halo2curves-axiom 0.7.0",
  "num-bigint 0.4.6",
- "openvm-algebra-complex-macros 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0)",
+ "openvm-algebra-complex-macros",
  "openvm-algebra-moduli-macros 1.2.0",
  "serde-big-array",
  "strum_macros 0.26.4",
@@ -3166,7 +3143,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-moduli-macros"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "openvm-macros-common 1.2.0",
  "quote",
@@ -3176,7 +3153,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-transpiler"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "openvm-algebra-guest 1.2.0",
  "openvm-instructions",
@@ -3190,7 +3167,7 @@ dependencies = [
 [[package]]
 name = "openvm-bigint-circuit"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -3212,11 +3189,11 @@ dependencies = [
 [[package]]
 name = "openvm-bigint-guest"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "num-bigint 0.4.6",
  "num-traits",
- "openvm 1.2.0",
+ "openvm",
  "openvm-platform 1.2.0",
  "serde",
  "serde-big-array",
@@ -3226,7 +3203,7 @@ dependencies = [
 [[package]]
 name = "openvm-bigint-transpiler"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "openvm-bigint-guest",
  "openvm-instructions",
@@ -3241,7 +3218,7 @@ dependencies = [
 [[package]]
 name = "openvm-build"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "cargo_metadata 0.18.1",
  "eyre",
@@ -3253,7 +3230,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "backtrace",
  "cfg-if",
@@ -3284,7 +3261,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit-derive"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "itertools 0.14.0",
  "quote",
@@ -3294,7 +3271,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit-primitives"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "derive-new 0.6.0",
  "itertools 0.14.0",
@@ -3309,7 +3286,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit-primitives-derive"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "itertools 0.14.0",
  "quote",
@@ -3319,7 +3296,7 @@ dependencies = [
 [[package]]
 name = "openvm-continuations"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "derivative",
  "openvm-circuit",
@@ -3334,17 +3311,7 @@ dependencies = [
 [[package]]
 name = "openvm-custom-insn"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.101",
-]
-
-[[package]]
-name = "openvm-custom-insn"
-version = "0.1.0"
-source = "git+https://github.com/openvm-org/openvm.git?rev=a0ae88f#a0ae88f2c4d98b651c653a1e9b7598d3ad15455e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3354,7 +3321,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-circuit"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -3396,10 +3363,10 @@ dependencies = [
  "lazy_static",
  "num-bigint 0.4.6",
  "once_cell",
- "openvm 1.1.1",
+ "openvm",
  "openvm-algebra-guest 1.1.1",
  "openvm-algebra-moduli-macros 1.1.1",
- "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?rev=a0ae88f)",
+ "openvm-custom-insn",
  "openvm-ecc-sw-macros 1.1.1",
  "openvm-rv32im-guest 1.1.1",
  "p256",
@@ -3410,7 +3377,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-guest"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
@@ -3421,10 +3388,10 @@ dependencies = [
  "lazy_static",
  "num-bigint 0.4.6",
  "once_cell",
- "openvm 1.2.0",
+ "openvm",
  "openvm-algebra-guest 1.2.0",
  "openvm-algebra-moduli-macros 1.2.0",
- "openvm-custom-insn 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0)",
+ "openvm-custom-insn",
  "openvm-ecc-sw-macros 1.2.0",
  "openvm-rv32im-guest 1.2.0",
  "p256",
@@ -3445,7 +3412,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-sw-macros"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "openvm-macros-common 1.2.0",
  "quote",
@@ -3455,7 +3422,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-transpiler"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "openvm-ecc-guest 1.2.0",
  "openvm-instructions",
@@ -3469,7 +3436,7 @@ dependencies = [
 [[package]]
 name = "openvm-instructions"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "backtrace",
  "derive-new 0.6.0",
@@ -3486,7 +3453,7 @@ dependencies = [
 [[package]]
 name = "openvm-instructions-derive"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "quote",
  "syn 2.0.101",
@@ -3495,7 +3462,7 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-circuit"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -3530,7 +3497,7 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-guest"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "openvm-platform 1.2.0",
  "tiny-keccak",
@@ -3539,7 +3506,7 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-transpiler"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "openvm-instructions",
  "openvm-instructions-derive",
@@ -3561,7 +3528,7 @@ dependencies = [
 [[package]]
 name = "openvm-macros-common"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "syn 2.0.101",
 ]
@@ -3569,7 +3536,7 @@ dependencies = [
 [[package]]
 name = "openvm-mod-circuit-builder"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "itertools 0.14.0",
  "num-bigint 0.4.6",
@@ -3588,7 +3555,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-circuit"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -3615,7 +3582,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-compiler"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "backtrace",
  "itertools 0.14.0",
@@ -3639,7 +3606,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-compiler-derive"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "quote",
  "syn 2.0.101",
@@ -3648,7 +3615,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-recursion"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "cfg-if",
  "itertools 0.14.0",
@@ -3676,7 +3643,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-transpiler"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "openvm-instructions",
  "openvm-transpiler",
@@ -3686,7 +3653,7 @@ dependencies = [
 [[package]]
 name = "openvm-pairing-circuit"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -3724,11 +3691,11 @@ dependencies = [
  "lazy_static",
  "num-bigint 0.4.6",
  "num-traits",
- "openvm 1.1.1",
- "openvm-algebra-complex-macros 0.1.0 (git+https://github.com/openvm-org/openvm.git?rev=a0ae88f)",
+ "openvm",
+ "openvm-algebra-complex-macros",
  "openvm-algebra-guest 1.1.1",
  "openvm-algebra-moduli-macros 1.1.1",
- "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?rev=a0ae88f)",
+ "openvm-custom-insn",
  "openvm-ecc-guest 1.1.1",
  "openvm-ecc-sw-macros 1.1.1",
  "openvm-platform 1.1.1",
@@ -3741,7 +3708,7 @@ dependencies = [
 [[package]]
 name = "openvm-pairing-guest"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "group 0.13.0",
  "halo2curves-axiom 0.7.0",
@@ -3750,11 +3717,11 @@ dependencies = [
  "lazy_static",
  "num-bigint 0.4.6",
  "num-traits",
- "openvm 1.2.0",
- "openvm-algebra-complex-macros 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0)",
+ "openvm",
+ "openvm-algebra-complex-macros",
  "openvm-algebra-guest 1.2.0",
  "openvm-algebra-moduli-macros 1.2.0",
- "openvm-custom-insn 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0)",
+ "openvm-custom-insn",
  "openvm-ecc-guest 1.2.0",
  "openvm-ecc-sw-macros 1.2.0",
  "openvm-platform 1.2.0",
@@ -3767,7 +3734,7 @@ dependencies = [
 [[package]]
 name = "openvm-pairing-transpiler"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "openvm-instructions",
  "openvm-instructions-derive",
@@ -3783,27 +3750,25 @@ name = "openvm-platform"
 version = "1.1.1"
 source = "git+https://github.com/openvm-org/openvm.git?rev=a0ae88f#a0ae88f2c4d98b651c653a1e9b7598d3ad15455e"
 dependencies = [
- "getrandom 0.2.16",
- "libm",
- "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?rev=a0ae88f)",
+ "openvm-custom-insn",
  "openvm-rv32im-guest 1.1.1",
 ]
 
 [[package]]
 name = "openvm-platform"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "getrandom 0.2.16",
  "libm",
- "openvm-custom-insn 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0)",
+ "openvm-custom-insn",
  "openvm-rv32im-guest 1.2.0",
 ]
 
 [[package]]
 name = "openvm-poseidon2-air"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "derivative",
  "lazy_static",
@@ -3820,7 +3785,7 @@ dependencies = [
 [[package]]
 name = "openvm-rv32-adapters"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "derive-new 0.6.0",
  "itertools 0.14.0",
@@ -3840,7 +3805,7 @@ dependencies = [
 [[package]]
 name = "openvm-rv32im-circuit"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -3865,23 +3830,23 @@ name = "openvm-rv32im-guest"
 version = "1.1.1"
 source = "git+https://github.com/openvm-org/openvm.git?rev=a0ae88f#a0ae88f2c4d98b651c653a1e9b7598d3ad15455e"
 dependencies = [
- "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?rev=a0ae88f)",
+ "openvm-custom-insn",
  "strum_macros 0.26.4",
 ]
 
 [[package]]
 name = "openvm-rv32im-guest"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
- "openvm-custom-insn 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0)",
+ "openvm-custom-insn",
  "strum_macros 0.26.4",
 ]
 
 [[package]]
 name = "openvm-rv32im-transpiler"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "openvm-instructions",
  "openvm-instructions-derive",
@@ -3897,7 +3862,7 @@ dependencies = [
 [[package]]
 name = "openvm-sdk"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "async-trait",
  "bitcode",
@@ -3910,7 +3875,7 @@ dependencies = [
  "hex",
  "itertools 0.14.0",
  "metrics 0.23.1",
- "openvm 1.2.0",
+ "openvm",
  "openvm-algebra-circuit",
  "openvm-algebra-transpiler",
  "openvm-bigint-circuit",
@@ -3948,7 +3913,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-air"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "openvm-circuit-primitives",
  "openvm-stark-backend",
@@ -3959,7 +3924,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-circuit"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -3991,7 +3956,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-guest"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "openvm-platform 1.2.0",
  "sha2",
@@ -4000,7 +3965,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-transpiler"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "openvm-instructions",
  "openvm-instructions-derive",
@@ -4080,7 +4045,7 @@ dependencies = [
 [[package]]
 name = "openvm-transpiler"
 version = "1.2.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#4fe04563e84d2e46b1fbcd885e93c4f7479ae92e"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0#ce88ec8a5e05ec469d1ce99b733fed5d555d9177"
 dependencies = [
  "elf",
  "eyre",
@@ -6199,8 +6164,8 @@ dependencies = [
  "bitcode",
  "c-kzg",
  "itertools 0.14.0",
- "openvm 1.2.0",
- "openvm-algebra-complex-macros 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0)",
+ "openvm",
+ "openvm-algebra-complex-macros",
  "openvm-algebra-guest 1.2.0",
  "openvm-ecc-guest 1.2.0",
  "openvm-keccak256-guest 1.2.0",
@@ -6251,7 +6216,7 @@ name = "scroll-zkvm-bundle-circuit"
 version = "0.4.0"
 dependencies = [
  "alloy-primitives",
- "openvm 1.2.0",
+ "openvm",
  "openvm-algebra-guest 1.2.0",
  "openvm-keccak256-guest 1.2.0",
  "openvm-rv32im-guest 1.2.0",
@@ -6263,8 +6228,8 @@ dependencies = [
 name = "scroll-zkvm-chunk-circuit"
 version = "0.4.0"
 dependencies = [
- "openvm 1.2.0",
- "openvm-algebra-complex-macros 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0)",
+ "openvm",
+ "openvm-algebra-complex-macros",
  "openvm-algebra-guest 1.2.0",
  "openvm-bigint-guest",
  "openvm-ecc-guest 1.2.0",
@@ -6282,8 +6247,8 @@ dependencies = [
  "alloy-primitives",
  "alloy-serde 0.8.3",
  "itertools 0.14.0",
- "openvm 1.2.0",
- "openvm-custom-insn 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.0)",
+ "openvm",
+ "openvm-custom-insn",
  "openvm-rv32im-guest 1.2.0",
  "rkyv",
  "sbv-core",
@@ -7524,7 +7489,7 @@ version = "0.57.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "12342cb4d8e3b046f3d80effd474a7a02447231330ef77d71daa6fbc40681143"
 dependencies = [
- "windows-core 0.57.0",
+ "windows-core",
  "windows-targets 0.52.6",
 ]
 
@@ -7534,23 +7499,10 @@ version = "0.57.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2ed2439a290666cd67ecce2b0ffaad89c2a56b976b736e6ece670297897832d"
 dependencies = [
- "windows-implement 0.57.0",
- "windows-interface 0.57.0",
- "windows-result 0.1.2",
+ "windows-implement",
+ "windows-interface",
+ "windows-result",
  "windows-targets 0.52.6",
-]
-
-[[package]]
-name = "windows-core"
-version = "0.61.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4763c1de310c86d75a878046489e2e5ba02c649d185f21c67d4cf8a56d098980"
-dependencies = [
- "windows-implement 0.60.0",
- "windows-interface 0.59.1",
- "windows-link",
- "windows-result 0.3.2",
- "windows-strings",
 ]
 
 [[package]]
@@ -7565,32 +7517,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "windows-implement"
-version = "0.60.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a47fddd13af08290e67f4acabf4b459f647552718f683a7b415d290ac744a836"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.101",
-]
-
-[[package]]
 name = "windows-interface"
 version = "0.57.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "29bee4b38ea3cde66011baa44dba677c432a78593e202392d1e9070cf2a7fca7"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.101",
-]
-
-[[package]]
-name = "windows-interface"
-version = "0.59.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd9211b69f8dcdfa817bfd14bf1c97c9188afa36f4750130fcdf3f400eca9fa8"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -7610,24 +7540,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5e383302e8ec8515204254685643de10811af0ed97ea37210dc26fb0032647f8"
 dependencies = [
  "windows-targets 0.52.6",
-]
-
-[[package]]
-name = "windows-result"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c64fd11a4fd95df68efcfee5f44a294fe71b8bc6a91993e2791938abcc712252"
-dependencies = [
- "windows-link",
-]
-
-[[package]]
-name = "windows-strings"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a2ba9642430ee452d5a7aa78d72907ebe8cfda358e8cb7918a2050581322f97"
-dependencies = [
- "windows-link",
 ]
 
 [[package]]
