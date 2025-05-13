@@ -1,9 +1,6 @@
-use scroll_zkvm_circuit_input_types::{
-    batch::{ArchivedBatchWitness, ArchivedReferenceHeader, BatchInfo},
-    chunk::ChunkInfo,
-};
-
 use crate::builder::{BatchInfoBuilderV6, BatchInfoBuilderV7};
+use scroll_zkvm_circuit_input_types_batch::{ArchivedBatchWitness, ArchivedReferenceHeader};
+use scroll_zkvm_circuit_input_types_circuit::public_inputs::{batch::BatchInfo, chunk::ChunkInfo};
 
 pub fn execute(witness: &ArchivedBatchWitness) -> BatchInfo {
     let chunk_infos: Vec<ChunkInfo> = witness.chunk_infos.iter().map(|ci| ci.into()).collect();

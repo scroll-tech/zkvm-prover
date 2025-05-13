@@ -6,7 +6,8 @@ repository.workspace = true
 version = "0.4.0"
 
 [dependencies]
-scroll-zkvm-circuit-input-types.workspace = true
+scroll-zkvm-circuit-input-types-circuit.workspace = true
+scroll-zkvm-circuit-input-types-batch.workspace = true
 
 openvm = { workspace = true, features = ["std"] }
 openvm-algebra-guest.workspace = true
@@ -18,11 +19,11 @@ openvm-pairing-guest = { workspace = true, features = ["halo2curves"] }
 openvm-rv32im-guest.workspace = true
 
 alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
-bitcode.workspace = true
+#bitcode.workspace = true
 itertools.workspace = true
 rkyv.workspace = true
-serde.workspace = true
-tiny-keccak.workspace = true
+#serde.workspace = true
+#tiny-keccak.workspace = true
 
 [features]
 default = []

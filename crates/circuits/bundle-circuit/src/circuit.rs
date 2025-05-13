@@ -1,14 +1,15 @@
-use alloy_primitives::B256;
-use scroll_zkvm_circuit_input_types::{
-    AggCircuit, Circuit, PublicInputs,
-    batch::VersionedBatchInfo,
-    bundle::{ArchivedBundleWitness, BundleInfo, BundleInfoV1, BundleInfoV2},
-    chunk::ForkName,
-    proof::{AggregationInput, ProgramCommitment},
-    utils::read_witnesses,
-};
-
 use crate::child_commitments::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT};
+use alloy_primitives::B256;
+use scroll_zkvm_circuit_input_types_bundle::ArchivedBundleWitness;
+use scroll_zkvm_circuit_input_types_circuit::{
+    AggCircuit, AggregationInput, Circuit, ProgramCommitment,
+    io::read_witnesses,
+    public_inputs::{
+        ForkName, PublicInputs,
+        batch::VersionedBatchInfo,
+        bundle::{BundleInfo, BundleInfoV1, BundleInfoV2},
+    },
+};
 
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use openvm_keccak256_guest;

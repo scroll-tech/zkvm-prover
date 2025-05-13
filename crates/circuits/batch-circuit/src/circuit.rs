@@ -1,12 +1,10 @@
 use alloy_primitives::B256;
-use scroll_zkvm_circuit_input_types::{
-    AggCircuit, Circuit,
-    batch::{ArchivedBatchWitness, VersionedBatchInfo},
-    chunk::VersionedChunkInfo,
-    proof::{AggregationInput, ProgramCommitment},
-    utils::read_witnesses,
+use scroll_zkvm_circuit_input_types_batch::ArchivedBatchWitness;
+use scroll_zkvm_circuit_input_types_circuit::{
+    AggCircuit, AggregationInput, Circuit, ProgramCommitment,
+    io::read_witnesses,
+    public_inputs::{batch::VersionedBatchInfo, chunk::VersionedChunkInfo},
 };
-
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use {
     openvm_algebra_guest::{IntMod, field::FieldExtension},

@@ -1,10 +1,7 @@
-use alloy_primitives::B256;
-use scroll_zkvm_circuit_input_types::{
-    batch::{BatchHeader, BatchHeaderV6, BatchInfo, EnvelopeV6, PayloadV6},
-    chunk::ChunkInfo,
-};
-
 use crate::blob_consistency::BlobPolynomial;
+use alloy_primitives::B256;
+use scroll_zkvm_circuit_input_types_batch::{BatchHeader, BatchHeaderV6, EnvelopeV6, PayloadV6};
+use scroll_zkvm_circuit_input_types_circuit::public_inputs::{batch::BatchInfo, chunk::ChunkInfo};
 
 /// Builder that consumes DA-codec@v6 [`BatchHeader`][BatchHeaderV6] and builds the public-input
 /// values [`BatchInfo`] for the batch-circuit.
