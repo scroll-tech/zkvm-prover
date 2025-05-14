@@ -6,7 +6,7 @@ repository.workspace = true
 version = "0.4.0"
 
 [dependencies]
-scroll-zkvm-circuit-input-types-circuit.workspace = true
+scroll-zkvm-circuit-input-types-circuit.path = "../circuit"
 scroll-zkvm-circuit-input-types-chunk.workspace = true
 
 rkyv.workspace = true

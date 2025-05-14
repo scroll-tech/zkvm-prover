@@ -1,5 +1,6 @@
 [workspace]
 members = [
+  "crates/circuits/circuit",
   "crates/circuits/chunk-circuit",
   "crates/circuits/batch-circuit",
   "crates/circuits/bundle-circuit",
@@ -46,7 +47,6 @@ openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", ta
 #sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "zkvm/euclid-upgrade" }
 
 alloy-primitives = { version = "0.8", default-features = false }
-#alloy-serde = { version = "0.8", default-features = false }
 bitcode = { version = "0.6.5", default-features = false, features = ["serde", "derive"] }
 #bincode_v1 = { version = "1.3", package = "bincode"}
 #derivative = "2.2.0"
@@ -74,7 +74,8 @@ tracing = "0.1"
 toml = "0.8.14"
 tracing-subscriber = "0.3"
 
-scroll-zkvm-circuit-input-types-circuit = { git = "https://github.com/scroll-tech/scroll.git", branch = "refactor/zkvm"}
+scroll-zkvm-circuit-input-types-base = { git = "https://github.com/scroll-tech/scroll.git", branch = "refactor/zkvm"}
+scroll-zkvm-circuit-input-types-aggregation = { git = "https://github.com/scroll-tech/scroll.git", branch = "refactor/zkvm"}
 scroll-zkvm-circuit-input-types-chunk = { git = "https://github.com/scroll-tech/scroll.git", branch = "refactor/zkvm"}
 scroll-zkvm-circuit-input-types-batch = { git = "https://github.com/scroll-tech/scroll.git", branch = "refactor/zkvm"}
 scroll-zkvm-circuit-input-types-bundle = { git = "https://github.com/scroll-tech/scroll.git", branch = "refactor/zkvm"}

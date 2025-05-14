@@ -6,7 +6,7 @@ repository.workspace = true
 version = "0.4.0"
 
 [dependencies]
-scroll-zkvm-circuit-input-types-circuit.workspace = true
+scroll-zkvm-circuit-input-types-circuit.path = "../circuit"
 scroll-zkvm-circuit-input-types-bundle.workspace = true
 
 openvm = { workspace = true, features = ["std"] }
@@ -14,7 +14,7 @@ openvm-algebra-guest.workspace = true
 openvm-keccak256-guest.workspace = true
 openvm-rv32im-guest.workspace = true
 
-alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
+alloy-primitives.workspace = true
 rkyv.workspace = true
 
 [features]

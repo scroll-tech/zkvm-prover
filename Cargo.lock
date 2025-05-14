@@ -71,7 +71,7 @@ dependencies = [
  "alloy-eips",
  "alloy-primitives",
  "alloy-rlp",
- "alloy-serde",
+ "alloy-serde 0.11.1",
  "alloy-trie",
  "auto_impl",
  "c-kzg",
@@ -90,7 +90,7 @@ dependencies = [
  "alloy-eips",
  "alloy-primitives",
  "alloy-rlp",
- "alloy-serde",
+ "alloy-serde 0.11.1",
  "serde",
 ]
 
@@ -143,7 +143,7 @@ dependencies = [
  "alloy-eip7702",
  "alloy-primitives",
  "alloy-rlp",
- "alloy-serde",
+ "alloy-serde 0.11.1",
  "auto_impl",
  "c-kzg",
  "derive_more 1.0.0",
@@ -160,7 +160,7 @@ checksum = "0cded3a2d4bd7173f696458c5d4c98c18a628dfcc9f194385e80a486e412e2e0"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
- "alloy-serde",
+ "alloy-serde 0.11.1",
  "alloy-trie",
  "serde",
 ]
@@ -205,7 +205,7 @@ dependencies = [
  "alloy-primitives",
  "alloy-rpc-types-any",
  "alloy-rpc-types-eth",
- "alloy-serde",
+ "alloy-serde 0.11.1",
  "alloy-signer",
  "alloy-sol-types",
  "async-trait",
@@ -225,7 +225,7 @@ dependencies = [
  "alloy-consensus",
  "alloy-eips",
  "alloy-primitives",
- "alloy-serde",
+ "alloy-serde 0.11.1",
  "serde",
 ]
 
@@ -288,7 +288,7 @@ checksum = "318ae46dd12456df42527c3b94c1ae9001e1ceb707f7afe2c7807ac4e49ebad9"
 dependencies = [
  "alloy-consensus-any",
  "alloy-rpc-types-eth",
- "alloy-serde",
+ "alloy-serde 0.11.1",
 ]
 
 [[package]]
@@ -301,7 +301,7 @@ dependencies = [
  "alloy-eips",
  "alloy-primitives",
  "alloy-rlp",
- "alloy-serde",
+ "alloy-serde 0.11.1",
  "derive_more 1.0.0",
  "strum 0.26.3",
 ]
@@ -318,12 +318,23 @@ dependencies = [
  "alloy-network-primitives",
  "alloy-primitives",
  "alloy-rlp",
- "alloy-serde",
+ "alloy-serde 0.11.1",
  "alloy-sol-types",
  "itertools 0.14.0",
  "serde",
  "serde_json",
  "thiserror 2.0.12",
+]
+
+[[package]]
+name = "alloy-serde"
+version = "0.8.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5851bf8d5ad33014bd0c45153c603303e730acc8a209450a7ae6b4a12c2789e2"
+dependencies = [
+ "alloy-primitives",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -2815,7 +2826,7 @@ dependencies = [
  "alloy-eips",
  "alloy-primitives",
  "alloy-rlp",
- "alloy-serde",
+ "alloy-serde 0.11.1",
  "derive_more 1.0.0",
  "serde",
  "serde_with",
@@ -4689,7 +4700,7 @@ dependencies = [
  "alloy-eips",
  "alloy-primitives",
  "alloy-rlp",
- "alloy-serde",
+ "alloy-serde 0.11.1",
  "derive_more 1.0.0",
  "modular-bitfield",
  "reth-codecs",
@@ -4907,7 +4918,7 @@ dependencies = [
  "alloy-eips",
  "alloy-genesis",
  "alloy-primitives",
- "alloy-serde",
+ "alloy-serde 0.11.1",
  "derive_more 1.0.0",
  "once_cell",
  "reth-chainspec",
@@ -5100,7 +5111,7 @@ dependencies = [
  "alloy-primitives",
  "alloy-rlp",
  "alloy-rpc-types-eth",
- "alloy-serde",
+ "alloy-serde 0.11.1",
  "alloy-trie",
  "bytes",
  "derive_more 1.0.0",
@@ -5460,7 +5471,7 @@ dependencies = [
  "alloy-network",
  "alloy-primitives",
  "alloy-rpc-types-eth",
- "alloy-serde",
+ "alloy-serde 0.11.1",
  "auto_impl",
  "itertools 0.14.0",
  "reth-chainspec",
@@ -5505,7 +5516,7 @@ dependencies = [
  "alloy-eips",
  "alloy-primitives",
  "alloy-rlp",
- "alloy-serde",
+ "alloy-serde 0.11.1",
  "derive_more 1.0.0",
  "modular-bitfield",
  "reth-codecs",
@@ -5538,7 +5549,7 @@ dependencies = [
  "alloy-network-primitives",
  "alloy-primitives",
  "alloy-rpc-types-eth",
- "alloy-serde",
+ "alloy-serde 0.11.1",
  "derive_more 1.0.0",
  "scroll-alloy-consensus",
  "serde",
@@ -5632,7 +5643,7 @@ dependencies = [
 [[package]]
 name = "scroll-zkvm-circuit-input-types-aggregation"
 version = "0.2.0"
-source = "git+https://github.com/scroll-tech/scroll.git?branch=refactor%2Fzkvm#98019927243d07786fbffe50281040021e8b426a"
+source = "git+https://github.com/scroll-tech/scroll.git?branch=refactor%2Fzkvm#591a833146c03e63f189600631866864e53ce1b0"
 dependencies = [
  "alloy-primitives",
  "rkyv",
@@ -5642,9 +5653,10 @@ dependencies = [
 [[package]]
 name = "scroll-zkvm-circuit-input-types-base"
 version = "0.2.0"
-source = "git+https://github.com/scroll-tech/scroll.git?branch=refactor%2Fzkvm#98019927243d07786fbffe50281040021e8b426a"
+source = "git+https://github.com/scroll-tech/scroll.git?branch=refactor%2Fzkvm#591a833146c03e63f189600631866864e53ce1b0"
 dependencies = [
  "alloy-primitives",
+ "alloy-serde 0.8.3",
  "itertools 0.14.0",
  "rkyv",
  "serde",
@@ -5656,7 +5668,7 @@ dependencies = [
 [[package]]
 name = "scroll-zkvm-circuit-input-types-batch"
 version = "0.2.0"
-source = "git+https://github.com/scroll-tech/scroll.git?branch=refactor%2Fzkvm#98019927243d07786fbffe50281040021e8b426a"
+source = "git+https://github.com/scroll-tech/scroll.git?branch=refactor%2Fzkvm#591a833146c03e63f189600631866864e53ce1b0"
 dependencies = [
  "alloy-primitives",
  "itertools 0.14.0",
@@ -5670,7 +5682,7 @@ dependencies = [
 [[package]]
 name = "scroll-zkvm-circuit-input-types-bundle"
 version = "0.2.0"
-source = "git+https://github.com/scroll-tech/scroll.git?branch=refactor%2Fzkvm#98019927243d07786fbffe50281040021e8b426a"
+source = "git+https://github.com/scroll-tech/scroll.git?branch=refactor%2Fzkvm#591a833146c03e63f189600631866864e53ce1b0"
 dependencies = [
  "alloy-primitives",
  "itertools 0.14.0",
@@ -5684,7 +5696,7 @@ dependencies = [
 [[package]]
 name = "scroll-zkvm-circuit-input-types-chunk"
 version = "0.2.0"
-source = "git+https://github.com/scroll-tech/scroll.git?branch=refactor%2Fzkvm#98019927243d07786fbffe50281040021e8b426a"
+source = "git+https://github.com/scroll-tech/scroll.git?branch=refactor%2Fzkvm#591a833146c03e63f189600631866864e53ce1b0"
 dependencies = [
  "alloy-primitives",
  "itertools 0.14.0",
@@ -5703,11 +5715,12 @@ dependencies = [
 [[package]]
 name = "scroll-zkvm-circuit-input-types-circuit"
 version = "0.2.0"
-source = "git+https://github.com/scroll-tech/scroll.git?branch=refactor%2Fzkvm#98019927243d07786fbffe50281040021e8b426a"
 dependencies = [
  "alloy-primitives",
  "itertools 0.14.0",
  "openvm",
+ "openvm-custom-insn",
+ "openvm-rv32im-guest",
  "rkyv",
  "scroll-zkvm-circuit-input-types-aggregation",
  "scroll-zkvm-circuit-input-types-base",
