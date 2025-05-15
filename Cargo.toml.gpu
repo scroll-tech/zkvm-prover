@@ -38,7 +38,7 @@ openvm-native-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.
 openvm-pairing-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.0-pipeline", default-features = false }
 openvm-rv32im-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.0-pipeline", default-features = false }
 openvm-rv32im-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.0-pipeline", default-features = false }
-openvm-sdk = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.0-pipeline", default-features = false, features = ["parallel", "pipeline", "evm-prove", "bench-metrics"] }
+openvm-sdk = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.0-pipeline", default-features = false, features = ["parallel", "evm-prove", "bench-metrics"] }
 openvm-sha256-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.0-pipeline", default-features = false }
 openvm-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.0-pipeline", default-features = false }
 
@@ -113,7 +113,7 @@ openvm-native-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.
 openvm-pairing-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.0-pipeline", default-features = false }
 openvm-rv32im-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.0-pipeline", default-features = false }
 openvm-rv32im-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.0-pipeline", default-features = false }
-openvm-sdk = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.0-pipeline", default-features = false, features = ["parallel", "pipeline", "bench-metrics", "evm-prove"] }
+openvm-sdk = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.0-pipeline", default-features = false, features = ["parallel", "bench-metrics", "evm-prove"] }
 openvm-sha256-guest = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.0-pipeline", default-features = false }
 openvm-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.0-pipeline", default-features = false }
 
