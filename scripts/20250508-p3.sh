@@ -9,6 +9,8 @@ function stage1_stage2() {
   patch_crates
   echo 'BUILD_STAGES=stage1,stage2' >crates/build-guest/.env
   bash build-guest-actions-entrypoint.sh
+  cp Cargo.toml Cargo.toml.gpu
+  cp Cargo.lock Cargo.lock.gpu
   git checkout Cargo.toml Cargo.lock
 }
 
@@ -22,7 +24,7 @@ if ! git diff --quiet || ! git diff --cached --quiet; then
   echo "Either commit, stash, or discard them before proceeding." >&2
   exit 1
 fi
-git checkout origin/master Cargo.toml
+git checkout origin/master Cargo.toml Cargo.lock
 if [ "$BUILD_MODE" = "full" ]; then
   stage1_stage2
 fi
