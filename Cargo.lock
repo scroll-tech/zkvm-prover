@@ -6840,6 +6840,7 @@ dependencies = [
  "openvm-native-recursion",
  "openvm-native-transpiler",
  "openvm-sdk",
+ "openvm-stark-sdk",
  "openvm-transpiler",
  "rayon",
  "regex",

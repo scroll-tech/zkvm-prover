@@ -56,7 +56,7 @@ impl ProverTester for ChunkProverTester {
                 #[cfg(not(feature = "euclidv2"))]
                 let blocks = 12508460usize..=12508463usize;
                 #[cfg(feature = "euclidv2")]
-                let blocks = 1usize..=4usize;
+                let blocks = 10319966usize..=10319974usize;
                 blocks
                     .into_iter()
                     .map(|block_n| {
