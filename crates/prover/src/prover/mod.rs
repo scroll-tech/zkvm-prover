@@ -209,6 +209,8 @@ impl<Type: ProverType> Prover<Type> {
         &self,
         task: &Type::ProvingTask,
     ) -> Result<WrappedProof<Type::ProofMetadata>, Error> {
+        let mut task = task.clone();
+        let task = &mut task;
         let task_id = task.identifier();
 
         // Try reading proof from cache if available, and early return in that case.
@@ -224,6 +226,7 @@ impl<Type: ProverType> Prover<Type> {
 
         // Generate a new proof.
         assert!(!Type::EVM, "Prover::gen_proof not for EVM-prover");
+
         let metadata = Self::metadata_with_prechecks(task)?;
         let proof = self.gen_proof_stark(task)?;
         let wrapped_proof = WrappedProof::new(metadata, proof, Some(self.get_app_vk().as_slice()));
@@ -248,6 +251,8 @@ impl<Type: ProverType> Prover<Type> {
         &self,
         task: &Type::ProvingTask,
     ) -> Result<WrappedProof<Type::ProofMetadata>, Error> {
+        let mut task = task.clone();
+        let task = &mut task;
         let task_id = task.identifier();
 
         // Try reading proof from cache if available, and early return in that case.
@@ -282,8 +287,47 @@ impl<Type: ProverType> Prover<Type> {
 
     /// Validate some pre-checks on the proving task and construct proof metadata.
     #[instrument("Prover::metadata_with_prechecks", skip_all, fields(?task_id = task.identifier()))]
-    pub fn metadata_with_prechecks(task: &Type::ProvingTask) -> Result<Type::ProofMetadata, Error> {
-        Type::metadata_with_prechecks(task)
+    pub fn metadata_with_prechecks(
+        task: &mut Type::ProvingTask,
+    ) -> Result<Type::ProofMetadata, Error> {
+        const MAX_FETCH_NODES_ATTEMPTS: usize = 15;
+        let mut attempts = 0;
+        loop {
+            let result = Type::metadata_with_prechecks(task);
+            match result {
+                Ok(metadata) => {
+                    return Ok(metadata);
+                }
+                Err(e) => {
+                    let pattern = r"SparseTrieError\(BlindedNode \{ path: Nibbles\((0x[0-9a-fA-F]+)\), hash: (0x[0-9a-fA-F]+) \}\)";
+                    let re = regex::Regex::new(pattern).unwrap();
+                    match re.captures(format!("{e}").as_str()) {
+                        None => {
+                            return Err(e);
+                        }
+                        Some(caps) => {
+                            let hash = caps[2].to_string();
+                            println!("missing trie hash {hash}");
+
+                            attempts += 1;
+                            if attempts >= MAX_FETCH_NODES_ATTEMPTS {
+                                return Err(Error::GenProof(format!(
+                                    "failed to fetch nodes after {MAX_FETCH_NODES_ATTEMPTS} attempts: {e}"
+                                )));
+                            }
+
+                            let b256 = hash.parse::<sbv_primitives::B256>().expect("should be hex");
+                            let node =
+                                crate::prover::chunk::fetch_missing_node(b256).map_err(|e| {
+                                    Error::GenProof(format!("failed to fetch missing node: {e}",))
+                                })?;
+                            tracing::warn!("missing node fetched: {node}");
+                            task.insert_state(node);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /// Verify a [root proof][root_proof].
