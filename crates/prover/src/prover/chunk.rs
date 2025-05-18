@@ -1,5 +1,3 @@
-use scroll_zkvm_circuit_input_types::chunk::{ArchivedChunkWitness, ChunkWitness, execute};
-
 use crate::{
     Error, Prover, ProverType,
     commitments::{chunk, chunk_rv32},
@@ -8,7 +6,9 @@ use crate::{
 };
 
 use super::Commitments;
-
+use alloy_primitives::B256;
+use scroll_zkvm_circuit_input_types::chunk::{ArchivedChunkWitness, ChunkWitness, execute};
+use std::{sync::LazyLock, time::Duration};
 pub struct ChunkCircuit;
 pub struct ChunkCircuitRv32;
 
@@ -31,6 +31,13 @@ pub type ChunkProver = Prover<ChunkProverType>;
 pub type ChunkProverRv32 = Prover<ChunkProverTypeRv32>;
 
 pub struct GenericChunkProverType<C: Commitments>(std::marker::PhantomData<C>);
+
+static PROVER_DB_GET_ENDPOINT: LazyLock<Option<String>> = LazyLock::new(|| {
+    std::env::var("PROVER_DB_GET_ENDPOINT")
+        .as_deref()
+        .ok()
+        .map(|s| s.trim_end_matches("/").to_string())
+});
 
 impl<C: Commitments> ProverType for GenericChunkProverType<C> {
     const NAME: &'static str = "chunk";
@@ -82,9 +89,100 @@ impl<C: Commitments> ProverType for GenericChunkProverType<C> {
             ))
         })?;
 
-        let chunk_info = execute(chunk_witness)
-            .map_err(|e| Error::GenProof(format!("{}: {}", err_prefix, e)))?;
+        let chunk_info = execute(chunk_witness).map_err(|e| {
+            println!("display {}", e);
+            println!("debug {:?}", e);
+            Error::GenProof(format!("{}: {}", err_prefix, e))
+        })?;
 
         Ok(ChunkProofMetadata { chunk_info })
+    }
+}
+
+#[tracing::instrument]
+pub(crate) fn fetch_missing_node(hash: B256) -> Result<sbv_primitives::Bytes, String> {
+    use backon::{BlockingRetryableWithContext, ExponentialBuilder};
+
+    const RETRY_POLICY: ExponentialBuilder = ExponentialBuilder::new()
+        .with_min_delay(Duration::from_millis(100))
+        .with_max_delay(Duration::from_secs(10))
+        .with_max_times(3);
+
+    static CLIENT: LazyLock<reqwest::blocking::Client> = LazyLock::new(|| {
+        reqwest::blocking::ClientBuilder::new()
+            .timeout(Duration::from_secs(10))
+            .build()
+            .expect("Failed to create reqwest client")
+    });
+
+    let body = serde_json::json!({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "debug_dbGet",
+        "params": [hash],
+    });
+    tracing::debug!("request_body: {body:?}");
+
+    #[derive(serde::Deserialize)]
+    //#[serde(untagged)]
+    enum Response {
+        result(sbv_primitives::Bytes),
+        error { code: i64, message: String },
+    }
+    // Define the JSON-RPC response structure
+    #[derive(serde::Deserialize)]
+    struct JsonRpcResponse {
+        jsonrpc: String,
+        id: serde_json::Value, // Use Value to handle numeric or string IDs
+        #[serde(flatten)]
+        result: Response, // Use flatten to handle result or error
+    }
+
+    // struct  Response {
+    //    jsonrpc: String,
+    //    id: u32,
+    //    result: sbv_primitives::Bytes,
+    //}
+
+    let client = reqwest::blocking::ClientBuilder::new()
+        .timeout(Duration::from_secs(10))
+        .build()
+        .expect("Failed to create reqwest client");
+    let endpoint = "https://ancient-smart-sunset.scroll-mainnet.quiknode.pro/310e39a5b18fbd648f52b6e7f763fd40ec94d93f";
+    let (_, result) = {
+        |body| {
+            let result = client
+                .post(endpoint)
+                .json(body)
+                .send()
+                .and_then(|r| r.error_for_status())
+                .and_then(|r| {
+                    // println!("r: {:?}", r.text());
+                    r.json::<JsonRpcResponse>()
+                    // panic!();
+                });
+            (body, result)
+        }
+    }
+    .retry(RETRY_POLICY)
+    .notify(|err, dur| {
+        tracing::debug!("retrying {err:?} after {dur:?}");
+    })
+    .context(&body)
+    .call();
+
+    match result {
+        Ok(r) => {
+            match r.result {
+                // 1. success: {"jsonrpc":"2.0","id":1,"result":"0xe19f3c8dfeea98e16e7fcafcce43929240f3ff23ad27fc7a81d5368b0e9eb6876a32"}
+                Response::result(bytes) => Ok(bytes),
+                // 2. method not supported: {"jsonrpc":"2.0","id":1,"error":{"code":-32604,"message":"this request method is not supported"}}
+                // 3. node not found: {"jsonrpc":"2.0","id":1,"error":{"code":-32000,"message":"leveldb: not found"}}
+                Response::error { code, message } => {
+                    Err(format!("error from RPC: {code} {message}"))
+                }
+            }
+        }
+        Err(e) => Err(format!("failed after max retries, last err: {e}")),
     }
 }

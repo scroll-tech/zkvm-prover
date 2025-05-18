@@ -63,6 +63,7 @@ metrics-util = "0.17"
 metrics-tracing-context = "0.16.0"
 p3-field = { git = "ssh://git@github.com/scroll-tech/plonky3-gpu.git", tag = "v0.2.0" }
 rayon = "1.10"
+reqwest = "0.12"
 rkyv = "0.8"
 serde = { version = "1", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0" }

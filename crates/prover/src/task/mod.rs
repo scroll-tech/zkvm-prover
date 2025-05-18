@@ -15,12 +15,15 @@ pub mod bundle;
 
 /// Every proving task must have an identifier. The identifier will be appended to a prefix while
 /// storing/reading proof to/from disc.
-pub trait ProvingTask: serde::de::DeserializeOwned {
+pub trait ProvingTask: serde::de::DeserializeOwned + Clone {
     fn identifier(&self) -> String;
 
     fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error>;
 
     fn fork_name(&self) -> ForkName;
+
+    // adhoc
+    fn insert_state(&mut self, witness: sbv_primitives::Bytes) {}
 }
 
 /// Flatten a [`WrappedProof`] and split the proof from the public values. We also split out the

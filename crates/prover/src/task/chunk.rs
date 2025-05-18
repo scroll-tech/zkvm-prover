@@ -75,6 +75,10 @@ impl ProvingTask for ChunkProvingTask {
         ForkName::from(self.fork_name.as_str())
     }
 
+    fn insert_state(&mut self, node: alloy_primitives::Bytes) {
+        self.block_witnesses[0].states.push(node);
+    }
+
     fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error> {
         let witness = ChunkWitness {
             blocks: self.block_witnesses.to_vec(),
