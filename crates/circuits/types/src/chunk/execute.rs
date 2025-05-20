@@ -100,7 +100,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
                 chain_spec.clone(),
                 false,
             )?
-        },
+        }
         Err(e) => return Err(e),
     };
 
