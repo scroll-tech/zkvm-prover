@@ -1,3 +1,4 @@
+use alloy_primitives::B256;
 use sbv_core::{EvmDatabase, EvmExecutor};
 use sbv_primitives::{
     BlockWitness,
@@ -13,10 +14,12 @@ use sbv_primitives::{
         scroll::ChunkInfoBuilder,
     },
 };
+use std::sync::Arc;
 
 use crate::{
     chunk::{
-        ArchivedChunkWitness, ChunkInfo, ForkName, make_providers, public_inputs::BlockContextV2,
+        ArchivedChunkWitness, BlockHashProvider, ChunkInfo, CodeDb, ForkName, NodesProvider,
+        make_providers, public_inputs::BlockContextV2,
     },
     manually_drop_on_zkvm,
 };
@@ -68,38 +71,44 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
         blob_params: Default::default(),
     };
     let config = ScrollChainConfig::mainnet();
-    let chain_spec: ScrollChainSpec = ScrollChainSpec { inner, config };
+    let chain_spec = Arc::new(ScrollChainSpec { inner, config });
 
     let (code_db, nodes_provider, block_hashes) = make_providers(&witness.blocks);
+    let code_db = manually_drop_on_zkvm!(code_db);
     let nodes_provider = manually_drop_on_zkvm!(nodes_provider);
 
     let prev_state_root = witness.blocks[0].pre_state_root();
-    let mut db = manually_drop_on_zkvm!(
-        EvmDatabase::new_from_root(code_db, prev_state_root, &nodes_provider, block_hashes)
-            .map_err(|e| format!("failed to create EvmDatabase: {}", e))?
-    );
-    for block in blocks.iter() {
-        let output = manually_drop_on_zkvm!(
-            EvmExecutor::new(std::sync::Arc::new(chain_spec.clone()), &db, block)
-                .execute()
-                .map_err(|e| format!("failed to execute block: {}", e))?
-        );
-        db.update(&nodes_provider, output.state.state.iter())
-            .map_err(|e| format!("failed to update db: {}", e))?;
-    }
 
-    let post_state_root = db.commit_changes();
-
-    let withdraw_root = db
-        .withdraw_root()
-        .map_err(|e| format!("failed to get withdraw root: {}", e))?;
+    let (post_state_root, withdraw_root) = match execute_inner(
+        &code_db,
+        &nodes_provider,
+        &block_hashes,
+        prev_state_root,
+        &blocks,
+        chain_spec.clone(),
+        true,
+    ) {
+        Ok((post_state_root, withdraw_root)) => (post_state_root, withdraw_root),
+        Err(e) if e.starts_with("failed to update db:") => {
+            openvm::io::println(format!("{e}; retrying with defer commit disabled"));
+            execute_inner(
+                &code_db,
+                &nodes_provider,
+                &block_hashes,
+                prev_state_root,
+                &blocks,
+                chain_spec.clone(),
+                false,
+            )?
+        },
+        Err(e) => return Err(e),
+    };
 
     let mut rlp_buffer = manually_drop_on_zkvm!(Vec::with_capacity(2048));
     let (tx_data_length, tx_data_digest) = blocks
         .iter()
         .flat_map(|b| b.body().transactions.iter())
         .tx_bytes_hash_in(rlp_buffer.as_mut());
-    let _ = tx_data_length;
 
     let sbv_chunk_info = {
         #[allow(unused_mut)]
@@ -145,4 +154,36 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     assert!(std::sync::LazyLock::get(&MAINNET).is_none());
 
     Ok(chunk_info)
+}
+
+fn execute_inner(
+    code_db: &CodeDb,
+    nodes_provider: &NodesProvider,
+    block_hashes: &BlockHashProvider,
+    prev_state_root: B256,
+    blocks: &[RecoveredBlock<Block>],
+    chain_spec: Arc<ScrollChainSpec>,
+    defer_commit: bool,
+) -> Result<(B256, B256), String> {
+    let mut db = manually_drop_on_zkvm!(
+        EvmDatabase::new_from_root(code_db, prev_state_root, nodes_provider, block_hashes)
+            .map_err(|e| format!("failed to create EvmDatabase: {}", e))?
+    );
+    for block in blocks.iter() {
+        let output = manually_drop_on_zkvm!(
+            EvmExecutor::new(chain_spec.clone(), &db, block)
+                .execute()
+                .map_err(|e| format!("failed to execute block: {}", e))?
+        );
+        db.update(nodes_provider, output.state.state.iter())
+            .map_err(|e| format!("failed to update db: {}", e))?;
+        if !defer_commit {
+            db.commit_changes();
+        }
+    }
+    let post_state_root = db.commit_changes();
+    let withdraw_root = db
+        .withdraw_root()
+        .map_err(|e| format!("failed to get withdraw root: {}", e))?;
+    Ok((post_state_root, withdraw_root))
 }

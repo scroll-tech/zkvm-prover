@@ -2,11 +2,11 @@ use sbv_kv::nohash::NoHashMap;
 use sbv_primitives::{B256, BlockWitness, Bytes, ext::BlockWitnessExt};
 use sbv_trie::{BlockWitnessTrieExt, TrieNode};
 
-type CodeDb = NoHashMap<B256, Bytes>;
+pub type CodeDb = NoHashMap<B256, Bytes>;
 
-type NodesProvider = NoHashMap<B256, TrieNode>;
+pub type NodesProvider = NoHashMap<B256, TrieNode>;
 
-type BlockHashProvider = sbv_kv::null::NullProvider;
+pub type BlockHashProvider = sbv_kv::null::NullProvider;
 
 pub fn make_providers<W: BlockWitness>(
     witnesses: &[W],
