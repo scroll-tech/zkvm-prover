@@ -105,7 +105,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     };
 
     let mut rlp_buffer = manually_drop_on_zkvm!(Vec::with_capacity(2048));
-    let (tx_data_length, tx_data_digest) = blocks
+    let (tx_data_length, tx_data_digest): (usize, B256) = blocks
         .iter()
         .flat_map(|b| b.body().transactions.iter())
         .tx_bytes_hash_in(rlp_buffer.as_mut());
@@ -137,7 +137,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
             .unwrap_or_default(),
         withdraw_root,
         tx_data_digest,
-        tx_data_length: u64::try_from(tx_data_length).expect("tx_data_length: u64"),
+        tx_data_length: tx_data_length as u64,
         initial_block_number: blocks[0].header().number,
         prev_msg_queue_hash: witness.prev_msg_queue_hash.into(),
         post_msg_queue_hash: sbv_chunk_info
