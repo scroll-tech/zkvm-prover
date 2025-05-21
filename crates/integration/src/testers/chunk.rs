@@ -1,11 +1,11 @@
-use std::{
-    fs::File,
-    path::{Path, PathBuf},
-};
-
 use sbv_primitives::{B256, types::BlockWitness};
 use scroll_zkvm_prover::{
     ChunkProverType, ChunkProverTypeRv32, ProverType, task::chunk::ChunkProvingTask,
+};
+use std::{
+    env,
+    fs::File,
+    path::{Path, PathBuf},
 };
 
 use crate::{ProverTester, testers::PATH_TESTDATA, utils::phase_base_directory};
@@ -53,10 +53,21 @@ impl ProverTester for ChunkProverTester {
                 paths
             }
             Err(_) => {
+                let start_block: usize = env::var("START_BLOCK")
+                    .ok()
+                    .and_then(|s| s.parse::<usize>().ok())
+                    .unwrap_or(10319966);
+                let end_block: usize = env::var("END_BLOCK")
+                    .ok()
+                    .and_then(|s| s.parse::<usize>().ok())
+                    .unwrap_or(10319974);
+
                 #[cfg(not(feature = "euclidv2"))]
                 let blocks = 12508460usize..=12508463usize;
                 #[cfg(feature = "euclidv2")]
-                let blocks = 10319966usize..=10319974usize;
+                let blocks = start_block..=end_block;
+
+                println!("block index: [{}, {}]", start_block, end_block);
                 blocks
                     .into_iter()
                     .map(|block_n| {
