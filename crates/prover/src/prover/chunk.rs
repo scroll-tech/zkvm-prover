@@ -1,4 +1,6 @@
-use scroll_zkvm_circuit_input_types::chunk::{ArchivedChunkWitness, ChunkWitness, execute};
+use scroll_zkvm_circuit_input_types::chunk::{
+    ArchivedChunkWitness, ChunkInfo, ChunkWitness, execute,
+};
 
 use crate::{
     Error, Prover, ProverType,
@@ -61,29 +63,36 @@ impl<C: Commitments> ProverType for GenericChunkProverType<C> {
             )));
         }
 
-        let chunk_witness = ChunkWitness::new(
+        let mut chunk_witness = ChunkWitness::new(
             &task.block_witnesses,
             task.prev_msg_queue_hash,
             task.fork_name.as_str().into(),
         );
-        let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&chunk_witness).map_err(|e| {
-            Error::GenProof(format!(
-                "{}: failed to serialize chunk witness: {}",
-                err_prefix, e
-            ))
-        })?;
-        let chunk_witness = rkyv::access::<ArchivedChunkWitness, rkyv::rancor::BoxedError>(
-            &serialized,
-        )
-        .map_err(|e| {
-            Error::GenProof(format!(
-                "{}: rkyv deserialisation of chunk witness bytes failed: {}",
-                err_prefix, e
-            ))
-        })?;
 
-        let chunk_info = execute(chunk_witness)
-            .map_err(|e| Error::GenProof(format!("{}: {}", err_prefix, e)))?;
+        let execute_serialized = |chunk_witness: &ChunkWitness| -> Result<ChunkInfo, Error> {
+            let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(chunk_witness).map_err(|e| {
+                Error::GenProof(format!(
+                    "{err_prefix}: failed to serialize chunk witness: {e}"
+                ))
+            })?;
+            let chunk_witness =
+                rkyv::access::<ArchivedChunkWitness, rkyv::rancor::BoxedError>(&serialized)
+                    .map_err(|e| {
+                        Error::GenProof(format!(
+                            "{err_prefix}: rkyv deserialisation of chunk witness bytes failed: {e}"
+                        ))
+                    })?;
+            execute(chunk_witness).map_err(|e| Error::GenProof(format!("{err_prefix}: {e}")))
+        };
+
+        let chunk_info = match execute_serialized(&chunk_witness) {
+            Ok(chunk_info) => chunk_info,
+            Err(e) => {
+                tracing::warn!("{e}, disable batch commit and retry");
+                chunk_witness.batch_commit = false;
+                execute_serialized(&chunk_witness)?
+            }
+        };
 
         Ok(ChunkProofMetadata { chunk_info })
     }

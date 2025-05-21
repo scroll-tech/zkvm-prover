@@ -59,25 +59,16 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
             .map_err(|e| e.to_string())?
     );
 
-    // Execute the blocks, commit db after all the blocks are executed.
-    // Fallback to block by block execution if it fails.
-    let withdraw_root = match execute_inner_batched(
-        &providers,
-        &blocks,
-        chain_spec.clone(),
-        prev_state_root,
-        post_state_root,
-    ) {
-        Ok(withdraw_root) => withdraw_root,
-        Err(e) => {
-            openvm::io::println(format!("{e}; retrying with defer commit disabled"));
-            execute_inner_block_by_block(
-                &providers,
-                &blocks,
-                chain_spec.clone(),
-                witness,
-            )?
-        }
+    let withdraw_root = if witness.batch_commit {
+        execute_inner_batched(
+            &providers,
+            &blocks,
+            chain_spec.clone(),
+            prev_state_root,
+            post_state_root,
+        )?
+    } else {
+        execute_inner_block_by_block(&providers, &blocks, chain_spec.clone(), witness)?
     };
 
     let mut rlp_buffer = manually_drop_on_zkvm!(Vec::with_capacity(2048));
@@ -169,13 +160,13 @@ fn execute_inner_batched(
         let output = manually_drop_on_zkvm!(
             EvmExecutor::new(chain_spec.clone(), &db, block)
                 .execute()
-                .map_err(|e| format!("failed to execute block: {}", e))?
+                .map_err(|e| format!("failed to execute block#{}: {}", block.number, e))?
         );
         // sort the update by key - Address in ascending order,
         // using reference to avoid cloning [`BundleAccount`].
         let state = manually_drop_on_zkvm!(BTreeMap::from_iter(output.state.state.iter()));
         db.update(nodes_provider, state.iter().map(|(k, v)| (*k, *v)))
-            .map_err(|e| format!("failed to update db: {}", e))?;
+            .map_err(|e| format!("failed to update db for block#{}: {}", block.number, e))?;
     }
     let db_post_state_root = db.commit_changes();
     if post_state_root != db_post_state_root {
@@ -206,23 +197,27 @@ fn execute_inner_block_by_block(
                 nodes_provider,
                 NullProvider
             )
-            .map_err(|e| format!("failed to create EvmDatabase: {}", e))?
+            .map_err(|e| format!(
+                "failed to create EvmDatabase for block#{}: {}",
+                block.number, e
+            ))?
         );
         let output = manually_drop_on_zkvm!(
             EvmExecutor::new(chain_spec.clone(), &db, block)
                 .execute()
-                .map_err(|e| format!("failed to execute block: {}", e))?
+                .map_err(|e| format!("failed to execute block#{}: {}", block.number, e))?
         );
         // sort the update by key - Address in ascending order,
         // using reference to avoid cloning [`BundleAccount`].
         let state = manually_drop_on_zkvm!(BTreeMap::from_iter(output.state.state.iter()));
         db.update(nodes_provider, state.iter().map(|(k, v)| (*k, *v)))
-            .map_err(|e| format!("failed to update db: {}", e))?;
+            .map_err(|e| format!("failed to update db for block#{}: {}", block.number, e))?;
         let post_state_root = db.commit_changes();
         // state root assertion happens for each block, instead of at the end.
         if witness.post_state_root() != post_state_root {
             return Err(format!(
-                "state root mismatch: expected={}, found={}",
+                "state root mismatch for block#{}: expected={}, found={}",
+                block.number,
                 witness.post_state_root(),
                 post_state_root
             ));

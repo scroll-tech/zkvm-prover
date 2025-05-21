@@ -22,6 +22,8 @@ pub struct ChunkWitness {
     pub prev_msg_queue_hash: B256,
     /// The code version specify the chain spec
     pub fork_name: ForkName,
+    /// If `batch_commit` is true, we commit after all the blocks in the chunk.
+    pub batch_commit: bool,
 }
 
 impl ChunkWitness {
@@ -58,6 +60,7 @@ impl ChunkWitness {
             blocks,
             prev_msg_queue_hash,
             fork_name,
+            batch_commit: true,
         }
     }
 
