@@ -10,7 +10,8 @@ use sbv_primitives::B256;
 use scroll_zkvm_circuit_input_types::{
     batch::BatchInfo,
     bundle::BundleInfo,
-    chunk::{ChunkInfo, ForkName, MultiVersionPublicInputs},
+    chunk::ChunkInfo,
+    public_inputs::{ForkName, MultiVersionPublicInputs},
 };
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use snark_verifier_sdk::snark_verifier::{
@@ -385,8 +386,8 @@ mod tests {
     use base64::{Engine, prelude::BASE64_STANDARD};
     use openvm_native_recursion::halo2::RawEvmProof;
     use scroll_zkvm_circuit_input_types::{
-        PublicInputs,
         bundle::{BundleInfo, BundleInfoV1},
+        public_inputs::PublicInputs,
     };
     use snark_verifier_sdk::snark_verifier::halo2_base::halo2_proofs::halo2curves::bn256::Fr;
 

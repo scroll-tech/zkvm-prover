@@ -1,7 +1,5 @@
-use scroll_zkvm_circuit_input_types::{
-    batch::{ArchivedBatchWitness, ArchivedReferenceHeader, BatchInfo},
-    chunk::ChunkInfo,
-};
+use scroll_zkvm_circuit_input_types_batch::{ArchivedBatchWitness, ArchivedReferenceHeader};
+use scroll_zkvm_circuit_input_types_circuit::public_inputs::{batch::BatchInfo, chunk::ChunkInfo};
 
 use crate::builder::{BatchInfoBuilderV6, BatchInfoBuilderV7};
 

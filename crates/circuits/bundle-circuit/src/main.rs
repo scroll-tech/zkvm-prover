@@ -1,4 +1,4 @@
-use scroll_zkvm_circuit_input_types::{AggCircuit, Circuit, bundle};
+use scroll_zkvm_circuit_input_types_circuit::{AggCircuit, Circuit, public_inputs::bundle};
 
 mod circuit;
 #[cfg(feature = "euclidv2")]

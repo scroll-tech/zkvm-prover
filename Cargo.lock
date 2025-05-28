@@ -5677,7 +5677,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-batch-circuit"
-version = "0.2.0"
+version = "0.4.0"
 dependencies = [
  "alloy-primitives",
  "bitcode",
@@ -5692,14 +5692,15 @@ dependencies = [
  "openvm-rv32im-guest",
  "openvm-sha256-guest",
  "rkyv",
- "scroll-zkvm-circuit-input-types",
+ "scroll-zkvm-circuit-input-types-batch",
+ "scroll-zkvm-circuit-input-types-circuit",
  "serde",
  "tiny-keccak",
 ]
 
 [[package]]
 name = "scroll-zkvm-build-guest"
-version = "0.2.0"
+version = "0.4.0"
 dependencies = [
  "bitcode",
  "cargo_metadata 0.19.2",
@@ -5732,7 +5733,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-bundle-circuit"
-version = "0.2.0"
+version = "0.4.0"
 dependencies = [
  "alloy-primitives",
  "openvm",
@@ -5740,12 +5741,13 @@ dependencies = [
  "openvm-keccak256-guest",
  "openvm-rv32im-guest",
  "rkyv",
- "scroll-zkvm-circuit-input-types",
+ "scroll-zkvm-circuit-input-types-bundle",
+ "scroll-zkvm-circuit-input-types-circuit",
 ]
 
 [[package]]
 name = "scroll-zkvm-chunk-circuit"
-version = "0.2.0"
+version = "0.4.0"
 dependencies = [
  "openvm",
  "openvm-algebra-complex-macros",
@@ -5756,15 +5758,63 @@ dependencies = [
  "openvm-pairing-guest",
  "openvm-rv32im-guest",
  "rkyv",
- "scroll-zkvm-circuit-input-types",
+ "scroll-zkvm-circuit-input-types-chunk",
+ "scroll-zkvm-circuit-input-types-circuit",
 ]
 
 [[package]]
 name = "scroll-zkvm-circuit-input-types"
-version = "0.2.0"
+version = "0.4.0"
+dependencies = [
+ "scroll-zkvm-circuit-input-types-base",
+ "scroll-zkvm-circuit-input-types-batch",
+ "scroll-zkvm-circuit-input-types-bundle",
+ "scroll-zkvm-circuit-input-types-chunk",
+]
+
+[[package]]
+name = "scroll-zkvm-circuit-input-types-base"
+version = "0.4.0"
 dependencies = [
  "alloy-primitives",
  "alloy-serde 0.8.3",
+ "itertools 0.14.0",
+ "rkyv",
+ "serde",
+ "sha2",
+ "sha3",
+ "tiny-keccak",
+]
+
+[[package]]
+name = "scroll-zkvm-circuit-input-types-batch"
+version = "0.4.0"
+dependencies = [
+ "alloy-primitives",
+ "itertools 0.14.0",
+ "rkyv",
+ "scroll-zkvm-circuit-input-types-base",
+ "serde",
+ "vm-zstd",
+]
+
+[[package]]
+name = "scroll-zkvm-circuit-input-types-bundle"
+version = "0.4.0"
+dependencies = [
+ "alloy-primitives",
+ "itertools 0.14.0",
+ "rkyv",
+ "scroll-zkvm-circuit-input-types-base",
+ "serde",
+ "vm-zstd",
+]
+
+[[package]]
+name = "scroll-zkvm-circuit-input-types-chunk"
+version = "0.4.0"
+dependencies = [
+ "alloy-primitives",
  "itertools 0.14.0",
  "openvm",
  "openvm-custom-insn",
@@ -5774,16 +5824,28 @@ dependencies = [
  "sbv-kv",
  "sbv-primitives",
  "sbv-trie",
+ "scroll-zkvm-circuit-input-types-base",
  "serde",
- "sha2",
- "sha3",
+]
+
+[[package]]
+name = "scroll-zkvm-circuit-input-types-circuit"
+version = "0.4.0"
+dependencies = [
+ "alloy-primitives",
+ "itertools 0.14.0",
+ "openvm",
+ "openvm-custom-insn",
+ "openvm-rv32im-guest",
+ "rkyv",
+ "scroll-zkvm-circuit-input-types-base",
+ "serde",
  "tiny-keccak",
- "vm-zstd",
 ]
 
 [[package]]
 name = "scroll-zkvm-integration"
-version = "0.2.0"
+version = "0.4.0"
 dependencies = [
  "alloy-primitives",
  "chrono",
@@ -5816,7 +5878,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-prover"
-version = "0.2.0"
+version = "0.4.0"
 dependencies = [
  "alloy-primitives",
  "base64",
@@ -5852,7 +5914,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-verifier"
-version = "0.2.0"
+version = "0.4.0"
 dependencies = [
  "bincode",
  "eyre",

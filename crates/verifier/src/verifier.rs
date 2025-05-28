@@ -5,7 +5,7 @@ use openvm_continuations::verifier::root::types::RootVmVerifierInput;
 use openvm_native_circuit::NativeConfig;
 use openvm_native_recursion::{halo2::RawEvmProof, hints::Hintable};
 use openvm_sdk::{F, RootSC, SC};
-use scroll_zkvm_circuit_input_types::proof::ProgramCommitment;
+use scroll_zkvm_circuit_input_types::types_agg::ProgramCommitment;
 use snark_verifier_sdk::snark_verifier::halo2_base::halo2_proofs::halo2curves::bn256::Fr;
 
 use crate::commitments::{
@@ -208,7 +208,7 @@ impl<Type: VerifierType> Verifier<Type> {
 mod tests {
     use std::path::Path;
 
-    use scroll_zkvm_circuit_input_types::proof::ProgramCommitment;
+    use scroll_zkvm_circuit_input_types::types_agg::ProgramCommitment;
     use scroll_zkvm_prover::{BatchProof, BundleProof, ChunkProof, utils::read_json_deep};
 
     use super::{BatchVerifier, BundleVerifierEuclidV2, ChunkVerifier};
