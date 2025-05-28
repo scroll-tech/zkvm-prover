@@ -1,0 +1,16 @@
+[package]
+name = "scroll-zkvm-circuit-input-types"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+types-base = { path = "base", package = "scroll-zkvm-circuit-input-types-base"}
+types-chunk = { path = "chunk", package = "scroll-zkvm-circuit-input-types-chunk"}
+types-batch = { path = "batch", package = "scroll-zkvm-circuit-input-types-batch"}
+types-bundle = { path = "bundle", package = "scroll-zkvm-circuit-input-types-bundle"}
+
+

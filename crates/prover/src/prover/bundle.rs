@@ -1,5 +1,5 @@
 use openvm_native_recursion::halo2::RawEvmProof;
-use scroll_zkvm_circuit_input_types::{bundle::BundleInfo, chunk::ForkName};
+use scroll_zkvm_circuit_input_types::{bundle::BundleInfo, public_inputs::ForkName};
 
 use crate::{
     Error, Prover, ProverType,

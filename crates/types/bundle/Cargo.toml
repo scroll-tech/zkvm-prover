@@ -1,0 +1,20 @@
+[package]
+name = "scroll-zkvm-circuit-input-types-bundle"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
+rkyv.workspace = true
+serde.workspace = true
+itertools.workspace = true
+vm-zstd = { workspace = true }
+
+types-base = { path = "../base", package = "scroll-zkvm-circuit-input-types-base"}
+
+[features]
+default = []

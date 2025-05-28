@@ -189,7 +189,7 @@ impl<Type: ProverType> Prover<Type> {
         let (_, [exe, leaf]) =
             Self::get_verify_program_commitment(&self.app_committed_exe, &self.app_pk, false);
 
-        scroll_zkvm_circuit_input_types::proof::ProgramCommitment { exe, leaf }.serialize()
+        scroll_zkvm_circuit_input_types::types_agg::ProgramCommitment { exe, leaf }.serialize()
     }
 
     /// Pick up the actual vk (serialized) for evm proof, would be empty if prover

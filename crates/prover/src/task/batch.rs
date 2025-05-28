@@ -7,7 +7,7 @@ use scroll_zkvm_circuit_input_types::{
         BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchInfo, BatchWitness, EnvelopeV6, EnvelopeV7,
         N_BLOB_BYTES, PointEvalWitness, ReferenceHeader,
     },
-    chunk::ForkName,
+    public_inputs::ForkName,
 };
 
 use crate::{

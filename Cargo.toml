@@ -1,9 +1,14 @@
 [workspace]
 members = [
+  "crates/types/base",
+  "crates/types/circuit",
+  "crates/types/chunk",
+  "crates/types/batch",
+  "crates/types/bundle",
+  "crates/types",
   "crates/circuits/chunk-circuit",
   "crates/circuits/batch-circuit",
   "crates/circuits/bundle-circuit",
-  "crates/circuits/types",
   "crates/prover",
   "crates/verifier",
   "crates/integration",
@@ -78,7 +83,12 @@ vm-zstd = { git = "https://github.com/scroll-tech/rust-zstd-decompressor.git", t
 toml = "0.8.14"
 tracing-subscriber = "0.3"
 
-scroll-zkvm-circuit-input-types = { path = "crates/circuits/types" }
+scroll-zkvm-circuit-input-types = { path = "crates/types" }
+scroll-zkvm-circuit-input-types-base = { path = "crates/types/base" }
+scroll-zkvm-circuit-input-types-circuit = { path = "crates/types/circuit" }
+scroll-zkvm-circuit-input-types-chunk = { path = "crates/types/chunk" }
+scroll-zkvm-circuit-input-types-batch = { path = "crates/types/batch" }
+scroll-zkvm-circuit-input-types-bundle = { path = "crates/types/bundle" }
 scroll-zkvm-integration = { path = "crates/integration" }
 scroll-zkvm-prover = { path = "crates/prover" }
 scroll-zkvm-verifier = { path = "crates/verifier" }
