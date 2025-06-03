@@ -4,7 +4,7 @@ pub use io::read_witnesses;
 use alloy_primitives::B256;
 use itertools::Itertools;
 use public_inputs::PublicInputs;
-use scroll_zkvm_circuit_input_types_base as types_base;
+use scroll_zkvm_types_base as types_base;
 pub use types_base::{
     aggregation::{AggregationInput, ProgramCommitment, ProofCarryingWitness},
     public_inputs, utils,

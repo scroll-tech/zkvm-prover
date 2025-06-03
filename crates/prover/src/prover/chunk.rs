@@ -1,4 +1,4 @@
-use scroll_zkvm_circuit_input_types::chunk::{ArchivedChunkWitness, ChunkWitness, execute};
+use scroll_zkvm_types::chunk::{ArchivedChunkWitness, ChunkWitness, execute};
 
 use crate::{
     Error, Prover, ProverType,

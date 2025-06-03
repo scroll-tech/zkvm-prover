@@ -1,5 +1,5 @@
 [package]
-name = "scroll-zkvm-circuit-input-types-chunk"
+name = "scroll-zkvm-types-chunk"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
@@ -21,7 +21,7 @@ openvm = { workspace = true, features = ["std"] }
 openvm-rv32im-guest = {  workspace = true }
 openvm-custom-insn = { workspace = true }
 
-types-base = { path = "../base", package = "scroll-zkvm-circuit-input-types-base"}
+types-base = { path = "../base", package = "scroll-zkvm-types-base"}
 
 [features]
 default = []

@@ -1,4 +1,4 @@
-use scroll_zkvm_circuit_input_types_circuit::{AggCircuit, Circuit};
+use scroll_zkvm_types_circuit::{AggCircuit, Circuit};
 
 mod blob_consistency;
 

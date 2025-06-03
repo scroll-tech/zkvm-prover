@@ -2,7 +2,7 @@ use alloy_primitives::{B256, U256};
 use c_kzg::Bytes48;
 use openvm_native_recursion::hints::Hintable;
 use openvm_sdk::StdIn;
-use scroll_zkvm_circuit_input_types::{
+use scroll_zkvm_types::{
     batch::{
         BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchInfo, BatchWitness, EnvelopeV6, EnvelopeV7,
         N_BLOB_BYTES, PointEvalWitness, ReferenceHeader,

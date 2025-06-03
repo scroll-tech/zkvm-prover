@@ -1,6 +1,6 @@
 use openvm_sdk::StdIn;
 use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
-use scroll_zkvm_circuit_input_types::{
+use scroll_zkvm_types::{
     public_inputs::ForkName,
     types_agg::{AggregationInput, ProgramCommitment},
 };

@@ -1,6 +1,6 @@
 use alloy_primitives::B256;
-use scroll_zkvm_circuit_input_types_batch::ArchivedBatchWitness;
-use scroll_zkvm_circuit_input_types_circuit::{
+use scroll_zkvm_types_batch::ArchivedBatchWitness;
+use scroll_zkvm_types_circuit::{
     AggCircuit, AggregationInput, Circuit, ProgramCommitment,
     io::read_witnesses,
     public_inputs::{batch::VersionedBatchInfo, chunk::VersionedChunkInfo},

@@ -1,4 +1,4 @@
-use scroll_zkvm_circuit_input_types_circuit::{
+use scroll_zkvm_types_circuit::{
     Circuit, public_inputs::PublicInputs, reveal_pi_hash,
 };
 

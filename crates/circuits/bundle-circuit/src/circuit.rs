@@ -1,7 +1,7 @@
 use crate::child_commitments::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT};
 use alloy_primitives::B256;
-use scroll_zkvm_circuit_input_types_bundle::ArchivedBundleWitness;
-use scroll_zkvm_circuit_input_types_circuit::{
+use scroll_zkvm_types_bundle::ArchivedBundleWitness;
+use scroll_zkvm_types_circuit::{
     AggCircuit, AggregationInput, Circuit, ProgramCommitment,
     io::read_witnesses,
     public_inputs::{

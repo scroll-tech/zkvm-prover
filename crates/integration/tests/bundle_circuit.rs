@@ -54,7 +54,7 @@ fn setup_prove_verify_local_task() -> eyre::Result<()> {
 
 #[test]
 fn verify_bundle_info_pi() {
-    use scroll_zkvm_circuit_input_types::bundle::BundleInfo;
+    use scroll_zkvm_types::bundle::BundleInfo;
 
     let info = BundleInfo {
         chain_id: 534352,

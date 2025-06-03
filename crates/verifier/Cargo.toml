@@ -6,7 +6,7 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
-scroll-zkvm-circuit-input-types.workspace = true
+scroll-zkvm-types.workspace = true
 
 openvm-circuit.workspace = true
 openvm-native-circuit.workspace = true

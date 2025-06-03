@@ -1,5 +1,5 @@
 [package]
-name = "scroll-zkvm-circuit-input-types-batch"
+name = "scroll-zkvm-types-batch"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
@@ -14,7 +14,7 @@ serde.workspace = true
 itertools.workspace = true
 vm-zstd = { workspace = true }
 
-types-base = { path = "../base", package = "scroll-zkvm-circuit-input-types-base"}
+types-base = { path = "../base", package = "scroll-zkvm-types-base"}
 
 [features]
 default = []

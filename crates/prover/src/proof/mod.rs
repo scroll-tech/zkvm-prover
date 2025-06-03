@@ -7,7 +7,7 @@ use openvm_stark_sdk::{
     p3_baby_bear::BabyBear,
 };
 use sbv_primitives::B256;
-use scroll_zkvm_circuit_input_types::{
+use scroll_zkvm_types::{
     batch::BatchInfo,
     bundle::BundleInfo,
     chunk::ChunkInfo,
@@ -256,7 +256,7 @@ impl ProofMetadata for ChunkProofMetadata {
 pub struct BatchProofMetadata {
     /// The batch information describing the list of chunks.
     pub batch_info: BatchInfo,
-    /// The [`scroll_zkvm_circuit_input_types::batch::BatchHeader`]'s digest.
+    /// The [`scroll_zkvm_types::batch::BatchHeader`]'s digest.
     pub batch_hash: B256,
 }
 
@@ -385,7 +385,7 @@ mod tests {
     use alloy_primitives::B256;
     use base64::{Engine, prelude::BASE64_STANDARD};
     use openvm_native_recursion::halo2::RawEvmProof;
-    use scroll_zkvm_circuit_input_types::{
+    use scroll_zkvm_types::{
         bundle::{BundleInfo, BundleInfoV1},
         public_inputs::PublicInputs,
     };
