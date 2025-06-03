@@ -2,10 +2,6 @@ use sbv_primitives::{
     B256, U256,
     types::{BlockWitness, Transaction, eips::Encodable2718, reth::TransactionSigned},
 };
-use scroll_zkvm_types::{
-    batch::{BatchHeader, BatchHeaderV6, BatchHeaderV7},
-    utils::keccak256,
-};
 use scroll_zkvm_prover::{
     ChunkProof,
     task::{
@@ -13,6 +9,10 @@ use scroll_zkvm_prover::{
         chunk::ChunkProvingTask,
     },
     utils::point_eval,
+};
+use scroll_zkvm_types::{
+    batch::{BatchHeader, BatchHeaderV6, BatchHeaderV7},
+    utils::keccak256,
 };
 use vm_zstd::zstd_encode;
 
@@ -319,11 +319,11 @@ pub fn build_batch_task(
 
 #[test]
 fn test_build_and_parse_batch_task() -> eyre::Result<()> {
+    use scroll_zkvm_prover::utils::{read_json, read_json_deep, write_json};
     #[cfg(not(feature = "euclidv2"))]
     use scroll_zkvm_types::batch::{EnvelopeV6 as Envelope, PayloadV6 as Payload};
     #[cfg(feature = "euclidv2")]
     use scroll_zkvm_types::batch::{EnvelopeV7 as Envelope, PayloadV7 as Payload};
-    use scroll_zkvm_prover::utils::{read_json, read_json_deep, write_json};
 
     // ./testdata/
     let path_testdata = std::path::Path::new("testdata");
@@ -395,8 +395,8 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
 #[cfg(feature = "euclidv2")]
 #[test]
 fn test_batch_task_payload() -> eyre::Result<()> {
-    use scroll_zkvm_types::batch::{EnvelopeV7, PayloadV7};
     use scroll_zkvm_prover::utils::read_json_deep;
+    use scroll_zkvm_types::batch::{EnvelopeV7, PayloadV7};
 
     // ./testdata/
     let path_testdata = std::path::Path::new("testdata");

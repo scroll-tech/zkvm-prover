@@ -1,6 +1,4 @@
-use scroll_zkvm_types_circuit::{
-    Circuit, public_inputs::PublicInputs, reveal_pi_hash,
-};
+use scroll_zkvm_types_circuit::{Circuit, public_inputs::PublicInputs, reveal_pi_hash};
 
 mod circuit;
 use circuit::ChunkCircuit as C;

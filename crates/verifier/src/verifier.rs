@@ -208,8 +208,8 @@ impl<Type: VerifierType> Verifier<Type> {
 mod tests {
     use std::path::Path;
 
-    use scroll_zkvm_types::types_agg::ProgramCommitment;
     use scroll_zkvm_prover::{BatchProof, BundleProof, ChunkProof, utils::read_json_deep};
+    use scroll_zkvm_types::types_agg::ProgramCommitment;
 
     use super::{BatchVerifier, BundleVerifierEuclidV2, ChunkVerifier};
 
