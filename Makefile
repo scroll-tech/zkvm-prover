@@ -52,6 +52,9 @@ $(TESTDATA_PATH)/proofs/chunk-%.json:
 profile-chunk:
 	@GUEST_PROFILING=true cargo test --release -p scroll-zkvm-integration --test chunk_circuit guest_profiling -- --exact --nocapture
 
+export-onchain-verifier:
+	@cargo test --release -p scroll-zkvm-integration --test onchain_verifier export_onchain_verifier -- --exact --nocapture
+
 test-execute-chunk:
 	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test chunk_circuit test_execute -- --exact --nocapture
 
