@@ -20,29 +20,34 @@ repository = "https://github.com/scroll-tech/zkvm-prover"
 version = "0.4.0"
 
 [workspace.dependencies]
-openvm = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-algebra-complex-macros = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-algebra-guest = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-bigint-guest = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-build = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-circuit = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-custom-insn = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-continuations = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-ecc-guest = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-instructions ={ git = "ssh://git@github.com/axiom-crypto/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-keccak256-guest = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-native-circuit = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-native-compiler = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-native-recursion = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-native-transpiler = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-pairing-guest = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-rv32im-guest = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-rv32im-transpiler = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-sdk = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", branch = "patch-v1.2.0", default-features = false, features = ["parallel", "bench-metrics", "evm-prove"] }
-openvm-sha256-guest = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-transpiler = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
+# openvm guest libs
+openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "a0ae88f", default-features = false }
+openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "a0ae88f", default-features = false }
+openvm-custom-insn = { git = "https://github.com/openvm-org/openvm.git", rev = "a0ae88f", default-features = false }
+openvm-sha256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "a0ae88f", default-features = false }
+openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "a0ae88f", default-features = false }
+openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "a0ae88f", default-features = false }
+openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "a0ae88f", default-features = false }
+openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "a0ae88f", default-features = false }
+openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "a0ae88f", default-features = false }
+openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "a0ae88f", default-features = false }
 
-openvm-stark-sdk = { git = "ssh://git@github.com/axiom-crypto/stark-backend-private.git", branch = "patch-v1.1.0" }
+# openvm guest libs
+openvm-build = { git = "https://github.com/openvm-org/openvm.git", rev = "bdb4831", default-features = false }
+openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", rev = "bdb4831", default-features = false }
+openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", rev = "bdb4831", default-features = false }
+openvm-instructions ={ git = "https://github.com/openvm-org/openvm.git", rev = "bdb4831", default-features = false }
+openvm-native-circuit = { git = "https://github.com/openvm-org/openvm.git", rev = "bdb4831", default-features = false }
+openvm-native-compiler = { git = "https://github.com/openvm-org/openvm.git", rev = "bdb4831", default-features = false }
+openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", rev = "bdb4831", default-features = false }
+openvm-native-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "bdb4831", default-features = false }
+openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "bdb4831", default-features = false }
+openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", rev = "bdb4831", default-features = false, features = ["parallel", "bench-metrics", "evm-prove"] }
+openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "bdb4831", default-features = false }
+
+# more openvm related libs
+openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.1.0" }
+p3-field = { git = "https://github.com/Plonky3/Plonky3.git", rev = "539bbc84085efb609f4f62cb03cf49588388abdb" }
 
 sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "zkvm/euclid-upgrade", features = ["scroll"] }
 sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "zkvm/euclid-upgrade", features = ["scroll"] }
@@ -61,7 +66,6 @@ hex-literal = { version = "0.4.1", default-features = false }
 metrics = "0.23.0"
 metrics-util = "0.17"
 metrics-tracing-context = "0.16.0"
-p3-field = { git = "ssh://git@github.com/axiom-crypto/plonky3-private.git", rev = "51704e6036fba6edd58022eb0eceb9f44bc941fb" }
 rayon = "1.10"
 rkyv = "0.8"
 serde = { version = "1", default-features = false, features = ["derive"] }
@@ -92,58 +96,3 @@ tiny-keccak = { git = "https://github.com/scroll-tech/tiny-keccak", branch = "sc
 inherits = "release"
 lto = "fat"
 codegen-units = 1
-
-
-[patch."ssh://git@github.com/axiom-crypto/openvm-private.git"]
-openvm = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-algebra-complex-macros = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-algebra-guest = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-bigint-guest = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-build = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-circuit = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-custom-insn = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-continuations = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-ecc-guest = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-instructions ={ git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-keccak256-guest = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-native-circuit = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-native-compiler = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-native-recursion = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-native-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-pairing-guest = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-rv32im-guest = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-rv32im-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-sdk = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.2.0", default-features = false, features = ["parallel", "bench-metrics", "evm-prove"] }
-openvm-sha256-guest = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-openvm-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.2.0", default-features = false }
-
-[patch."ssh://git@github.com/axiom-crypto/stark-backend-private.git"]
-openvm-stark-backend = { git = "ssh://git@github.com/scroll-tech/stark-backend-private.git", branch = "patch-v1.1.0", default-features = false }
-openvm-stark-sdk = { git = "ssh://git@github.com/scroll-tech/stark-backend-private.git", branch = "patch-v1.1.0", default-features = false }
-
-[patch."ssh://git@github.com/axiom-crypto/plonky3-private.git"]
-p3-air = { git = "ssh://git@github.com/scroll-tech/plonky3-private.git", rev = "51704e6036fba6edd58022eb0eceb9f44bc941fb" }
-p3-field = { git = "ssh://git@github.com/scroll-tech/plonky3-private.git", rev = "51704e6036fba6edd58022eb0eceb9f44bc941fb" }
-p3-commit = { git = "ssh://git@github.com/scroll-tech/plonky3-private.git", rev = "51704e6036fba6edd58022eb0eceb9f44bc941fb" }
-p3-matrix = { git = "ssh://git@github.com/scroll-tech/plonky3-private.git", rev = "51704e6036fba6edd58022eb0eceb9f44bc941fb" }
-p3-baby-bear = { git = "ssh://git@github.com/scroll-tech/plonky3-private.git", rev = "51704e6036fba6edd58022eb0eceb9f44bc941fb" }
-p3-koala-bear = { git = "ssh://git@github.com/scroll-tech/plonky3-private.git", rev = "51704e6036fba6edd58022eb0eceb9f44bc941fb" }
-p3-util = { git = "ssh://git@github.com/scroll-tech/plonky3-private.git", rev = "51704e6036fba6edd58022eb0eceb9f44bc941fb" }
-p3-challenger = { git = "ssh://git@github.com/scroll-tech/plonky3-private.git", rev = "51704e6036fba6edd58022eb0eceb9f44bc941fb" }
-p3-dft = { git = "ssh://git@github.com/scroll-tech/plonky3-private.git", rev = "51704e6036fba6edd58022eb0eceb9f44bc941fb" }
-p3-fri = { git = "ssh://git@github.com/scroll-tech/plonky3-private.git", rev = "51704e6036fba6edd58022eb0eceb9f44bc941fb" }
-p3-goldilocks = { git = "ssh://git@github.com/scroll-tech/plonky3-private.git", rev = "51704e6036fba6edd58022eb0eceb9f44bc941fb" }
-p3-keccak = { git = "ssh://git@github.com/scroll-tech/plonky3-private.git", rev = "51704e6036fba6edd58022eb0eceb9f44bc941fb" }
-p3-keccak-air = { git = "ssh://git@github.com/scroll-tech/plonky3-private.git", rev = "51704e6036fba6edd58022eb0eceb9f44bc941fb" }
-p3-blake3 = { git = "ssh://git@github.com/scroll-tech/plonky3-private.git", rev = "51704e6036fba6edd58022eb0eceb9f44bc941fb" }
-p3-mds = { git = "ssh://git@github.com/scroll-tech/plonky3-private.git", rev = "51704e6036fba6edd58022eb0eceb9f44bc941fb" }
-p3-merkle-tree = { git = "ssh://git@github.com/scroll-tech/plonky3-private.git", rev = "51704e6036fba6edd58022eb0eceb9f44bc941fb" }
-p3-monty-31 = { git = "ssh://git@github.com/scroll-tech/plonky3-private.git", rev = "51704e6036fba6edd58022eb0eceb9f44bc941fb" }
-p3-poseidon = { git = "ssh://git@github.com/scroll-tech/plonky3-private.git", rev = "51704e6036fba6edd58022eb0eceb9f44bc941fb" }
-p3-poseidon2 = { git = "ssh://git@github.com/scroll-tech/plonky3-private.git", rev = "51704e6036fba6edd58022eb0eceb9f44bc941fb" }
-p3-poseidon2-air = { git = "ssh://git@github.com/scroll-tech/plonky3-private.git", rev = "51704e6036fba6edd58022eb0eceb9f44bc941fb" }
-p3-symmetric = { git = "ssh://git@github.com/scroll-tech/plonky3-private.git", rev = "51704e6036fba6edd58022eb0eceb9f44bc941fb" }
-p3-uni-stark = { git = "ssh://git@github.com/scroll-tech/plonky3-private.git", rev = "51704e6036fba6edd58022eb0eceb9f44bc941fb" }
-p3-maybe-rayon = { git = "ssh://git@github.com/scroll-tech/plonky3-private.git", rev = "51704e6036fba6edd58022eb0eceb9f44bc941fb" } # the "parallel" feature is NOT on by default to allow single-threaded benchmarking
-p3-bn254-fr = { git = "ssh://git@github.com/scroll-tech/plonky3-private.git", rev = "51704e6036fba6edd58022eb0eceb9f44bc941fb" }
-
