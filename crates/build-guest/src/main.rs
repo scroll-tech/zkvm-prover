@@ -199,7 +199,11 @@ fn run_stage3_exe_commits(project_names: &[&str], workspace_dir: &Path) -> Resul
             let app_config = builder::load_app_config(project_dir)?;
 
             // 1. Build ELF
-            let elf = builder::build(project_dir, &build_config.features)?;
+            let elf = builder::build(
+                project_dir,
+                &build_config.features,
+                &app_config.app_vm_config,
+            )?;
             println!("{LOG_PREFIX} Built ELF");
 
             // 2. Transpile ELF to VM Executable

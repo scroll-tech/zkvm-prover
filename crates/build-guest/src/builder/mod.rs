@@ -22,11 +22,18 @@ const FD_APP_EXE: &str = "app.vmexe";
 pub fn build<S: AsRef<str>>(
     project_root: &str,
     feature_flags: impl IntoIterator<Item = S>,
+    vm_config: &SdkVmConfig,
 ) -> eyre::Result<Elf> {
     let guest_opts = GuestOptions::default();
     let guest_opts = guest_opts.with_features(feature_flags);
     let guest_opts = guest_opts.with_profile("maxperf".to_string());
-    Sdk::new().build(guest_opts, project_root, &Default::default())
+    Sdk::new().build(
+        guest_opts,
+        vm_config,
+        project_root,
+        &Default::default(),
+        None,
+    )
 }
 
 pub fn load_app_config(project_root: &str) -> eyre::Result<AppConfig<SdkVmConfig>> {

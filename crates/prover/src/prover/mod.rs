@@ -26,7 +26,7 @@ use serde::{Serialize, de::DeserializeOwned};
 use tracing::{debug, instrument};
 
 // Re-export from openvm_sdk.
-pub use openvm_sdk::{self, F, SC};
+pub use openvm_sdk::{self, SC};
 
 use crate::{
     Error, WrappedProof,
@@ -99,7 +99,7 @@ pub struct Prover<Type> {
 type InitRes = (
     Arc<VmCommittedExe<SC>>,
     Arc<AppProvingKey<SdkVmConfig>>,
-    AppExecutionCommit<F>,
+    AppExecutionCommit,
 );
 
 /// Configure the [`Prover`].
@@ -501,23 +501,20 @@ impl<Type: ProverType> Prover<Type> {
         app_committed_exe: &NonRootCommittedExe,
         app_pk: &AppProvingKey<SdkVmConfig>,
         debug_out: bool,
-    ) -> (AppExecutionCommit<F>, [[u32; 8]; 2]) {
-        use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
+    ) -> (AppExecutionCommit, [[u32; 8]; 2]) {
         let commits = AppExecutionCommit::compute(
             &app_pk.app_vm_pk.vm_config,
             app_committed_exe,
             &app_pk.leaf_committed_exe,
         );
 
-        let exe_commit = commits.exe_commit.map(|x| x.as_canonical_u32());
-        let leaf_commit = commits
-            .leaf_vm_verifier_commit
-            .map(|x| x.as_canonical_u32());
+        let exe_commit = commits.app_exe_commit.to_u32_digest();
+        let vm_commit = commits.app_vm_commit.to_u32_digest();
 
         // print the 2 exe commitments
         if debug_out {
-            debug!(name: "exe-commitment", prover_name = Type::NAME, raw = ?exe_commit, as_bn254 = ?commits.exe_commit_to_bn254());
-            debug!(name: "leaf-commitment", prover_name = Type::NAME, raw = ?leaf_commit, as_bn254 = ?commits.app_config_commit_to_bn254());
+            debug!(name: "exe-commitment", prover_name = Type::NAME, raw = ?exe_commit, as_bn254 = ?commits.app_exe_commit.to_bn254());
+            debug!(name: "vm-commitment", prover_name = Type::NAME, raw = ?vm_commit, as_bn254 = ?commits.app_vm_commit.to_bn254());
         }
 
         assert_eq!(
@@ -526,11 +523,11 @@ impl<Type: ProverType> Prover<Type> {
             "read unmatched exe commitment from app"
         );
         assert_eq!(
-            leaf_commit,
+            vm_commit,
             Type::LEAF_COMMIT,
             "read unmatched app commitment from app"
         );
-        (commits, [exe_commit, leaf_commit])
+        (commits, [exe_commit, vm_commit])
     }
 }
 
