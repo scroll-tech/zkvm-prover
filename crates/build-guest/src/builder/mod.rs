@@ -63,8 +63,7 @@ pub fn transpile(
     // Transpile ELF to openvm executable.
     let transpiler = app_config
         .app_vm_config
-        .transpiler()
-        .with_extension(openvm_native_transpiler::LongFormTranspilerExtension);
+        .transpiler();
     let app_exe = Sdk::new().transpile(elf, transpiler)?;
 
     // Write exe to disc.
