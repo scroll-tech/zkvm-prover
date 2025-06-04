@@ -61,9 +61,7 @@ pub fn transpile(
     std::fs::create_dir_all(&path_assets)?;
 
     // Transpile ELF to openvm executable.
-    let transpiler = app_config
-        .app_vm_config
-        .transpiler();
+    let transpiler = app_config.app_vm_config.transpiler();
     let app_exe = Sdk::new().transpile(elf, transpiler)?;
 
     // Write exe to disc.

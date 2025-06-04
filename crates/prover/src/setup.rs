@@ -10,7 +10,7 @@ use openvm_sdk::{
     DefaultStaticVerifierPvHandler, Sdk,
     commit::AppExecutionCommit,
     config::{AggConfig, AppConfig, SdkVmConfig},
-    fs::{read_app_pk_from_file, read_from_file_bitcode},
+    fs::{read_app_pk_from_file, read_exe_from_file, read_from_file_bitcode},
     keygen::{AggProvingKey, AppProvingKey},
 };
 use openvm_stark_sdk::p3_baby_bear::BabyBear;
@@ -22,6 +22,10 @@ pub type F = BabyBear;
 
 /// Wrapper around [`openvm_sdk::fs::read_exe_from_file`].
 pub fn read_app_exe<P: AsRef<Path>>(path: P) -> Result<VmExe<F>, Error> {
+    if let Ok(exe) = read_exe_from_file(&path) {
+        return Ok(exe);
+    }
+    println!("loading vmexe failed, trying old format..");
     #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
     pub struct OldProgram<F> {
         pub instructions_and_debug_infos: Vec<Option<(Instruction<F>, Option<DebugInfo>)>>,
