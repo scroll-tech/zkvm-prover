@@ -1,4 +1,4 @@
-use openvm_ecc_guest::halo2curves::bls12_381::G1Affine as Bls12_381_G1;
+use halo2curves_axiom::bls12_381::G1Affine as Bls12_381_G1;
 use scroll_zkvm_circuit_input_types::{
     batch::{BatchHeader, BatchHeaderV7, BatchInfo, Bytes48, EnvelopeV7, PayloadV7},
     chunk::ChunkInfo,

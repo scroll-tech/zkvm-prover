@@ -12,6 +12,12 @@ pub mod proof;
 
 pub mod utils;
 
+use getrandom::{Error, register_custom_getrandom};
+pub fn zkvm_getrandom(dest: &mut [u8]) -> Result<(), Error> {
+    panic!("getrandom is not enabled in the current build");
+}
+register_custom_getrandom!(zkvm_getrandom);
+
 /// Defines behaviour to be implemented by types representing the public-input values of a circuit.
 pub trait PublicInputs {
     /// Keccak-256 digest of the public inputs. The public-input hash are revealed as public values
