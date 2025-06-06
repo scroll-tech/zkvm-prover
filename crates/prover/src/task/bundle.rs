@@ -1,8 +1,8 @@
 use openvm_native_recursion::hints::Hintable;
 use openvm_sdk::StdIn;
-use scroll_zkvm_circuit_input_types::{
+use scroll_zkvm_types::{
     bundle::{BundleInfo, BundleWitness},
-    chunk::ForkName,
+    public_inputs::ForkName,
 };
 
 use crate::{
