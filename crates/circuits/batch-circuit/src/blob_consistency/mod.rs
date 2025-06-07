@@ -1,6 +1,6 @@
 use alloy_primitives::{B256 as H256, U256};
 
-use openvm_pairing_guest::bls12_381::Scalar;
+use openvm_pairing::bls12_381::Scalar;
 
 mod openvm;
 pub use openvm::point_evaluation;

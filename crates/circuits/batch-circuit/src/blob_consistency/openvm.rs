@@ -2,20 +2,13 @@ use std::sync::LazyLock;
 
 use algebra::{Field, IntMod};
 use alloy_primitives::U256;
+use halo2curves_axiom::bls12_381::{
+    Fq as Bls12_381_Fq, G1Affine as Bls12_381_G1, G2Affine as Bls12_381_G2,
+};
 use itertools::Itertools;
-use openvm_ecc_guest::{
-    AffinePoint, CyclicGroup,
-    halo2curves::bls12_381::{
-        Fq as Bls12_381_Fq, G1Affine as Bls12_381_G1, G2Affine as Bls12_381_G2,
-    },
-    msm,
-    weierstrass::WeierstrassPoint,
-};
-use openvm_pairing_guest::{
-    algebra,
-    bls12_381::{Bls12_381, Fp, Fp2, G1Affine, G2Affine, Scalar},
-    pairing::PairingCheck,
-};
+use openvm_ecc_guest::{AffinePoint, CyclicGroup, msm, weierstrass::WeierstrassPoint};
+use openvm_pairing::bls12_381::{Bls12_381, Fp, Fp2, G1Affine, G2Affine, Scalar};
+use openvm_pairing_guest::{algebra, pairing::PairingCheck};
 
 use super::{BLOB_WIDTH, LOG_BLOB_WIDTH};
 
@@ -165,7 +158,7 @@ pub fn point_evaluation(
 ///
 /// We use the [`openvm_sha256_guest`] extension to compute the SHA-256 digest.
 pub fn kzg_to_versioned_hash(kzg_commitment: &[u8]) -> [u8; 32] {
-    let mut hash = openvm_sha256_guest::sha256(kzg_commitment);
+    let mut hash = openvm_sha2::sha256(kzg_commitment);
     hash[0] = VERSIONED_HASH_VERSION_KZG;
     hash
 }

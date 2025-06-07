@@ -74,7 +74,7 @@ fn get_build_configs(project_name: &str) -> Vec<BuildConfig> {
                 filename_suffix: "_rv32".to_string(), // Suffix for the RV32 variant
             },
             BuildConfig {
-                features: vec!["openvm".to_string()],
+                features: vec![],                // vec!["openvm".to_string()],
                 filename_suffix: "".to_string(), // No suffix for the default (OpenVM) variant
             },
         ],
@@ -199,7 +199,11 @@ fn run_stage3_exe_commits(project_names: &[&str], workspace_dir: &Path) -> Resul
             let app_config = builder::load_app_config(project_dir)?;
 
             // 1. Build ELF
-            let elf = builder::build(project_dir, &build_config.features)?;
+            let elf = builder::build(
+                project_dir,
+                &build_config.features,
+                &app_config.app_vm_config,
+            )?;
             println!("{LOG_PREFIX} Built ELF");
 
             // 2. Transpile ELF to VM Executable
