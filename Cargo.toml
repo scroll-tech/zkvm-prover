@@ -92,7 +92,20 @@ scroll-zkvm-integration = { path = "crates/integration" }
 scroll-zkvm-prover = { path = "crates/prover" }
 scroll-zkvm-verifier = { path = "crates/verifier" }
 
-#[patch.crates-io]
+[patch.crates-io]
+revm = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
+revm-bytecode = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
+revm-context = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
+revm-context-interface = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
+revm-database = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
+revm-database-interface = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
+revm-handler = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
+revm-inspector = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
+revm-interpreter = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
+revm-precompile = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
+revm-primitives = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
+revm-state = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
+
 #alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.18-euclid-upgrade" }
 #ruint = { git = "https://github.com/scroll-tech/uint.git", branch = "v1.12.3" }
 #tiny-keccak = { git = "https://github.com/scroll-tech/tiny-keccak", branch = "scroll-patch-v2.0.2-euclid-upgrade" }
