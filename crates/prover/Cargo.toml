@@ -9,7 +9,7 @@ version.workspace = true
 scroll-zkvm-circuit-input-types.workspace = true
 scroll-zkvm-verifier.workspace = true
 
-alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
+alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash"]}#, "rkyv"] }
 rkyv.workspace = true
 bincode_v1.workspace = true
 sbv-primitives = { workspace = true }
@@ -36,8 +36,8 @@ serde_json = "1.0"
 serde_stacker = "0.1"
 thiserror = "2.0"
 toml = "0.8"
-revm = "19.0"
-c-kzg = { version = "1.0", features = ["serde"] }
+revm = "21.0"
+#c-kzg = { version = "1.0", features = ["serde"] }
 
 [dev-dependencies]
 eyre = "0.6"

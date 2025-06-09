@@ -69,10 +69,10 @@ pub(crate) struct BuildConfig {
 fn get_build_configs(project_name: &str) -> Vec<BuildConfig> {
     match project_name {
         "chunk" => vec![
-            BuildConfig {
-                features: vec![],
-                filename_suffix: "_rv32".to_string(), // Suffix for the RV32 variant
-            },
+            //BuildConfig {
+            //    features: vec![],
+            //    filename_suffix: "_rv32".to_string(), // Suffix for the RV32 variant
+            //},
             BuildConfig {
                 features: vec![],                // vec!["openvm".to_string()],
                 filename_suffix: "".to_string(), // No suffix for the default (OpenVM) variant

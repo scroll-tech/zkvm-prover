@@ -8,7 +8,8 @@ repository.workspace = true
 version = "0.4.0"
 
 [dependencies]
-alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
+revm-precompile = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74", features = ["kzg-rs"] }
+alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash"]} #, "rkyv"] }
 alloy-serde.workspace = true
 getrandom = { version = "0.2", features = ["custom"] }
 rkyv.workspace = true
@@ -29,4 +30,4 @@ sha2 = "0.10.8"
 
 [features]
 default = []
-openvm = ["sbv-trie/openvm", "sbv-core/openvm", "sbv-primitives/openvm", "tiny-keccak/openvm"]
+openvm = ["sbv-trie/openvm", "sbv-core/openvm", "sbv-primitives/openvm"]#, "tiny-keccak/openvm"]
