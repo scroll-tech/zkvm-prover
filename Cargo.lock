@@ -6929,7 +6929,6 @@ dependencies = [
  "rkyv",
  "scroll-zkvm-circuit-input-types",
  "serde",
- "tiny-keccak",
 ]
 
 [[package]]
@@ -7015,7 +7014,6 @@ dependencies = [
  "serde",
  "sha2 0.10.9",
  "sha3",
- "tiny-keccak",
  "vm-zstd",
 ]
 
