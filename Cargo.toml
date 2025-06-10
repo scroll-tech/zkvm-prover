@@ -76,6 +76,7 @@ rkyv = "0.8"
 serde = { version = "1", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0" }
 serde_with = "3.11.0"
+base64 = "0.22"
 snark-verifier-sdk = { version = "0.2.0", default-features = false, features = [
     "loader_halo2",
     "halo2-axiom",

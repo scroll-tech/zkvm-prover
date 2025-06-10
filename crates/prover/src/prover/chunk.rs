@@ -3,7 +3,7 @@ use scroll_zkvm_types::chunk::{ArchivedChunkWitness, ChunkWitness, execute};
 use crate::{
     Error, Prover, ProverType,
     commitments::{chunk, chunk_rv32},
-    proof::{ChunkProofMetadata, RootProof},
+    proof::ChunkProofMetadata,
     task::{ProvingTask, chunk::ChunkProvingTask},
 };
 
@@ -44,8 +44,6 @@ impl<C: Commitments> ProverType for GenericChunkProverType<C> {
     const LEAF_COMMIT: [u32; 8] = C::LEAF_COMMIT;
 
     type ProvingTask = ChunkProvingTask;
-
-    type ProofType = RootProof;
 
     type ProofMetadata = ChunkProofMetadata;
 

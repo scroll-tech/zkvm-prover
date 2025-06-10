@@ -13,4 +13,11 @@ types-chunk = { path = "chunk", package = "scroll-zkvm-types-chunk"}
 types-batch = { path = "batch", package = "scroll-zkvm-types-batch"}
 types-bundle = { path = "bundle", package = "scroll-zkvm-types-bundle"}
 
-
+openvm-sdk = { workspace = true }
+openvm-continuations.workspace = true
+openvm-native-recursion.workspace = true
+openvm-stark-sdk = { workspace = true, default-features = false }
+snark-verifier-sdk.workspace = true
+serde.workspace = true
+base64.workspace = true
+bincode_v1.workspace = true

@@ -208,7 +208,9 @@ impl<Type: VerifierType> Verifier<Type> {
 mod tests {
     use std::path::Path;
 
-    use scroll_zkvm_prover::{BatchProof, BundleProof, ChunkProof, utils::read_json_deep};
+    use scroll_zkvm_prover::{
+        AsRootProof, BatchProof, BundleProof, ChunkProof, IntoEvmProof, PersistableProof,
+    };
     use scroll_zkvm_types::types_agg::ProgramCommitment;
 
     use super::{BatchVerifier, BundleVerifierEuclidV2, ChunkVerifier};
@@ -218,7 +220,7 @@ mod tests {
     #[ignore = "need release assets"]
     #[test]
     fn verify_chunk_proof() -> eyre::Result<()> {
-        let chunk_proof = read_json_deep::<_, ChunkProof>(
+        let chunk_proof = ChunkProof::from_json(
             Path::new(PATH_TESTDATA)
                 .join("proofs")
                 .join("chunk-proof-phase2.json"),
@@ -233,7 +235,7 @@ mod tests {
         )?;
 
         let commitment = ProgramCommitment::deserialize(&chunk_proof.vk);
-        let root_proof = chunk_proof.as_proof();
+        let root_proof = chunk_proof.as_root_proof();
         let pi = verifier.verify_proof_inner(root_proof).unwrap();
         assert_eq!(
             &pi[..8],
@@ -256,7 +258,7 @@ mod tests {
     #[ignore = "need release assets"]
     #[test]
     fn verify_batch_proof() -> eyre::Result<()> {
-        let batch_proof = read_json_deep::<_, BatchProof>(
+        let batch_proof = BatchProof::from_json(
             Path::new(PATH_TESTDATA)
                 .join("proofs")
                 .join("batch-proof-phase2.json"),
@@ -269,7 +271,7 @@ mod tests {
         )?;
 
         let commitment = ProgramCommitment::deserialize(&batch_proof.vk);
-        let root_proof = batch_proof.as_proof();
+        let root_proof = batch_proof.as_root_proof();
         let pi = verifier.verify_proof_inner(root_proof).unwrap();
         assert_eq!(
             &pi[..8],
@@ -292,7 +294,7 @@ mod tests {
     #[ignore = "need released assets"]
     #[test]
     fn verify_bundle_proof() -> eyre::Result<()> {
-        let evm_proof = read_json_deep::<_, BundleProof>(
+        let evm_proof = BundleProof::from_json(
             Path::new(PATH_TESTDATA)
                 .join("proofs")
                 .join("bundle-proof-phase2.json"),
@@ -304,7 +306,7 @@ mod tests {
             Path::new(PATH_TESTDATA).join("verifier.bin"),
         )?;
 
-        assert!(verifier.verify_proof_evm(&evm_proof.as_proof()));
+        assert!(verifier.verify_proof_evm(&evm_proof.into_evm_proof()));
 
         Ok(())
     }

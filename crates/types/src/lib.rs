@@ -18,3 +18,5 @@ pub mod chunk {
 }
 
 pub use types_base::{aggregation as types_agg, public_inputs, utils};
+
+pub mod proof;

@@ -1,4 +1,3 @@
-use openvm_native_recursion::halo2::RawEvmProof;
 use scroll_zkvm_types::{bundle::BundleInfo, public_inputs::ForkName};
 
 use crate::{
@@ -44,8 +43,6 @@ impl<C: Commitments> ProverType for GenericBundleProverType<C> {
     const LEAF_COMMIT: [u32; 8] = C::LEAF_COMMIT;
 
     type ProvingTask = BundleProvingTask;
-
-    type ProofType = RawEvmProof;
 
     type ProofMetadata = BundleProofMetadata;
 

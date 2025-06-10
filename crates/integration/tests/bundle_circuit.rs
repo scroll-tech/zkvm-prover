@@ -9,7 +9,7 @@ use scroll_zkvm_integration::{
     utils::{LastHeader, build_batch_task},
 };
 use scroll_zkvm_prover::{
-    BatchProof, ChunkProof,
+    AsRootProof, BatchProof, ChunkProof, IntoEvmProof,
     task::{bundle::BundleProvingTask, chunk::ChunkProvingTask},
     utils::{read_json_deep, write_json},
 };
@@ -158,20 +158,21 @@ fn e2e() -> eyre::Result<()> {
     // Verifier all above proofs with the verifier-only mode.
     let verifier = verifier.to_chunk_verifier();
     for proof in chunk_proofs.iter() {
-        assert!(verifier.verify_proof(proof.as_proof()));
+        assert!(verifier.verify_proof(proof.as_root_proof()));
     }
     let verifier = verifier.to_batch_verifier();
     for proof in bundle_task.batch_proofs.iter() {
-        assert!(verifier.verify_proof(proof.as_proof()));
+        assert!(verifier.verify_proof(proof.as_root_proof()));
     }
     #[cfg(not(feature = "euclidv2"))]
     let verifier = verifier.to_bundle_verifier_v1();
     #[cfg(feature = "euclidv2")]
     let verifier = verifier.to_bundle_verifier_v2();
-    assert!(verifier.verify_proof_evm(&outcome.proofs[0].as_proof()));
+    let evm_proof = outcome.proofs[0].clone().into_evm_proof();
+    assert!(verifier.verify_proof_evm(&evm_proof));
 
     let expected_pi_hash = &outcome.proofs[0].metadata.bundle_pi_hash;
-    let observed_instances = &outcome.proofs[0].as_proof().instances;
+    let observed_instances = &evm_proof.instances;
 
     for (i, (&expected, &observed)) in expected_pi_hash
         .iter()

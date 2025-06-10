@@ -5,10 +5,7 @@ use scroll_zkvm_types::{
     public_inputs::ForkName,
 };
 
-use crate::{
-    BatchProof,
-    task::{ProvingTask, flatten_wrapped_proof},
-};
+use crate::{AsRootProof, BatchProof, task::ProvingTask};
 
 /// Message indicating a sanity check failure.
 const BUNDLE_SANITY_MSG: &str = "bundle must have at least one batch";
@@ -48,11 +45,7 @@ impl ProvingTask for BundleProvingTask {
 
     fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error> {
         let witness = BundleWitness {
-            batch_proofs: self
-                .batch_proofs
-                .iter()
-                .map(flatten_wrapped_proof)
-                .collect(),
+            batch_proofs: self.batch_proofs.iter().map(|proof| proof.into()).collect(),
             batch_infos: self
                 .batch_proofs
                 .iter()
@@ -63,7 +56,7 @@ impl ProvingTask for BundleProvingTask {
         let mut stdin = StdIn::default();
         stdin.write_bytes(&serialized);
         for batch_proof in &self.batch_proofs {
-            let root_input = &batch_proof.as_proof();
+            let root_input = &batch_proof.as_root_proof();
             let streams = root_input.write();
             for s in &streams {
                 stdin.write_field(s);

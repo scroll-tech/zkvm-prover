@@ -11,8 +11,8 @@ use scroll_zkvm_types::{
 };
 
 use crate::{
-    ChunkProof,
-    task::{ProvingTask, flatten_wrapped_proof},
+    AsRootProof, ChunkProof,
+    task::ProvingTask,
     utils::{base64, point_eval},
 };
 
@@ -150,11 +150,7 @@ impl ProvingTask for BatchProvingTask {
 
         let witness = BatchWitness {
             fork_name,
-            chunk_proofs: self
-                .chunk_proofs
-                .iter()
-                .map(flatten_wrapped_proof)
-                .collect(),
+            chunk_proofs: self.chunk_proofs.iter().map(|proof| proof.into()).collect(),
             chunk_infos: self
                 .chunk_proofs
                 .iter()
@@ -169,7 +165,7 @@ impl ProvingTask for BatchProvingTask {
         let mut stdin = StdIn::default();
         stdin.write_bytes(&serialized);
         for chunk_proof in &self.chunk_proofs {
-            let root_input = &chunk_proof.as_proof();
+            let root_input = chunk_proof.as_root_proof();
             let streams = root_input.write();
             for s in &streams {
                 stdin.write_field(s);

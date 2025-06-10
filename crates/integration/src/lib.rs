@@ -9,10 +9,11 @@ use openvm_sdk::{
     config::{AppConfig, SdkVmConfig},
 };
 use scroll_zkvm_prover::{
-    ProverType, WrappedProof,
+    ProverType,
     setup::{read_app_config, read_app_exe},
     task::ProvingTask,
 };
+use scroll_zkvm_types::proof::WrappedProof;
 use tracing::instrument;
 use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -215,7 +216,6 @@ where
     T: ProverTester,
     <T::Prover as ProverType>::ProvingTask: Clone,
     <T::Prover as ProverType>::ProofMetadata: Clone,
-    <T::Prover as ProverType>::ProofType: Clone,
 {
     let (path_app_config, _, path_app_exe) = T::load()?;
 
@@ -260,7 +260,6 @@ where
     T: ProverTester,
     <T::Prover as ProverType>::ProvingTask: Clone,
     <T::Prover as ProverType>::ProofMetadata: Clone,
-    <T::Prover as ProverType>::ProofType: Clone,
 {
     let (path_app_config, _, path_app_exe) = T::load()?;
 
@@ -304,7 +303,6 @@ where
     T: ProverTester,
     <T::Prover as ProverType>::ProvingTask: Clone,
     <T::Prover as ProverType>::ProofMetadata: Clone,
-    <T::Prover as ProverType>::ProofType: Clone,
 {
     let (path_app_config, _, path_app_exe) = T::load()?;
 
