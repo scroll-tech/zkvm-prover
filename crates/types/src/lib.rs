@@ -24,4 +24,4 @@ pub mod proof;
 pub mod task;
 pub use task::ProvingTask;
 
-pub(crate) mod util;
+pub mod util;

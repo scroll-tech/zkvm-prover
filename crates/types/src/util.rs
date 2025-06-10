@@ -1,3 +1,5 @@
+pub use types_base::utils::*;
+
 pub mod vec_as_base64 {
     use base64::prelude::*;
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
