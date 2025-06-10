@@ -1,3 +1,4 @@
+use crate::util::{as_base64, vec_as_base64};
 use openvm_continuations::verifier::root::types::RootVmVerifierInput;
 use openvm_sdk::SC;
 use openvm_stark_sdk::{
@@ -9,44 +10,6 @@ use types_base::aggregation::{AggregationInput, ProgramCommitment};
 
 /// Alias for convenience.
 pub type RootProof = RootVmVerifierInput<SC>;
-
-mod vec_as_base64 {
-    use base64::prelude::*;
-    use serde::{Deserialize, Deserializer, Serialize, Serializer};
-
-    pub fn serialize<S: Serializer>(v: &Vec<u8>, s: S) -> Result<S::Ok, S::Error> {
-        let base64 = BASE64_STANDARD.encode(v);
-        String::serialize(&base64, s)
-    }
-
-    pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<Vec<u8>, D::Error> {
-        let base64 = String::deserialize(d)?;
-        BASE64_STANDARD
-            .decode(base64.as_bytes())
-            .map_err(serde::de::Error::custom)
-    }
-}
-
-mod as_base64 {
-    use base64::prelude::*;
-    use serde::{Deserialize, Deserializer, Serialize, Serializer, de::DeserializeOwned};
-
-    pub fn serialize<S: Serializer, T: Serialize>(v: &T, s: S) -> Result<S::Ok, S::Error> {
-        let v_bytes = bincode_v1::serialize(v).map_err(serde::ser::Error::custom)?;
-        let v_base64 = BASE64_STANDARD.encode(&v_bytes);
-        String::serialize(&v_base64, s)
-    }
-
-    pub fn deserialize<'de, D: Deserializer<'de>, T: DeserializeOwned>(
-        d: D,
-    ) -> Result<T, D::Error> {
-        let v_base64 = String::deserialize(d)?;
-        let v_bytes = BASE64_STANDARD
-            .decode(v_base64.as_bytes())
-            .map_err(serde::de::Error::custom)?;
-        bincode_v1::deserialize(&v_bytes).map_err(serde::de::Error::custom)
-    }
-}
 
 /// Helper type for convenience that implements [`From`] and [`Into`] traits between
 /// [`OpenVmEvmProof`]. The difference is that the instances in [`EvmProof`] are the byte-encoding

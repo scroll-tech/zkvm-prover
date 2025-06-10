@@ -20,3 +20,8 @@ pub mod chunk {
 pub use types_base::{aggregation as types_agg, public_inputs, utils};
 
 pub mod proof;
+
+pub mod task;
+pub use task::ProvingTask;
+
+pub(crate) mod util;
