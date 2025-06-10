@@ -32,4 +32,4 @@ tiny-keccak.workspace = true
 default = []
 
 [dev-dependencies]
-#c-kzg = "1.0"
+c-kzg = "2.0"

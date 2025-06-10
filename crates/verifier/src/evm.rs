@@ -1,8 +1,5 @@
 use openvm_native_recursion::halo2::RawEvmProof;
-use revm::{
-    Context, Evm, Handler, InMemoryDB,
-    primitives::{ExecutionResult, Output, TransactTo, TxEnv, TxKind, specification::CancunSpec},
-};
+use revm::{Context, primitives::TxKind};
 
 // Re-export from snark_verifier_sdk.
 pub use snark_verifier_sdk::{
@@ -43,62 +40,10 @@ pub fn deserialize_vk<C: Circuit<Fr, Params = ()>>(raw_vk: &[u8]) -> VerifyingKe
 pub fn verify_evm_proof(evm_verifier: &[u8], evm_proof: &RawEvmProof) -> Result<u64, String> {
     let calldata =
         snark_verifier_sdk::evm::encode_calldata(&[evm_proof.instances.clone()], &evm_proof.proof);
-    deploy_and_call(evm_verifier.to_vec(), calldata)
-}
-
-fn deploy_and_call(deployment_code: Vec<u8>, calldata: Vec<u8>) -> Result<u64, String> {
-    let mut evm = Evm::new(
-        Context::new_with_db(InMemoryDB::default()),
-        Handler::mainnet::<CancunSpec>(),
-    );
-
-    *evm.tx_mut() = TxEnv {
-        gas_limit: u64::MAX,
-        transact_to: TxKind::Create,
-        data: deployment_code.into(),
-        ..Default::default()
-    };
-
-    let result = evm.transact_commit().unwrap();
-    let contract = match result {
-        ExecutionResult::Success {
-            output: Output::Create(_, Some(contract)),
-            ..
-        } => contract,
-        ExecutionResult::Revert { gas_used, output } => {
-            return Err(format!(
-                "Contract deployment transaction reverts with gas_used {gas_used} and output {:#x}",
-                output
-            ));
-        }
-        ExecutionResult::Halt { reason, gas_used } => {
-            return Err(format!(
-                "Contract deployment transaction halts unexpectedly with gas_used {gas_used} and reason {:?}",
-                reason
-            ));
-        }
-        _ => unreachable!(),
-    };
-
-    *evm.tx_mut() = TxEnv {
-        gas_limit: u64::MAX,
-        transact_to: TransactTo::Call(contract),
-        data: calldata.into(),
-        ..Default::default()
-    };
-
-    let result = evm.transact_commit().unwrap();
-    match result {
-        ExecutionResult::Success { gas_used, .. } => Ok(gas_used),
-        ExecutionResult::Revert { gas_used, output } => Err(format!(
-            "Contract call transaction reverts with gas_used {gas_used} and output {:#x}",
-            output
-        )),
-        ExecutionResult::Halt { reason, gas_used } => Err(format!(
-            "Contract call transaction halts unexpectedly with gas_used {gas_used} and reason {:?}",
-            reason
-        )),
-    }
+    snark_verifier_sdk::snark_verifier::loader::evm::deploy_and_call(
+        evm_verifier.to_vec(),
+        calldata,
+    )
 }
 
 #[test]
