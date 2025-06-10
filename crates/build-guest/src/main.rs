@@ -180,7 +180,7 @@ fn run_stage2_root_verifier(project_names: &[&str], workspace_dir: &Path) -> Res
 fn run_stage3_exe_commits(project_names: &[&str], workspace_dir: &Path) -> Result<()> {
     println!("{LOG_PREFIX} === Stage 3: Generating Executable Commitments ===");
     for &project_name in project_names {
-        let project_dir = workspace_dir
+        let project_path = workspace_dir // Renamed to avoid conflict
             .join("crates")
             .join("circuits")
             .join(format!("{project_name}-circuit"));
@@ -195,8 +195,16 @@ fn run_stage3_exe_commits(project_names: &[&str], workspace_dir: &Path) -> Resul
             let start_time = Instant::now();
             println!("{LOG_PREFIX} Starting build for config: {build_config:?}...");
 
-            let project_dir = project_dir.to_str().expect("Invalid path");
+            let project_dir = project_path.to_str().expect("Invalid path"); // Use renamed variable
             let app_config = builder::load_app_config(project_dir)?;
+
+            // Store current directory and change to project directory
+            let original_dir = env::current_dir()?;
+            env::set_current_dir(&project_path)?; // Use PathBuf directly
+            println!(
+                "{LOG_PREFIX} Changed working directory to: {}",
+                project_path.display()
+            );
 
             // 1. Build ELF
             let elf = builder::build(
@@ -206,10 +214,17 @@ fn run_stage3_exe_commits(project_names: &[&str], workspace_dir: &Path) -> Resul
             )?;
             println!("{LOG_PREFIX} Built ELF");
 
+            // Revert to original directory
+            env::set_current_dir(&original_dir)?;
+            println!(
+                "{LOG_PREFIX} Reverted working directory to: {}",
+                original_dir.display()
+            );
+
             // 2. Transpile ELF to VM Executable
             let vmexe_filename = format!("app{}.vmexe", build_config.filename_suffix);
             let app_exe = builder::transpile(
-                project_dir,
+                project_dir, // Pass original project_dir_str for transpile context
                 elf,
                 Some(&vmexe_filename), // Pass filename directly
                 app_config.clone(),
@@ -233,7 +248,7 @@ fn run_stage3_exe_commits(project_names: &[&str], workspace_dir: &Path) -> Resul
                 "{project_name}_exe{}_commit.rs",
                 build_config.filename_suffix
             );
-            let output_path = Path::new(project_dir).join(&commit_filename);
+            let output_path = Path::new(project_dir).join(&commit_filename); // Use project_dir_str
             write_commitment(output_path.to_str().expect("Invalid path"), exe_commit_u32)?;
 
             // Special handling for bundle project: generate digest_1
@@ -248,7 +263,7 @@ fn run_stage3_exe_commits(project_names: &[&str], workspace_dir: &Path) -> Resul
                     .rev() // Ensure correct byte order
                     .collect::<Vec<u8>>();
                 let digest_1_filename = format!("digest_1{}", build_config.filename_suffix,);
-                let digest_1_path = Path::new(project_dir).join(&digest_1_filename);
+                let digest_1_path = Path::new(project_dir).join(&digest_1_filename); // Use project_dir_str
                 std::fs::write(&digest_1_path, &digest_1_bytes)?;
                 println!(
                     "{LOG_PREFIX} Wrote {} to {}",

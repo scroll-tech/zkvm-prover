@@ -83,7 +83,7 @@ dependencies = [
  "c-kzg",
  "derive_more 2.0.1",
  "either",
- "k256",
+ "k256 0.13.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "once_cell",
  "rand 0.8.5",
  "secp256k1",
@@ -162,7 +162,7 @@ checksum = "9b15b13d38b366d01e818fe8e710d4d702ef7499eacd44926a06171dd9585d0c"
 dependencies = [
  "alloy-primitives 0.8.25",
  "alloy-rlp",
- "k256",
+ "k256 0.13.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde",
  "thiserror 2.0.12",
 ]
@@ -175,7 +175,7 @@ checksum = "9d4769c6ffddca380b0070d71c8b7f30bed375543fe76bb2f74ec0acf4b7cd16"
 dependencies = [
  "alloy-primitives 1.2.0",
  "alloy-rlp",
- "k256",
+ "k256 0.13.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde",
  "serde_with",
  "thiserror 2.0.12",
@@ -367,7 +367,7 @@ dependencies = [
  "hashbrown 0.15.4",
  "indexmap 2.9.0",
  "itoa",
- "k256",
+ "k256 0.13.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "keccak-asm",
  "paste",
  "proptest",
@@ -393,7 +393,7 @@ dependencies = [
  "hashbrown 0.15.4",
  "indexmap 2.9.0",
  "itoa",
- "k256",
+ "k256 0.13.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "keccak-asm",
  "paste",
  "proptest",
@@ -575,7 +575,7 @@ dependencies = [
  "auto_impl",
  "either",
  "elliptic-curve",
- "k256",
+ "k256 0.13.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "thiserror 2.0.12",
 ]
 
@@ -2995,6 +2995,20 @@ dependencies = [
 [[package]]
 name = "k256"
 version = "0.13.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f6e3919bbaa2945715f0bb6d3934a173d1e9a59ac23767fbaaef277265a7411b"
+dependencies = [
+ "cfg-if",
+ "ecdsa",
+ "elliptic-curve",
+ "once_cell",
+ "serdect",
+ "sha2 0.10.9",
+]
+
+[[package]]
+name = "k256"
+version = "0.13.4"
 source = "git+https://github.com/openvm-org/openvm.git?rev=c25b262#c25b262dd75694e798ab090c22f42ffc2e1002a0"
 dependencies = [
  "ecdsa",
@@ -4450,6 +4464,18 @@ checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
 [[package]]
 name = "p256"
 version = "0.13.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c9863ad85fa8f4460f9c48cb909d38a0d689dba1f6f6988a5e3e0d31071bcd4b"
+dependencies = [
+ "ecdsa",
+ "elliptic-curve",
+ "primeorder",
+ "sha2 0.10.9",
+]
+
+[[package]]
+name = "p256"
+version = "0.13.2"
 source = "git+https://github.com/openvm-org/openvm.git?rev=c25b262#c25b262dd75694e798ab090c22f42ffc2e1002a0"
 dependencies = [
  "ecdsa",
@@ -5184,6 +5210,15 @@ checksum = "9dee91521343f4c5c6a63edd65e54f31f5c92fe8978c40a4282f8372194c6a7d"
 dependencies = [
  "proc-macro2",
  "syn 2.0.101",
+]
+
+[[package]]
+name = "primeorder"
+version = "0.13.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "353e1ca18966c16d9deb1c69278edbc5f194139612772bd9537af60ac231e1e6"
+dependencies = [
+ "elliptic-curve",
 ]
 
 [[package]]
@@ -6391,10 +6426,10 @@ dependencies = [
  "blst",
  "c-kzg",
  "cfg-if",
- "k256",
+ "k256 0.13.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "libsecp256k1",
  "once_cell",
- "p256",
+ "p256 0.13.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "revm-primitives 17.0.0",
  "ripemd",
  "secp256k1",
@@ -6416,10 +6451,10 @@ dependencies = [
  "blst",
  "c-kzg",
  "cfg-if",
- "k256",
+ "k256 0.13.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "libsecp256k1",
  "once_cell",
- "p256",
+ "p256 0.13.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "revm-primitives 18.0.0",
  "ripemd",
  "secp256k1",
@@ -6439,11 +6474,11 @@ dependencies = [
  "aurora-engine-modexp",
  "c-kzg",
  "cfg-if",
- "k256",
+ "k256 0.13.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "kzg-rs",
  "libsecp256k1",
  "once_cell",
- "p256",
+ "p256 0.13.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "revm-primitives 19.1.0",
  "ripemd",
  "secp256k1",
@@ -6945,7 +6980,7 @@ dependencies = [
 name = "scroll-zkvm-chunk-circuit"
 version = "0.4.0"
 dependencies = [
- "k256",
+ "k256 0.13.4 (git+https://github.com/openvm-org/openvm.git?rev=c25b262)",
  "openvm",
  "openvm-algebra-complex-macros",
  "openvm-algebra-guest",
@@ -6955,7 +6990,7 @@ dependencies = [
  "openvm-pairing",
  "openvm-pairing-guest",
  "openvm-rv32im-guest",
- "p256",
+ "p256 0.13.2 (git+https://github.com/openvm-org/openvm.git?rev=c25b262)",
  "rkyv",
  "scroll-zkvm-circuit-input-types",
 ]

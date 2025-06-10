@@ -30,3 +30,4 @@ openvm = ["scroll-zkvm-circuit-input-types/openvm"]
 #[patch.crates-io]
 #k256 = { git = "https://github.com/openvm-org/openvm.git", rev = "c25b262" }
 
+
