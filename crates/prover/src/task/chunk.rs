@@ -76,11 +76,11 @@ impl ProvingTask for ChunkProvingTask {
     }
 
     fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error> {
-        let witness = ChunkWitness {
-            blocks: self.block_witnesses.to_vec(),
-            prev_msg_queue_hash: self.prev_msg_queue_hash,
-            fork_name: self.fork_name.to_lowercase().as_str().into(),
-        };
+        let witness = ChunkWitness::new(
+            &self.block_witnesses,
+            self.prev_msg_queue_hash,
+            self.fork_name.to_lowercase().as_str().into(),
+        );
 
         let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&witness)?;
 

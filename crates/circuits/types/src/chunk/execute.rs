@@ -57,15 +57,8 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
 
     let inner = ChainSpec {
         chain,
-        genesis_hash: Default::default(),
-        genesis: Default::default(),
-        genesis_header: Default::default(),
-        paris_block_and_final_difficulty: Default::default(),
         hardforks,
-        deposit_contract: Default::default(),
-        base_fee_params: BaseFeeParamsKind::Constant(BaseFeeParams::ethereum()),
-        prune_delete_limit: 20000,
-        blob_params: Default::default(),
+        ..Default::default()
     };
     let config = ScrollChainConfig::mainnet();
     let chain_spec: ScrollChainSpec = ScrollChainSpec { inner, config };
