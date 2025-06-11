@@ -9,7 +9,7 @@ pub struct ProvingTask {
     pub serialized_witness: Vec<u8>,
     /// aggregated proof carried by babybear fields, should be written into stdin
     /// followed `serialized_witness`
-    pub aggregated_proof_data: Vec<BabyBear>,
+    pub aggregated_proof_data: Vec<Vec<BabyBear>>,
     /// Fork name specify
     pub fork_name: String,
     /// The vk of app which is expcted to prove this task

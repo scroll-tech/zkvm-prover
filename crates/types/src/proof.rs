@@ -1,5 +1,6 @@
 use crate::util::{as_base64, vec_as_base64};
 use openvm_continuations::verifier::root::types::RootVmVerifierInput;
+use openvm_native_recursion::hints::Hintable;
 use openvm_sdk::SC;
 use openvm_stark_sdk::{
     openvm_stark_backend::{p3_field::PrimeField32, proof::Proof},
@@ -147,6 +148,11 @@ impl ProofEnum {
             Self::Evm(proof) => Some(proof),
             _ => None,
         }
+    }
+
+    /// Expend the proof into
+    pub fn flattened_root_proof(&self) -> Option<Vec<Vec<BabyBear>>> {
+        self.as_root_proof().map(|proof| proof.write())
     }
 
     /// Derive public inputs from the proof.
