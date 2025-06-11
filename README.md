@@ -34,7 +34,7 @@ In case you have made any changes to the guest programs, it is important to buil
 $ make build-guest
 ```
 
-Upon building the guest programs, the child commitments in [batch-circuit](./crates/circuits/batch-circuit/src/child_commitments.rs) and [bundle-circuit](./crates/circuits/bundle-circuit/src/child_commitments.rs) will be overwritten by `build-guest`.
+Upon building the guest programs, the child commitments in [batch-circuit](./crates/circuits/batch-circuit/src/child_commitments) and [bundle-circuit](./crates/circuits/bundle-circuit/src/child_commitments) will be overwritten by `build-guest`.
 
 ### End-to-end tests for chunk-prover
 
