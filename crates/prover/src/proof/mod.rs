@@ -6,8 +6,10 @@ use scroll_zkvm_types::{
     batch::BatchInfo,
     bundle::BundleInfo,
     chunk::ChunkInfo,
-    proof::{EvmProof, OpenVmEvmProof, ProofEnum, RootProof, WrappedProof},
+    proof::{EvmProof, OpenVmEvmProof, ProofEnum, RootProof},
     public_inputs::{ForkName, MultiVersionPublicInputs},
+    types_agg::{AggregationInput, ProgramCommitment},
+    util::vec_as_base64,
 };
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
@@ -83,8 +85,6 @@ pub trait ProofMetadata: Serialize + DeserializeOwned + std::fmt::Debug {
 }
 
 pub trait PersistableProof: Sized {
-    /// Sanity checks on the wrapped proof:
-    fn sanity_check(&self, fork_name: ForkName);
     /// Read and deserialize the proof.
     fn from_json<P: AsRef<Path>>(path_proof: P) -> Result<Self, Error>;
     /// Serialize the proof and dumping at the given path.
@@ -140,11 +140,44 @@ impl ProofMetadata for BundleProofMetadata {
     }
 }
 
-impl<Metadata: ProofMetadata> PersistableProof for WrappedProof<Metadata> {
+/// A wrapper around the actual inner proof.
+#[derive(Clone, Serialize, Deserialize)]
+pub struct WrappedProof<Metadata> {
+    /// Generic metadata carried by a proof.
+    pub metadata: Metadata,
+    /// The inner proof, either a [`RootProof`] or [`EvmProof`] depending on the [`crate::ProverType`].
+    pub proof: ProofEnum,
+    /// Represents the verifying key in serialized form. The purpose of including the verifying key
+    /// along with the proof is to allow a verifier-only mode to identify the source of proof
+    /// generation.
+    ///
+    /// For [`RootProof`] the verifying key is denoted by the digest of the VM's program.
+    ///
+    /// For [`EvmProof`] its the raw bytes of the halo2 circuit's `VerifyingKey`.
+    ///
+    /// We encode the vk in base64 format during JSON serialization.
+    #[serde(with = "vec_as_base64", default)]
+    pub vk: Vec<u8>,
+    /// Represents the git ref for `zkvm-prover` that was used to construct the proof.
+    ///
+    /// This is useful for debugging.
+    pub git_version: String,
+}
+
+impl<Metadata> From<&WrappedProof<Metadata>> for AggregationInput {
+    fn from(value: &WrappedProof<Metadata>) -> Self {
+        Self {
+            public_values: value.proof.public_values(),
+            commitment: ProgramCommitment::deserialize(&value.vk),
+        }
+    }
+}
+
+impl<Metadata: ProofMetadata> WrappedProof<Metadata> {
     /// Sanity checks on the wrapped proof:
     ///
     /// - pi_hash computed in host does in fact match pi_hash computed in guest
-    fn sanity_check(&self, fork_name: ForkName) {
+    pub fn sanity_check(&self, fork_name: ForkName) {
         let proof_pi = self.proof.public_values();
 
         let expected_pi = self
@@ -162,13 +195,13 @@ impl<Metadata: ProofMetadata> PersistableProof for WrappedProof<Metadata> {
             "pi mismatch: expected={expected_pi:?}, found={proof_pi:?}"
         );
     }
+}
 
-    /// Read and deserialize the proof.
+impl<Metadata: ProofMetadata> PersistableProof for WrappedProof<Metadata> {
     fn from_json<P: AsRef<Path>>(path_proof: P) -> Result<Self, Error> {
         crate::utils::read_json_deep(path_proof)
     }
 
-    /// Serialize the proof and dumping at the given path.
     fn dump<P: AsRef<Path>>(&self, path_proof: P) -> Result<(), Error> {
         crate::utils::write_json(path_proof, &self)
     }

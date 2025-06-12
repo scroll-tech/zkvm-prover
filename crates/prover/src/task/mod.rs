@@ -1,6 +1,6 @@
+use openvm_native_recursion::hints::Hintable;
 use openvm_sdk::StdIn;
-use scroll_zkvm_types::public_inputs::ForkName;
-
+use scroll_zkvm_types::{public_inputs::ForkName, task::ProvingTask as UniversalProvingTask};
 pub mod batch;
 
 pub mod chunk;
@@ -15,4 +15,27 @@ pub trait ProvingTask: serde::de::DeserializeOwned {
     fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error>;
 
     fn fork_name(&self) -> ForkName;
+}
+
+impl ProvingTask for UniversalProvingTask {
+    fn identifier(&self) -> String {
+        self.identifier.clone()
+    }
+
+    fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error> {
+        let mut stdin = StdIn::default();
+        stdin.write_bytes(&self.serialized_witness);
+
+        for proof in &self.aggregated_proofs {
+            let streams = proof.write();
+            for s in &streams {
+                stdin.write_field(s);
+            }
+        }
+        Ok(stdin)
+    }
+
+    fn fork_name(&self) -> ForkName {
+        ForkName::from(self.fork_name.as_str())
+    }
 }

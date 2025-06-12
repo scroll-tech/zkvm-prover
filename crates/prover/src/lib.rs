@@ -8,6 +8,7 @@ pub use error::Error;
 mod proof;
 pub use proof::{
     AsEvmProof, AsRootProof, BatchProof, BundleProof, ChunkProof, IntoEvmProof, PersistableProof,
+    WrappedProof,
 };
 
 mod prover;

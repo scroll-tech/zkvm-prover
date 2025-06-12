@@ -9,11 +9,10 @@ use openvm_sdk::{
     config::{AppConfig, SdkVmConfig},
 };
 use scroll_zkvm_prover::{
-    ProverType,
+    ProverType, WrappedProof,
     setup::{read_app_config, read_app_exe},
     task::ProvingTask,
 };
-use scroll_zkvm_types::proof::WrappedProof;
 use tracing::instrument;
 use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::SubscriberInitExt};
 

@@ -1,13 +1,11 @@
 use crate::util::{as_base64, vec_as_base64};
 use openvm_continuations::verifier::root::types::RootVmVerifierInput;
-use openvm_native_recursion::hints::Hintable;
 use openvm_sdk::SC;
 use openvm_stark_sdk::{
     openvm_stark_backend::{p3_field::PrimeField32, proof::Proof},
     p3_baby_bear::BabyBear,
 };
 use serde::{Deserialize, Serialize};
-use types_base::aggregation::{AggregationInput, ProgramCommitment};
 
 /// Alias for convenience.
 pub type RootProof = RootVmVerifierInput<SC>;
@@ -150,11 +148,6 @@ impl ProofEnum {
         }
     }
 
-    /// Expend the proof into
-    pub fn flattened_root_proof(&self) -> Option<Vec<Vec<BabyBear>>> {
-        self.as_root_proof().map(|proof| proof.write())
-    }
-
     /// Derive public inputs from the proof.
     pub fn public_values(&self) -> Vec<u32> {
         match self {
@@ -182,39 +175,6 @@ impl ProofEnum {
                     .map(|bytes32_chunk| bytes32_chunk[31] as u32)
                     .collect::<Vec<u32>>()
             }
-        }
-    }
-}
-
-/// A wrapper around the actual inner proof.
-#[derive(Clone, Serialize, Deserialize)]
-pub struct WrappedProof<Metadata> {
-    /// Generic metadata carried by a proof.
-    pub metadata: Metadata,
-    /// The inner proof, either a [`RootProof`] or [`EvmProof`] depending on the [`crate::ProverType`].
-    pub proof: ProofEnum,
-    /// Represents the verifying key in serialized form. The purpose of including the verifying key
-    /// along with the proof is to allow a verifier-only mode to identify the source of proof
-    /// generation.
-    ///
-    /// For [`RootProof`] the verifying key is denoted by the digest of the VM's program.
-    ///
-    /// For [`EvmProof`] its the raw bytes of the halo2 circuit's `VerifyingKey`.
-    ///
-    /// We encode the vk in base64 format during JSON serialization.
-    #[serde(with = "vec_as_base64", default)]
-    pub vk: Vec<u8>,
-    /// Represents the git ref for `zkvm-prover` that was used to construct the proof.
-    ///
-    /// This is useful for debugging.
-    pub git_version: String,
-}
-
-impl<Metadata> From<&WrappedProof<Metadata>> for AggregationInput {
-    fn from(value: &WrappedProof<Metadata>) -> Self {
-        Self {
-            public_values: value.proof.public_values(),
-            commitment: ProgramCommitment::deserialize(&value.vk),
         }
     }
 }
