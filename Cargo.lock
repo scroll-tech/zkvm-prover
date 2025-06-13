@@ -6018,6 +6018,7 @@ dependencies = [
  "openvm-native-recursion",
  "openvm-sdk",
  "openvm-stark-sdk",
+ "rkyv",
  "scroll-zkvm-types-base",
  "scroll-zkvm-types-batch",
  "scroll-zkvm-types-bundle",
