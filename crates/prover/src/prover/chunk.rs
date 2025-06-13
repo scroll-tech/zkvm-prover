@@ -1,9 +1,9 @@
-use scroll_zkvm_circuit_input_types::chunk::{ArchivedChunkWitness, ChunkWitness, execute};
+use scroll_zkvm_types::chunk::{ChunkWitness, execute};
 
 use crate::{
     Error, Prover, ProverType,
     commitments::{chunk, chunk_rv32},
-    proof::{ChunkProofMetadata, RootProof},
+    proof::ChunkProofMetadata,
     task::{ProvingTask, chunk::ChunkProvingTask},
 };
 
@@ -45,8 +45,6 @@ impl<C: Commitments> ProverType for GenericChunkProverType<C> {
 
     type ProvingTask = ChunkProvingTask;
 
-    type ProofType = RootProof;
-
     type ProofMetadata = ChunkProofMetadata;
 
     fn metadata_with_prechecks(task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error> {
@@ -66,23 +64,8 @@ impl<C: Commitments> ProverType for GenericChunkProverType<C> {
             task.prev_msg_queue_hash,
             task.fork_name.as_str().into(),
         );
-        let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&chunk_witness).map_err(|e| {
-            Error::GenProof(format!(
-                "{}: failed to serialize chunk witness: {}",
-                err_prefix, e
-            ))
-        })?;
-        let chunk_witness = rkyv::access::<ArchivedChunkWitness, rkyv::rancor::BoxedError>(
-            &serialized,
-        )
-        .map_err(|e| {
-            Error::GenProof(format!(
-                "{}: rkyv deserialisation of chunk witness bytes failed: {}",
-                err_prefix, e
-            ))
-        })?;
 
-        let chunk_info = execute(chunk_witness)
+        let chunk_info = execute(&chunk_witness)
             .map_err(|e| Error::GenProof(format!("{}: {}", err_prefix, e)))?;
 
         Ok(ChunkProofMetadata { chunk_info })
