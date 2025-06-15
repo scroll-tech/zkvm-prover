@@ -215,7 +215,6 @@ where
     T: ProverTester,
     <T::Prover as ProverType>::ProvingTask: Clone,
     <T::Prover as ProverType>::ProofMetadata: Clone,
-    <T::Prover as ProverType>::ProofType: Clone,
 {
     let (path_app_config, _, path_app_exe) = T::load()?;
 
@@ -260,7 +259,6 @@ where
     T: ProverTester,
     <T::Prover as ProverType>::ProvingTask: Clone,
     <T::Prover as ProverType>::ProofMetadata: Clone,
-    <T::Prover as ProverType>::ProofType: Clone,
 {
     let (path_app_config, _, path_app_exe) = T::load()?;
 
@@ -304,7 +302,6 @@ where
     T: ProverTester,
     <T::Prover as ProverType>::ProvingTask: Clone,
     <T::Prover as ProverType>::ProofMetadata: Clone,
-    <T::Prover as ProverType>::ProofType: Clone,
 {
     let (path_app_config, _, path_app_exe) = T::load()?;
 

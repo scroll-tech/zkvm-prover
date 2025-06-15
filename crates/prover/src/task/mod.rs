@@ -1,12 +1,6 @@
+use openvm_native_recursion::hints::Hintable;
 use openvm_sdk::StdIn;
-use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
-use scroll_zkvm_circuit_input_types::{
-    chunk::ForkName,
-    proof::{AggregationInput, ProgramCommitment},
-};
-
-use crate::proof::WrappedProof;
-
+use scroll_zkvm_types::{public_inputs::ForkName, task::ProvingTask as UniversalProvingTask};
 pub mod batch;
 
 pub mod chunk;
@@ -23,23 +17,25 @@ pub trait ProvingTask: serde::de::DeserializeOwned {
     fn fork_name(&self) -> ForkName;
 }
 
-/// Flatten a [`WrappedProof`] and split the proof from the public values. We also split out the
-/// program commitments.
-///
-/// Panics if the inner proof is not [`RootProof`].
-pub fn flatten_wrapped_proof<Metadata>(wrapped_proof: &WrappedProof<Metadata>) -> AggregationInput {
-    let public_values = wrapped_proof
-        .proof
-        .as_root_proof()
-        .expect("flatten_wrapped_proof expects RootProof")
-        .public_values
-        .iter()
-        .map(|x| x.as_canonical_u32())
-        .collect();
-    let commitment = ProgramCommitment::deserialize(&wrapped_proof.vk);
+impl ProvingTask for UniversalProvingTask {
+    fn identifier(&self) -> String {
+        self.identifier.clone()
+    }
 
-    AggregationInput {
-        public_values,
-        commitment,
+    fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error> {
+        let mut stdin = StdIn::default();
+        stdin.write_bytes(&self.serialized_witness);
+
+        for proof in &self.aggregated_proofs {
+            let streams = proof.write();
+            for s in &streams {
+                stdin.write_field(s);
+            }
+        }
+        Ok(stdin)
+    }
+
+    fn fork_name(&self) -> ForkName {
+        ForkName::from(self.fork_name.as_str())
     }
 }
