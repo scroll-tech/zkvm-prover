@@ -168,6 +168,39 @@ impl<Type: ProverType> Prover<Type> {
         Ok((app_committed_exe, Arc::new(app_pk), commits))
     }
 
+    /// Directly dump the universal verifier, and also persist the staffs
+    pub fn dump_universal_verifier<P: AsRef<Path>>(
+        &self,
+        dir: P,
+    ) -> Result<scroll_zkvm_verifier::verifier::UniversalVerifier, Error> {
+        use scroll_zkvm_verifier::verifier::UniversalVerifier as Verifier;
+
+        let root_verifier_pk = &AGG_STARK_PROVING_KEY.root_verifier_pk;
+        let vm_config = root_verifier_pk.vm_pk.vm_config.clone();
+        let root_committed_exe: &VmCommittedExe<_> = &root_verifier_pk.root_committed_exe;
+
+        let path_vm_config = dir.as_ref().join(FD_ROOT_VERIFIER_VM_CONFIG);
+        let path_root_committed_exe = dir.as_ref().join(FD_ROOT_VERIFIER_COMMITTED_EXE);
+
+        crate::utils::write_bin(&path_vm_config, &vm_config)?;
+        crate::utils::write_bin(&path_root_committed_exe, &root_committed_exe)?;
+        // note the verifier.bin has been written in setup evm prover
+
+        Ok(if let Some(evm_prover) = &self.evm_prover {
+            Verifier {
+                vm_executor: SingleSegmentVmExecutor::new(vm_config),
+                root_committed_exe: root_committed_exe.clone(),
+                evm_verifier: evm_prover.verifier_contract.clone(),
+            }
+        } else {
+            Verifier {
+                vm_executor: SingleSegmentVmExecutor::new(vm_config),
+                root_committed_exe: root_committed_exe.clone(),
+                evm_verifier: Vec::new(),
+            }
+        })
+    }
+
     /// Dump assets required to setup verifier-only mode.
     pub fn dump_verifier<P: AsRef<Path>>(&self, dir: P) -> Result<(PathBuf, PathBuf), Error> {
         if !Type::EVM {

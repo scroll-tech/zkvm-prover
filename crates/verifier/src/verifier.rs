@@ -88,6 +88,96 @@ impl VerifierType for BundleVerifierTypeEuclidV2 {
     const EXE_COMMIT: [u32; 8] = bundle::EXE_COMMIT;
     const LEAF_COMMIT: [u32; 8] = bundle::LEAF_COMMIT;
 }
+
+pub struct UniversalVerifier {
+    pub vm_executor: SingleSegmentVmExecutor<F, NativeConfig>,
+    pub root_committed_exe: VmCommittedExe<RootSC>,
+    pub evm_verifier: Vec<u8>,
+}
+
+impl UniversalVerifier {
+    pub fn setup<P: AsRef<Path>>(
+        path_vm_config: P,
+        path_root_committed_exe: P,
+        path_verifier_code: P,
+    ) -> eyre::Result<Self> {
+        let vm_executor = {
+            let bytes = std::fs::read(path_vm_config.as_ref())?;
+            let vm_config: NativeConfig = bincode_v1::deserialize(&bytes)?;
+            SingleSegmentVmExecutor::new(vm_config)
+        };
+
+        let root_committed_exe = std::fs::read(path_root_committed_exe.as_ref())
+            .map_err(|e| e.into())
+            .and_then(|bytes| bincode_v1::deserialize(&bytes))?;
+
+        let evm_verifier = std::fs::read(path_verifier_code.as_ref())?;
+
+        Ok(Self {
+            vm_executor,
+            root_committed_exe,
+            evm_verifier,
+        })
+    }
+
+    pub fn verify_proof(
+        &self,
+        root_proof: &RootVmVerifierInput<SC>,
+        vk: &[u8],
+    ) -> eyre::Result<bool> {
+        let prog_commit = ProgramCommitment::deserialize(vk);
+
+        let ret = match self.verify_proof_inner(root_proof) {
+            Ok(pi) => {
+                assert!(pi.len() >= 16, "unexpected len(pi)<16");
+                if &pi[..8] != prog_commit.exe.map(Some).as_slice() {
+                    eyre::bail!("mismatch EXE commitment");
+                }
+                if &pi[8..16] != prog_commit.leaf.map(Some).as_slice() {
+                    eyre::bail!("mismatch LEAF commitment");
+                }
+                true
+            }
+            Err(e) => eyre::bail!("unknown issue: {e}"),
+        };
+
+        Ok(ret)
+    }
+
+    pub fn verify_proof_evm(&self, evm_proof: &RawEvmProof, vk: &[u8]) -> eyre::Result<bool> {
+        let prog_commit = ProgramCommitment::deserialize(vk);
+
+        if evm_proof.instances[12] != compress_commitment(&prog_commit.exe) {
+            eyre::bail!("evm: mismatch EXE commitment");
+        }
+        if evm_proof.instances[13] != compress_commitment(&prog_commit.leaf) {
+            eyre::bail!("evm: mismatch EXE commitment");
+        }
+
+        crate::evm::verify_evm_proof(&self.evm_verifier, evm_proof)
+            .map_err(|e| eyre::eyre!("evm execute fail {e}"))?;
+
+        Ok(true)
+    }
+
+    fn verify_proof_inner(
+        &self,
+        root_proof: &RootVmVerifierInput<SC>,
+    ) -> eyre::Result<Vec<Option<u32>>> {
+        use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
+        Ok(self
+            .vm_executor
+            .execute_and_compute_heights(self.root_committed_exe.exe.clone(), root_proof.write())
+            .map(|exec_res| {
+                exec_res
+                    .public_values
+                    .iter()
+                    .map(|op_f| op_f.map(|f| f.as_canonical_u32()))
+                    .collect()
+            })?)
+    }
+}
+
 pub struct Verifier<Type> {
     pub vm_executor: SingleSegmentVmExecutor<F, NativeConfig>,
     pub root_committed_exe: VmCommittedExe<RootSC>,
@@ -213,9 +303,52 @@ mod tests {
     };
     use scroll_zkvm_types::types_agg::ProgramCommitment;
 
-    use super::{BatchVerifier, BundleVerifierEuclidV2, ChunkVerifier};
+    use super::*;
 
     const PATH_TESTDATA: &str = "./testdata";
+
+    #[ignore = "need release assets"]
+    #[test]
+    fn verify_universal_proof() -> eyre::Result<()> {
+        let chunk_proof = ChunkProof::from_json(
+            Path::new(PATH_TESTDATA)
+                .join("proofs")
+                .join("chunk-proof-phase2.json"),
+        )?;
+        let batch_proof = BatchProof::from_json(
+            Path::new(PATH_TESTDATA)
+                .join("proofs")
+                .join("batch-proof-phase2.json"),
+        )?;
+        let evm_proof = BundleProof::from_json(
+            Path::new(PATH_TESTDATA)
+                .join("proofs")
+                .join("bundle-proof-phase2.json"),
+        )?;
+
+        // Note: the committed exe has to match the version of openvm
+        // which is used to generate the proof
+        let verifier = UniversalVerifier::setup(
+            Path::new(PATH_TESTDATA).join("root-verifier-vm-config"),
+            Path::new(PATH_TESTDATA).join("root-verifier-committed-exe"),
+            Path::new(PATH_TESTDATA).join("verifier.bin"),
+        )?;
+
+        verifier.verify_proof(
+            chunk_proof.as_root_proof(),
+            &ChunkVerifierType::get_app_vk(),
+        )?;
+        verifier.verify_proof(
+            batch_proof.as_root_proof(),
+            &BatchVerifierType::get_app_vk(),
+        )?;
+        verifier.verify_proof_evm(
+            &evm_proof.into_evm_proof(),
+            &BundleVerifierTypeEuclidV2::get_app_vk(),
+        )?;
+
+        Ok(())
+    }
 
     #[ignore = "need release assets"]
     #[test]
