@@ -2,17 +2,17 @@ use alloy_primitives::{B256, U256};
 use c_kzg::Bytes48;
 use openvm_native_recursion::hints::Hintable;
 use openvm_sdk::StdIn;
-use scroll_zkvm_circuit_input_types::{
+use scroll_zkvm_types::{
     batch::{
         BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchInfo, BatchWitness, EnvelopeV6, EnvelopeV7,
         N_BLOB_BYTES, PointEvalWitness, ReferenceHeader,
     },
-    chunk::ForkName,
+    public_inputs::ForkName,
 };
 
 use crate::{
-    ChunkProof,
-    task::{ProvingTask, flatten_wrapped_proof},
+    AsRootProof, ChunkProof,
+    task::ProvingTask,
     utils::{base64, point_eval},
 };
 
@@ -150,11 +150,7 @@ impl ProvingTask for BatchProvingTask {
 
         let witness = BatchWitness {
             fork_name,
-            chunk_proofs: self
-                .chunk_proofs
-                .iter()
-                .map(flatten_wrapped_proof)
-                .collect(),
+            chunk_proofs: self.chunk_proofs.iter().map(|proof| proof.into()).collect(),
             chunk_infos: self
                 .chunk_proofs
                 .iter()
@@ -169,7 +165,7 @@ impl ProvingTask for BatchProvingTask {
         let mut stdin = StdIn::default();
         stdin.write_bytes(&serialized);
         for chunk_proof in &self.chunk_proofs {
-            let root_input = &chunk_proof.as_proof();
+            let root_input = chunk_proof.as_root_proof();
             let streams = root_input.write();
             for s in &streams {
                 stdin.write_field(s);

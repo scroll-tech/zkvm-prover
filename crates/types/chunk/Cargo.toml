@@ -1,0 +1,30 @@
+[package]
+name = "scroll-zkvm-types-chunk"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+revm-precompile = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74", default-features=false, features = ["kzg-rs", "libsecp256k1"] }
+alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "native-keccak"]} #, "rkyv"] }
+getrandom = { version = "0.2", features = ["custom"] }
+rkyv.workspace = true
+sbv-trie = { workspace = true }
+sbv-core = { workspace = true }
+sbv-primitives = { workspace = true }
+sbv-kv = { workspace = true }
+serde.workspace = true
+itertools.workspace = true
+
+openvm = { workspace = true, features = ["std"] }
+openvm-rv32im-guest = {  workspace = true }
+openvm-custom-insn = { workspace = true }
+
+types-base = { path = "../base", package = "scroll-zkvm-types-base"}
+
+[features]
+default = []
+openvm = ["sbv-trie/openvm", "sbv-core/openvm", "sbv-primitives/openvm"]

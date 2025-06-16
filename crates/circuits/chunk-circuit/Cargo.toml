@@ -6,7 +6,8 @@ repository.workspace = true
 version = "0.4.0"
 
 [dependencies]
-scroll-zkvm-circuit-input-types = { workspace = true }
+scroll-zkvm-types-circuit = { workspace = true }
+scroll-zkvm-types-chunk = { workspace = true }
 
 rkyv.workspace = true
 
@@ -24,7 +25,7 @@ openvm-rv32im-guest= {  workspace = true }
 
 [features]
 default = []
-openvm = ["scroll-zkvm-circuit-input-types/openvm"]
+openvm = ["scroll-zkvm-types-chunk/openvm"]
 
 
 #[patch.crates-io]

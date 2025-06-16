@@ -1,8 +1,6 @@
 use alloy_primitives::B256;
-use scroll_zkvm_circuit_input_types::{
-    batch::{BatchHeader, BatchHeaderV6, BatchInfo, EnvelopeV6, PayloadV6},
-    chunk::ChunkInfo,
-};
+use scroll_zkvm_types_batch::{BatchHeader, BatchHeaderV6, EnvelopeV6, PayloadV6};
+use scroll_zkvm_types_circuit::public_inputs::{batch::BatchInfo, chunk::ChunkInfo};
 
 use crate::blob_consistency::BlobPolynomial;
 

@@ -50,11 +50,11 @@ pub fn verify_evm_proof(evm_verifier: &[u8], evm_proof: &RawEvmProof) -> Result<
 fn test_verify_evm_proof() -> eyre::Result<()> {
     use std::path::Path;
 
-    use scroll_zkvm_prover::{BundleProof, utils::read_json_deep};
+    use scroll_zkvm_prover::{BundleProof, IntoEvmProof, PersistableProof};
 
     const PATH_TESTDATA: &str = "./testdata";
 
-    let evm_proof = read_json_deep::<_, BundleProof>(
+    let evm_proof = BundleProof::from_json(
         Path::new(PATH_TESTDATA)
             .join("proofs")
             .join("bundle-proof-phase2.json"),
@@ -63,7 +63,7 @@ fn test_verify_evm_proof() -> eyre::Result<()> {
     let evm_verifier: Vec<u8> =
         scroll_zkvm_prover::utils::read(Path::new(PATH_TESTDATA).join("verifier.bin"))?;
 
-    let gas_cost = verify_evm_proof(&evm_verifier, &evm_proof.as_proof())
+    let gas_cost = verify_evm_proof(&evm_verifier, &evm_proof.into_evm_proof())
         .map_err(|e| eyre::eyre!("evm-proof verification failed: {e}"))?;
 
     println!("evm-verify gas cost = {gas_cost}");

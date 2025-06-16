@@ -1,9 +1,14 @@
 [workspace]
 members = [
+  "crates/types/base",
+  "crates/types/circuit",
+  "crates/types/chunk",
+  "crates/types/batch",
+  "crates/types/bundle",
+  "crates/types",
   "crates/circuits/chunk-circuit",
   "crates/circuits/batch-circuit",
   "crates/circuits/bundle-circuit",
-  "crates/circuits/types",
   "crates/prover",
   "crates/verifier",
   "crates/integration",
@@ -78,6 +83,7 @@ revm = "=24.0.0"
 serde = { version = "1", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0" }
 serde_with = "3.11.0"
+base64 = "0.22"
 snark-verifier-sdk = { version = "=0.2.1", default-features = false, features = [
     "loader_halo2",
     "halo2-axiom",
@@ -90,7 +96,12 @@ vm-zstd = { git = "https://github.com/scroll-tech/rust-zstd-decompressor.git", b
 toml = "0.8.14"
 tracing-subscriber = "0.3"
 
-scroll-zkvm-circuit-input-types = { path = "crates/circuits/types" }
+scroll-zkvm-types = { path = "crates/types" }
+scroll-zkvm-types-base = { path = "crates/types/base" }
+scroll-zkvm-types-circuit = { path = "crates/types/circuit" }
+scroll-zkvm-types-chunk = { path = "crates/types/chunk" }
+scroll-zkvm-types-batch = { path = "crates/types/batch" }
+scroll-zkvm-types-bundle = { path = "crates/types/bundle" }
 scroll-zkvm-integration = { path = "crates/integration" }
 scroll-zkvm-prover = { path = "crates/prover" }
 scroll-zkvm-verifier = { path = "crates/verifier" }

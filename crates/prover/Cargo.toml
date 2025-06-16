@@ -6,7 +6,7 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
-scroll-zkvm-circuit-input-types.workspace = true
+scroll-zkvm-types.workspace = true
 scroll-zkvm-verifier.workspace = true
 
 alloy-primitives = { workspace = true, default-features = false, features = ["std", "tiny-keccak", "map-hashbrown", "map-fxhash"]}#, "rkyv"] }
