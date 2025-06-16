@@ -7128,7 +7128,6 @@ name = "scroll-zkvm-types-chunk"
 version = "0.4.0"
 dependencies = [
  "alloy-primitives 1.2.0",
- "getrandom 0.2.16",
  "itertools 0.14.0",
  "openvm",
  "openvm-custom-insn",
@@ -7148,6 +7147,7 @@ name = "scroll-zkvm-types-circuit"
 version = "0.4.0"
 dependencies = [
  "alloy-primitives 1.2.0",
+ "getrandom 0.2.16",
  "itertools 0.14.0",
  "openvm",
  "openvm-custom-insn",

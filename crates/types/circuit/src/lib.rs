@@ -14,13 +14,14 @@ pub use types_base::{
 pub fn reveal_pi_hash(pi_hash: B256) {
     openvm::io::println(format!("pi_hash = {pi_hash:?}"));
     openvm::io::reveal_bytes32(*pi_hash);
-use getrandom::{Error, register_custom_getrandom};
+}
+
 pub fn zkvm_getrandom(dest: &mut [u8]) -> Result<(), Error> {
     panic!("getrandom is not enabled in the current build");
 }
+use getrandom::{Error, register_custom_getrandom};
 register_custom_getrandom!(zkvm_getrandom);
 
-}
 
 /// Circuit defines the higher-level behaviour to be observed by a [`openvm`] guest program.
 pub trait Circuit {

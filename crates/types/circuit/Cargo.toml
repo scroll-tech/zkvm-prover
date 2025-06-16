@@ -16,3 +16,4 @@ openvm = { workspace = true, features = ["std"] }
 openvm-rv32im-guest.workspace = true
 openvm-custom-insn.workspace = true
 itertools.workspace = true
+getrandom = { version = "0.2", features = ["custom"] }
