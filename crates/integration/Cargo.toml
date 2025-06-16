@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-scroll-zkvm-circuit-input-types.workspace = true
+scroll-zkvm-types.workspace = true
 scroll-zkvm-prover.workspace = true
 scroll-zkvm-verifier.workspace = true
 sbv-primitives = { workspace = true }

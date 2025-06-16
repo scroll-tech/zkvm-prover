@@ -1,7 +1,6 @@
-use scroll_zkvm_circuit_input_types::{
-    Circuit,
-    chunk::{ArchivedChunkWitness, VersionedChunkInfo, execute},
-    utils::read_witnesses,
+use scroll_zkvm_types_chunk::{ArchivedChunkWitness, execute};
+use scroll_zkvm_types_circuit::{
+    Circuit, io::read_witnesses, public_inputs::chunk::VersionedChunkInfo,
 };
 
 #[allow(unused_imports, clippy::single_component_path_imports)]

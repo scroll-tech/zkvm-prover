@@ -1,8 +1,6 @@
 use openvm_ecc_guest::halo2curves::bls12_381::G1Affine as Bls12_381_G1;
-use scroll_zkvm_circuit_input_types::{
-    batch::{BatchHeader, BatchHeaderV7, BatchInfo, Bytes48, EnvelopeV7, PayloadV7},
-    chunk::ChunkInfo,
-};
+use scroll_zkvm_types_batch::{BatchHeader, BatchHeaderV7, Bytes48, EnvelopeV7, PayloadV7};
+use scroll_zkvm_types_circuit::public_inputs::{batch::BatchInfo, chunk::ChunkInfo};
 
 use crate::blob_consistency::{
     BlobPolynomial, EccToPairing, N_BLOB_BYTES, kzg_to_versioned_hash, verify_kzg_proof,
