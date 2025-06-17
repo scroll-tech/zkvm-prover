@@ -163,7 +163,11 @@ impl<Type: ProverType> Prover<Type> {
             .commit_app_exe(app_pk.app_fri_params(), app_exe)
             .map_err(|e| Error::Commit(e.to_string()))?;
 
-        let (commits, _) = Self::get_verify_program_commitment(&app_committed_exe, &app_pk, true);
+        let commits = AppExecutionCommit::compute(
+            &app_pk.app_vm_pk.vm_config,
+            &app_committed_exe,
+            &app_pk.leaf_committed_exe,
+        );
 
         Ok((app_committed_exe, Arc::new(app_pk), commits))
     }
