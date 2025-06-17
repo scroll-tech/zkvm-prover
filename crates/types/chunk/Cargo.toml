@@ -8,7 +8,8 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
-alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
+revm-precompile = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74", default-features=false, features = ["kzg-rs", "libsecp256k1"] }
+alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "native-keccak"]} #, "rkyv"] }
 rkyv.workspace = true
 sbv-trie = { workspace = true }
 sbv-core = { workspace = true }
