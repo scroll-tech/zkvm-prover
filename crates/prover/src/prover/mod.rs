@@ -288,6 +288,10 @@ impl<Type: ProverType> Prover<Type> {
         // Generate a new proof.
         assert!(!Type::EVM, "Prover::gen_proof not for EVM-prover");
         let metadata = Self::metadata_with_prechecks(task)?;
+
+        // sanity check for using expected program commit
+        let _ = Self::get_verify_program_commitment(&self.app_committed_exe, &self.app_pk, false);
+
         let proof = self.gen_proof_universal(task, false)?;
         let wrapped_proof = metadata.new_proof(proof, Some(self.get_app_vk().as_slice()));
 
@@ -330,8 +334,26 @@ impl<Type: ProverType> Prover<Type> {
         // Generate a new proof.
         assert!(Type::EVM, "Prover::gen_proof_evm only for EVM-prover");
         let metadata = Self::metadata_with_prechecks(task)?;
-        let proof: EvmProof = self.gen_proof_snark(task)?.into();
-        let wrapped_proof = metadata.new_proof(proof, Some(self.get_evm_vk().as_slice()));
+
+        // sanity check for using expected program commit
+        let _ = Self::get_verify_program_commitment(&self.app_committed_exe, &self.app_pk, false);
+
+        let proof = self.gen_proof_snark(task)?;
+
+        // sanity check for evm proof match the program commit
+        assert_eq!(
+            proof.instances[12],
+            crate::utils::compress_commitment(&Type::EXE_COMMIT),
+            "commitment is not match in generate evm proof",
+        );
+        assert_eq!(
+            proof.instances[13],
+            crate::utils::compress_commitment(&Type::LEAF_COMMIT),
+            "commitment is not match in generate evm proof",
+        );
+
+        let wrapped_proof =
+            metadata.new_proof(EvmProof::from(proof), Some(self.get_evm_vk().as_slice()));
 
         wrapped_proof.sanity_check(task.fork_name());
 
@@ -511,9 +533,6 @@ impl<Type: ProverType> Prover<Type> {
 
         let task_id = task.identifier();
 
-        // sanity check
-        let _ = Self::get_verify_program_commitment(&self.app_committed_exe, &self.app_pk, false);
-
         tracing::debug!(name: "generate_root_verifier_input", ?task_id);
         let app_prover = AppProver::<_, BabyBearPoseidon2Engine>::new(
             self.app_pk.app_vm_pk.clone(),
@@ -547,18 +566,6 @@ impl<Type: ProverType> Prover<Type> {
             .generate_proof_for_evm(stdin)
             .try_into()
             .map_err(|e| Error::GenProof(format!("{}", e)))?;
-
-        // sanity check
-        assert_eq!(
-            evm_proof.instances[12],
-            crate::utils::compress_commitment(&Type::EXE_COMMIT),
-            "commitment is not match in generate evm proof",
-        );
-        assert_eq!(
-            evm_proof.instances[13],
-            crate::utils::compress_commitment(&Type::LEAF_COMMIT),
-            "commitment is not match in generate evm proof",
-        );
 
         Ok(evm_proof)
     }
