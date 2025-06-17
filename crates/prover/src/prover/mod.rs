@@ -100,11 +100,7 @@ pub struct Prover<Type> {
 }
 
 /// Alias for convenience.
-type InitRes = (
-    Arc<VmCommittedExe<SC>>,
-    Arc<AppProvingKey<SdkVmConfig>>,
-    AppExecutionCommit<F>,
-);
+type InitRes = (Arc<VmCommittedExe<SC>>, Arc<AppProvingKey<SdkVmConfig>>);
 
 /// Configure the [`Prover`].
 #[derive(Debug, Clone, Default)]
@@ -128,7 +124,7 @@ impl<Type: ProverType> Prover<Type> {
     /// Setup the [`Prover`] given paths to the application's exe and proving key.
     #[instrument("Prover::setup")]
     pub fn setup(config: ProverConfig) -> Result<Self, Error> {
-        let (app_committed_exe, app_pk, _) = Self::init(&config)?;
+        let (app_committed_exe, app_pk) = Self::init(&config)?;
 
         let evm_prover = Type::EVM
             .then(|| Self::setup_evm_prover(&config, &app_committed_exe, &app_pk))
@@ -163,13 +159,7 @@ impl<Type: ProverType> Prover<Type> {
             .commit_app_exe(app_pk.app_fri_params(), app_exe)
             .map_err(|e| Error::Commit(e.to_string()))?;
 
-        let commits = AppExecutionCommit::compute(
-            &app_pk.app_vm_pk.vm_config,
-            &app_committed_exe,
-            &app_pk.leaf_committed_exe,
-        );
-
-        Ok((app_committed_exe, Arc::new(app_pk), commits))
+        Ok((app_committed_exe, Arc::new(app_pk)))
     }
 
     /// Directly dump the universal verifier, and also persist the staffs if path is provided
@@ -227,10 +217,20 @@ impl<Type: ProverType> Prover<Type> {
         Ok((path_vm_config, path_root_committed_exe))
     }
 
-    /// Pick up app commit as "vk" in proof, to distinguish from which circuit the proof comes
+    /// Pick up loaded app commit as "vk" in proof, to distinguish from which circuit the proof comes
     pub fn get_app_vk(&self) -> Vec<u8> {
-        let (_, [exe, leaf]) =
-            Self::get_verify_program_commitment(&self.app_committed_exe, &self.app_pk, false);
+        use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
+
+        let commits = AppExecutionCommit::compute(
+            &self.app_pk.app_vm_pk.vm_config,
+            &self.app_committed_exe,
+            &self.app_pk.leaf_committed_exe,
+        );
+
+        let exe = commits.exe_commit.map(|x| x.as_canonical_u32());
+        let leaf = commits
+            .leaf_vm_verifier_commit
+            .map(|x| x.as_canonical_u32());
 
         scroll_zkvm_types::types_agg::ProgramCommitment { exe, leaf }.serialize()
     }
