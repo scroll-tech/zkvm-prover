@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ProvingTask {
     /// seralized witness which should be written into stdin first
-    pub serialized_witness: Vec<u8>,
+    pub serialized_witness: Vec<Vec<u8>>,
     /// aggregated proof carried by babybear fields, should be written into stdin
     /// followed `serialized_witness`
     pub aggregated_proofs: Vec<RootProof>,

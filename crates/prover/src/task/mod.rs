@@ -24,7 +24,9 @@ impl ProvingTask for UniversalProvingTask {
 
     fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error> {
         let mut stdin = StdIn::default();
-        stdin.write_bytes(&self.serialized_witness);
+        for witness in &self.serialized_witness {
+            stdin.write_bytes(witness);
+        }
 
         for proof in &self.aggregated_proofs {
             let streams = proof.write();

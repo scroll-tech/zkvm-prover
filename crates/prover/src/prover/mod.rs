@@ -100,11 +100,7 @@ pub struct Prover<Type> {
 }
 
 /// Alias for convenience.
-type InitRes = (
-    Arc<VmCommittedExe<SC>>,
-    Arc<AppProvingKey<SdkVmConfig>>,
-    AppExecutionCommit<F>,
-);
+type InitRes = (Arc<VmCommittedExe<SC>>, Arc<AppProvingKey<SdkVmConfig>>);
 
 /// Configure the [`Prover`].
 #[derive(Debug, Clone, Default)]
@@ -128,7 +124,7 @@ impl<Type: ProverType> Prover<Type> {
     /// Setup the [`Prover`] given paths to the application's exe and proving key.
     #[instrument("Prover::setup")]
     pub fn setup(config: ProverConfig) -> Result<Self, Error> {
-        let (app_committed_exe, app_pk, _) = Self::init(&config)?;
+        let (app_committed_exe, app_pk) = Self::init(&config)?;
 
         let evm_prover = Type::EVM
             .then(|| Self::setup_evm_prover(&config, &app_committed_exe, &app_pk))
@@ -163,9 +159,7 @@ impl<Type: ProverType> Prover<Type> {
             .commit_app_exe(app_pk.app_fri_params(), app_exe)
             .map_err(|e| Error::Commit(e.to_string()))?;
 
-        let (commits, _) = Self::get_verify_program_commitment(&app_committed_exe, &app_pk, true);
-
-        Ok((app_committed_exe, Arc::new(app_pk), commits))
+        Ok((app_committed_exe, Arc::new(app_pk)))
     }
 
     /// Directly dump the universal verifier, and also persist the staffs if path is provided
@@ -223,10 +217,20 @@ impl<Type: ProverType> Prover<Type> {
         Ok((path_vm_config, path_root_committed_exe))
     }
 
-    /// Pick up app commit as "vk" in proof, to distinguish from which circuit the proof comes
+    /// Pick up loaded app commit as "vk" in proof, to distinguish from which circuit the proof comes
     pub fn get_app_vk(&self) -> Vec<u8> {
-        let (_, [exe, leaf]) =
-            Self::get_verify_program_commitment(&self.app_committed_exe, &self.app_pk, false);
+        use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
+
+        let commits = AppExecutionCommit::compute(
+            &self.app_pk.app_vm_pk.vm_config,
+            &self.app_committed_exe,
+            &self.app_pk.leaf_committed_exe,
+        );
+
+        let exe = commits.exe_commit.map(|x| x.as_canonical_u32());
+        let leaf = commits
+            .leaf_vm_verifier_commit
+            .map(|x| x.as_canonical_u32());
 
         scroll_zkvm_types::types_agg::ProgramCommitment { exe, leaf }.serialize()
     }
@@ -284,6 +288,10 @@ impl<Type: ProverType> Prover<Type> {
         // Generate a new proof.
         assert!(!Type::EVM, "Prover::gen_proof not for EVM-prover");
         let metadata = Self::metadata_with_prechecks(task)?;
+
+        // sanity check for using expected program commit
+        let _ = Self::get_verify_program_commitment(&self.app_committed_exe, &self.app_pk, false);
+
         let proof = self.gen_proof_universal(task, false)?;
         let wrapped_proof = metadata.new_proof(proof, Some(self.get_app_vk().as_slice()));
 
@@ -326,8 +334,26 @@ impl<Type: ProverType> Prover<Type> {
         // Generate a new proof.
         assert!(Type::EVM, "Prover::gen_proof_evm only for EVM-prover");
         let metadata = Self::metadata_with_prechecks(task)?;
-        let proof: EvmProof = self.gen_proof_snark(task)?.into();
-        let wrapped_proof = metadata.new_proof(proof, Some(self.get_evm_vk().as_slice()));
+
+        // sanity check for using expected program commit
+        let _ = Self::get_verify_program_commitment(&self.app_committed_exe, &self.app_pk, false);
+
+        let proof = self.gen_proof_snark(task)?;
+
+        // sanity check for evm proof match the program commit
+        assert_eq!(
+            proof.instances[12],
+            crate::utils::compress_commitment(&Type::EXE_COMMIT),
+            "commitment is not match in generate evm proof",
+        );
+        assert_eq!(
+            proof.instances[13],
+            crate::utils::compress_commitment(&Type::LEAF_COMMIT),
+            "commitment is not match in generate evm proof",
+        );
+
+        let wrapped_proof =
+            metadata.new_proof(EvmProof::from(proof), Some(self.get_evm_vk().as_slice()));
 
         wrapped_proof.sanity_check(task.fork_name());
 
@@ -507,9 +533,6 @@ impl<Type: ProverType> Prover<Type> {
 
         let task_id = task.identifier();
 
-        // sanity check
-        let _ = Self::get_verify_program_commitment(&self.app_committed_exe, &self.app_pk, false);
-
         tracing::debug!(name: "generate_root_verifier_input", ?task_id);
         let app_prover = AppProver::<_, BabyBearPoseidon2Engine>::new(
             self.app_pk.app_vm_pk.clone(),
@@ -543,18 +566,6 @@ impl<Type: ProverType> Prover<Type> {
             .generate_proof_for_evm(stdin)
             .try_into()
             .map_err(|e| Error::GenProof(format!("{}", e)))?;
-
-        // sanity check
-        assert_eq!(
-            evm_proof.instances[12],
-            crate::utils::compress_commitment(&Type::EXE_COMMIT),
-            "commitment is not match in generate evm proof",
-        );
-        assert_eq!(
-            evm_proof.instances[13],
-            crate::utils::compress_commitment(&Type::LEAF_COMMIT),
-            "commitment is not match in generate evm proof",
-        );
 
         Ok(evm_proof)
     }
