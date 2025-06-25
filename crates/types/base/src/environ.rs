@@ -2,7 +2,7 @@ use rkyv::util::AlignedVec;
 use std::{borrow::Cow, collections::BTreeMap};
 
 #[cfg(target_os = "zkvm")]
-static ENVIRON_STUB: std::sync::OnceLock<&'static ArchivedEnvironStub> = OnceLock::new();
+static ENVIRON_STUB: std::sync::OnceLock<&'static ArchivedEnvironStub> = std::sync::OnceLock::new();
 
 /// A list of environment variable keys that are allowed to be stored in the `EnvironStub`.
 #[cfg(not(target_os = "zkvm"))]
@@ -29,7 +29,7 @@ impl EnvironStub {
     /// Sets up the `EnvironStub` with serialized environment variables.
     #[cfg(target_os = "zkvm")]
     pub fn setup(env: Vec<u8>) {
-        static INIT: std::sync::OnceLock<Vec<u8>> = OnceLock::new();
+        static INIT: std::sync::OnceLock<Vec<u8>> = std::sync::OnceLock::new();
         INIT.set(env).expect("EnvironStub already initialized");
 
         let buffer = INIT.get().expect("EnvironStub not initialized");
