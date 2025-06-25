@@ -5,6 +5,7 @@ use alloy_primitives::B256;
 use itertools::Itertools;
 use public_inputs::PublicInputs;
 use scroll_zkvm_types_base as types_base;
+use scroll_zkvm_types_base::environ::EnvironStub;
 pub use types_base::{
     aggregation::{AggregationInput, ProgramCommitment, ProofCarryingWitness},
     public_inputs, utils,
@@ -25,7 +26,19 @@ pub trait Circuit {
     type PublicInputs: PublicInputs;
 
     /// Setup openvm extensions as a preliminary step.
-    fn setup();
+    fn setup() {
+        Self::setup_openvm();
+        Self::setup_environ();
+    }
+
+    /// Setup openvm extensions as a preliminary step.
+    fn setup_openvm();
+
+    /// Setup the environ stub.
+    fn setup_environ() {
+        let environ = read_witnesses();
+        EnvironStub::setup(environ);
+    }
 
     /// Reads bytes from openvm StdIn.
     fn read_witness_bytes() -> Vec<u8>;

@@ -43,7 +43,7 @@ impl ProvingTask for BundleProvingTask {
         ForkName::from(self.fork_name.as_str())
     }
 
-    fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error> {
+    fn build_guest_input_inner(&self, stdin: &mut StdIn) -> Result<(), rkyv::rancor::Error> {
         let witness = BundleWitness {
             batch_proofs: self.batch_proofs.iter().map(|proof| proof.into()).collect(),
             batch_infos: self
@@ -53,7 +53,6 @@ impl ProvingTask for BundleProvingTask {
                 .collect(),
         };
         let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&witness)?;
-        let mut stdin = StdIn::default();
         stdin.write_bytes(&serialized);
         for batch_proof in &self.batch_proofs {
             let root_input = &batch_proof.as_root_proof();
@@ -62,6 +61,6 @@ impl ProvingTask for BundleProvingTask {
                 stdin.write_field(s);
             }
         }
-        Ok(stdin)
+        Ok(())
     }
 }

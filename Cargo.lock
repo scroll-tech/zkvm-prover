@@ -6035,6 +6035,7 @@ dependencies = [
  "alloy-serde 0.8.3",
  "itertools 0.14.0",
  "rkyv",
+ "sbv-primitives",
  "serde",
  "sha2",
  "sha3",

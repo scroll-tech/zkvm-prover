@@ -11,6 +11,7 @@ version.workspace = true
 alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
 alloy-serde.workspace = true
 rkyv.workspace = true
+sbv-primitives = { workspace = true, features = ["scroll-consensus-types", "scroll-reth-types"] }
 serde.workspace = true
 itertools.workspace = true
 tiny-keccak = { workspace = true }

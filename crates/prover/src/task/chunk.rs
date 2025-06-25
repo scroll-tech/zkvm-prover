@@ -1,9 +1,8 @@
+use crate::task::ProvingTask;
 use alloy_primitives::B256;
 use openvm_sdk::StdIn;
 use sbv_primitives::types::BlockWitness;
 use scroll_zkvm_types::{chunk::ChunkWitness, public_inputs::ForkName};
-
-use crate::task::ProvingTask;
 
 /// Message indicating a sanity check failure.
 const CHUNK_SANITY_MSG: &str = "chunk must have at least one block";
@@ -75,7 +74,7 @@ impl ProvingTask for ChunkProvingTask {
         ForkName::from(self.fork_name.as_str())
     }
 
-    fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error> {
+    fn build_guest_input_inner(&self, stdin: &mut StdIn) -> Result<(), rkyv::rancor::Error> {
         let witness = ChunkWitness {
             blocks: self.block_witnesses.to_vec(),
             prev_msg_queue_hash: self.prev_msg_queue_hash,
@@ -84,8 +83,7 @@ impl ProvingTask for ChunkProvingTask {
 
         let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&witness)?;
 
-        let mut stdin = StdIn::default();
         stdin.write_bytes(&serialized);
-        Ok(stdin)
+        Ok(())
     }
 }

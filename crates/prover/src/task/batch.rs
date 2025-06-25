@@ -90,7 +90,7 @@ impl ProvingTask for BatchProvingTask {
         ForkName::from(self.fork_name.as_str())
     }
 
-    fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error> {
+    fn build_guest_input_inner(&self, stdin: &mut StdIn) -> Result<(), rkyv::rancor::Error> {
         let fork_name = self.fork_name.to_lowercase().as_str().into();
 
         // calculate point eval needed and compare with task input
@@ -162,7 +162,6 @@ impl ProvingTask for BatchProvingTask {
         };
 
         let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&witness)?;
-        let mut stdin = StdIn::default();
         stdin.write_bytes(&serialized);
         for chunk_proof in &self.chunk_proofs {
             let root_input = chunk_proof.as_root_proof();
@@ -171,7 +170,7 @@ impl ProvingTask for BatchProvingTask {
                 stdin.write_field(s);
             }
         }
-        Ok(stdin)
+        Ok(())
     }
 }
 
