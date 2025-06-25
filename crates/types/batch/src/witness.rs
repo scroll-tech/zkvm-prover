@@ -1,7 +1,11 @@
-use crate::header::ReferenceHeader;
+use crate::{
+    builder::*,
+    header::{ArchivedReferenceHeader, ReferenceHeader},
+};
+
 use types_base::{
     aggregation::{AggregationInput, ProgramCommitment, ProofCarryingWitness},
-    public_inputs::{ForkName, chunk::ChunkInfo},
+    public_inputs::{ForkName, batch::BatchInfo, chunk::ChunkInfo},
 };
 
 /// Simply rewrap byte48 to avoid unnecessary dep
@@ -55,5 +59,24 @@ impl ProofCarryingWitness for ArchivedBatchWitness {
                 commitment: ProgramCommitment::from(&archived.commitment),
             })
             .collect()
+    }
+}
+
+impl From<&ArchivedBatchWitness> for BatchInfo {
+    fn from(witness: &ArchivedBatchWitness) -> Self {
+        match &witness.reference_header {
+            ArchivedReferenceHeader::V6(header) => {
+                let chunk_infos: Vec<ChunkInfo> =
+                    witness.chunk_infos.iter().map(|ci| ci.into()).collect();
+                BatchInfoBuilderV6::build(&header.into(), &chunk_infos, &witness.blob_bytes)
+            }
+            ArchivedReferenceHeader::V7(header) => BatchInfoBuilderV7::build(
+                &header.into(),
+                &witness.chunk_infos,
+                &witness.blob_bytes,
+                &witness.point_eval_witness.kzg_commitment,
+                &witness.point_eval_witness.kzg_proof,
+            ),
+        }
     }
 }

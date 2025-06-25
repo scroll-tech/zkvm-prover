@@ -323,13 +323,17 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
     #[cfg(not(feature = "euclidv2"))]
     use scroll_zkvm_types::batch::{EnvelopeV6 as Envelope, PayloadV6 as Payload};
     #[cfg(feature = "euclidv2")]
-    use scroll_zkvm_types::batch::{EnvelopeV7 as Envelope, PayloadV7 as Payload};
+    use scroll_zkvm_types::{
+        batch::{EnvelopeV7 as Envelope, PayloadV7 as Payload},
+        chunk::ArchivedChunkInfo,
+    };
 
     // ./testdata/
     let path_testdata = std::path::Path::new("testdata");
 
     // read block witnesses.
     let paths_block_witnesses = if cfg!(feature = "euclidv2") {
+        let path_testdata = path_testdata.join("phase2").join("witnesses");
         [
             path_testdata.join("1.json"),
             path_testdata.join("2.json"),
@@ -337,6 +341,7 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
             path_testdata.join("4.json"),
         ]
     } else {
+        let path_testdata = path_testdata.join("phase1").join("witnesses");
         [
             path_testdata.join("12508460.json"),
             path_testdata.join("12508461.json"),
@@ -359,13 +364,15 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
     };
 
     // read chunk proof.
-    let path_chunk_proof = path_testdata
-        .join("proofs")
-        .join(if cfg!(feature = "euclidv2") {
-            "chunk-1-4.json"
-        } else {
-            "chunk-12508460-12508463.json"
-        });
+    let path_chunk_proof =
+        path_testdata
+            .join("phase2")
+            .join("proofs")
+            .join(if cfg!(feature = "euclidv2") {
+                "chunk-1-4.json"
+            } else {
+                "chunk-12508460-12508463.json"
+            });
     let chunk_proof = read_json_deep::<_, ChunkProof>(&path_chunk_proof)?;
 
     let task = build_batch_task(&[chunk_task], &[chunk_proof], Default::default());
@@ -382,7 +389,13 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
     let header = task.batch_header.must_v7_header();
     #[cfg(not(feature = "euclidv2"))]
     let header = task.batch_header.must_v6_header();
-    Payload::from(&enveloped).validate(header, &chunk_infos);
+    let serialized_bytes = rkyv::to_bytes::<rkyv::rancor::Error>(&chunk_infos).unwrap();
+    let archieved_chunk_info = rkyv::access::<
+        rkyv::vec::ArchivedVec<ArchivedChunkInfo>,
+        rkyv::rancor::Error,
+    >(&serialized_bytes)
+    .unwrap();
+    Payload::from(&enveloped).validate(header, archieved_chunk_info.as_slice());
 
     // depressed task output for pre-v2
     #[cfg(feature = "euclidv2")]
@@ -396,14 +409,18 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
 #[test]
 fn test_batch_task_payload() -> eyre::Result<()> {
     use scroll_zkvm_prover::utils::read_json_deep;
-    use scroll_zkvm_types::batch::{EnvelopeV7, PayloadV7};
+    use scroll_zkvm_types::{
+        batch::{EnvelopeV7, PayloadV7},
+        chunk::ArchivedChunkInfo,
+    };
 
     // ./testdata/
-    let path_testdata = std::path::Path::new("testdata");
+    let path_testdata = std::path::Path::new("testdata")
+        .join("phase2")
+        .join("tasks");
 
     let task =
-        read_json_deep::<_, BatchProvingTask>(path_testdata.join("batch-task-test-out.json"))
-            .unwrap();
+        read_json_deep::<_, BatchProvingTask>(path_testdata.join("batch-task.json")).unwrap();
 
     println!("blob {:?}", &task.blob_bytes[..32]);
     let enveloped = EnvelopeV7::from(task.blob_bytes.as_slice());
@@ -414,7 +431,16 @@ fn test_batch_task_payload() -> eyre::Result<()> {
         .map(|proof| proof.metadata.chunk_info.clone())
         .collect::<Vec<_>>();
 
-    PayloadV7::from(&enveloped).validate(task.batch_header.must_v7_header(), &chunk_infos);
+    let serialized_bytes = rkyv::to_bytes::<rkyv::rancor::Error>(&chunk_infos).unwrap();
+    let archieved_chunk_info = rkyv::access::<
+        rkyv::vec::ArchivedVec<ArchivedChunkInfo>,
+        rkyv::rancor::Error,
+    >(&serialized_bytes)
+    .unwrap();
+    PayloadV7::from(&enveloped).validate(
+        task.batch_header.must_v7_header(),
+        archieved_chunk_info.as_slice(),
+    );
 
     Ok(())
 }

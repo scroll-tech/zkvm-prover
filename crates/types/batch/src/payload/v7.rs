@@ -2,7 +2,7 @@ use alloy_primitives::B256;
 
 use crate::BatchHeaderV7;
 use types_base::{
-    public_inputs::chunk::{BlockContextV2, ChunkInfo, SIZE_BLOCK_CTX},
+    public_inputs::chunk::{ArchivedChunkInfo, BlockContextV2, SIZE_BLOCK_CTX},
     utils::keccak256,
 };
 
@@ -189,8 +189,8 @@ impl PayloadV7 {
     pub fn validate<'a>(
         &self,
         header: &BatchHeaderV7,
-        chunk_infos: &'a [ChunkInfo],
-    ) -> (&'a ChunkInfo, &'a ChunkInfo) {
+        chunk_infos: &'a [ArchivedChunkInfo],
+    ) -> (&'a ArchivedChunkInfo, &'a ArchivedChunkInfo) {
         // Get the first and last chunks' info, to construct the batch info.
         let (first_chunk, last_chunk) = (
             chunk_infos.first().expect("at least one chunk in batch"),
@@ -205,7 +205,7 @@ impl PayloadV7 {
             usize::from(self.num_blocks),
             chunk_infos
                 .iter()
-                .flat_map(|chunk_info| &chunk_info.block_ctxs)
+                .flat_map(|chunk_info| chunk_info.block_ctxs.as_slice())
                 .count()
         );
         assert_eq!(usize::from(self.num_blocks), self.block_contexts.len());
@@ -214,10 +214,13 @@ impl PayloadV7 {
         assert_eq!(self.initial_block_number, first_chunk.initial_block_number);
 
         // prev message queue hash
-        assert_eq!(self.prev_msg_queue_hash, first_chunk.prev_msg_queue_hash);
+        assert_eq!(
+            self.prev_msg_queue_hash.0,
+            first_chunk.prev_msg_queue_hash.0
+        );
 
         // post message queue hash
-        assert_eq!(self.post_msg_queue_hash, last_chunk.post_msg_queue_hash);
+        assert_eq!(self.post_msg_queue_hash.0, last_chunk.post_msg_queue_hash.0);
 
         // for each chunk, the tx_data_digest, i.e. keccak digest of the rlp-encoded L2 tx bytes
         // flattened over every tx in the chunk, should be re-computed and matched against the
@@ -229,15 +232,15 @@ impl PayloadV7 {
             u64::try_from(self.tx_data.len()).expect("len(tx-data) is u64"),
             chunk_infos
                 .iter()
-                .map(|chunk_info| chunk_info.tx_data_length)
+                .map(|chunk_info| chunk_info.tx_data_length.to_native())
                 .sum::<u64>(),
         );
         let mut index: usize = 0;
         for chunk_info in chunk_infos.iter() {
-            let chunk_size = chunk_info.tx_data_length as usize;
+            let chunk_size = chunk_info.tx_data_length.to_native() as usize;
             let chunk_tx_data_digest =
                 keccak256(&self.tx_data.as_slice()[index..(index + chunk_size)]);
-            assert_eq!(chunk_tx_data_digest, chunk_info.tx_data_digest);
+            assert_eq!(chunk_tx_data_digest.0, chunk_info.tx_data_digest.0);
             index += chunk_size;
         }
 
@@ -246,9 +249,9 @@ impl PayloadV7 {
         for (block_ctx, witness_block_ctx) in self.block_contexts.iter().zip(
             chunk_infos
                 .iter()
-                .flat_map(|chunk_info| &chunk_info.block_ctxs),
+                .flat_map(|chunk_info| chunk_info.block_ctxs.as_slice()),
         ) {
-            assert_eq!(block_ctx, witness_block_ctx);
+            assert_eq!(block_ctx, &BlockContextV2::from(witness_block_ctx));
         }
 
         (first_chunk, last_chunk)
