@@ -15,6 +15,13 @@ itertools.workspace = true
 vm-zstd = { workspace = true }
 
 types-base = { path = "../base", package = "scroll-zkvm-types-base"}
+openvm = { workspace = true, features = ["std"] }
+openvm-pairing-guest = { workspace = true, features = ["halo2curves"] }
+openvm-ecc-guest = { workspace = true, features = ["halo2curves"] }
+openvm-sha256-guest.workspace = true
 
 [features]
 default = []
+
+[dev-dependencies]
+c-kzg = "1.0"

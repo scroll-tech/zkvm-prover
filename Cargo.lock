@@ -5959,6 +5959,7 @@ dependencies = [
  "openvm-transpiler",
  "rayon",
  "revm 19.7.0",
+ "rkyv",
  "sbv-primitives",
  "scroll-zkvm-prover",
  "scroll-zkvm-types",
@@ -6046,7 +6047,12 @@ name = "scroll-zkvm-types-batch"
 version = "0.4.0"
 dependencies = [
  "alloy-primitives",
+ "c-kzg",
  "itertools 0.14.0",
+ "openvm 1.1.1",
+ "openvm-ecc-guest 1.1.1",
+ "openvm-pairing-guest 1.1.1",
+ "openvm-sha256-guest 1.1.1",
  "rkyv",
  "scroll-zkvm-types-base",
  "serde",

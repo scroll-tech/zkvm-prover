@@ -2,7 +2,7 @@ use alloy_primitives::B256;
 use sbv_primitives::types::BlockWitness;
 use std::collections::HashSet;
 
-use types_base::public_inputs::ForkName;
+use types_base::public_inputs::{ForkName, chunk::ChunkInfo};
 
 /// The witness type accepted by the chunk-circuit.
 #[derive(
@@ -67,5 +67,13 @@ impl ChunkWitness {
 
     pub fn new_v2(blocks: &[BlockWitness], prev_msg_queue_hash: B256) -> Self {
         Self::new(blocks, prev_msg_queue_hash, ForkName::EuclidV2)
+    }
+}
+
+impl TryFrom<&ArchivedChunkWitness> for ChunkInfo {
+    type Error = String;
+
+    fn try_from(value: &ArchivedChunkWitness) -> Result<Self, Self::Error> {
+        crate::execute(value)
     }
 }

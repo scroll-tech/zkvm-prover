@@ -1,6 +1,8 @@
-use scroll_zkvm_types_chunk::{ArchivedChunkWitness, execute};
+use scroll_zkvm_types_chunk::ArchivedChunkWitness;
 use scroll_zkvm_types_circuit::{
-    Circuit, io::read_witnesses, public_inputs::chunk::VersionedChunkInfo,
+    Circuit,
+    io::read_witnesses,
+    public_inputs::chunk::{ChunkInfo, VersionedChunkInfo},
 };
 
 #[allow(unused_imports, clippy::single_component_path_imports)]
@@ -54,7 +56,7 @@ impl Circuit for ChunkCircuit {
 
     fn validate(witness: &Self::Witness) -> Self::PublicInputs {
         (
-            execute(witness).expect("failed to execute chunk"),
+            ChunkInfo::try_from(witness).expect("failed to execute chunk"),
             (&witness.fork_name).into(),
         )
     }

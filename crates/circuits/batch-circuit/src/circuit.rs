@@ -3,7 +3,10 @@ use scroll_zkvm_types_batch::ArchivedBatchWitness;
 use scroll_zkvm_types_circuit::{
     AggCircuit, AggregationInput, Circuit, ProgramCommitment,
     io::read_witnesses,
-    public_inputs::{batch::VersionedBatchInfo, chunk::VersionedChunkInfo},
+    public_inputs::{
+        batch::{BatchInfo, VersionedBatchInfo},
+        chunk::VersionedChunkInfo,
+    },
 };
 
 #[allow(unused_imports, clippy::single_component_path_imports)]
@@ -53,10 +56,7 @@ impl Circuit for BatchCircuit {
     }
 
     fn validate(witness: &Self::Witness) -> Self::PublicInputs {
-        (
-            crate::execute::execute(witness),
-            (&witness.fork_name).into(),
-        )
+        (BatchInfo::from(witness), (&witness.fork_name).into())
     }
 }
 
