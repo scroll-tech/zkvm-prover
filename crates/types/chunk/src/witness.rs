@@ -51,7 +51,8 @@ impl ChunkWitness {
                     .filter(|c| codes.insert(*c))
                     .cloned()
                     .collect(),
-                compression_ratios: if cfg!(feature = "scroll-compress-ratio") {
+                #[cfg(feature = "scroll-compress-ratio")]
+                compression_ratios: {
                     use sbv_primitives::types::{
                         eips::Encodable2718, evm::compute_compression_ratio,
                     };
@@ -64,9 +65,11 @@ impl ChunkWitness {
                             compute_compression_ratio(&tx.encoded_2718())
                         })
                         .collect()
-                } else {
-                    panic!("you should not build ChunkWitness in guest?");
                 },
+                #[cfg(not(feature = "scroll-compress-ratio"))]
+                compression_ratios: {
+                    panic!("you should not build ChunkWitness in guest?");
+                }
             })
             .collect();
 
