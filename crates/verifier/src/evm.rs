@@ -1,5 +1,4 @@
 use openvm_native_recursion::halo2::RawEvmProof;
-use revm::{Context, primitives::TxKind};
 
 // Re-export from snark_verifier_sdk.
 pub use snark_verifier_sdk::{

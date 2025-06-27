@@ -36,7 +36,7 @@ serde_json = "1.0"
 serde_stacker = "0.1"
 thiserror = "2.0"
 toml = "0.8"
-revm = "21.0"
+revm = { workspace = true }
 c-kzg = { workspace = true, features = ["serde"] }
 
 [dev-dependencies]

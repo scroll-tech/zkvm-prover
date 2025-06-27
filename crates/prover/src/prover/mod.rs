@@ -219,18 +219,14 @@ impl<Type: ProverType> Prover<Type> {
 
     /// Pick up loaded app commit as "vk" in proof, to distinguish from which circuit the proof comes
     pub fn get_app_vk(&self) -> Vec<u8> {
-        use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
-
         let commits = AppExecutionCommit::compute(
             &self.app_pk.app_vm_pk.vm_config,
             &self.app_committed_exe,
             &self.app_pk.leaf_committed_exe,
         );
 
-        let exe = commits.exe_commit.map(|x| x.as_canonical_u32());
-        let leaf = commits
-            .leaf_vm_verifier_commit
-            .map(|x| x.as_canonical_u32());
+        let exe = commits.app_exe_commit.to_u32_digest();
+        let leaf = commits.app_vm_commit.to_u32_digest();
 
         scroll_zkvm_types::types_agg::ProgramCommitment { exe, leaf }.serialize()
     }

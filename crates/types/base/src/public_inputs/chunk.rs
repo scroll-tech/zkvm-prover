@@ -5,7 +5,7 @@ use crate::{
 use alloy_primitives::{B256, U256};
 use sbv_primitives::types::{
     consensus::BlockHeader,
-    reth::{Block, RecoveredBlock},
+    reth::primitives::{Block, RecoveredBlock},
 };
 
 /// Number of bytes used to serialise [`BlockContextV2`].

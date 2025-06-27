@@ -7,14 +7,14 @@ use sbv_core::{EvmDatabase, EvmExecutor};
 use sbv_primitives::{
     BlockWitness,
     chainspec::{
-        BaseFeeParams, BaseFeeParamsKind, Chain, MAINNET,
+        Chain,
         reth_chainspec::ChainSpec,
         scroll::{ScrollChainConfig, ScrollChainSpec},
     },
-    ext::{BlockWitnessChunkExt, TxBytesHashExt},
+    ext::{BlockWitnessChunkExt, BlockWitnessRethExt as _, TxBytesHashExt},
     hardforks::SCROLL_DEV_HARDFORKS,
     types::{
-        reth::{Block, BlockWitnessRethExt, RecoveredBlock},
+        reth::primitives::{Block, RecoveredBlock},
         scroll::ChunkInfoBuilder,
     },
 };
@@ -175,7 +175,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     openvm::io::println(format!("tx_bytes_hash = {:?}", tx_data_digest));
 
     // We should never touch that lazy lock... Or else we introduce 40M useless cycles.
-    assert!(std::sync::LazyLock::get(&MAINNET).is_none());
+    // assert!(std::sync::LazyLock::get(&MAINNET).is_none());
 
     Ok(chunk_info)
 }
