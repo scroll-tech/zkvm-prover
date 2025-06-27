@@ -13,6 +13,7 @@ pub trait PublicInputs {
     fn validate(&self, prev_pi: &Self);
 }
 
+// TODO: should we use ScrollHardfork in reth?
 #[derive(
     Default,
     Debug,
@@ -20,6 +21,8 @@ pub trait PublicInputs {
     Clone,
     PartialEq,
     Eq,
+    PartialOrd,
+    Ord,
     rkyv::Archive,
     rkyv::Deserialize,
     rkyv::Serialize,
@@ -31,6 +34,15 @@ pub enum ForkName {
     #[default]
     EuclidV1,
     EuclidV2,
+    Feynman,
+}
+
+pub fn fork_name_to_protocol_version(fork_name: ForkName) -> usize {
+    match fork_name {
+        ForkName::EuclidV1 => 6,
+        ForkName::EuclidV2 => 7,
+        ForkName::Feynman => 8,
+    }
 }
 
 impl From<&ArchivedForkName> for ForkName {
@@ -38,6 +50,7 @@ impl From<&ArchivedForkName> for ForkName {
         match archived {
             ArchivedForkName::EuclidV1 => ForkName::EuclidV1,
             ArchivedForkName::EuclidV2 => ForkName::EuclidV2,
+            ArchivedForkName::Feynman => ForkName::Feynman,
         }
     }
 }
@@ -48,6 +61,7 @@ impl From<Option<&str>> for ForkName {
             None => Default::default(),
             Some("euclidv1") => ForkName::EuclidV1,
             Some("euclidv2") => ForkName::EuclidV2,
+            Some("feynman") => ForkName::Feynman,
             Some(s) => unreachable!("hardfork not accepted: {s}"),
         }
     }
@@ -58,6 +72,7 @@ impl From<&str> for ForkName {
         match value {
             "euclidv1" => ForkName::EuclidV1,
             "euclidv2" => ForkName::EuclidV2,
+            "feynman" => ForkName::Feynman,
             s => unreachable!("hardfork not accepted: {s}"),
         }
     }

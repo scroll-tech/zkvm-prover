@@ -1,7 +1,9 @@
 use alloy_primitives::B256;
 
 use crate::{
-    public_inputs::{ForkName, MultiVersionPublicInputs, PublicInputs},
+    public_inputs::{
+        ForkName, MultiVersionPublicInputs, PublicInputs, fork_name_to_protocol_version,
+    },
     utils::keccak256,
 };
 
@@ -61,9 +63,9 @@ impl BundleInfo {
         )
     }
 
-    /// Public input hash for a bundle (euclidv2 or da-codec@v7) is defined as
+    /// Public input for a bundle (euclidv2 or da-codec@v7) is defined as
     ///
-    /// keccak(
+    /// concat(
     ///     chain id ||
     ///     msg_queue_hash ||
     ///     num batches ||
@@ -73,26 +75,39 @@ impl BundleInfo {
     ///     batch hash ||
     ///     withdraw root
     /// )   
+    pub fn pi_euclidv2(&self) -> Vec<u8> {
+        std::iter::empty()
+            .chain(self.chain_id.to_be_bytes().as_slice())
+            .chain(self.msg_queue_hash.as_slice())
+            .chain(self.num_batches.to_be_bytes().as_slice())
+            .chain(self.prev_state_root.as_slice())
+            .chain(self.prev_batch_hash.as_slice())
+            .chain(self.post_state_root.as_slice())
+            .chain(self.batch_hash.as_slice())
+            .chain(self.withdraw_root.as_slice())
+            .cloned()
+            .collect()
+    }
     pub fn pi_hash_euclidv2(&self) -> B256 {
-        keccak256(
-            std::iter::empty()
-                .chain(self.chain_id.to_be_bytes().as_slice())
-                .chain(self.msg_queue_hash.as_slice())
-                .chain(self.num_batches.to_be_bytes().as_slice())
-                .chain(self.prev_state_root.as_slice())
-                .chain(self.prev_batch_hash.as_slice())
-                .chain(self.post_state_root.as_slice())
-                .chain(self.batch_hash.as_slice())
-                .chain(self.withdraw_root.as_slice())
-                .cloned()
-                .collect::<Vec<u8>>(),
-        )
+        keccak256(self.pi_euclidv2())
+    }
+    pub fn pi_hash_feynman(&self) -> B256 {
+        let protocol_version = B256::left_padding_from(
+            &fork_name_to_protocol_version(ForkName::Feynman).to_be_bytes(),
+        );
+        let pi: Vec<u8> = std::iter::empty()
+            .chain(protocol_version.as_slice())
+            .chain(self.pi_euclidv2().as_slice())
+            .cloned()
+            .collect();
+        keccak256(pi)
     }
 
     pub fn pi_hash(&self, fork_name: ForkName) -> B256 {
         match fork_name {
             ForkName::EuclidV1 => self.pi_hash_euclidv1(),
             ForkName::EuclidV2 => self.pi_hash_euclidv2(),
+            ForkName::Feynman => self.pi_hash_feynman(),
         }
     }
 }
@@ -102,6 +117,7 @@ impl MultiVersionPublicInputs for BundleInfo {
         match fork_name {
             ForkName::EuclidV1 => self.pi_hash_euclidv1(),
             ForkName::EuclidV2 => self.pi_hash_euclidv2(),
+            ForkName::Feynman => self.pi_hash_feynman(),
         }
     }
 

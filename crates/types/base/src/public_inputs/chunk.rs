@@ -247,6 +247,10 @@ impl MultiVersionPublicInputs for ChunkInfo {
                 self.pi_hash_euclidv1()
             }
             ForkName::EuclidV2 => self.pi_hash_euclidv2(),
+            ForkName::Feynman => {
+                // Feynman fork uses the same hash as EuclidV2
+                self.pi_hash_euclidv2()
+            }
         }
     }
 
