@@ -1,4 +1,4 @@
-use scroll_zkvm_types::chunk::{ChunkWitness, execute};
+use scroll_zkvm_types::chunk::{ChunkWitness, ToArchievedWitness, execute};
 
 use crate::{
     Error, Prover, ProverType,
@@ -65,7 +65,8 @@ impl<C: Commitments> ProverType for GenericChunkProverType<C> {
             task.fork_name.as_str().into(),
         );
 
-        let chunk_info = execute(&chunk_witness)
+        let to_archieve = ToArchievedWitness::create(&chunk_witness).map_err(Error::GenProof)?;
+        let chunk_info = execute(to_archieve.access().map_err(Error::GenProof)?)
             .map_err(|e| Error::GenProof(format!("{}: {}", err_prefix, e)))?;
 
         Ok(ChunkProofMetadata { chunk_info })

@@ -1,3 +1,4 @@
+use eyre::Ok;
 use scroll_zkvm_integration::{
     ProverTester, prove_verify_multi, prove_verify_single,
     testers::chunk::{ChunkProverTester, MultiChunkProverTester, read_block_witness_from_testdata},
@@ -67,6 +68,61 @@ fn test_execute() -> eyre::Result<()> {
 
     let task = ChunkProverTester::gen_proving_task()?;
     exec_chunk(&task)?;
+
+    Ok(())
+}
+
+#[test]
+fn test_autofill_trie_nodes() -> eyre::Result<()> {
+    use std::result::Result::Ok;
+    ChunkProverTester::setup()?;
+
+    let mut task: ChunkProvingTask = ChunkProverTester::gen_proving_task()?;
+    task.block_witnesses.truncate(1);
+    for index in [10, 13] {
+        println!(
+            "removing state at index {}: {:?}",
+            index, task.block_witnesses[0].states[index]
+        );
+        let mut task = task.clone();
+        task.block_witnesses[0].states.remove(index);
+
+        let result = ChunkProverType::metadata_with_prechecks(&task);
+
+        match result {
+            Err(err_str) => {
+                let err_str = format!("{}", err_str);
+                // https://github.com/scroll-tech/scroll/blob/develop/crates/libzkp/src/tasks/chunk.rs#L155
+                let pattern = r"SparseTrieError\(BlindedNode \{ path: Nibbles\((0x[0-9a-fA-F]+)\), hash: (0x[0-9a-fA-F]+) \}\)";
+                let err_parse_re = regex::Regex::new(pattern)?;
+                match err_parse_re.captures(&err_str) {
+                    Some(caps) => {
+                        let hash = caps[2].to_string();
+                        println!("missing trie hash {hash}");
+                        if index == 10 {
+                            assert_eq!(
+                                hash,
+                                "0x3672d4a4951dbf05a8d18c33bd880a640aeb4dc1082bc96c489e3d658659c340"
+                            );
+                        }
+                        if index == 13 {
+                            assert_eq!(
+                                hash,
+                                "0x166a095be91b1f2ffc9d1a8abc0522264f67121086a4ea0b22a0a6bef07b000a"
+                            );
+                        }
+                    }
+                    None => {
+                        println!("Cannot capture missing trie nodes");
+                        panic!("Err msg: {}", err_str);
+                    }
+                }
+            }
+            Ok(_) => {
+                panic!("Cannot capture missing trie nodes");
+            }
+        }
+    }
 
     Ok(())
 }

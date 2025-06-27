@@ -1,15 +1,9 @@
 use scroll_zkvm_types_circuit::{AggCircuit, Circuit};
 
-mod blob_consistency;
-
-mod builder;
-
 mod circuit;
 use circuit::BatchCircuit as C;
 
 mod child_commitments;
-
-mod execute;
 
 openvm::entry!(main);
 

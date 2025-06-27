@@ -1,6 +1,6 @@
+use crate::{BatchHeader, BatchHeaderV6, EnvelopeV6, PayloadV6};
 use alloy_primitives::B256;
-use scroll_zkvm_types_batch::{BatchHeader, BatchHeaderV6, EnvelopeV6, PayloadV6};
-use scroll_zkvm_types_circuit::public_inputs::{batch::BatchInfo, chunk::ChunkInfo};
+use types_base::public_inputs::{batch::BatchInfo, chunk::ChunkInfo};
 
 use crate::blob_consistency::BlobPolynomial;
 
@@ -27,7 +27,7 @@ impl BatchInfoBuilderV6 {
         let blob_consistency = BlobPolynomial::new(blob_bytes);
         let challenge_digest = payload.get_challenge_digest(batch_header.blob_versioned_hash);
         let blob_data_proof = blob_consistency.evaluate(challenge_digest);
-        use openvm_algebra_guest::IntMod;
+        use openvm_pairing_guest::algebra::IntMod;
         assert_eq!(
             B256::new(blob_data_proof.0.to_be_bytes()),
             batch_header.blob_data_proof[0]

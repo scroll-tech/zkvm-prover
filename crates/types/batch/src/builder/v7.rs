@@ -1,6 +1,6 @@
 use halo2curves_axiom::bls12_381::G1Affine as Bls12_381_G1;
-use scroll_zkvm_types_batch::{BatchHeader, BatchHeaderV7, Bytes48, EnvelopeV7, PayloadV7};
-use scroll_zkvm_types_circuit::public_inputs::{batch::BatchInfo, chunk::ChunkInfo};
+use crate::{BatchHeader, BatchHeaderV7, Bytes48, EnvelopeV7, PayloadV7};
+use types_base::public_inputs::{batch::BatchInfo, chunk::ArchivedChunkInfo};
 
 use crate::blob_consistency::{
     BlobPolynomial, EccToPairing, N_BLOB_BYTES, kzg_to_versioned_hash, verify_kzg_proof,
@@ -15,7 +15,7 @@ impl BatchInfoBuilderV7 {
     /// by processing the witness, while making some validations.
     pub fn build(
         header: &BatchHeaderV7,
-        chunk_infos: &[ChunkInfo],
+        chunk_infos: &[ArchivedChunkInfo],
         blob_bytes: &[u8],
         kzg_commitment: &Bytes48,
         kzg_proof: &Bytes48,
@@ -62,14 +62,14 @@ impl BatchInfoBuilderV7 {
         let (first_chunk, last_chunk) = payload.validate(header, chunk_infos);
 
         BatchInfo {
-            parent_state_root: first_chunk.prev_state_root,
+            parent_state_root: first_chunk.prev_state_root.into(),
             parent_batch_hash: header.parent_batch_hash,
-            state_root: last_chunk.post_state_root,
+            state_root: last_chunk.post_state_root.into(),
             batch_hash: header.batch_hash(),
-            chain_id: last_chunk.chain_id,
-            withdraw_root: last_chunk.withdraw_root,
-            prev_msg_queue_hash: first_chunk.prev_msg_queue_hash,
-            post_msg_queue_hash: last_chunk.post_msg_queue_hash,
+            chain_id: last_chunk.chain_id.to_native(),
+            withdraw_root: last_chunk.withdraw_root.into(),
+            prev_msg_queue_hash: first_chunk.prev_msg_queue_hash.into(),
+            post_msg_queue_hash: last_chunk.post_msg_queue_hash.into(),
         }
     }
 }
