@@ -11,6 +11,9 @@ pub use payload::{
     v7::{EnvelopeV7, PayloadV7},
 };
 
+mod blob_consistency;
+mod builder;
+
 pub use payload::{BLOB_WIDTH, N_BLOB_BYTES, N_DATA_BYTES_PER_COEFFICIENT};
 
 mod witness;
