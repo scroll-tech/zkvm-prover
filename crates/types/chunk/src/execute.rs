@@ -89,7 +89,13 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
         .map(|s| match s.deref() {
             "chunk" => StateCommitMode::Chunk,
             "block" => StateCommitMode::Block,
-            _ => StateCommitMode::Auto,
+            _ => {
+                if cfg!(target_os = "zkvm") {
+                    StateCommitMode::Auto
+                } else {
+                    StateCommitMode::Chunk
+                }
+            }
         })
         .unwrap_or(StateCommitMode::Auto);
 

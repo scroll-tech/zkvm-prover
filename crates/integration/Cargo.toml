@@ -40,6 +40,7 @@ snark-verifier-sdk = { version = "0.2.0", default-features = false, features = [
     "halo2-axiom",
     "display",
 ] }
+regex = "1.11.1"
 
 [dev-dependencies]
 halo2curves-axiom = "0.7.0"
