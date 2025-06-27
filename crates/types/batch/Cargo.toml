@@ -24,4 +24,4 @@ openvm-sha256-guest.workspace = true
 default = []
 
 [dev-dependencies]
-c-kzg = "1.0"
+c-kzg = { workspace = true }

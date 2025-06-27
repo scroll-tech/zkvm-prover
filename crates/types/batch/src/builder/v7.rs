@@ -1,5 +1,5 @@
-use halo2curves_axiom::bls12_381::G1Affine as Bls12_381_G1;
 use crate::{BatchHeader, BatchHeaderV7, Bytes48, EnvelopeV7, PayloadV7};
+use halo2curves_axiom::bls12_381::G1Affine as Bls12_381_G1;
 use types_base::public_inputs::{batch::BatchInfo, chunk::ArchivedChunkInfo};
 
 use crate::blob_consistency::{

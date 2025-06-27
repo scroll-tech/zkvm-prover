@@ -23,7 +23,6 @@ pub fn zkvm_getrandom(dest: &mut [u8]) -> Result<(), Error> {
 use getrandom::{Error, register_custom_getrandom};
 register_custom_getrandom!(zkvm_getrandom);
 
-
 /// Circuit defines the higher-level behaviour to be observed by a [`openvm`] guest program.
 pub trait Circuit {
     /// The witness provided to the circuit.
