@@ -39,7 +39,7 @@ impl Circuit for BatchCircuit {
 
     type PublicInputs = VersionedBatchInfo;
 
-    fn setup() {
+    fn setup_openvm() {
         setup_all_complex_extensions();
         // barycentric require scalar field algebra so we setup all moduli,
         // not `setup_0` in openvm's example

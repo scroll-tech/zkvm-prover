@@ -56,7 +56,7 @@ pub mod chunk {
     }
 }
 
-pub use types_base::{aggregation as types_agg, public_inputs, utils};
+pub use types_base::{aggregation as types_agg, environ, public_inputs, utils};
 
 pub mod proof;
 

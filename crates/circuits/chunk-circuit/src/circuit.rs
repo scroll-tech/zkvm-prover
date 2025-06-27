@@ -39,7 +39,7 @@ impl Circuit for ChunkCircuit {
     type Witness = ArchivedChunkWitness;
     type PublicInputs = VersionedChunkInfo;
 
-    fn setup() {
+    fn setup_openvm() {
         setup_all_moduli();
         setup_all_curves();
         setup_all_complex_extensions();
