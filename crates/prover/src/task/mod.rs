@@ -19,7 +19,8 @@ pub trait ProvingTask: serde::de::DeserializeOwned {
 
     fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error> {
         let mut stdin = StdIn::default();
-        stdin.write_bytes(&EnvironStub::from_env()?);
+        // FIXME zhuo
+        // stdin.write_bytes(&EnvironStub::from_env()?);
         self.build_guest_input_inner(&mut stdin)?;
         Ok(stdin)
     }

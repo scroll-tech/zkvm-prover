@@ -58,10 +58,12 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
 
     // SCROLL_DEV_HARDFORKS will enable all forks
     let mut hardforks = (*SCROLL_DEV_HARDFORKS).clone();
+    use sbv_primitives::{chainspec::ForkCondition, hardforks::ScrollHardfork};
     if fork_name == ForkName::EuclidV1 {
-        // disable EuclidV2 fork for legacy chunk
-        use sbv_primitives::{chainspec::ForkCondition, hardforks::ScrollHardfork};
         hardforks.insert(ScrollHardfork::EuclidV2, ForkCondition::Never);
+        hardforks.insert(ScrollHardfork::Feynman, ForkCondition::Never);
+    } else if fork_name == ForkName::EuclidV2 {
+        hardforks.insert(ScrollHardfork::Feynman, ForkCondition::Never);
     }
 
     let inner = ChainSpec {
