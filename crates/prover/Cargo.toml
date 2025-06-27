@@ -9,6 +9,8 @@ version.workspace = true
 scroll-zkvm-types.workspace = true
 scroll-zkvm-verifier.workspace = true
 
+scroll-alloy-evm = { git = "https://github.com/scroll-tech/reth", branch = "scroll", features = ["std", "zstd_compression"] }
+
 alloy-primitives = { workspace = true, default-features = false, features = ["std", "tiny-keccak", "map-hashbrown", "map-fxhash"]}#, "rkyv"] }
 rkyv.workspace = true
 bincode_v1.workspace = true

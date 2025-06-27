@@ -183,6 +183,8 @@ dependencies = [
  "alloy-sol-types",
  "auto_impl",
  "derive_more 2.0.1",
+ "op-alloy-consensus",
+ "op-revm",
  "revm 24.0.0",
  "thiserror 2.0.12",
 ]
@@ -212,6 +214,18 @@ dependencies = [
  "auto_impl",
  "dyn-clone",
  "serde",
+]
+
+[[package]]
+name = "alloy-json-abi"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b26fdd571915bafe857fccba4ee1a4f352965800e46a53e4a5f50187b7776fa"
+dependencies = [
+ "alloy-primitives",
+ "alloy-sol-type-parser",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -348,13 +362,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "alloy-sol-type-parser"
+version = "1.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "10db1bd7baa35bc8d4a1b07efbf734e73e5ba09f2580fb8cee3483a36087ceb2"
+dependencies = [
+ "serde",
+ "winnow",
+]
+
+[[package]]
 name = "alloy-sol-types"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6185e98a79cf19010722f48a74b5a65d153631d2f038cabd250f4b9e9813b8ad"
 dependencies = [
+ "alloy-json-abi",
  "alloy-primitives",
  "alloy-sol-macro",
+ "serde",
 ]
 
 [[package]]
@@ -3112,6 +3138,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "op-revm"
+version = "5.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "47296d449fbe2d5cc74ab6e1213dee88cae3e2fd238343bec605c3c687bbcfab"
+dependencies = [
+ "auto_impl",
+ "once_cell",
+ "revm 24.0.0",
+ "serde",
+]
+
+[[package]]
 name = "opaque-debug"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5834,6 +5872,7 @@ dependencies = [
  "revm 24.0.0",
  "revm-inspector 5.0.0",
  "revm-primitives 19.1.0",
+ "serde",
 ]
 
 [[package]]
@@ -6157,6 +6196,8 @@ dependencies = [
  "revm-scroll",
  "scroll-alloy-consensus",
  "scroll-alloy-hardforks",
+ "serde",
+ "zstd",
 ]
 
 [[package]]
@@ -6321,6 +6362,7 @@ dependencies = [
  "revm 24.0.0",
  "rkyv",
  "sbv-primitives",
+ "scroll-alloy-evm",
  "scroll-zkvm-types",
  "scroll-zkvm-verifier",
  "serde",
