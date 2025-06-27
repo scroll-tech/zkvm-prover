@@ -5,7 +5,7 @@ use crate::{
 use alloy_primitives::B256;
 use sbv_core::{EvmDatabase, EvmExecutor};
 use sbv_primitives::{
-    BlockWitness,
+    BlockWitness, U256,
     chainspec::{
         Chain,
         reth_chainspec::ChainSpec,
@@ -51,6 +51,16 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
             .collect::<Result<Vec<RecoveredBlock<Block>>, _>>()
             .map_err(|e| e.to_string())?
     );
+    let compression_ratios: Vec<Vec<U256>> = witness
+        .blocks
+        .iter()
+        .map(|w| {
+            w.compression_ratios
+                .iter()
+                .map(|r| r.to_owned().into())
+                .collect()
+        })
+        .collect();
     let pre_state_root = witness.blocks[0].pre_state_root;
 
     let fork_name = ForkName::from(&witness.fork_name);
@@ -102,6 +112,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
             prev_state_root,
             &blocks,
             chain_spec.clone(),
+            &compression_ratios,
             matches!(state_commit_mode, StateCommitMode::Chunk),
         )?,
         StateCommitMode::Auto => match execute_inner(
@@ -111,6 +122,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
             prev_state_root,
             &blocks,
             chain_spec.clone(),
+            &compression_ratios,
             true,
         ) {
             Ok((post_state_root, withdraw_root)) => (post_state_root, withdraw_root),
@@ -123,6 +135,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
                     prev_state_root,
                     &blocks,
                     chain_spec.clone(),
+                    &compression_ratios,
                     false,
                 )?
             }
@@ -189,17 +202,23 @@ fn execute_inner(
     prev_state_root: B256,
     blocks: &[RecoveredBlock<Block>],
     chain_spec: Arc<ScrollChainSpec>,
+    compression_ratios: &[Vec<U256>],
     defer_commit: bool,
 ) -> Result<(B256, B256), String> {
     let mut db = manually_drop_on_zkvm!(
         EvmDatabase::new_from_root(code_db, prev_state_root, nodes_provider, block_hashes)
             .map_err(|e| format!("failed to create EvmDatabase: {}", e))?
     );
-    for block in blocks.iter() {
+    for (idx, block) in blocks.iter().enumerate() {
         let output = manually_drop_on_zkvm!(
-            EvmExecutor::new(chain_spec.clone(), &db, block)
-                .execute()
-                .map_err(|e| format!("failed to execute block: {}", e))?
+            EvmExecutor::new(
+                chain_spec.clone(),
+                &db,
+                block,
+                compression_ratios[idx].iter().cloned()
+            )
+            .execute()
+            .map_err(|e| format!("failed to execute block: {}", e))?
         );
         db.update(nodes_provider, output.state.state.iter())
             .map_err(|e| format!("failed to update db: {}", e))?;

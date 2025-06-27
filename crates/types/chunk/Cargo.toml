@@ -26,5 +26,7 @@ types-base = { path = "../base", package = "scroll-zkvm-types-base"}
 
 [features]
 default = []
+# should be enabled at host
+scroll-compress-ratio = ["sbv-primitives/scroll-compress-ratio"]
 #openvm = ["sbv-trie/openvm", "sbv-core/openvm"] #, "sbv-primitives/openvm"]
 openvm = ["sbv-core/openvm"] #, "sbv-primitives/openvm"]

@@ -7,6 +7,7 @@ version.workspace = true
 
 [dependencies]
 scroll-zkvm-types.workspace = true
+scroll-zkvm-types-chunk = { workspace = true, features = ["scroll-compress-ratio"] }
 scroll-zkvm-verifier.workspace = true
 
 scroll-alloy-evm = { git = "https://github.com/scroll-tech/reth", branch = "scroll", features = ["std", "zstd_compression"] }

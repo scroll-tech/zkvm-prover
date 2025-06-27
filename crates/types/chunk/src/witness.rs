@@ -1,5 +1,5 @@
 use alloy_primitives::B256;
-use sbv_primitives::types::BlockWitness;
+use sbv_primitives::types::{BlockWitness, reth::primitives::TransactionSigned};
 use std::collections::HashSet;
 
 use types_base::public_inputs::{ForkName, chunk::ChunkInfo};
@@ -51,6 +51,22 @@ impl ChunkWitness {
                     .filter(|c| codes.insert(*c))
                     .cloned()
                     .collect(),
+                compression_ratios: if cfg!(feature = "scroll-compress-ratio") {
+                    use sbv_primitives::types::{
+                        eips::Encodable2718, evm::compute_compression_ratio,
+                    };
+
+                    block
+                        .transaction
+                        .iter()
+                        .map(|tx| {
+                            let tx: TransactionSigned = tx.try_into().unwrap();
+                            compute_compression_ratio(&tx.encoded_2718())
+                        })
+                        .collect()
+                } else {
+                    panic!("you should not build ChunkWitness in guest?");
+                },
             })
             .collect();
 
