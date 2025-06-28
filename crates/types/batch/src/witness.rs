@@ -77,6 +77,13 @@ impl From<&ArchivedBatchWitness> for BatchInfo {
                 &witness.point_eval_witness.kzg_commitment,
                 &witness.point_eval_witness.kzg_proof,
             ),
+            ArchivedReferenceHeader::V8(header) => BatchInfoBuilderV8::build(
+                &header.into(),
+                &witness.chunk_infos,
+                &witness.blob_bytes,
+                &witness.point_eval_witness.kzg_commitment,
+                &witness.point_eval_witness.kzg_proof,
+            ),
         }
     }
 }
