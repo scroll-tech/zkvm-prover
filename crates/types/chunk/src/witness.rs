@@ -69,7 +69,7 @@ impl ChunkWitness {
                 #[cfg(not(feature = "scroll-compress-ratio"))]
                 compression_ratios: {
                     panic!("you should not build ChunkWitness in guest?");
-                }
+                },
             })
             .collect();
 

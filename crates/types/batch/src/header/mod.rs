@@ -4,6 +4,8 @@ pub mod v6;
 
 pub mod v7;
 
+pub mod v8;
+
 pub trait BatchHeader {
     /// The DA-codec version for the batch header.
     fn version(&self) -> u8;
@@ -27,4 +29,6 @@ pub enum ReferenceHeader {
     V6(v6::BatchHeaderV6),
     /// Represents DA-codec v7.
     V7(v7::BatchHeaderV7),
+    /// Represents DA-codec v8.
+    V8(v8::BatchHeaderV8),
 }
