@@ -1,4 +1,3 @@
-use crate::child_commitments::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT};
 use alloy_primitives::B256;
 use scroll_zkvm_types_bundle::ArchivedBundleWitness;
 use scroll_zkvm_types_circuit::{
@@ -7,9 +6,11 @@ use scroll_zkvm_types_circuit::{
     public_inputs::{
         ForkName, PublicInputs,
         batch::VersionedBatchInfo,
-        bundle::{BundleInfo, BundleInfoV1, BundleInfoV2},
+        bundle::{BundleInfo, BundleInfoV1, BundleInfoV2, BundleInfoV3},
     },
 };
+
+use crate::child_commitments::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT};
 
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use openvm_keccak256_guest;
@@ -51,6 +52,12 @@ impl ForkNameInfo for BundleInfoV1 {
 impl ForkNameInfo for BundleInfoV2 {
     fn fork_name() -> ForkName {
         ForkName::EuclidV2
+    }
+}
+
+impl ForkNameInfo for BundleInfoV3 {
+    fn fork_name() -> ForkName {
+        ForkName::Feynman
     }
 }
 
