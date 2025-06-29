@@ -22,7 +22,7 @@ openvm-rv32im-guest.workspace = true
 
 halo2curves-axiom = "0.7.0"
 
-alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash"]}#, "rkyv"] }
+alloy-primitives = { workspace = true }
 bitcode.workspace = true
 itertools.workspace = true
 rkyv.workspace = true

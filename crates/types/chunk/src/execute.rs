@@ -190,6 +190,7 @@ pub fn execute(
     Ok(chunk_info)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn execute_inner(
     code_db: &CodeDb,
     nodes_provider: &NodesProvider,

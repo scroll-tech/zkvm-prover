@@ -68,12 +68,10 @@ pub(crate) struct BuildConfig {
 /// Returns the build configurations for a given project name.
 fn get_build_configs(project_name: &str) -> Vec<BuildConfig> {
     match project_name {
-        "chunk" => vec![
-            BuildConfig {
-                features: vec![],
-                filename_suffix: "".to_string(),
-            },
-        ],
+        "chunk" => vec![BuildConfig {
+            features: vec![],
+            filename_suffix: "".to_string(),
+        }],
         "batch" => vec![BuildConfig {
             features: vec![],
             filename_suffix: "".to_string(),
@@ -219,12 +217,8 @@ fn run_stage3_exe_commits(project_names: &[&str], workspace_dir: &Path) -> Resul
 
             // 2. Transpile ELF to VM Executable
             let vmexe_filename = format!("app{}.vmexe", build_config.filename_suffix);
-            let app_exe = builder::transpile(
-                project_dir,
-                elf,
-                Some(&vmexe_filename),
-                app_config.clone(),
-            )?;
+            let app_exe =
+                builder::transpile(project_dir, elf, Some(&vmexe_filename), app_config.clone())?;
             println!("{LOG_PREFIX} Transpiled to VM Executable: {vmexe_filename}");
 
             // 3. Commit VM Executable

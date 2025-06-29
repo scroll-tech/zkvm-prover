@@ -8,7 +8,7 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
-alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
+alloy-primitives = { workspace = true }
 alloy-serde.workspace = true
 rkyv.workspace = true
 sbv-primitives = { workspace = true, features = ["scroll-consensus-types", "scroll-reth-types"] }
