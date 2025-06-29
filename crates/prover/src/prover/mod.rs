@@ -587,14 +587,14 @@ impl<Type: ProverType> Prover<Type> {
         }
 
         assert_eq!(
-            exe_commit,
-            Type::EXE_COMMIT,
-            "read unmatched exe commitment from app"
-        );
-        assert_eq!(
             vm_commit,
             Type::LEAF_COMMIT,
             "read unmatched app commitment from app"
+        );
+        assert_eq!(
+            exe_commit,
+            Type::EXE_COMMIT,
+            "read unmatched exe commitment from app"
         );
         (commits, [exe_commit, vm_commit])
     }
