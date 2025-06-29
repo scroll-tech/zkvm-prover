@@ -6331,7 +6331,6 @@ dependencies = [
  "serde_json",
  "sha2 0.10.9",
  "snark-verifier-sdk",
- "tiny-keccak",
  "tracing",
  "tracing-subscriber 0.3.19",
  "vm-zstd",
@@ -6406,7 +6405,6 @@ dependencies = [
  "serde",
  "sha2 0.10.9",
  "sha3",
- "tiny-keccak",
 ]
 
 [[package]]

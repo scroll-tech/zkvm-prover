@@ -27,7 +27,6 @@ bitcode.workspace = true
 itertools.workspace = true
 rkyv.workspace = true
 serde.workspace = true
-#tiny-keccak.workspace = true
 
 [features]
 default = []
