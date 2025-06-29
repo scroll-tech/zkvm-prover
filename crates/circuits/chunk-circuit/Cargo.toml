@@ -26,9 +26,3 @@ openvm-rv32im-guest= {  workspace = true }
 [features]
 default = []
 openvm = ["scroll-zkvm-types-chunk/openvm"]
-
-
-#[patch.crates-io]
-#k256 = { git = "https://github.com/openvm-org/openvm.git", rev = "c25b262" }
-
-

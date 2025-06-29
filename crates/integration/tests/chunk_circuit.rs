@@ -25,8 +25,7 @@ fn exec_chunk(task: &ChunkProvingTask) -> eyre::Result<(ExecutionResult, u64)> {
     let stats = task.stats();
     println!("chunk stats {:#?}", stats);
     ChunkProverType::metadata_with_prechecks(task)?;
-    println!("precheck done");
-    // return Ok(());
+    println!("precheck finished");
     let stdin = task.build_guest_input()?;
     let exec_result = utils::vm::execute_guest(config, app_exe, &stdin, &Default::default())?;
     let cycle_count = exec_result.total_cycle as u64;

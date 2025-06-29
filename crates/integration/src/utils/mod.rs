@@ -197,8 +197,7 @@ pub fn build_batch_task(
     }
     payload.extend(chunk_tx_bytes);
     // compress ...
-    //
-    let compressed_payload: Vec<u8> = zstd_encode(&payload);
+    let compressed_payload = zstd_encode(&payload);
 
     let version = 7u32;
     let heading = compressed_payload.len() as u32 + (version << 24);
