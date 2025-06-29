@@ -32,7 +32,12 @@ enum StateCommitMode {
     Auto,
 }
 
-pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
+/// `compression_ratios` can be `None` in host mode.
+/// But in guest mode, it must be provided.
+pub fn execute(
+    witness: &Witness,
+    compression_ratios: Option<Vec<Vec<U256>>>,
+) -> Result<ChunkInfo, String> {
     if witness.blocks.is_empty() {
         return Err("At least one witness must be provided in chunk mode".into());
     }
@@ -51,16 +56,6 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
             .collect::<Result<Vec<RecoveredBlock<Block>>, _>>()
             .map_err(|e| e.to_string())?
     );
-    let compression_ratios: Vec<Vec<U256>> = witness
-        .blocks
-        .iter()
-        .map(|w| {
-            w.compression_ratios
-                .iter()
-                .map(|r| r.to_owned().into())
-                .collect()
-        })
-        .collect();
     let pre_state_root = witness.blocks[0].pre_state_root;
 
     let fork_name = ForkName::from(&witness.fork_name);
@@ -202,7 +197,7 @@ fn execute_inner(
     prev_state_root: B256,
     blocks: &[RecoveredBlock<Block>],
     chain_spec: Arc<ScrollChainSpec>,
-    compression_ratios: &[Vec<U256>],
+    compression_ratios: &Option<Vec<Vec<U256>>>,
     defer_commit: bool,
 ) -> Result<(B256, B256), String> {
     let mut db = manually_drop_on_zkvm!(
@@ -215,7 +210,8 @@ fn execute_inner(
                 chain_spec.clone(),
                 &db,
                 block,
-                compression_ratios[idx].iter().cloned()
+                compression_ratios.as_ref().map(|compression_ratios| compression_ratios[idx].iter().cloned())
+                //None::<Vec<U256>>, //
             )
             .execute()
             .map_err(|e| format!("failed to execute block: {}", e))?

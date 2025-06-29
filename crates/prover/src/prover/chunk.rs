@@ -66,7 +66,7 @@ impl<C: Commitments> ProverType for GenericChunkProverType<C> {
         );
 
         let to_archieve = ToArchievedWitness::create(&chunk_witness).map_err(Error::GenProof)?;
-        let chunk_info = execute(to_archieve.access().map_err(Error::GenProof)?)
+        let chunk_info = execute(to_archieve.access().map_err(Error::GenProof)?, None)
             .map_err(|e| Error::GenProof(format!("{}: {}", err_prefix, e)))?;
 
         Ok(ChunkProofMetadata { chunk_info })

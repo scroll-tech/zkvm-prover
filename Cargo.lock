@@ -1711,7 +1711,7 @@ dependencies = [
 [[package]]
 name = "encoder"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/da-codec.git?branch=test%2Fprim_zstd#ad2db39b5e1ef4532f98ad0de0cc4c4f5f059308"
+source = "git+https://github.com/scroll-tech/da-codec.git?rev=ad2db39#ad2db39b5e1ef4532f98ad0de0cc4c4f5f059308"
 dependencies = [
  "zstd",
 ]
@@ -6081,7 +6081,7 @@ checksum = "28d3b2b1366ec20994f1fd18c3c594f05c5dd4bc44d8bb0c1c632c8d6829481f"
 [[package]]
 name = "sbv-core"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fcompress-ratio#62869bb9b4e74b15e0ca1221db52ff94d936d442"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fcompress-ratio#a530a334d89db50d04fdf2ff31ce406c196e8036"
 dependencies = [
  "sbv-helpers",
  "sbv-kv",
@@ -6094,7 +6094,7 @@ dependencies = [
 [[package]]
 name = "sbv-helpers"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fcompress-ratio#62869bb9b4e74b15e0ca1221db52ff94d936d442"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fcompress-ratio#a530a334d89db50d04fdf2ff31ce406c196e8036"
 dependencies = [
  "revm 24.0.0",
  "tracing",
@@ -6103,7 +6103,7 @@ dependencies = [
 [[package]]
 name = "sbv-kv"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fcompress-ratio#62869bb9b4e74b15e0ca1221db52ff94d936d442"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fcompress-ratio#a530a334d89db50d04fdf2ff31ce406c196e8036"
 dependencies = [
  "auto_impl",
  "hashbrown 0.15.4",
@@ -6113,7 +6113,7 @@ dependencies = [
 [[package]]
 name = "sbv-precompile"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fcompress-ratio#62869bb9b4e74b15e0ca1221db52ff94d936d442"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fcompress-ratio#a530a334d89db50d04fdf2ff31ce406c196e8036"
 dependencies = [
  "sbv-primitives",
 ]
@@ -6121,7 +6121,7 @@ dependencies = [
 [[package]]
 name = "sbv-primitives"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fcompress-ratio#62869bb9b4e74b15e0ca1221db52ff94d936d442"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fcompress-ratio#a530a334d89db50d04fdf2ff31ce406c196e8036"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.0.9",
@@ -6154,7 +6154,7 @@ dependencies = [
 [[package]]
 name = "sbv-trie"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fcompress-ratio#62869bb9b4e74b15e0ca1221db52ff94d936d442"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fcompress-ratio#a530a334d89db50d04fdf2ff31ce406c196e8036"
 dependencies = [
  "alloy-rlp",
  "alloy-trie",
@@ -7468,7 +7468,7 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 [[package]]
 name = "vm-zstd"
 version = "0.1.1"
-source = "git+https://github.com/scroll-tech/rust-zstd-decompressor.git?branch=master#74f52276d648b2296757afe7c8c6849d2592ac51"
+source = "git+https://github.com/scroll-tech/rust-zstd-decompressor.git?branch=master#0aa0c51819334a79bca90525ae87297fbaabd6d8"
 dependencies = [
  "anyhow",
  "bitstream-io",

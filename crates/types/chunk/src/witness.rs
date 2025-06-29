@@ -1,5 +1,5 @@
 use alloy_primitives::B256;
-use sbv_primitives::types::{BlockWitness, reth::primitives::TransactionSigned};
+use sbv_primitives::types::BlockWitness;
 use std::collections::HashSet;
 
 use types_base::public_inputs::{ForkName, chunk::ChunkInfo};
@@ -51,25 +51,6 @@ impl ChunkWitness {
                     .filter(|c| codes.insert(*c))
                     .cloned()
                     .collect(),
-                #[cfg(feature = "scroll-compress-ratio")]
-                compression_ratios: {
-                    use sbv_primitives::types::{
-                        eips::Encodable2718, evm::compute_compression_ratio,
-                    };
-
-                    block
-                        .transaction
-                        .iter()
-                        .map(|tx| {
-                            let tx: TransactionSigned = tx.try_into().unwrap();
-                            compute_compression_ratio(&tx.encoded_2718())
-                        })
-                        .collect()
-                },
-                #[cfg(not(feature = "scroll-compress-ratio"))]
-                compression_ratios: {
-                    panic!("you should not build ChunkWitness in guest?");
-                }
             })
             .collect();
 
@@ -93,6 +74,7 @@ impl TryFrom<&ArchivedChunkWitness> for ChunkInfo {
     type Error = String;
 
     fn try_from(value: &ArchivedChunkWitness) -> Result<Self, Self::Error> {
-        crate::execute(value)
+        // FIXME zhuo: guest mode
+        crate::execute(value, None)
     }
 }

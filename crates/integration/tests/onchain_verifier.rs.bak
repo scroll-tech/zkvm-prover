@@ -1,12 +1,10 @@
-#[allow(dead_code)]
-
-// FIXME: @rohit
-
 use openvm_native_recursion::halo2::utils::{CacheHalo2ParamsReader, Halo2ParamsReader};
 use openvm_sdk::{DefaultStaticVerifierPvHandler, Sdk, config::AggConfig};
 use revm::{
-    Context,
-    primitives::{B256, Bytes, TxKind, keccak256},
+    Context, Evm, Handler, InMemoryDB,
+    primitives::{
+        B256, Bytes, ExecutionResult, Output, TxEnv, TxKind, keccak256, specification::CancunSpec,
+    },
 };
 
 /// The default directory to locate openvm's halo2 SRS parameters.
@@ -34,54 +32,55 @@ fn generate() -> eyre::Result<Vec<u8>> {
         None,
     ))
 }
-// Simulate deployment of initialisation code to get the deployed code and codehash.
-// fn deploy(init_code: &[u8]) -> eyre::Result<(Bytes, B256)> {
-// let mut evm = Evm::new(
-// Context::new_with_db(InMemoryDB::default()),
-// Handler::mainnet::<CancunSpec>(),
-// );
-//
-// evm.tx_mut() = TxEnv {
-// gas_limit: u64::MAX,
-// transact_to: TxKind::Create,
-// data: init_code.to_vec().into(),
-// ..Default::default()
-// };
-//
-// let result = evm.transact_commit()?;
-// let code = match result {
-// ExecutionResult::Success {
-// output: Output::Create(code, _),
-// ..
-// } => code,
-// ExecutionResult::Revert { gas_used, output } => {
-// return Err(eyre::eyre!(
-// "Contract deployment tx reverted: gas_used={gas_used}, output={:#x}",
-// output
-// ));
-// }
-// ExecutionResult::Halt { reason, gas_used } => {
-// return Err(eyre::eyre!(
-// "Contract deployment tx halted unexpectedly: gas_used={gas_used}, reason={:?}",
-// reason
-// ));
-// }
-// _ => unreachable!(),
-// };
-//
-// let codehash = keccak256(&code);
-//
-// Ok((code, codehash))
-// }
-//
-// #[test]
-// fn export_onchain_verifier() -> eyre::Result<()> {
-// let init_code = generate()?;
-//
-// let (deployed_code, codehash) = deploy(&init_code)?;
-//
-// println!("verifier.bin code len={}", deployed_code.len());
-// println!("verifier.bin codehash={:?}", codehash);
-//
-// Ok(())
-// }
+
+/// Simulate deployment of initialisation code to get the deployed code and codehash.
+fn deploy(init_code: &[u8]) -> eyre::Result<(Bytes, B256)> {
+    let mut evm = Evm::new(
+        Context::new_with_db(InMemoryDB::default()),
+        Handler::mainnet::<CancunSpec>(),
+    );
+
+    *evm.tx_mut() = TxEnv {
+        gas_limit: u64::MAX,
+        transact_to: TxKind::Create,
+        data: init_code.to_vec().into(),
+        ..Default::default()
+    };
+
+    let result = evm.transact_commit()?;
+    let code = match result {
+        ExecutionResult::Success {
+            output: Output::Create(code, _),
+            ..
+        } => code,
+        ExecutionResult::Revert { gas_used, output } => {
+            return Err(eyre::eyre!(
+                "Contract deployment tx reverted: gas_used={gas_used}, output={:#x}",
+                output
+            ));
+        }
+        ExecutionResult::Halt { reason, gas_used } => {
+            return Err(eyre::eyre!(
+                "Contract deployment tx halted unexpectedly: gas_used={gas_used}, reason={:?}",
+                reason
+            ));
+        }
+        _ => unreachable!(),
+    };
+
+    let codehash = keccak256(&code);
+
+    Ok((code, codehash))
+}
+
+#[test]
+fn export_onchain_verifier() -> eyre::Result<()> {
+    let init_code = generate()?;
+
+    let (deployed_code, codehash) = deploy(&init_code)?;
+
+    println!("verifier.bin code len={}", deployed_code.len());
+    println!("verifier.bin codehash={:?}", codehash);
+
+    Ok(())
+}
