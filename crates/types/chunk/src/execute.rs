@@ -184,9 +184,6 @@ pub fn execute(
     openvm::io::println(format!("withdraw_root = {:?}", withdraw_root));
     openvm::io::println(format!("tx_bytes_hash = {:?}", tx_data_digest));
 
-    // We should never touch that lazy lock... Or else we introduce 40M useless cycles.
-    // assert!(std::sync::LazyLock::get(&MAINNET).is_none());
-
     Ok(chunk_info)
 }
 
@@ -212,7 +209,6 @@ fn execute_inner(
                 &db,
                 block,
                 compression_ratios.as_ref().map(|compression_ratios| compression_ratios[idx].iter().cloned())
-                //None::<Vec<U256>>, //
             )
             .execute()
             .map_err(|e| format!("failed to execute block: {}", e))?
