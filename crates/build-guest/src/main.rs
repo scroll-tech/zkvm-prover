@@ -205,7 +205,11 @@ fn run_stage3_exe_commits(project_names: &[&str], workspace_dir: &Path) -> Resul
                 project_dir,
                 &build_config.features,
                 &app_config.app_vm_config,
-            )?;
+            )
+            .map_err(|err| {
+                println!("{LOG_PREFIX} Building failed in {}", project_dir);
+                err
+            })?;
             println!("{LOG_PREFIX} Built ELF");
 
             // Revert to original directory

@@ -6081,7 +6081,7 @@ checksum = "28d3b2b1366ec20994f1fd18c3c594f05c5dd4bc44d8bb0c1c632c8d6829481f"
 [[package]]
 name = "sbv-core"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fcompress-ratio#a530a334d89db50d04fdf2ff31ce406c196e8036"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Fupgrade#9451fdb48bc453f2b3fc55d0d6c92050114d98c7"
 dependencies = [
  "sbv-helpers",
  "sbv-kv",
@@ -6094,7 +6094,7 @@ dependencies = [
 [[package]]
 name = "sbv-helpers"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fcompress-ratio#a530a334d89db50d04fdf2ff31ce406c196e8036"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Fupgrade#9451fdb48bc453f2b3fc55d0d6c92050114d98c7"
 dependencies = [
  "revm 24.0.0",
  "tracing",
@@ -6103,7 +6103,7 @@ dependencies = [
 [[package]]
 name = "sbv-kv"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fcompress-ratio#a530a334d89db50d04fdf2ff31ce406c196e8036"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Fupgrade#9451fdb48bc453f2b3fc55d0d6c92050114d98c7"
 dependencies = [
  "auto_impl",
  "hashbrown 0.15.4",
@@ -6113,7 +6113,7 @@ dependencies = [
 [[package]]
 name = "sbv-precompile"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fcompress-ratio#a530a334d89db50d04fdf2ff31ce406c196e8036"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Fupgrade#9451fdb48bc453f2b3fc55d0d6c92050114d98c7"
 dependencies = [
  "sbv-primitives",
 ]
@@ -6121,7 +6121,7 @@ dependencies = [
 [[package]]
 name = "sbv-primitives"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fcompress-ratio#a530a334d89db50d04fdf2ff31ce406c196e8036"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Fupgrade#9451fdb48bc453f2b3fc55d0d6c92050114d98c7"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.0.9",
@@ -6154,7 +6154,7 @@ dependencies = [
 [[package]]
 name = "sbv-trie"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fcompress-ratio#a530a334d89db50d04fdf2ff31ce406c196e8036"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Fupgrade#9451fdb48bc453f2b3fc55d0d6c92050114d98c7"
 dependencies = [
  "alloy-rlp",
  "alloy-trie",

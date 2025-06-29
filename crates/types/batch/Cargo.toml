@@ -14,7 +14,7 @@ serde.workspace = true
 itertools.workspace = true
 vm-zstd = { workspace = true }
 
-types-base = { path = "../base", package = "scroll-zkvm-types-base"}
+types-base = { path = "../base", package = "scroll-zkvm-types-base" }
 openvm = { workspace = true, features = ["std"] }
 openvm-ecc-guest = { workspace = true, features = ["halo2curves"] }
 openvm-pairing-guest = { workspace = true, features = ["halo2curves"] }
