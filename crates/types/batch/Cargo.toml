@@ -8,20 +8,23 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
-alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
+alloy-primitives = { workspace = true }
 rkyv.workspace = true
 serde.workspace = true
 itertools.workspace = true
 vm-zstd = { workspace = true }
 
-types-base = { path = "../base", package = "scroll-zkvm-types-base"}
+types-base = { path = "../base", package = "scroll-zkvm-types-base" }
 openvm = { workspace = true, features = ["std"] }
-openvm-pairing-guest = { workspace = true, features = ["halo2curves"] }
 openvm-ecc-guest = { workspace = true, features = ["halo2curves"] }
+openvm-pairing-guest = { workspace = true, features = ["halo2curves"] }
+openvm-pairing = { workspace = true, features = ["bls12_381"] }
+openvm-sha2.workspace = true
 openvm-sha256-guest.workspace = true
+halo2curves-axiom = "0.7.0"
 
 [features]
 default = []
 
 [dev-dependencies]
-c-kzg = "1.0"
+c-kzg = { workspace = true }

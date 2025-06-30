@@ -8,9 +8,6 @@ mod child_commitments;
 openvm::entry!(main);
 
 fn main() {
-    // Setup openvm extensions for the circuit.
-    C::setup();
-
     // Read witness bytes from openvm StdIn.
     let witness_bytes = C::read_witness_bytes();
 

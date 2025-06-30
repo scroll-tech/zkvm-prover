@@ -15,5 +15,5 @@ serde.workspace = true
 openvm = { workspace = true, features = ["std"] }
 openvm-rv32im-guest.workspace = true
 openvm-custom-insn.workspace = true
-tiny-keccak = { workspace = true, features = ["openvm"]}
 itertools.workspace = true
+getrandom = { version = "0.2", features = ["custom"] }

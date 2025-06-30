@@ -1,5 +1,4 @@
 use alloy_primitives::B256;
-use tiny_keccak::{Hasher, Keccak};
 
 /// From the utility of ether-rs
 ///
@@ -7,13 +6,7 @@ use tiny_keccak::{Hasher, Keccak};
 ///
 /// Note that strings are interpreted as UTF-8 bytes,
 pub fn keccak256<T: AsRef<[u8]>>(bytes: T) -> B256 {
-    let mut output = [0u8; 32];
-
-    let mut hasher = Keccak::v256();
-    hasher.update(bytes.as_ref());
-    hasher.finalize(&mut output);
-
-    B256::from(output)
+    alloy_primitives::keccak256(bytes)
 }
 
 pub fn keccak256_rv32<T: AsRef<[u8]>>(bytes: T) -> B256 {

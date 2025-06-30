@@ -6,8 +6,6 @@ use circuit::ChunkCircuit as C;
 openvm::entry!(main);
 
 fn main() {
-    C::setup();
-
     let witness_bytes = C::read_witness_bytes();
 
     let witness = C::deserialize_witness(&witness_bytes);
