@@ -42,17 +42,17 @@ openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev =
 openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
 
 # openvm guest libs
-openvm-build = { git = "https://github.com/openvm-org/openvm.git", rev = "1c4a696", default-features = false }
-openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", rev = "1c4a696", default-features = false }
-openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", rev = "1c4a696", default-features = false }
-openvm-instructions ={ git = "https://github.com/openvm-org/openvm.git", rev = "1c4a696", default-features = false }
-openvm-native-circuit = { git = "https://github.com/openvm-org/openvm.git", rev = "1c4a696", default-features = false }
-openvm-native-compiler = { git = "https://github.com/openvm-org/openvm.git", rev = "1c4a696", default-features = false }
-openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", rev = "1c4a696", default-features = false }
-openvm-native-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "1c4a696", default-features = false }
-openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "1c4a696", default-features = false }
-openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", rev = "1c4a696", default-features = false, features = ["parallel", "bench-metrics", "evm-prove"] }
-openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "1c4a696", default-features = false }
+openvm-build = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.1-rc.1", default-features = false }
+openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.1-rc.1", default-features = false }
+openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.1-rc.1", default-features = false }
+openvm-instructions ={ git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.1-rc.1", default-features = false }
+openvm-native-circuit = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.1-rc.1", default-features = false }
+openvm-native-compiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.1-rc.1", default-features = false }
+openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.1-rc.1", default-features = false }
+openvm-native-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.1-rc.1", default-features = false }
+openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.1-rc.1", default-features = false }
+openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.1-rc.1", default-features = false, features = ["parallel", "bench-metrics", "evm-prove"] }
+openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.1-rc.1", default-features = false }
 
 # more openvm related libs
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", rev = "f48090c9febd021f8ee0349bc929a775fb1fa3ad" }
@@ -126,7 +126,7 @@ alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch =
 #alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.18-euclid-upgrade" }
 #ruint = { git = "https://github.com/scroll-tech/uint.git", branch = "v1.12.3" }
 #tiny-keccak = { git = "https://github.com/scroll-tech/tiny-keccak", branch = "scroll-patch-v2.0.2-euclid-upgrade" }
-#ruint = { git = "https://github.com/openvm-org/openvm.git", rev = "1c4a696" }
+#ruint = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.1-rc.1" }
 
 [profile.maxperf]
 inherits = "release"
