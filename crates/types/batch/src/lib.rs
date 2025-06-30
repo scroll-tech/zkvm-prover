@@ -8,6 +8,7 @@ pub use header::{
 
 mod payload;
 pub use payload::{
+    BLOB_WIDTH, Envelope, N_BLOB_BYTES, N_DATA_BYTES_PER_COEFFICIENT, Payload,
     v6::{EnvelopeV6, PayloadV6},
     v7::{EnvelopeV7, PayloadV7},
     v8::{EnvelopeV8, PayloadV8},
@@ -15,8 +16,6 @@ pub use payload::{
 
 mod blob_consistency;
 mod builder;
-
-pub use payload::{BLOB_WIDTH, N_BLOB_BYTES, N_DATA_BYTES_PER_COEFFICIENT};
 
 mod witness;
 pub use witness::{ArchivedBatchWitness, BatchWitness, Bytes48, PointEvalWitness};

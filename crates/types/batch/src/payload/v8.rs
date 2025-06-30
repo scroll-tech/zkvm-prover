@@ -7,4 +7,4 @@ use super::{
 /// appropriate da-codec version byte.
 pub type EnvelopeV8 = GenericEnvelopeV7<DA_CODEC_VERSION_V8>;
 
-pub type PayloadV8 = GenericPayloadV7;
+pub type PayloadV8 = GenericPayloadV7<DA_CODEC_VERSION_V8>;

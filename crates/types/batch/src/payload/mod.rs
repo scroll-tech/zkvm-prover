@@ -1,3 +1,8 @@
+use alloy_primitives::B256;
+use types_base::public_inputs::chunk::ChunkInfo;
+
+use crate::BatchHeader;
+
 pub mod v6;
 
 pub mod v7;
@@ -22,3 +27,23 @@ pub const DA_CODEC_VERSION_V7: u8 = 7;
 
 /// da-codec@v8
 pub const DA_CODEC_VERSION_V8: u8 = 8;
+
+pub trait Envelope {
+    fn from_slice(blob_bytes: &[u8]) -> Self;
+
+    fn challenge_digest(&self, blob_versioned_hash: B256) -> B256;
+}
+
+pub trait Payload {
+    type BatchHeader: BatchHeader;
+
+    type Envelope: Envelope;
+
+    fn from_envelope(envelope: &Self::Envelope) -> Self;
+
+    fn validate<'a>(
+        &self,
+        header: &Self::BatchHeader,
+        chunks: &'a [ChunkInfo],
+    ) -> (&'a ChunkInfo, &'a ChunkInfo);
+}

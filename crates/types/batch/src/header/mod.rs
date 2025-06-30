@@ -18,6 +18,9 @@ pub trait BatchHeader {
 
     /// The batch header digest.
     fn batch_hash(&self) -> B256;
+
+    /// The blob-versioned hash as per EIP-4844 for the blob representing the batch.
+    fn blob_versioned_hash(&self) -> B256;
 }
 
 /// Reference header indicate the version of batch header base on which batch hash
