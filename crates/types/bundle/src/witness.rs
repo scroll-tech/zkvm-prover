@@ -45,7 +45,7 @@ impl BundleWitness {
         &self,
         guest_version: Option<ForkName>,
     ) -> Result<AlignedVec, rkyv::rancor::Error> {
-        let guest_version = guest_version.unwrap_or(self.fork_name.clone());
+        let guest_version = guest_version.unwrap_or(self.fork_name);
         if guest_version >= ForkName::Feynman {
             // Use the new rkyv serialization for Feynman and later forks
             rkyv::to_bytes::<rkyv::rancor::Error>(self)

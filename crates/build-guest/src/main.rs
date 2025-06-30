@@ -76,16 +76,10 @@ fn get_build_configs(project_name: &str) -> Vec<BuildConfig> {
             features: vec![],
             filename_suffix: "".to_string(),
         }],
-        "bundle" => vec![
-            BuildConfig {
-                features: vec![],
-                filename_suffix: "_euclidv1".to_string(), // Suffix for Euclid v1
-            },
-            BuildConfig {
-                features: vec!["euclidv2".to_string()],
-                filename_suffix: "".to_string(), // No suffix for the default (Euclid v2)
-            },
-        ],
+        "bundle" => vec![BuildConfig {
+            features: vec![],
+            filename_suffix: "".to_string(),
+        }],
         _ => {
             // Use panic instead of unreachable for build scripts, providing a clearer error.
             panic!("{LOG_PREFIX} Unsupported project name: {project_name}");
