@@ -212,11 +212,7 @@ mod tests {
     use alloy_primitives::B256;
     use base64::{Engine, prelude::BASE64_STANDARD};
     use openvm_native_recursion::halo2::RawEvmProof;
-    use scroll_zkvm_types::{
-        bundle::{BundleInfo, BundleInfoV1},
-        proof::EvmProof,
-        public_inputs::PublicInputs,
-    };
+    use scroll_zkvm_types::{bundle::BundleInfo, proof::EvmProof, public_inputs::PublicInputs};
     use snark_verifier_sdk::snark_verifier::halo2_base::halo2_proofs::halo2curves::bn256::Fr;
 
     use super::*;
@@ -244,7 +240,7 @@ mod tests {
     fn test_dummy_proof() -> eyre::Result<()> {
         // 1. Metadata
         let metadata = {
-            let bundle_info: BundleInfoV1 = BundleInfo {
+            let bundle_info = BundleInfo {
                 chain_id: 12345,
                 num_batches: 12,
                 prev_state_root: B256::repeat_byte(1),
@@ -253,11 +249,10 @@ mod tests {
                 batch_hash: B256::repeat_byte(4),
                 withdraw_root: B256::repeat_byte(5),
                 msg_queue_hash: B256::repeat_byte(6),
-            }
-            .into();
-            let bundle_pi_hash = bundle_info.pi_hash();
+            };
+            let bundle_pi_hash = (bundle_info.clone(), ForkName::EuclidV1).pi_hash();
             BundleProofMetadata {
-                bundle_info: bundle_info.0,
+                bundle_info,
                 bundle_pi_hash,
             }
         };

@@ -1,7 +1,7 @@
 use alloy_primitives::B256;
 
 use crate::{
-    public_inputs::{ForkName, MultiVersionPublicInputs, PublicInputs},
+    public_inputs::{ForkName, MultiVersionPublicInputs},
     utils::keccak256,
 };
 
@@ -123,63 +123,6 @@ impl MultiVersionPublicInputs for BundleInfo {
     }
 
     fn validate(&self, _prev_pi: &Self, _fork_name: ForkName) {
-        unreachable!("bundle is the last layer and is not aggregated by any other circuit");
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct BundleInfoV1(pub BundleInfo);
-
-#[derive(Clone, Debug)]
-pub struct BundleInfoV2(pub BundleInfo);
-
-#[derive(Clone, Debug)]
-pub struct BundleInfoV3(pub BundleInfo);
-
-impl From<BundleInfo> for BundleInfoV1 {
-    fn from(value: BundleInfo) -> Self {
-        Self(value)
-    }
-}
-
-impl From<BundleInfo> for BundleInfoV2 {
-    fn from(value: BundleInfo) -> Self {
-        Self(value)
-    }
-}
-
-impl From<BundleInfo> for BundleInfoV3 {
-    fn from(value: BundleInfo) -> Self {
-        Self(value)
-    }
-}
-
-impl PublicInputs for BundleInfoV1 {
-    fn pi_hash(&self) -> B256 {
-        self.0.pi_hash_euclidv1()
-    }
-
-    fn validate(&self, _prev_pi: &Self) {
-        unreachable!("bundle is the last layer and is not aggregated by any other circuit");
-    }
-}
-
-impl PublicInputs for BundleInfoV2 {
-    fn pi_hash(&self) -> B256 {
-        self.0.pi_hash_euclidv2()
-    }
-
-    fn validate(&self, _prev_pi: &Self) {
-        unreachable!("bundle is the last layer and is not aggregated by any other circuit");
-    }
-}
-
-impl PublicInputs for BundleInfoV3 {
-    fn pi_hash(&self) -> B256 {
-        self.0.pi_hash_feynman()
-    }
-
-    fn validate(&self, _prev_pi: &Self) {
         unreachable!("bundle is the last layer and is not aggregated by any other circuit");
     }
 }

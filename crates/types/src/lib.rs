@@ -1,7 +1,7 @@
 // re-export for a compatible interface with old circuit/types for prover
 
 pub mod bundle {
-    pub use types_base::public_inputs::bundle::{BundleInfo, BundleInfoV1, BundleInfoV2};
+    pub use types_base::public_inputs::bundle::BundleInfo;
     pub use types_bundle::*;
 
     pub struct ToArchievedWitness(Vec<u8>);
