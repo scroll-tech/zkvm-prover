@@ -1,4 +1,4 @@
-use crate::task::ProvingTask;
+use crate::task::{ProvingTask, guest_version};
 use alloy_primitives::B256;
 use openvm_sdk::StdIn;
 use sbv_primitives::types::BlockWitness;
@@ -81,9 +81,10 @@ impl ProvingTask for ChunkProvingTask {
             self.fork_name.to_lowercase().as_str().into(),
         );
 
-        let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&witness)?;
+        let serialized = witness.rkyv_serialize(guest_version())?;
 
         stdin.write_bytes(&serialized);
+
         Ok(())
     }
 }

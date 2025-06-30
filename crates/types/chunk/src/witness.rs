@@ -1,8 +1,45 @@
 use alloy_primitives::B256;
-use sbv_primitives::types::BlockWitness;
+use rkyv::util::AlignedVec;
+use sbv_primitives::{U256, types::BlockWitness};
 use std::collections::HashSet;
 
-use types_base::public_inputs::{ForkName, chunk::ChunkInfo};
+use types_base::{fork_name::ForkName, public_inputs::chunk::ChunkInfo};
+
+/// The witness type accepted by the chunk-circuit.
+#[derive(
+    Clone,
+    Debug,
+    serde::Deserialize,
+    serde::Serialize,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
+#[rkyv(derive(Debug))]
+pub struct ChunkWitnessEuclid {
+    /// The block witness for each block in the chunk.
+    pub blocks: Vec<BlockWitness>,
+    /// The on-chain rolling L1 message queue hash before enqueueing any L1 msg tx from the chunk.
+    pub prev_msg_queue_hash: B256,
+    /// The code version specify the chain spec
+    pub fork_name: ForkName,
+}
+
+#[derive(
+    Clone,
+    Debug,
+    serde::Deserialize,
+    serde::Serialize,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
+#[rkyv(derive(Debug))]
+pub enum StateCommitMode {
+    Chunk,
+    Block,
+    Auto,
+}
 
 /// The witness type accepted by the chunk-circuit.
 #[derive(
@@ -22,6 +59,10 @@ pub struct ChunkWitness {
     pub prev_msg_queue_hash: B256,
     /// The code version specify the chain spec
     pub fork_name: ForkName,
+    /// The compression ratios for each block in the chunk.
+    pub compression_ratios: Vec<Vec<U256>>,
+    /// The mode of state commitment for the chunk.
+    pub state_commit_mode: StateCommitMode,
 }
 
 impl ChunkWitness {
@@ -31,7 +72,7 @@ impl ChunkWitness {
         let mut codes = HashSet::with_capacity(num_codes);
         let mut states = HashSet::with_capacity(num_states);
 
-        let blocks = blocks
+        let blocks: Vec<BlockWitness> = blocks
             .iter()
             .map(|block| BlockWitness {
                 chain_id: block.chain_id,
@@ -53,20 +94,41 @@ impl ChunkWitness {
                     .collect(),
             })
             .collect();
+        let compression_ratios = blocks
+            .iter()
+            .map(|block| block.compression_ratios())
+            .collect();
 
         Self {
             blocks,
             prev_msg_queue_hash,
             fork_name,
+            compression_ratios,
+            state_commit_mode: StateCommitMode::Auto,
         }
     }
-
-    pub fn new_v1(blocks: &[BlockWitness]) -> Self {
-        Self::new(blocks, Default::default(), ForkName::EuclidV1)
+    pub fn into_euclid(self) -> ChunkWitnessEuclid {
+        ChunkWitnessEuclid {
+            blocks: self.blocks,
+            prev_msg_queue_hash: self.prev_msg_queue_hash,
+            fork_name: self.fork_name,
+        }
     }
-
-    pub fn new_v2(blocks: &[BlockWitness], prev_msg_queue_hash: B256) -> Self {
-        Self::new(blocks, prev_msg_queue_hash, ForkName::EuclidV2)
+    /// TODO: redesign?
+    /// `guest_version` is related to the guest program.
+    /// It is not always same with the evm hardfork.
+    /// For example, a `Feynman` guest program can execute `EuclidV2` blocks.
+    pub fn rkyv_serialize(
+        &self,
+        guest_version: ForkName,
+    ) -> Result<AlignedVec, rkyv::rancor::Error> {
+        if guest_version >= ForkName::Feynman {
+            // Use the new rkyv serialization for Feynman and later forks
+            rkyv::to_bytes::<rkyv::rancor::Error>(self)
+        } else {
+            // Use the old rkyv serialization for earlier forks
+            rkyv::to_bytes::<rkyv::rancor::Error>(&self.clone().into_euclid())
+        }
     }
 }
 
@@ -74,7 +136,6 @@ impl TryFrom<&ArchivedChunkWitness> for ChunkInfo {
     type Error = String;
 
     fn try_from(value: &ArchivedChunkWitness) -> Result<Self, Self::Error> {
-        // FIXME zhuo: guest mode
-        crate::execute(value, None)
+        crate::execute(value)
     }
 }

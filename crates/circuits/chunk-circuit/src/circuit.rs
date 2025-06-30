@@ -25,8 +25,6 @@ impl Circuit for ChunkCircuit {
     type Witness = ArchivedChunkWitness;
     type PublicInputs = VersionedChunkInfo;
 
-    fn setup_openvm() {}
-
     fn read_witness_bytes() -> Vec<u8> {
         read_witnesses()
     }

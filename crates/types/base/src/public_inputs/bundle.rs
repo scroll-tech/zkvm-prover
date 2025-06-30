@@ -1,9 +1,7 @@
 use alloy_primitives::B256;
 
 use crate::{
-    public_inputs::{
-        ForkName, MultiVersionPublicInputs, PublicInputs, fork_name_to_protocol_version,
-    },
+    public_inputs::{ForkName, MultiVersionPublicInputs, PublicInputs},
     utils::keccak256,
 };
 
@@ -92,9 +90,8 @@ impl BundleInfo {
         keccak256(self.pi_euclidv2())
     }
     pub fn pi_hash_feynman(&self) -> B256 {
-        let protocol_version = B256::left_padding_from(
-            &fork_name_to_protocol_version(ForkName::Feynman).to_be_bytes(),
-        );
+        let protocol_version =
+            B256::left_padding_from(&ForkName::Feynman.to_protocol_version().to_be_bytes());
         let pi: Vec<u8> = std::iter::empty()
             .chain(protocol_version.as_slice())
             .chain(self.pi_euclidv2().as_slice())
