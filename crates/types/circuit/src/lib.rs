@@ -5,7 +5,6 @@ use alloy_primitives::B256;
 use itertools::Itertools;
 use public_inputs::PublicInputs;
 use scroll_zkvm_types_base as types_base;
-use scroll_zkvm_types_base::environ::EnvironStub;
 pub use types_base::{
     aggregation::{AggregationInput, ProgramCommitment, ProofCarryingWitness},
     public_inputs, utils,
@@ -17,12 +16,6 @@ pub fn reveal_pi_hash(pi_hash: B256) {
     openvm::io::reveal_bytes32(*pi_hash);
 }
 
-pub fn zkvm_getrandom(_dest: &mut [u8]) -> Result<(), Error> {
-    panic!("getrandom is not enabled in the current build");
-}
-use getrandom::{Error, register_custom_getrandom};
-register_custom_getrandom!(zkvm_getrandom);
-
 /// Circuit defines the higher-level behaviour to be observed by a [`openvm`] guest program.
 pub trait Circuit {
     /// The witness provided to the circuit.
@@ -30,21 +23,6 @@ pub trait Circuit {
 
     /// The public-input values for the circuit.
     type PublicInputs: PublicInputs;
-
-    /// Setup openvm extensions as a preliminary step.
-    fn setup() {
-        Self::setup_openvm();
-        Self::setup_environ();
-    }
-
-    /// Setup openvm extensions as a preliminary step.
-    fn setup_openvm();
-
-    /// Setup the environ stub.
-    fn setup_environ() {
-        let environ = read_witnesses();
-        EnvironStub::setup(environ);
-    }
 
     /// Reads bytes from openvm StdIn.
     fn read_witness_bytes() -> Vec<u8>;

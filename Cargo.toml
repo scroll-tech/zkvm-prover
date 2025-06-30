@@ -26,20 +26,20 @@ version = "0.4.0"
 
 [workspace.dependencies]
 # openvm guest libs
-openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "1c4a696" }
-openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "1c4a696", default-features = false }
-openvm-custom-insn = { git = "https://github.com/openvm-org/openvm.git", rev = "1c4a696", default-features = false }
-openvm-sha2 = { git = "https://github.com/openvm-org/openvm.git", rev = "1c4a696" }
-openvm-sha256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "1c4a696", default-features = false }
-openvm-p256 = { git = "https://github.com/openvm-org/openvm.git", package = "p256", rev = "1c4a696", features = ["std"] }
-openvm-k256 = { git = "https://github.com/openvm-org/openvm.git", package = "k256", rev = "1c4a696", features = ["std"] }
-openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", rev = "1c4a696" }
-openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "1c4a696", default-features = false }
-openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "1c4a696", default-features = false }
-openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "1c4a696", default-features = false }
-openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "1c4a696", default-features = false }
-openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "1c4a696", default-features = false }
-openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "1c4a696", default-features = false }
+openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549" }
+openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
+openvm-custom-insn = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
+openvm-sha2 = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549" }
+openvm-sha256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
+openvm-p256 = { git = "https://github.com/openvm-org/openvm.git", package = "p256", rev = "3c800070d363237832a66dbe5501d3c365f3c549", features = ["std"] }
+openvm-k256 = { git = "https://github.com/openvm-org/openvm.git", package = "k256", rev = "3c800070d363237832a66dbe5501d3c365f3c549", features = ["std"] }
+openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549" }
+openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
+openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
+openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
+openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
+openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
+openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
 
 # openvm guest libs
 openvm-build = { git = "https://github.com/openvm-org/openvm.git", rev = "1c4a696", default-features = false }
@@ -58,10 +58,10 @@ openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "1
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", rev = "f48090c9febd021f8ee0349bc929a775fb1fa3ad" }
 p3-field = { git = "https://github.com/Plonky3/Plonky3.git", rev = "539bbc84085efb609f4f62cb03cf49588388abdb" }
 
-sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "feat/compress-ratio", features = ["scroll"] }
-sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "feat/compress-ratio", features = ["scroll", "serde", "rkyv"] }
-sbv-kv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "feat/compress-ratio" }
-sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "feat/compress-ratio" }
+sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/upgrade", features = ["scroll"] }
+sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/upgrade", features = ["scroll", "serde", "rkyv"] }
+sbv-kv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/upgrade" }
+sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/upgrade" }
 
 alloy-primitives = { version = "1.2", default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
 alloy-serde = { version = "1.0", default-features = false }

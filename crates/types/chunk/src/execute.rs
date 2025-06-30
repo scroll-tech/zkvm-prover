@@ -1,8 +1,9 @@
 use crate::{
     ArchivedChunkWitness, BlockHashProvider, CodeDb, NodesProvider, make_providers,
-    manually_drop_on_zkvm,
+    manually_drop_on_zkvm, witness::ArchivedStateCommitMode,
 };
 use alloy_primitives::B256;
+use itertools::Itertools;
 use sbv_core::{EvmDatabase, EvmExecutor};
 use sbv_primitives::{
     BlockWitness, U256,
@@ -18,20 +19,13 @@ use sbv_primitives::{
         scroll::ChunkInfoBuilder,
     },
 };
-use std::{ops::Deref, sync::Arc};
-use types_base::{
-    environ::EnvironStub,
-    public_inputs::{ForkName, chunk::ChunkInfo},
-};
+use std::sync::Arc;
+use types_base::{fork_name::ForkName, public_inputs::chunk::ChunkInfo};
 
 type Witness = ArchivedChunkWitness;
 
-enum StateCommitMode {
-    Chunk,
-    Block,
-    Auto,
-}
-
+/// `compression_ratios` can be `None` in host mode.
+/// But in guest mode, it must be provided.
 pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     if witness.blocks.is_empty() {
         return Err("At least one witness must be provided in chunk mode".into());
@@ -51,16 +45,6 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
             .collect::<Result<Vec<RecoveredBlock<Block>>, _>>()
             .map_err(|e| e.to_string())?
     );
-    let compression_ratios: Vec<Vec<U256>> = witness
-        .blocks
-        .iter()
-        .map(|w| {
-            w.compression_ratios
-                .iter()
-                .map(|r| r.to_owned().into())
-                .collect()
-        })
-        .collect();
     let pre_state_root = witness.blocks[0].pre_state_root;
 
     let fork_name = ForkName::from(&witness.fork_name);
@@ -90,39 +74,34 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
 
     let prev_state_root = witness.blocks[0].pre_state_root();
 
-    let state_commit_mode = EnvironStub::get("SCROLL_CHUNK_STATE_COMMITMENT")
-        .map(|s| match s.deref() {
-            "chunk" => StateCommitMode::Chunk,
-            "block" => StateCommitMode::Block,
-            _ => {
-                if cfg!(target_os = "zkvm") {
-                    StateCommitMode::Auto
-                } else {
-                    StateCommitMode::Chunk
-                }
-            }
-        })
-        .unwrap_or(StateCommitMode::Auto);
+    let state_commit_mode = &witness.state_commit_mode;
+    println!("state_commit_mode: {:?}", state_commit_mode);
+
+    let compression_ratios = witness
+        .compression_ratios
+        .iter()
+        .map(|b| b.iter().map(|c| c.into()).collect())
+        .collect::<Vec<Vec<U256>>>();
 
     let (post_state_root, withdraw_root) = match state_commit_mode {
-        StateCommitMode::Chunk | StateCommitMode::Block => execute_inner(
+        ArchivedStateCommitMode::Chunk | ArchivedStateCommitMode::Block => execute_inner(
             &code_db,
             &nodes_provider,
             &block_hashes,
             prev_state_root,
             &blocks,
             chain_spec.clone(),
-            &compression_ratios,
-            matches!(state_commit_mode, StateCommitMode::Chunk),
+            compression_ratios,
+            matches!(state_commit_mode, ArchivedStateCommitMode::Chunk),
         )?,
-        StateCommitMode::Auto => match execute_inner(
+        ArchivedStateCommitMode::Auto => match execute_inner(
             &code_db,
             &nodes_provider,
             &block_hashes,
             prev_state_root,
             &blocks,
             chain_spec.clone(),
-            &compression_ratios,
+            compression_ratios.clone(),
             true,
         ) {
             Ok((post_state_root, withdraw_root)) => (post_state_root, withdraw_root),
@@ -135,7 +114,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
                     prev_state_root,
                     &blocks,
                     chain_spec.clone(),
-                    &compression_ratios,
+                    compression_ratios,
                     false,
                 )?
             }
@@ -189,9 +168,6 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     openvm::io::println(format!("withdraw_root = {:?}", withdraw_root));
     openvm::io::println(format!("tx_bytes_hash = {:?}", tx_data_digest));
 
-    // We should never touch that lazy lock... Or else we introduce 40M useless cycles.
-    // assert!(std::sync::LazyLock::get(&MAINNET).is_none());
-
     Ok(chunk_info)
 }
 
@@ -203,23 +179,18 @@ fn execute_inner(
     prev_state_root: B256,
     blocks: &[RecoveredBlock<Block>],
     chain_spec: Arc<ScrollChainSpec>,
-    compression_ratios: &[Vec<U256>],
+    compression_ratios: Vec<Vec<U256>>,
     defer_commit: bool,
 ) -> Result<(B256, B256), String> {
     let mut db = manually_drop_on_zkvm!(
         EvmDatabase::new_from_root(code_db, prev_state_root, nodes_provider, block_hashes)
             .map_err(|e| format!("failed to create EvmDatabase: {}", e))?
     );
-    for (idx, block) in blocks.iter().enumerate() {
+    for (block, compression_ratios) in blocks.iter().zip_eq(compression_ratios.into_iter()) {
         let output = manually_drop_on_zkvm!(
-            EvmExecutor::new(
-                chain_spec.clone(),
-                &db,
-                block,
-                compression_ratios[idx].iter().cloned()
-            )
-            .execute()
-            .map_err(|e| format!("failed to execute block: {}", e))?
+            EvmExecutor::new(chain_spec.clone(), &db, block, Some(compression_ratios))
+                .execute()
+                .map_err(|e| format!("failed to execute block: {}", e))?
         );
         db.update(nodes_provider, output.state.state.iter())
             .map_err(|e| format!("failed to update db: {}", e))?;

@@ -23,8 +23,6 @@ impl<T: PublicInputs + From<BundleInfo>> Circuit for BundleCircuit<T> {
 
     type PublicInputs = T;
 
-    fn setup_openvm() {}
-
     fn read_witness_bytes() -> Vec<u8> {
         read_witnesses()
     }

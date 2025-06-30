@@ -27,8 +27,6 @@ impl Circuit for BatchCircuit {
 
     type PublicInputs = VersionedBatchInfo;
 
-    fn setup_openvm() {}
-
     fn read_witness_bytes() -> Vec<u8> {
         read_witnesses()
     }

@@ -7,17 +7,9 @@ export RUST_BACKTRACE
 RUST_LOG ?= off,scroll_zkvm_integration=debug,scroll_zkvm_verifier=debug,scroll_zkvm_prover=debug,openvm_circuit=debug
 export RUST_LOG
 
-ifdef LEGACY
-FEATURE := --no-default-features
-TESTDATA_PATH := crates/integration/testdata/phase1
-CHUNK_PROOF := 12508460-12508463
-else
-FEATURE := 
 TESTDATA_PATH := crates/integration/testdata/phase2
 CHUNK_PROOF := 1-4
-endif
 
-$(info FEATURE set to: $(FEATURE))
 $(info TESTDATA_PATH set to: $(TESTDATA_PATH))
 
 download-release:
@@ -56,40 +48,40 @@ export-onchain-verifier:
 	@cargo test --release -p scroll-zkvm-integration --test onchain_verifier export_onchain_verifier -- --exact --nocapture
 
 test-execute-chunk:
-	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test chunk_circuit test_execute -- --exact --nocapture
+	@cargo test --release -p scroll-zkvm-integration --test chunk_circuit test_execute -- --exact --nocapture
 
 test-execute-chunk-multi:
-	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test chunk_circuit test_execute_multi -- --exact --nocapture
+	@cargo test --release -p scroll-zkvm-integration --test chunk_circuit test_execute_multi -- --exact --nocapture
 
 test-cycle:
-	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test chunk_circuit test_cycle -- --exact --nocapture
+	@cargo test --release -p scroll-zkvm-integration --test chunk_circuit test_cycle -- --exact --nocapture
 
 test-execute-batch: $(TESTDATA_PATH)/proofs/chunk-$(CHUNK_PROOF).json
-	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test batch_circuit test_e2e_execute -- --exact --nocapture
+	@cargo test --release -p scroll-zkvm-integration --test batch_circuit test_e2e_execute -- --exact --nocapture
 
 test-execute-batch-fast: $(TESTDATA_PATH)/tasks/batch-task.json
-	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test batch_circuit test_execute -- --exact --nocapture
+	@cargo test --release -p scroll-zkvm-integration --test batch_circuit test_execute -- --exact --nocapture
 
 test-execute-bundle:
-	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test bundle_circuit test_execute -- --exact --nocapture
+	@cargo test --release -p scroll-zkvm-integration --test bundle_circuit test_execute -- --exact --nocapture
 
 test-single-chunk:
-	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test chunk_circuit setup_prove_verify_single -- --exact --nocapture
+	@cargo test --release -p scroll-zkvm-integration --test chunk_circuit setup_prove_verify_single -- --exact --nocapture
 
 test-multi-chunk:
-	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test chunk_circuit setup_prove_verify_multi -- --exact --nocapture
+	@cargo test --release -p scroll-zkvm-integration --test chunk_circuit setup_prove_verify_multi -- --exact --nocapture
 
 test-single-batch: $(TESTDATA_PATH)/tasks/batch-task.json
-	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test batch_circuit setup_prove_verify_single -- --exact --nocapture
+	@cargo test --release -p scroll-zkvm-integration --test batch_circuit setup_prove_verify_single -- --exact --nocapture
 
 test-e2e-batch:
-	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test batch_circuit e2e -- --exact --nocapture
+	@cargo test --release -p scroll-zkvm-integration --test batch_circuit e2e -- --exact --nocapture
 
 test-bundle:
-	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test bundle_circuit setup_prove_verify -- --exact --nocapture
+	@cargo test --release -p scroll-zkvm-integration --test bundle_circuit setup_prove_verify -- --exact --nocapture
 
 test-bundle-local:
-	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test bundle_circuit setup_prove_verify_local_task -- --exact --nocapture
+	@cargo test --release -p scroll-zkvm-integration --test bundle_circuit setup_prove_verify_local_task -- --exact --nocapture
 
 test-e2e-bundle:
-	@cargo test --release -p scroll-zkvm-integration $(FEATURE) --test bundle_circuit e2e -- --exact --nocapture
+	@cargo test --release -p scroll-zkvm-integration --test bundle_circuit e2e -- --exact --nocapture

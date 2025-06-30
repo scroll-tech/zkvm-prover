@@ -88,7 +88,7 @@ impl EccToPairing for Bls12_381_Fq {
 
     fn convert(&self) -> Self::PairingType {
         let bytes = self.to_bytes();
-        Fp::from_le_bytes(&bytes)
+        Fp::from_le_bytes_unchecked(&bytes)
     }
 }
 
@@ -143,10 +143,10 @@ pub fn point_evaluation(
     //
     // also termed P(x)
     let coefficients_as_scalars =
-        coefficients.map(|coeff| Scalar::from_le_bytes(coeff.as_le_slice()));
+        coefficients.map(|coeff| Scalar::from_le_bytes_unchecked(coeff.as_le_slice()));
 
     let challenge = challenge_digest % *BLS_MODULUS;
-    let challenge = Scalar::from_le_bytes(challenge.as_le_slice());
+    let challenge = Scalar::from_le_bytes_unchecked(challenge.as_le_slice());
 
     // y = P(z)
     let evaluation = interpolate(&challenge, &coefficients_as_scalars);
@@ -232,8 +232,8 @@ mod test {
             .unwrap();
         assert!(ret, "failed at sanity check verify");
 
-        let z = Scalar::from_be_bytes(input_val.as_ref());
-        let y = Scalar::from_be_bytes(y.as_ref());
+        let z = Scalar::from_be_bytes_unchecked(input_val.as_ref());
+        let y = Scalar::from_be_bytes_unchecked(y.as_ref());
         let commitment = Bls12_381_G1::from_compressed_be(commitment.to_bytes().as_ref())
             .unwrap()
             .convert();

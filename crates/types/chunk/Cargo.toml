@@ -9,11 +9,11 @@ version.workspace = true
 
 [dependencies]
 revm-precompile = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74", default-features=false, features = ["kzg-rs", "libsecp256k1"] }
-alloy-primitives = { workspace = true, default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "native-keccak"]} #, "rkyv"] }
+alloy-primitives = { workspace = true, features = ["native-keccak"] }
 rkyv.workspace = true
 sbv-trie = { workspace = true }
 sbv-core = { workspace = true }
-sbv-primitives = { workspace = true, features = ["hardforks", "scroll-hardforks"] }
+sbv-primitives = { workspace = true, features = ["hardforks", "scroll-hardforks", "scroll-revm-types"] }
 sbv-kv = { workspace = true }
 serde.workspace = true
 itertools.workspace = true
@@ -28,5 +28,4 @@ types-base = { path = "../base", package = "scroll-zkvm-types-base"}
 default = []
 # should be enabled at host
 scroll-compress-ratio = ["sbv-primitives/scroll-compress-ratio"]
-#openvm = ["sbv-trie/openvm", "sbv-core/openvm"] #, "sbv-primitives/openvm"]
-openvm = ["sbv-core/openvm"] #, "sbv-primitives/openvm"]
+openvm = ["sbv-core/scroll-openvm"]

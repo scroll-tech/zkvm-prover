@@ -1,8 +1,6 @@
 use openvm_native_recursion::hints::Hintable;
 use openvm_sdk::StdIn;
-use scroll_zkvm_types::{
-    environ::EnvironStub, public_inputs::ForkName, task::ProvingTask as UniversalProvingTask,
-};
+use scroll_zkvm_types::{public_inputs::ForkName, task::ProvingTask as UniversalProvingTask};
 
 pub mod batch;
 
@@ -19,9 +17,6 @@ pub trait ProvingTask: serde::de::DeserializeOwned {
 
     fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error> {
         let mut stdin = StdIn::default();
-        if self.fork_name() >= ForkName::Feynman {
-            stdin.write_bytes(&EnvironStub::from_env()?);
-        }
         self.build_guest_input_inner(&mut stdin)?;
         Ok(stdin)
     }
@@ -51,4 +46,11 @@ impl ProvingTask for UniversalProvingTask {
     fn fork_name(&self) -> ForkName {
         ForkName::from(self.fork_name.as_str())
     }
+}
+
+/// Read the 'GUEST_VERSION' from the environment variable.
+pub fn guest_version() -> ForkName {
+    std::env::var("GUEST_VERSION")
+        .map(|v| ForkName::from(v.as_str()))
+        .unwrap_or(ForkName::EuclidV2)
 }

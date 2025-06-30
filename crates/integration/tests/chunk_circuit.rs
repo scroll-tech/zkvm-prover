@@ -25,6 +25,7 @@ fn exec_chunk(task: &ChunkProvingTask) -> eyre::Result<(ExecutionResult, u64)> {
     let stats = task.stats();
     println!("chunk stats {:#?}", stats);
     ChunkProverType::metadata_with_prechecks(task)?;
+    println!("precheck finished");
     let stdin = task.build_guest_input()?;
     let exec_result = utils::vm::execute_guest(config, app_exe, &stdin, &Default::default())?;
     let cycle_count = exec_result.total_cycle as u64;
@@ -129,7 +130,7 @@ fn test_autofill_trie_nodes() -> eyre::Result<()> {
 
 #[test]
 fn test_execute_multi() -> eyre::Result<()> {
-    use rayon::iter::{IntoParallelIterator, ParallelIterator};
+    // use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
     MultiChunkProverTester::setup()?;
 
@@ -142,18 +143,18 @@ fn test_execute_multi() -> eyre::Result<()> {
     // Execute tasks in parallel
     let (total_gas, total_cycle, total_tick) = pool.install(|| {
         let tasks = MultiChunkProverTester::gen_multi_proving_tasks().unwrap();
+        let init = (0u64, 0u64, 0u64);
+        let adder = |(gas1, cycle1, tick1): (u64, u64, u64),
+                     (gas2, cycle2, tick2): (u64, u64, u64)| {
+            (gas1 + gas2, cycle1 + cycle2, tick1 + tick2)
+        };
         tasks
-            .into_par_iter()
+            .into_iter()
             .map(|task| -> (u64, u64, u64) {
                 let (exec_result, gas) = exec_chunk(&task).unwrap();
                 (gas, exec_result.total_cycle, exec_result.total_tick)
             })
-            .reduce(
-                || (0, 0, 0),
-                |(gas1, cycle1, tick1), (gas2, cycle2, tick2)| {
-                    (gas1 + gas2, cycle1 + cycle2, tick1 + tick2)
-                },
-            )
+            .fold(init, adder)
     });
 
     println!(
