@@ -1,5 +1,13 @@
+use alloy_primitives::B256;
+use types_base::public_inputs::chunk::ChunkInfo;
+
+use crate::BatchHeader;
+
 pub mod v6;
+
 pub mod v7;
+
+pub mod v8;
 
 /// The number data bytes we pack each BLS12-381 scalar into. The most-significant byte is 0.
 pub const N_DATA_BYTES_PER_COEFFICIENT: usize = 31;
@@ -13,3 +21,29 @@ pub const BLOB_WIDTH: usize = 4096;
 /// in its canonical form. As a result, we set the most-significant byte in each such chunk to 0.
 /// This allows us to use only up to 31 bytes in each such chunk, hence the reduced capacity.
 pub const N_BLOB_BYTES: usize = BLOB_WIDTH * N_DATA_BYTES_PER_COEFFICIENT;
+
+/// da-codec@v7
+pub const DA_CODEC_VERSION_V7: u8 = 7;
+
+/// da-codec@v8
+pub const DA_CODEC_VERSION_V8: u8 = 8;
+
+pub trait Envelope {
+    fn from_slice(blob_bytes: &[u8]) -> Self;
+
+    fn challenge_digest(&self, blob_versioned_hash: B256) -> B256;
+}
+
+pub trait Payload {
+    type BatchHeader: BatchHeader;
+
+    type Envelope: Envelope;
+
+    fn from_envelope(envelope: &Self::Envelope) -> Self;
+
+    fn validate<'a>(
+        &self,
+        header: &Self::BatchHeader,
+        chunks: &'a [ChunkInfo],
+    ) -> (&'a ChunkInfo, &'a ChunkInfo);
+}

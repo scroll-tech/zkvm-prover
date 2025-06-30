@@ -86,9 +86,11 @@ impl BundleInfo {
             .cloned()
             .collect()
     }
+
     pub fn pi_hash_euclidv2(&self) -> B256 {
         keccak256(self.pi_euclidv2())
     }
+
     pub fn pi_hash_feynman(&self) -> B256 {
         let protocol_version =
             B256::left_padding_from(&ForkName::Feynman.to_protocol_version().to_be_bytes());
@@ -129,6 +131,9 @@ pub struct BundleInfoV1(pub BundleInfo);
 #[derive(Clone, Debug)]
 pub struct BundleInfoV2(pub BundleInfo);
 
+#[derive(Clone, Debug)]
+pub struct BundleInfoV3(pub BundleInfo);
+
 impl From<BundleInfo> for BundleInfoV1 {
     fn from(value: BundleInfo) -> Self {
         Self(value)
@@ -136,6 +141,12 @@ impl From<BundleInfo> for BundleInfoV1 {
 }
 
 impl From<BundleInfo> for BundleInfoV2 {
+    fn from(value: BundleInfo) -> Self {
+        Self(value)
+    }
+}
+
+impl From<BundleInfo> for BundleInfoV3 {
     fn from(value: BundleInfo) -> Self {
         Self(value)
     }
@@ -154,6 +165,16 @@ impl PublicInputs for BundleInfoV1 {
 impl PublicInputs for BundleInfoV2 {
     fn pi_hash(&self) -> B256 {
         self.0.pi_hash_euclidv2()
+    }
+
+    fn validate(&self, _prev_pi: &Self) {
+        unreachable!("bundle is the last layer and is not aggregated by any other circuit");
+    }
+}
+
+impl PublicInputs for BundleInfoV3 {
+    fn pi_hash(&self) -> B256 {
+        self.0.pi_hash_feynman()
     }
 
     fn validate(&self, _prev_pi: &Self) {

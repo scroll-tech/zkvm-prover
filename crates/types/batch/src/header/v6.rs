@@ -89,6 +89,10 @@ impl BatchHeader for BatchHeaderV6 {
                 .collect::<Vec<u8>>(),
         )
     }
+
+    fn blob_versioned_hash(&self) -> B256 {
+        self.blob_versioned_hash
+    }
 }
 
 impl BatchHeader for ArchivedBatchHeaderV6 {
@@ -128,6 +132,10 @@ impl BatchHeader for ArchivedBatchHeaderV6 {
                 .cloned()
                 .collect::<Vec<u8>>(),
         )
+    }
+
+    fn blob_versioned_hash(&self) -> B256 {
+        self.blob_versioned_hash.into()
     }
 }
 

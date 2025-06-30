@@ -1,22 +1,29 @@
 use alloy_primitives::B256;
-
-use crate::BatchHeaderV7;
 use types_base::{
-    public_inputs::chunk::{ArchivedChunkInfo, BlockContextV2, SIZE_BLOCK_CTX},
+    public_inputs::chunk::{BlockContextV2, ChunkInfo, SIZE_BLOCK_CTX},
     utils::keccak256,
 };
 
-use super::N_BLOB_BYTES;
+use crate::BatchHeaderV7;
 
-/// da-codec@v7
-const DA_CODEC_VERSION: u8 = 7;
+use super::{DA_CODEC_VERSION_V7, N_BLOB_BYTES};
+
+/// Envelope@v7 represents the generic envelope type from v7 onwards, marked by the appropriate
+/// da-codec version byte.
+pub type EnvelopeV7 = GenericEnvelopeV7<DA_CODEC_VERSION_V7>;
+
+pub type PayloadV7 = GenericPayloadV7<DA_CODEC_VERSION_V7>;
 
 /// Represents the data contained within an EIP-4844 blob that is published on-chain.
 ///
 /// The bytes following some metadata represent zstd-encoded [`PayloadV7`] if the envelope is
 /// indicated as `is_encoded == true`.
+///
+/// Both da-codec@v7 and da-codec@v8 use the same envelope and payload structure, the only
+/// difference being the codec version byte in the envelope. Hence we supply that as a generic
+/// version type to [`EnvelopeV7`].
 #[derive(Debug, Clone)]
-pub struct EnvelopeV7 {
+pub struct GenericEnvelopeV7<const CODEC_VERSION: u8> {
     /// The original envelope bytes supplied.
     ///
     /// Caching just for re-use later in challenge digest computation.
@@ -30,14 +37,14 @@ pub struct EnvelopeV7 {
     pub unpadded_bytes: Vec<u8>,
 }
 
-impl From<&[u8]> for EnvelopeV7 {
-    fn from(blob_bytes: &[u8]) -> Self {
+impl<const CODEC_VERSION: u8> super::Envelope for GenericEnvelopeV7<CODEC_VERSION> {
+    fn from_slice(blob_bytes: &[u8]) -> Self {
         // The number of bytes is as expected.
         assert_eq!(blob_bytes.len(), N_BLOB_BYTES);
 
         // The version of the blob encoding was as expected, i.e. da-codec@v7.
         let version = blob_bytes[0];
-        assert_eq!(version, DA_CODEC_VERSION);
+        assert_eq!(version, CODEC_VERSION);
 
         // Calculate the unpadded size of the encoded payload.
         //
@@ -65,9 +72,7 @@ impl From<&[u8]> for EnvelopeV7 {
             envelope_bytes: blob_bytes.to_vec(),
         }
     }
-}
 
-impl EnvelopeV7 {
     /// The verification of the EIP-4844 blob is done via point-evaluation precompile
     /// implemented in-circuit.
     ///
@@ -79,17 +84,23 @@ impl EnvelopeV7 {
     ///     keccak256(envelope) ||
     ///     versioned hash
     /// )
-    pub fn challenge_digest(&self, versioned_hash: B256) -> B256 {
+    fn challenge_digest(&self, blob_versioned_hash: B256) -> B256 {
         keccak256(
             std::iter::empty()
                 .chain(keccak256(&self.envelope_bytes))
-                .chain(versioned_hash.0)
+                .chain(blob_versioned_hash.0)
                 .collect::<Vec<u8>>(),
         )
     }
 }
 
-/// Represents the batch data, eventually encoded into an [`EnvelopeV7`].
+const INDEX_PREV_MSG_QUEUE_HASH: usize = 0;
+const INDEX_POST_MSG_QUEUE_HASH: usize = INDEX_PREV_MSG_QUEUE_HASH + 32;
+const INDEX_L2_BLOCK_NUM: usize = INDEX_POST_MSG_QUEUE_HASH + 32;
+const INDEX_NUM_BLOCKS: usize = INDEX_L2_BLOCK_NUM + 8;
+const INDEX_BLOCK_CTX: usize = INDEX_NUM_BLOCKS + 2;
+
+/// Represents the batch data, eventually encoded into an [`GenericEnvelopeV7`].
 ///
 /// | Field                  | # Bytes | Type           | Index         |
 /// |------------------------|---------|----------------|---------------|
@@ -102,7 +113,7 @@ impl EnvelopeV7 {
 /// | blockCtxs[n-1]         | 52      | BlockContextV2 | 74 + 52*(n-1) |
 /// | l2TxsData              | dynamic | bytes          | 74 + 52*n     |
 #[derive(Debug, Clone)]
-pub struct PayloadV7 {
+pub struct GenericPayloadV7<const CODEC_VERSION: u8> {
     /// The version from da-codec, i.e. v7 in this case.
     ///
     /// Note: This is not really a part of payload, simply coopied from the envelope for
@@ -122,14 +133,12 @@ pub struct PayloadV7 {
     pub tx_data: Vec<u8>,
 }
 
-const INDEX_PREV_MSG_QUEUE_HASH: usize = 0;
-const INDEX_POST_MSG_QUEUE_HASH: usize = INDEX_PREV_MSG_QUEUE_HASH + 32;
-const INDEX_L2_BLOCK_NUM: usize = INDEX_POST_MSG_QUEUE_HASH + 32;
-const INDEX_NUM_BLOCKS: usize = INDEX_L2_BLOCK_NUM + 8;
-const INDEX_BLOCK_CTX: usize = INDEX_NUM_BLOCKS + 2;
+impl<const CODEC_VERSION: u8> super::Payload for GenericPayloadV7<CODEC_VERSION> {
+    type BatchHeader = BatchHeaderV7;
 
-impl From<&EnvelopeV7> for PayloadV7 {
-    fn from(envelope: &EnvelopeV7) -> Self {
+    type Envelope = GenericEnvelopeV7<CODEC_VERSION>;
+
+    fn from_envelope(envelope: &Self::Envelope) -> Self {
         // Conditionally decode depending on the flag set in the envelope.
         let payload_bytes = if envelope.is_encoded & 1 == 1 {
             vm_zstd::process(&envelope.unpadded_bytes)
@@ -182,15 +191,12 @@ impl From<&EnvelopeV7> for PayloadV7 {
             tx_data,
         }
     }
-}
 
-impl PayloadV7 {
-    /// Validate the payload contents.
-    pub fn validate<'a>(
+    fn validate<'a>(
         &self,
-        header: &BatchHeaderV7,
-        chunk_infos: &'a [ArchivedChunkInfo],
-    ) -> (&'a ArchivedChunkInfo, &'a ArchivedChunkInfo) {
+        header: &Self::BatchHeader,
+        chunk_infos: &'a [ChunkInfo],
+    ) -> (&'a ChunkInfo, &'a ChunkInfo) {
         // Get the first and last chunks' info, to construct the batch info.
         let (first_chunk, last_chunk) = (
             chunk_infos.first().expect("at least one chunk in batch"),
@@ -232,12 +238,12 @@ impl PayloadV7 {
             u64::try_from(self.tx_data.len()).expect("len(tx-data) is u64"),
             chunk_infos
                 .iter()
-                .map(|chunk_info| chunk_info.tx_data_length.to_native())
+                .map(|chunk_info| chunk_info.tx_data_length)
                 .sum::<u64>(),
         );
         let mut index: usize = 0;
         for chunk_info in chunk_infos.iter() {
-            let chunk_size = chunk_info.tx_data_length.to_native() as usize;
+            let chunk_size = chunk_info.tx_data_length as usize;
             let chunk_tx_data_digest =
                 keccak256(&self.tx_data.as_slice()[index..(index + chunk_size)]);
             assert_eq!(chunk_tx_data_digest.0, chunk_info.tx_data_digest.0);
@@ -251,7 +257,7 @@ impl PayloadV7 {
                 .iter()
                 .flat_map(|chunk_info| chunk_info.block_ctxs.as_slice()),
         ) {
-            assert_eq!(block_ctx, &BlockContextV2::from(witness_block_ctx));
+            assert_eq!(block_ctx, witness_block_ctx);
         }
 
         (first_chunk, last_chunk)

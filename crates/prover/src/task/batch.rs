@@ -4,8 +4,9 @@ use openvm_native_recursion::hints::Hintable;
 use openvm_sdk::StdIn;
 use scroll_zkvm_types::{
     batch::{
-        BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchInfo, BatchWitness, EnvelopeV6, EnvelopeV7,
-        N_BLOB_BYTES, PointEvalWitness, ReferenceHeader,
+        BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchHeaderV8, BatchInfo, BatchWitness,
+        Envelope, EnvelopeV6, EnvelopeV7, EnvelopeV8, N_BLOB_BYTES, PointEvalWitness,
+        ReferenceHeader,
     },
     public_inputs::ForkName,
 };
@@ -25,6 +26,7 @@ use crate::{
 pub enum BatchHeaderV {
     V6(BatchHeaderV6),
     V7(BatchHeaderV7),
+    V8(BatchHeaderV8),
 }
 
 impl From<BatchHeaderV> for ReferenceHeader {
@@ -32,6 +34,7 @@ impl From<BatchHeaderV> for ReferenceHeader {
         match value {
             BatchHeaderV::V6(h) => ReferenceHeader::V6(h),
             BatchHeaderV::V7(h) => ReferenceHeader::V7(h),
+            BatchHeaderV::V8(h) => ReferenceHeader::V8(h),
         }
     }
 }
@@ -41,20 +44,28 @@ impl BatchHeaderV {
         match self {
             BatchHeaderV::V6(h) => h.batch_hash(),
             BatchHeaderV::V7(h) => h.batch_hash(),
+            BatchHeaderV::V8(h) => h.batch_hash(),
         }
     }
 
     pub fn must_v6_header(&self) -> &BatchHeaderV6 {
         match self {
             BatchHeaderV::V6(h) => h,
-            BatchHeaderV::V7(_) => panic!("try to pick v7 header"),
+            _ => panic!("try to pick v6 header"),
         }
     }
 
     pub fn must_v7_header(&self) -> &BatchHeaderV7 {
         match self {
             BatchHeaderV::V7(h) => h,
-            BatchHeaderV::V6(_) => panic!("try to pick v6 header"),
+            _ => panic!("try to pick v7 header"),
+        }
+    }
+
+    pub fn must_v8_header(&self) -> &BatchHeaderV8 {
+        match self {
+            BatchHeaderV::V8(h) => h,
+            _ => panic!("try to pick v8 header"),
         }
     }
 }
@@ -106,7 +117,8 @@ impl ProvingTask for BatchProvingTask {
                         "hardfork mismatch for da-codec@v6 header: found={fork_name:?}, expected={:?}",
                         ForkName::EuclidV1,
                     );
-                    EnvelopeV6::from(self.blob_bytes.as_slice()).challenge_digest(versioned_hash)
+                    <EnvelopeV6 as Envelope>::from_slice(self.blob_bytes.as_slice())
+                        .challenge_digest(versioned_hash)
                 }
                 BatchHeaderV::V7(_) => {
                     assert_eq!(
@@ -120,7 +132,23 @@ impl ProvingTask for BatchProvingTask {
                         padded_blob_bytes.resize(N_BLOB_BYTES, 0);
                         padded_blob_bytes
                     };
-                    EnvelopeV7::from(padded_blob_bytes.as_slice()).challenge_digest(versioned_hash)
+                    <EnvelopeV7 as Envelope>::from_slice(padded_blob_bytes.as_slice())
+                        .challenge_digest(versioned_hash)
+                }
+                BatchHeaderV::V8(_) => {
+                    assert_eq!(
+                        fork_name,
+                        ForkName::Feynman,
+                        "hardfork mismatch for da-codec@v8 header: found={fork_name:?}, expected={:?}",
+                        ForkName::Feynman,
+                    );
+                    let padded_blob_bytes = {
+                        let mut padded_blob_bytes = self.blob_bytes.to_vec();
+                        padded_blob_bytes.resize(N_BLOB_BYTES, 0);
+                        padded_blob_bytes
+                    };
+                    <EnvelopeV8 as Envelope>::from_slice(padded_blob_bytes.as_slice())
+                        .challenge_digest(versioned_hash)
                 }
             };
 
@@ -220,6 +248,29 @@ impl From<&BatchProvingTask> for BatchInfo {
                     ForkName::EuclidV2,
                     "hardfork mismatch for da-codec@v7 header: found={fork_name:?}, expected={:?}",
                     ForkName::EuclidV2,
+                );
+                (
+                    h.parent_batch_hash,
+                    task.chunk_proofs
+                        .first()
+                        .expect("at least one chunk in batch")
+                        .metadata
+                        .chunk_info
+                        .prev_msg_queue_hash,
+                    task.chunk_proofs
+                        .last()
+                        .expect("at least one chunk in batch")
+                        .metadata
+                        .chunk_info
+                        .post_msg_queue_hash,
+                )
+            }
+            BatchHeaderV::V8(h) => {
+                assert_eq!(
+                    fork_name,
+                    ForkName::Feynman,
+                    "hardfork mismatch for da-codec@v8 header: found={fork_name:?}, expected={:?}",
+                    ForkName::Feynman,
                 );
                 (
                     h.parent_batch_hash,
