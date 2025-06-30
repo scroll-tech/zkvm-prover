@@ -107,6 +107,7 @@ impl ChunkWitness {
             state_commit_mode: StateCommitMode::Auto,
         }
     }
+    /// Convert the `ChunkWitness` into a `ChunkWitnessEuclid`.
     pub fn into_euclid(self) -> ChunkWitnessEuclid {
         ChunkWitnessEuclid {
             blocks: self.blocks,
@@ -114,14 +115,16 @@ impl ChunkWitness {
             fork_name: self.fork_name,
         }
     }
-    /// TODO: redesign?
     /// `guest_version` is related to the guest program.
     /// It is not always same with the evm hardfork.
     /// For example, a `Feynman` guest program can execute `EuclidV2` blocks.
+    /// While in realworld, we keep them same.
+    /// Only during development, we may use different versions.
     pub fn rkyv_serialize(
         &self,
-        guest_version: ForkName,
+        guest_version: Option<ForkName>,
     ) -> Result<AlignedVec, rkyv::rancor::Error> {
+        let guest_version = guest_version.unwrap_or(self.fork_name.clone());
         if guest_version >= ForkName::Feynman {
             // Use the new rkyv serialization for Feynman and later forks
             rkyv::to_bytes::<rkyv::rancor::Error>(self)

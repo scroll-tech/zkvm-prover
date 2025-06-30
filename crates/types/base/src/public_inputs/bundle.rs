@@ -111,6 +111,8 @@ impl BundleInfo {
     }
 }
 
+pub type VersionedBundleInfo = (BundleInfo, ForkName);
+
 impl MultiVersionPublicInputs for BundleInfo {
     fn pi_hash_by_fork(&self, fork_name: ForkName) -> B256 {
         match fork_name {

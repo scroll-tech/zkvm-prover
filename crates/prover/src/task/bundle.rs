@@ -5,7 +5,10 @@ use scroll_zkvm_types::{
     public_inputs::ForkName,
 };
 
-use crate::{AsRootProof, BatchProof, task::ProvingTask};
+use crate::{
+    AsRootProof, BatchProof,
+    task::{ProvingTask, guest_version},
+};
 
 /// Message indicating a sanity check failure.
 const BUNDLE_SANITY_MSG: &str = "bundle must have at least one batch";
@@ -51,8 +54,9 @@ impl ProvingTask for BundleProvingTask {
                 .iter()
                 .map(|wrapped_proof| wrapped_proof.metadata.batch_info.clone())
                 .collect(),
+            fork_name: ForkName::from(self.fork_name.as_str()),
         };
-        let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&witness)?;
+        let serialized = witness.rkyv_serialize(guest_version())?;
         stdin.write_bytes(&serialized);
         for batch_proof in &self.batch_proofs {
             let root_input = &batch_proof.as_root_proof();

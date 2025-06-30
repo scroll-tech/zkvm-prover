@@ -4,9 +4,8 @@ use scroll_zkvm_types_circuit::{
     AggCircuit, AggregationInput, Circuit, ProgramCommitment,
     io::read_witnesses,
     public_inputs::{
-        ForkName, PublicInputs,
         batch::VersionedBatchInfo,
-        bundle::{BundleInfo, BundleInfoV1, BundleInfoV2, BundleInfoV3},
+        bundle::{BundleInfo, VersionedBundleInfo},
     },
 };
 
@@ -16,12 +15,12 @@ use crate::child_commitments::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BA
 use openvm_keccak256_guest;
 
 #[derive(Default)]
-pub struct BundleCircuit<T>(std::marker::PhantomData<T>);
+pub struct BundleCircuit;
 
-impl<T: PublicInputs + From<BundleInfo>> Circuit for BundleCircuit<T> {
+impl Circuit for BundleCircuit {
     type Witness = ArchivedBundleWitness;
 
-    type PublicInputs = T;
+    type PublicInputs = VersionedBundleInfo;
 
     fn read_witness_bytes() -> Vec<u8> {
         read_witnesses()
@@ -33,33 +32,11 @@ impl<T: PublicInputs + From<BundleInfo>> Circuit for BundleCircuit<T> {
     }
 
     fn validate(witness: &Self::Witness) -> Self::PublicInputs {
-        BundleInfo::from(witness).into()
+        (BundleInfo::from(witness), (&witness.fork_name).into())
     }
 }
 
-pub trait ForkNameInfo {
-    fn fork_name() -> ForkName;
-}
-
-impl ForkNameInfo for BundleInfoV1 {
-    fn fork_name() -> ForkName {
-        ForkName::EuclidV1
-    }
-}
-
-impl ForkNameInfo for BundleInfoV2 {
-    fn fork_name() -> ForkName {
-        ForkName::EuclidV2
-    }
-}
-
-impl ForkNameInfo for BundleInfoV3 {
-    fn fork_name() -> ForkName {
-        ForkName::Feynman
-    }
-}
-
-impl<T: ForkNameInfo + PublicInputs + From<BundleInfo>> AggCircuit for BundleCircuit<T> {
+impl AggCircuit for BundleCircuit {
     type AggregatedPublicInputs = VersionedBatchInfo;
 
     fn verify_commitments(commitment: &ProgramCommitment) {
@@ -76,10 +53,11 @@ impl<T: ForkNameInfo + PublicInputs + From<BundleInfo>> AggCircuit for BundleCir
     }
 
     fn aggregated_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs> {
+        let fork_name = (&witness.fork_name).into();
         witness
             .batch_infos
             .iter()
-            .map(|archived| (archived.into(), T::fork_name()))
+            .map(|archived| (archived.into(), fork_name))
             .collect()
     }
 

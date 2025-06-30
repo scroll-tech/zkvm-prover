@@ -1,12 +1,8 @@
-use scroll_zkvm_types_circuit::{AggCircuit, Circuit, public_inputs::bundle};
+use scroll_zkvm_types_circuit::{AggCircuit, Circuit};
 
 mod circuit;
 
-#[cfg(feature = "euclidv2")]
-type C = circuit::BundleCircuit<bundle::BundleInfoV2>;
-
-#[cfg(not(feature = "euclidv2"))]
-type C = circuit::BundleCircuit<bundle::BundleInfoV1>;
+type C = circuit::BundleCircuit;
 
 // TODO: feature handling for feynman to use bundle info v3.
 

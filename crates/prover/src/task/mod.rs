@@ -47,10 +47,14 @@ impl ProvingTask for UniversalProvingTask {
         ForkName::from(self.fork_name.as_str())
     }
 }
-
 /// Read the 'GUEST_VERSION' from the environment variable.
-pub fn guest_version() -> ForkName {
-    std::env::var("GUEST_VERSION")
-        .map(|v| ForkName::from(v.as_str()))
-        .unwrap_or(ForkName::EuclidV2)
+/// Mainly used for testing purposes to specify the guest version
+pub fn guest_version() -> Option<ForkName> {
+    std::env::var("GUEST_VERSION").ok().and_then(|v| {
+        if v.is_empty() {
+            None
+        } else {
+            Some(ForkName::from(v.as_str()))
+        }
+    })
 }
