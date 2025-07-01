@@ -4,12 +4,13 @@ pub mod bundle {
     pub use types_base::public_inputs::bundle::BundleInfo;
     pub use types_bundle::*;
 
-    pub struct ToArchievedWitness(Vec<u8>);
+    pub struct ToArchievedWitness(pub rkyv::util::AlignedVec);
     impl ToArchievedWitness {
         pub fn create(witness: &BundleWitness) -> Result<Self, String> {
-            rkyv::to_bytes::<rkyv::rancor::Error>(witness)
+            witness
+                .rkyv_serialize(None)
                 .map_err(|e| format!("failed to serialize chunk witness: {e}"))
-                .map(|v| Self(v.to_vec()))
+                .map(Self)
         }
         pub fn access(&self) -> Result<&ArchivedBundleWitness, String> {
             rkyv::access::<ArchivedBundleWitness, rkyv::rancor::BoxedError>(&self.0)
@@ -22,12 +23,12 @@ pub mod batch {
     pub use types_base::public_inputs::batch::{ArchivedBatchInfo, BatchInfo, VersionedBatchInfo};
     pub use types_batch::*;
 
-    pub struct ToArchievedWitness(Vec<u8>);
+    pub struct ToArchievedWitness(pub rkyv::util::AlignedVec);
     impl ToArchievedWitness {
         pub fn create(witness: &BatchWitness) -> Result<Self, String> {
             rkyv::to_bytes::<rkyv::rancor::Error>(witness)
                 .map_err(|e| format!("failed to serialize chunk witness: {e}"))
-                .map(|v| Self(v.to_vec()))
+                .map(Self)
         }
         pub fn access(&self) -> Result<&ArchivedBatchWitness, String> {
             rkyv::access::<ArchivedBatchWitness, rkyv::rancor::BoxedError>(&self.0)
@@ -42,12 +43,13 @@ pub mod chunk {
     };
     pub use types_chunk::*;
 
-    pub struct ToArchievedWitness(Vec<u8>);
+    pub struct ToArchievedWitness(pub rkyv::util::AlignedVec);
     impl ToArchievedWitness {
         pub fn create(witness: &ChunkWitness) -> Result<Self, String> {
-            rkyv::to_bytes::<rkyv::rancor::Error>(witness)
+            witness
+                .rkyv_serialize(None)
                 .map_err(|e| format!("failed to serialize chunk witness: {e}"))
-                .map(|v| Self(v.to_vec()))
+                .map(Self)
         }
         pub fn access(&self) -> Result<&ArchivedChunkWitness, String> {
             rkyv::access::<ArchivedChunkWitness, rkyv::rancor::BoxedError>(&self.0)
