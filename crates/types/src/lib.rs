@@ -7,14 +7,13 @@ pub mod bundle {
     pub struct ToArchievedWitness(pub rkyv::util::AlignedVec);
     impl ToArchievedWitness {
         pub fn create(witness: &BundleWitness) -> Result<Self, String> {
-            witness
-                .rkyv_serialize(None)
-                .map_err(|e| format!("failed to serialize chunk witness: {e}"))
+            rkyv::to_bytes::<rkyv::rancor::Error>(witness)
+                .map_err(|e| format!("failed to serialize bundle witness: {e}"))
                 .map(Self)
         }
         pub fn access(&self) -> Result<&ArchivedBundleWitness, String> {
             rkyv::access::<ArchivedBundleWitness, rkyv::rancor::BoxedError>(&self.0)
-                .map_err(|e| format!("rkyv deserialisation of chunk witness bytes failed: {e}"))
+                .map_err(|e| format!("rkyv deserialisation of bundle witness bytes failed: {e}"))
         }
     }
 }
@@ -27,12 +26,12 @@ pub mod batch {
     impl ToArchievedWitness {
         pub fn create(witness: &BatchWitness) -> Result<Self, String> {
             rkyv::to_bytes::<rkyv::rancor::Error>(witness)
-                .map_err(|e| format!("failed to serialize chunk witness: {e}"))
+                .map_err(|e| format!("failed to serialize batch witness: {e}"))
                 .map(Self)
         }
         pub fn access(&self) -> Result<&ArchivedBatchWitness, String> {
             rkyv::access::<ArchivedBatchWitness, rkyv::rancor::BoxedError>(&self.0)
-                .map_err(|e| format!("rkyv deserialisation of chunk witness bytes failed: {e}"))
+                .map_err(|e| format!("rkyv deserialisation of batch witness bytes failed: {e}"))
         }
     }
 }
@@ -46,8 +45,7 @@ pub mod chunk {
     pub struct ToArchievedWitness(pub rkyv::util::AlignedVec);
     impl ToArchievedWitness {
         pub fn create(witness: &ChunkWitness) -> Result<Self, String> {
-            witness
-                .rkyv_serialize(None)
+            rkyv::to_bytes::<rkyv::rancor::Error>(witness)
                 .map_err(|e| format!("failed to serialize chunk witness: {e}"))
                 .map(Self)
         }
