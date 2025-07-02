@@ -8,6 +8,7 @@ scroll-zkvm-types.workspace = true
 scroll-zkvm-prover.workspace = true
 scroll-zkvm-verifier.workspace = true
 sbv-primitives = { workspace = true }
+sbv-utils.workspace = true
 tracing.workspace = true
 rkyv.workspace = true
 tracing-subscriber.workspace = true
@@ -22,10 +23,16 @@ openvm-native-recursion = { workspace = true, default-features = false }
 openvm-native-transpiler = { workspace = true, default-features = false }
 openvm-transpiler = { workspace = true, default-features = false }
 
+alloy-provider = { workspace = true }
+alloy-rpc-client.workspace = true
+alloy-transport = { workspace = true, features = ["throttle"] }
 alloy-primitives.workspace = true
 eyre.workspace = true
+futures.workspace = true
 rayon.workspace = true
 vm-zstd = { workspace = true, features = ["zstd"] }
+tokio = { workspace = true, features = ["full", "macros"] }
+url.workspace = true
 
 chrono = "0.4"
 ff = "0.13"

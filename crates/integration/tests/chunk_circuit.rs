@@ -1,4 +1,4 @@
-use eyre::Ok;
+use eyre::{Context, ContextCompat};
 use scroll_zkvm_integration::{
     ProverTester, prove_verify_multi, prove_verify_single,
     testers::chunk::{ChunkProverTester, MultiChunkProverTester, read_block_witness_from_testdata},
@@ -128,6 +128,25 @@ fn test_autofill_trie_nodes() -> eyre::Result<()> {
     Ok(())
 }
 
+fn execute_multi(
+    proving_tasks: Vec<ChunkProvingTask>,
+) -> impl FnOnce() -> (u64, u64, u64) + Send + Sync + 'static {
+    || {
+        let init = (0u64, 0u64, 0u64);
+        let adder = |(gas1, cycle1, tick1): (u64, u64, u64),
+                     (gas2, cycle2, tick2): (u64, u64, u64)| {
+            (gas1 + gas2, cycle1 + cycle2, tick1 + tick2)
+        };
+        proving_tasks
+            .into_iter()
+            .map(|task| -> (u64, u64, u64) {
+                let (exec_result, gas) = exec_chunk(&task).unwrap();
+                (gas, exec_result.total_cycle, exec_result.total_tick)
+            })
+            .fold(init, adder)
+    }
+}
+
 #[test]
 fn test_execute_multi() -> eyre::Result<()> {
     // use rayon::iter::{IntoParallelIterator, ParallelIterator};
@@ -141,21 +160,9 @@ fn test_execute_multi() -> eyre::Result<()> {
         .build()
         .unwrap();
     // Execute tasks in parallel
-    let (total_gas, total_cycle, total_tick) = pool.install(|| {
-        let tasks = MultiChunkProverTester::gen_multi_proving_tasks().unwrap();
-        let init = (0u64, 0u64, 0u64);
-        let adder = |(gas1, cycle1, tick1): (u64, u64, u64),
-                     (gas2, cycle2, tick2): (u64, u64, u64)| {
-            (gas1 + gas2, cycle1 + cycle2, tick1 + tick2)
-        };
-        tasks
-            .into_iter()
-            .map(|task| -> (u64, u64, u64) {
-                let (exec_result, gas) = exec_chunk(&task).unwrap();
-                (gas, exec_result.total_cycle, exec_result.total_tick)
-            })
-            .fold(init, adder)
-    });
+    let (total_gas, total_cycle, total_tick) = pool.install(execute_multi(
+        MultiChunkProverTester::gen_multi_proving_tasks().unwrap(),
+    ));
 
     println!(
         "Total gas: {}, Total cycles: {}, Average cycle/gas: {}, Average tick/gas: {}",
@@ -209,5 +216,107 @@ fn setup_prove_verify_multi() -> eyre::Result<()> {
 
     prove_verify_multi::<MultiChunkProverTester>(None)?;
 
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_scanner() -> eyre::Result<()> {
+    use alloy_provider::{Provider, ProviderBuilder};
+    use alloy_rpc_client::ClientBuilder;
+    use alloy_transport::layers::{RetryBackoffLayer, ThrottleLayer};
+    use sbv_primitives::types::Network;
+    use sbv_utils::rpc::ProviderExt;
+    use std::env;
+    use url::Url;
+
+    let rpc_url: Url = env::var("RPC_URL")
+        .context("RPC_URL must be set")?
+        .parse()
+        .context("Unable to parse RPC_URL")?;
+    println!("RPC URL = {}", rpc_url);
+
+    MultiChunkProverTester::setup()?;
+
+    let client = ClientBuilder::default()
+        .layer(RetryBackoffLayer::new(
+            env::var("MAX_RATE_LIMIT_RETRIES")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(10),
+            env::var("RETRIES_INITIAL_BACKOFF")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(100),
+            u64::MAX,
+        ))
+        .layer(ThrottleLayer::new(
+            env::var("REQUESTS_PER_SECOND")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(10),
+        ))
+        .http(rpc_url);
+    let provider = ProviderBuilder::<_, _, Network>::default()
+        .with_recommended_fillers()
+        .connect_client(client);
+
+    let latest_block = provider
+        .get_block_number()
+        .await
+        .context("Failed to get the latest block number")?;
+    // fetch latest 100 blocks
+    let n_chunks: u64 = env::var("N_CHUNKS")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(10);
+    let chunk_size: u64 = env::var("CHUNK_SIZE")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(10);
+    let start_block = latest_block
+        .checked_sub(chunk_size * n_chunks)
+        .context("Not enough blocks to fetch. Please decrease N_CHUNKS or CHUNK_SIZE.")?;
+    println!(
+        "blocks = {start_block}..={latest_block}; {chunk_size} blocks chunk, {n_chunks} chunks"
+    );
+
+    let witnesses = futures::future::try_join_all(
+        (start_block..=latest_block)
+            .map(|block| {
+                let provider = provider.clone();
+                async move {
+                    provider
+                        .dump_block_witness(block.into())
+                        .await
+                        .map(|w| w.unwrap())
+                }
+            })
+    )
+    .await?;
+
+    let proving_tasks = witnesses
+        .chunks_exact(chunk_size as usize)
+        .map(|witnesses| ChunkProvingTask {
+            block_witnesses: witnesses.to_vec(),
+            prev_msg_queue_hash: Default::default(),
+            fork_name: "euclidv2".to_string(),
+        })
+        .collect::<Vec<_>>();
+
+    let parallel = 8;
+    let pool = rayon::ThreadPoolBuilder::new()
+        .num_threads(parallel)
+        .build()
+        .unwrap();
+
+    let (total_gas, total_cycle, total_tick) = pool.install(execute_multi(proving_tasks));
+
+    println!(
+        "Total gas: {}, Total cycles: {}, Average cycle/gas: {}, Average tick/gas: {}",
+        total_gas,
+        total_cycle,
+        total_cycle as f64 / total_gas as f64,
+        total_tick as f64 / total_gas as f64,
+    );
     Ok(())
 }
