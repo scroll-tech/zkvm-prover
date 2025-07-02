@@ -42,19 +42,20 @@ openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev =
 openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
 
 # openvm guest libs
-openvm-build = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1", default-features = false }
-openvm-circuit = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1", default-features = false }
-openvm-continuations = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1", default-features = false }
-openvm-instructions ={ git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1", default-features = false }
-openvm-native-circuit = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1", default-features = false }
-openvm-native-compiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1", default-features = false }
-openvm-native-recursion = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1", default-features = false }
-openvm-native-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1", default-features = false }
-openvm-rv32im-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1", default-features = false }
-openvm-sdk = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1", default-features = false, features = ["parallel", "bench-metrics", "evm-prove"] }
-openvm-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1", default-features = false }
+openvm-build = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1-pipe", default-features = false }
+openvm-circuit = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1-pipe", default-features = false }
+openvm-continuations = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1-pipe", default-features = false }
+openvm-instructions ={ git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1-pipe", default-features = false }
+openvm-native-circuit = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1-pipe", default-features = false }
+openvm-native-compiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1-pipe", default-features = false }
+openvm-native-recursion = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1-pipe", default-features = false }
+openvm-native-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1-pipe", default-features = false }
+openvm-rv32im-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1-pipe", default-features = false }
+openvm-sdk = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1-pipe", default-features = false, features = ["parallel", "bench-metrics", "evm-prove"] }
+openvm-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1-pipe", default-features = false }
 
 # more openvm related libs
+openvm-stark-backend = { git = "ssh://git@github.com/scroll-tech/openvm-stark-gpu.git", branch = "sync/upstream-250702", features = ["gpu"] }
 openvm-stark-sdk = { git = "ssh://git@github.com/scroll-tech/openvm-stark-gpu.git", branch = "sync/upstream-250702", features = ["gpu"] }
 p3-field = { git = "https://github.com/Plonky3/Plonky3.git", rev = "539bbc84085efb609f4f62cb03cf49588388abdb" }
 
@@ -134,17 +135,17 @@ lto = "fat"
 codegen-units = 1
 
 # [patch."https://github.com/openvm-org/openvm.git"]
-# openvm-build = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1", default-features = false }
-# openvm-circuit = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1", default-features = false }
-# openvm-continuations = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1", default-features = false }
-# openvm-instructions ={ git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1", default-features = false }
-# openvm-native-circuit = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1", default-features = false }
-# openvm-native-compiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1", default-features = false }
-# openvm-native-recursion = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1", default-features = false }
-# openvm-native-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1", default-features = false }
-# openvm-rv32im-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1", default-features = false }
-# openvm-sdk = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1", default-features = false, features = ["parallel", "bench-metrics", "evm-prove"] }
-# openvm-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1", default-features = false }
+# openvm-build = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1-pipe", default-features = false }
+# openvm-circuit = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1-pipe", default-features = false }
+# openvm-continuations = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1-pipe", default-features = false }
+# openvm-instructions ={ git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1-pipe", default-features = false }
+# openvm-native-circuit = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1-pipe", default-features = false }
+# openvm-native-compiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1-pipe", default-features = false }
+# openvm-native-recursion = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1-pipe", default-features = false }
+# openvm-native-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1-pipe", default-features = false }
+# openvm-rv32im-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1-pipe", default-features = false }
+# openvm-sdk = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1-pipe", default-features = false, features = ["parallel", "bench-metrics", "evm-prove"] }
+# openvm-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.2.1-rc.1-pipe", default-features = false }
 
 [patch."https://github.com/openvm-org/stark-backend.git"]
 openvm-stark-backend = { git = "ssh://git@github.com/scroll-tech/openvm-stark-gpu.git", branch = "sync/upstream-250702", features = ["gpu"] }

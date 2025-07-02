@@ -3337,11 +3337,11 @@ checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
 [[package]]
 name = "openvm"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "bytemuck",
  "num-bigint 0.4.6",
- "openvm-custom-insn 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1)",
+ "openvm-custom-insn 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe)",
  "openvm-platform 1.2.1-rc.0",
  "openvm-rv32im-guest 1.2.1-rc.0",
  "serde",
@@ -3365,7 +3365,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-circuit"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -3382,8 +3382,8 @@ dependencies = [
  "openvm-mod-circuit-builder",
  "openvm-rv32-adapters",
  "openvm-rv32im-circuit",
- "openvm-stark-backend 1.1.0",
- "openvm-stark-sdk 1.1.0",
+ "openvm-stark-backend",
+ "openvm-stark-sdk",
  "rand 0.8.5",
  "serde",
  "serde-big-array",
@@ -3394,7 +3394,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-complex-macros"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "openvm-macros-common 1.2.1-rc.0",
  "quote",
@@ -3414,14 +3414,14 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-guest"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "halo2curves-axiom 0.7.0",
  "num-bigint 0.4.6",
  "once_cell",
  "openvm-algebra-complex-macros 1.2.1-rc.0",
  "openvm-algebra-moduli-macros 1.2.1-rc.0",
- "openvm-custom-insn 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1)",
+ "openvm-custom-insn 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe)",
  "openvm-rv32im-guest 1.2.1-rc.0",
  "serde-big-array",
  "strum_macros 0.26.4",
@@ -3446,7 +3446,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-moduli-macros"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "num-bigint 0.4.6",
  "num-prime",
@@ -3470,12 +3470,12 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-transpiler"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "openvm-algebra-guest 1.2.1-rc.0",
  "openvm-instructions",
  "openvm-instructions-derive",
- "openvm-stark-backend 1.1.0",
+ "openvm-stark-backend",
  "openvm-transpiler",
  "rrs-lib",
  "strum 0.26.3",
@@ -3484,7 +3484,7 @@ dependencies = [
 [[package]]
 name = "openvm-bigint-circuit"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -3497,8 +3497,8 @@ dependencies = [
  "openvm-rv32-adapters",
  "openvm-rv32im-circuit",
  "openvm-rv32im-transpiler",
- "openvm-stark-backend 1.1.0",
- "openvm-stark-sdk 1.1.0",
+ "openvm-stark-backend",
+ "openvm-stark-sdk",
  "rand 0.8.5",
  "serde",
 ]
@@ -3506,7 +3506,7 @@ dependencies = [
 [[package]]
 name = "openvm-bigint-guest"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "openvm-platform 1.2.1-rc.0",
  "strum_macros 0.26.4",
@@ -3524,13 +3524,13 @@ dependencies = [
 [[package]]
 name = "openvm-bigint-transpiler"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "openvm-bigint-guest 1.2.1-rc.0",
  "openvm-instructions",
  "openvm-instructions-derive",
  "openvm-rv32im-transpiler",
- "openvm-stark-backend 1.1.0",
+ "openvm-stark-backend",
  "openvm-transpiler",
  "rrs-lib",
  "strum 0.26.3",
@@ -3539,7 +3539,7 @@ dependencies = [
 [[package]]
 name = "openvm-build"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "cargo_metadata 0.18.1",
  "eyre",
@@ -3551,7 +3551,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "backtrace",
  "cfg-if",
@@ -3568,7 +3568,7 @@ dependencies = [
  "openvm-circuit-primitives-derive",
  "openvm-instructions",
  "openvm-poseidon2-air",
- "openvm-stark-backend 1.1.0",
+ "openvm-stark-backend",
  "p3-baby-bear 0.1.0",
  "rand 0.8.5",
  "rustc-hash 2.1.1",
@@ -3582,7 +3582,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit-derive"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "itertools 0.14.0",
  "quote",
@@ -3592,14 +3592,14 @@ dependencies = [
 [[package]]
 name = "openvm-circuit-primitives"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "derive-new 0.6.0",
  "itertools 0.14.0",
  "num-bigint 0.4.6",
  "num-traits",
  "openvm-circuit-primitives-derive",
- "openvm-stark-backend 1.1.0",
+ "openvm-stark-backend",
  "rand 0.8.5",
  "tracing",
 ]
@@ -3607,7 +3607,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit-primitives-derive"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "itertools 0.14.0",
  "quote",
@@ -3617,14 +3617,14 @@ dependencies = [
 [[package]]
 name = "openvm-continuations"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "derivative",
  "openvm-circuit",
  "openvm-native-compiler",
  "openvm-native-recursion",
- "openvm-stark-backend 1.1.0",
- "openvm-stark-sdk 1.1.0",
+ "openvm-stark-backend",
+ "openvm-stark-sdk",
  "serde",
  "static_assertions",
 ]
@@ -3632,7 +3632,7 @@ dependencies = [
 [[package]]
 name = "openvm-custom-insn"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3652,7 +3652,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-circuit"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -3673,7 +3673,7 @@ dependencies = [
  "openvm-mod-circuit-builder",
  "openvm-rv32-adapters",
  "openvm-rv32im-circuit",
- "openvm-stark-backend 1.1.0",
+ "openvm-stark-backend",
  "serde",
  "serde_with",
  "strum 0.26.3",
@@ -3682,7 +3682,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-guest"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
@@ -3691,7 +3691,7 @@ dependencies = [
  "once_cell",
  "openvm 1.2.1-rc.0",
  "openvm-algebra-guest 1.2.1-rc.0",
- "openvm-custom-insn 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1)",
+ "openvm-custom-insn 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe)",
  "openvm-ecc-sw-macros 1.2.1-rc.0",
  "openvm-rv32im-guest 1.2.1-rc.0",
  "serde",
@@ -3720,7 +3720,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-sw-macros"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "openvm-macros-common 1.2.1-rc.0",
  "quote",
@@ -3740,12 +3740,12 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-transpiler"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "openvm-ecc-guest 1.2.1-rc.0",
  "openvm-instructions",
  "openvm-instructions-derive",
- "openvm-stark-backend 1.1.0",
+ "openvm-stark-backend",
  "openvm-transpiler",
  "rrs-lib",
  "strum 0.26.3",
@@ -3754,7 +3754,7 @@ dependencies = [
 [[package]]
 name = "openvm-instructions"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "backtrace",
  "derive-new 0.6.0",
@@ -3762,7 +3762,7 @@ dependencies = [
  "num-bigint 0.4.6",
  "num-traits",
  "openvm-instructions-derive",
- "openvm-stark-backend 1.1.0",
+ "openvm-stark-backend",
  "serde",
  "strum 0.26.3",
  "strum_macros 0.26.4",
@@ -3771,7 +3771,7 @@ dependencies = [
 [[package]]
 name = "openvm-instructions-derive"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "quote",
  "syn 2.0.101",
@@ -3780,7 +3780,7 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-circuit"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -3792,8 +3792,8 @@ dependencies = [
  "openvm-instructions",
  "openvm-keccak256-transpiler",
  "openvm-rv32im-circuit",
- "openvm-stark-backend 1.1.0",
- "openvm-stark-sdk 1.1.0",
+ "openvm-stark-backend",
+ "openvm-stark-sdk",
  "p3-keccak-air",
  "rand 0.8.5",
  "serde",
@@ -3806,7 +3806,7 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-guest"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "openvm-platform 1.2.1-rc.0",
 ]
@@ -3822,12 +3822,12 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-transpiler"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "openvm-instructions",
  "openvm-instructions-derive",
  "openvm-keccak256-guest 1.2.1-rc.0",
- "openvm-stark-backend 1.1.0",
+ "openvm-stark-backend",
  "openvm-transpiler",
  "rrs-lib",
  "strum 0.26.3",
@@ -3836,7 +3836,7 @@ dependencies = [
 [[package]]
 name = "openvm-macros-common"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "syn 2.0.101",
 ]
@@ -3852,7 +3852,7 @@ dependencies = [
 [[package]]
 name = "openvm-mod-circuit-builder"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "itertools 0.14.0",
  "num-bigint 0.4.6",
@@ -3860,8 +3860,8 @@ dependencies = [
  "openvm-circuit",
  "openvm-circuit-primitives",
  "openvm-instructions",
- "openvm-stark-backend 1.1.0",
- "openvm-stark-sdk 1.1.0",
+ "openvm-stark-backend",
+ "openvm-stark-sdk",
  "rand 0.8.5",
  "serde",
  "serde_with",
@@ -3871,7 +3871,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-circuit"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -3885,8 +3885,8 @@ dependencies = [
  "openvm-native-compiler",
  "openvm-poseidon2-air",
  "openvm-rv32im-circuit",
- "openvm-stark-backend 1.1.0",
- "openvm-stark-sdk 1.1.0",
+ "openvm-stark-backend",
+ "openvm-stark-sdk",
  "rand 0.8.5",
  "serde",
  "serde-big-array",
@@ -3898,7 +3898,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-compiler"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "backtrace",
  "itertools 0.14.0",
@@ -3910,8 +3910,8 @@ dependencies = [
  "openvm-instructions-derive",
  "openvm-native-compiler-derive",
  "openvm-rv32im-transpiler",
- "openvm-stark-backend 1.1.0",
- "openvm-stark-sdk 1.1.0",
+ "openvm-stark-backend",
+ "openvm-stark-sdk",
  "serde",
  "snark-verifier-sdk",
  "strum 0.26.3",
@@ -3922,7 +3922,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-compiler-derive"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "quote",
  "syn 2.0.101",
@@ -3931,7 +3931,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-recursion"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "cfg-if",
  "itertools 0.14.0",
@@ -3942,8 +3942,8 @@ dependencies = [
  "openvm-native-circuit",
  "openvm-native-compiler",
  "openvm-native-compiler-derive",
- "openvm-stark-backend 1.1.0",
- "openvm-stark-sdk 1.1.0",
+ "openvm-stark-backend",
+ "openvm-stark-sdk",
  "p3-dft 0.1.0",
  "p3-fri",
  "p3-merkle-tree",
@@ -3959,7 +3959,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-transpiler"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "openvm-instructions",
  "openvm-transpiler",
@@ -3993,7 +3993,7 @@ dependencies = [
 [[package]]
 name = "openvm-pairing-circuit"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -4015,7 +4015,7 @@ dependencies = [
  "openvm-pairing-transpiler",
  "openvm-rv32-adapters",
  "openvm-rv32im-circuit",
- "openvm-stark-backend 1.1.0",
+ "openvm-stark-backend",
  "rand 0.8.5",
  "serde",
  "strum 0.26.3",
@@ -4024,7 +4024,7 @@ dependencies = [
 [[package]]
 name = "openvm-pairing-guest"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "halo2curves-axiom 0.7.0",
  "hex-literal",
@@ -4035,7 +4035,7 @@ dependencies = [
  "openvm 1.2.1-rc.0",
  "openvm-algebra-guest 1.2.1-rc.0",
  "openvm-algebra-moduli-macros 1.2.1-rc.0",
- "openvm-custom-insn 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1)",
+ "openvm-custom-insn 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe)",
  "openvm-ecc-guest 1.2.1-rc.0",
  "rand 0.8.5",
  "serde",
@@ -4066,12 +4066,12 @@ dependencies = [
 [[package]]
 name = "openvm-pairing-transpiler"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "openvm-instructions",
  "openvm-instructions-derive",
  "openvm-pairing-guest 1.2.1-rc.0",
- "openvm-stark-backend 1.1.0",
+ "openvm-stark-backend",
  "openvm-transpiler",
  "rrs-lib",
  "strum 0.26.3",
@@ -4080,10 +4080,10 @@ dependencies = [
 [[package]]
 name = "openvm-platform"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "libm",
- "openvm-custom-insn 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1)",
+ "openvm-custom-insn 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe)",
  "openvm-rv32im-guest 1.2.1-rc.0",
 ]
 
@@ -4100,12 +4100,12 @@ dependencies = [
 [[package]]
 name = "openvm-poseidon2-air"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "derivative",
  "lazy_static",
- "openvm-stark-backend 1.1.0",
- "openvm-stark-sdk 1.1.0",
+ "openvm-stark-backend",
+ "openvm-stark-sdk",
  "p3-monty-31",
  "p3-poseidon2 0.1.0",
  "p3-poseidon2-air",
@@ -4117,7 +4117,7 @@ dependencies = [
 [[package]]
 name = "openvm-rv32-adapters"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "derive-new 0.6.0",
  "itertools 0.14.0",
@@ -4126,8 +4126,8 @@ dependencies = [
  "openvm-circuit-primitives-derive",
  "openvm-instructions",
  "openvm-rv32im-circuit",
- "openvm-stark-backend 1.1.0",
- "openvm-stark-sdk 1.1.0",
+ "openvm-stark-backend",
+ "openvm-stark-sdk",
  "rand 0.8.5",
  "serde",
  "serde-big-array",
@@ -4137,7 +4137,7 @@ dependencies = [
 [[package]]
 name = "openvm-rv32im-circuit"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -4150,7 +4150,7 @@ dependencies = [
  "openvm-circuit-primitives-derive",
  "openvm-instructions",
  "openvm-rv32im-transpiler",
- "openvm-stark-backend 1.1.0",
+ "openvm-stark-backend",
  "rand 0.8.5",
  "serde",
  "serde-big-array",
@@ -4160,9 +4160,9 @@ dependencies = [
 [[package]]
 name = "openvm-rv32im-guest"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
- "openvm-custom-insn 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1)",
+ "openvm-custom-insn 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe)",
  "p3-field 0.1.0",
  "strum_macros 0.26.4",
 ]
@@ -4180,12 +4180,12 @@ dependencies = [
 [[package]]
 name = "openvm-rv32im-transpiler"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "openvm-instructions",
  "openvm-instructions-derive",
  "openvm-rv32im-guest 1.2.1-rc.0",
- "openvm-stark-backend 1.1.0",
+ "openvm-stark-backend",
  "openvm-transpiler",
  "rrs-lib",
  "serde",
@@ -4196,7 +4196,7 @@ dependencies = [
 [[package]]
 name = "openvm-sdk"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "async-trait",
  "bitcode",
@@ -4232,8 +4232,8 @@ dependencies = [
  "openvm-rv32im-transpiler",
  "openvm-sha256-circuit",
  "openvm-sha256-transpiler",
- "openvm-stark-backend 1.1.0",
- "openvm-stark-sdk 1.1.0",
+ "openvm-stark-backend",
+ "openvm-stark-sdk",
  "openvm-transpiler",
  "p3-fri",
  "rrs-lib",
@@ -4259,10 +4259,10 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-air"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "openvm-circuit-primitives",
- "openvm-stark-backend 1.1.0",
+ "openvm-stark-backend",
  "rand 0.8.5",
  "sha2 0.10.9",
 ]
@@ -4270,7 +4270,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-circuit"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -4282,8 +4282,8 @@ dependencies = [
  "openvm-rv32im-circuit",
  "openvm-sha256-air",
  "openvm-sha256-transpiler",
- "openvm-stark-backend 1.1.0",
- "openvm-stark-sdk 1.1.0",
+ "openvm-stark-backend",
+ "openvm-stark-sdk",
  "rand 0.8.5",
  "serde",
  "sha2 0.10.9",
@@ -4293,7 +4293,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-guest"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "openvm-platform 1.2.1-rc.0",
 ]
@@ -4309,12 +4309,12 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-transpiler"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "openvm-instructions",
  "openvm-instructions-derive",
  "openvm-sha256-guest 1.2.1-rc.0",
- "openvm-stark-backend 1.1.0",
+ "openvm-stark-backend",
  "openvm-transpiler",
  "rrs-lib",
  "strum 0.26.3",
@@ -4322,8 +4322,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-stark-backend"
-version = "1.1.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-stark-gpu.git?branch=main#308223401cab827f931cb5939be0620a8ba83875"
+version = "1.1.1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-stark-gpu.git?branch=sync%2Fupstream-250702#0c3afca11c6e7393ee8ccf032c9e75d03ae76e74"
 dependencies = [
  "bitcode",
  "cfg-if",
@@ -4350,71 +4350,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "openvm-stark-backend"
-version = "1.1.1"
-source = "git+ssh://git@github.com/scroll-tech/openvm-stark-gpu.git?branch=sync%2Fupstream-250702#0c3afca11c6e7393ee8ccf032c9e75d03ae76e74"
-dependencies = [
- "bitcode",
- "cfg-if",
- "derivative",
- "derive-new 0.7.0",
- "itertools 0.14.0",
- "p3-air",
- "p3-challenger",
- "p3-commit",
- "p3-field 0.1.0",
- "p3-gpu-backend",
- "p3-gpu-base",
- "p3-gpu-module",
- "p3-matrix 0.1.0",
- "p3-maybe-rayon 0.1.0",
- "p3-uni-stark",
- "p3-util 0.1.0",
- "rayon",
- "rustc-hash 2.1.1",
- "serde",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
-name = "openvm-stark-sdk"
-version = "1.1.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-stark-gpu.git?branch=main#308223401cab827f931cb5939be0620a8ba83875"
-dependencies = [
- "derivative",
- "derive_more 0.99.20",
- "ff 0.13.1",
- "itertools 0.14.0",
- "metrics",
- "metrics-tracing-context",
- "metrics-util",
- "openvm-stark-backend 1.1.0",
- "p3-baby-bear 0.1.0",
- "p3-blake3",
- "p3-bn254-fr",
- "p3-dft 0.1.0",
- "p3-fri",
- "p3-goldilocks",
- "p3-gpu-backend",
- "p3-keccak",
- "p3-koala-bear",
- "p3-merkle-tree",
- "p3-poseidon",
- "p3-poseidon2 0.1.0",
- "p3-symmetric 0.1.0",
- "rand 0.8.5",
- "serde",
- "serde_json",
- "static_assertions",
- "toml",
- "tracing",
- "tracing-forest",
- "tracing-subscriber 0.3.19",
- "zkhash",
-]
-
-[[package]]
 name = "openvm-stark-sdk"
 version = "1.1.1"
 source = "git+ssh://git@github.com/scroll-tech/openvm-stark-gpu.git?branch=sync%2Fupstream-250702#0c3afca11c6e7393ee8ccf032c9e75d03ae76e74"
@@ -4426,7 +4361,7 @@ dependencies = [
  "metrics",
  "metrics-tracing-context",
  "metrics-util",
- "openvm-stark-backend 1.1.1",
+ "openvm-stark-backend",
  "p3-baby-bear 0.1.0",
  "p3-blake3",
  "p3-bn254-fr",
@@ -4454,13 +4389,13 @@ dependencies = [
 [[package]]
 name = "openvm-transpiler"
 version = "1.2.1-rc.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1#cbc0e0f73cfdd28fa77a89fcc7fb1bb440e0cf2f"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.2.1-rc.1-pipe#c2da2619b85189e5218857debde3f558d966ad49"
 dependencies = [
  "elf",
  "eyre",
  "openvm-instructions",
  "openvm-platform 1.2.1-rc.0",
- "openvm-stark-backend 1.1.0",
+ "openvm-stark-backend",
  "rrs-lib",
  "thiserror 1.0.69",
 ]
@@ -6840,7 +6775,7 @@ dependencies = [
  "openvm-native-transpiler",
  "openvm-rv32im-transpiler",
  "openvm-sdk",
- "openvm-stark-sdk 1.1.1",
+ "openvm-stark-sdk",
  "openvm-transpiler",
  "p3-field 0.1.0",
  "serde",
@@ -6943,7 +6878,7 @@ dependencies = [
  "openvm-native-circuit",
  "openvm-native-recursion",
  "openvm-sdk",
- "openvm-stark-sdk 1.1.1",
+ "openvm-stark-sdk",
  "revm 24.0.0",
  "rkyv",
  "sbv-primitives",
@@ -6969,7 +6904,7 @@ dependencies = [
  "openvm-continuations",
  "openvm-native-recursion",
  "openvm-sdk",
- "openvm-stark-sdk 1.1.1",
+ "openvm-stark-sdk",
  "rkyv",
  "scroll-zkvm-types-base",
  "scroll-zkvm-types-batch",
@@ -7071,7 +7006,7 @@ dependencies = [
  "openvm-native-circuit",
  "openvm-native-recursion",
  "openvm-sdk",
- "openvm-stark-sdk 1.1.1",
+ "openvm-stark-sdk",
  "revm 24.0.0",
  "scroll-zkvm-prover",
  "scroll-zkvm-types",
