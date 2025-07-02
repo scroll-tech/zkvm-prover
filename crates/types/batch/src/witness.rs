@@ -1,11 +1,14 @@
-use crate::{
-    builder::*,
-    header::{ArchivedReferenceHeader, ReferenceHeader},
-};
-
 use types_base::{
     aggregation::{AggregationInput, ProgramCommitment, ProofCarryingWitness},
     public_inputs::{ForkName, batch::BatchInfo, chunk::ChunkInfo},
+};
+
+use crate::{
+    builder::{
+        BatchInfoBuilder, BatchInfoBuilderV6, BatchInfoBuilderV7, BatchInfoBuilderV8,
+        BuilderArgsV6, BuilderArgsV7, BuilderArgsV8,
+    },
+    header::{ArchivedReferenceHeader, ReferenceHeader},
 };
 
 /// Simply rewrap byte48 to avoid unnecessary dep
@@ -64,19 +67,39 @@ impl ProofCarryingWitness for ArchivedBatchWitness {
 
 impl From<&ArchivedBatchWitness> for BatchInfo {
     fn from(witness: &ArchivedBatchWitness) -> Self {
+        let chunk_infos: Vec<ChunkInfo> = witness.chunk_infos.iter().map(|ci| ci.into()).collect();
+
         match &witness.reference_header {
             ArchivedReferenceHeader::V6(header) => {
-                let chunk_infos: Vec<ChunkInfo> =
-                    witness.chunk_infos.iter().map(|ci| ci.into()).collect();
-                BatchInfoBuilderV6::build(&header.into(), &chunk_infos, &witness.blob_bytes)
+                let args = BuilderArgsV6 {
+                    header: header.into(),
+                    chunk_infos,
+                    blob_bytes: witness.blob_bytes.to_vec(),
+                    kzg_commitment: None,
+                    kzg_proof: None,
+                };
+                BatchInfoBuilderV6::build(args)
             }
-            ArchivedReferenceHeader::V7(header) => BatchInfoBuilderV7::build(
-                &header.into(),
-                &witness.chunk_infos,
-                &witness.blob_bytes,
-                &witness.point_eval_witness.kzg_commitment,
-                &witness.point_eval_witness.kzg_proof,
-            ),
+            ArchivedReferenceHeader::V7(header) => {
+                let args = BuilderArgsV7 {
+                    header: header.into(),
+                    chunk_infos,
+                    blob_bytes: witness.blob_bytes.to_vec(),
+                    kzg_commitment: Some(witness.point_eval_witness.kzg_commitment),
+                    kzg_proof: Some(witness.point_eval_witness.kzg_proof),
+                };
+                BatchInfoBuilderV7::build(args)
+            }
+            ArchivedReferenceHeader::V8(header) => {
+                let args = BuilderArgsV8 {
+                    header: header.into(),
+                    chunk_infos,
+                    blob_bytes: witness.blob_bytes.to_vec(),
+                    kzg_commitment: Some(witness.point_eval_witness.kzg_commitment),
+                    kzg_proof: Some(witness.point_eval_witness.kzg_proof),
+                };
+                BatchInfoBuilderV8::build(args)
+            }
         }
     }
 }

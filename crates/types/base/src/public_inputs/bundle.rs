@@ -1,7 +1,7 @@
 use alloy_primitives::B256;
 
 use crate::{
-    public_inputs::{ForkName, MultiVersionPublicInputs, PublicInputs},
+    public_inputs::{ForkName, MultiVersionPublicInputs},
     utils::keccak256,
 };
 
@@ -61,9 +61,9 @@ impl BundleInfo {
         )
     }
 
-    /// Public input hash for a bundle (euclidv2 or da-codec@v7) is defined as
+    /// Public input for a bundle (euclidv2 or da-codec@v7) is defined as
     ///
-    /// keccak(
+    /// concat(
     ///     chain id ||
     ///     msg_queue_hash ||
     ///     num batches ||
@@ -73,77 +73,56 @@ impl BundleInfo {
     ///     batch hash ||
     ///     withdraw root
     /// )   
+    pub fn pi_euclidv2(&self) -> Vec<u8> {
+        std::iter::empty()
+            .chain(self.chain_id.to_be_bytes().as_slice())
+            .chain(self.msg_queue_hash.as_slice())
+            .chain(self.num_batches.to_be_bytes().as_slice())
+            .chain(self.prev_state_root.as_slice())
+            .chain(self.prev_batch_hash.as_slice())
+            .chain(self.post_state_root.as_slice())
+            .chain(self.batch_hash.as_slice())
+            .chain(self.withdraw_root.as_slice())
+            .cloned()
+            .collect()
+    }
+
     pub fn pi_hash_euclidv2(&self) -> B256 {
-        keccak256(
-            std::iter::empty()
-                .chain(self.chain_id.to_be_bytes().as_slice())
-                .chain(self.msg_queue_hash.as_slice())
-                .chain(self.num_batches.to_be_bytes().as_slice())
-                .chain(self.prev_state_root.as_slice())
-                .chain(self.prev_batch_hash.as_slice())
-                .chain(self.post_state_root.as_slice())
-                .chain(self.batch_hash.as_slice())
-                .chain(self.withdraw_root.as_slice())
-                .cloned()
-                .collect::<Vec<u8>>(),
-        )
+        keccak256(self.pi_euclidv2())
+    }
+
+    pub fn pi_hash_feynman(&self) -> B256 {
+        let protocol_version =
+            B256::left_padding_from(&ForkName::Feynman.to_protocol_version().to_be_bytes());
+        let pi: Vec<u8> = std::iter::empty()
+            .chain(protocol_version.as_slice())
+            .chain(self.pi_euclidv2().as_slice())
+            .cloned()
+            .collect();
+        keccak256(pi)
     }
 
     pub fn pi_hash(&self, fork_name: ForkName) -> B256 {
         match fork_name {
             ForkName::EuclidV1 => self.pi_hash_euclidv1(),
             ForkName::EuclidV2 => self.pi_hash_euclidv2(),
+            ForkName::Feynman => self.pi_hash_feynman(),
         }
     }
 }
+
+pub type VersionedBundleInfo = (BundleInfo, ForkName);
 
 impl MultiVersionPublicInputs for BundleInfo {
     fn pi_hash_by_fork(&self, fork_name: ForkName) -> B256 {
         match fork_name {
             ForkName::EuclidV1 => self.pi_hash_euclidv1(),
             ForkName::EuclidV2 => self.pi_hash_euclidv2(),
+            ForkName::Feynman => self.pi_hash_feynman(),
         }
     }
 
     fn validate(&self, _prev_pi: &Self, _fork_name: ForkName) {
-        unreachable!("bundle is the last layer and is not aggregated by any other circuit");
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct BundleInfoV1(pub BundleInfo);
-
-#[derive(Clone, Debug)]
-pub struct BundleInfoV2(pub BundleInfo);
-
-impl From<BundleInfo> for BundleInfoV1 {
-    fn from(value: BundleInfo) -> Self {
-        Self(value)
-    }
-}
-
-impl From<BundleInfo> for BundleInfoV2 {
-    fn from(value: BundleInfo) -> Self {
-        Self(value)
-    }
-}
-
-impl PublicInputs for BundleInfoV1 {
-    fn pi_hash(&self) -> B256 {
-        self.0.pi_hash_euclidv1()
-    }
-
-    fn validate(&self, _prev_pi: &Self) {
-        unreachable!("bundle is the last layer and is not aggregated by any other circuit");
-    }
-}
-
-impl PublicInputs for BundleInfoV2 {
-    fn pi_hash(&self) -> B256 {
-        self.0.pi_hash_euclidv2()
-    }
-
-    fn validate(&self, _prev_pi: &Self) {
         unreachable!("bundle is the last layer and is not aggregated by any other circuit");
     }
 }

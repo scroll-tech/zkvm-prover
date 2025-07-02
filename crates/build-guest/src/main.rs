@@ -68,30 +68,18 @@ pub(crate) struct BuildConfig {
 /// Returns the build configurations for a given project name.
 fn get_build_configs(project_name: &str) -> Vec<BuildConfig> {
     match project_name {
-        "chunk" => vec![
-            BuildConfig {
-                features: vec![],
-                filename_suffix: "_rv32".to_string(), // Suffix for the RV32 variant
-            },
-            BuildConfig {
-                features: vec!["openvm".to_string()],
-                filename_suffix: "".to_string(), // No suffix for the default (OpenVM) variant
-            },
-        ],
+        "chunk" => vec![BuildConfig {
+            features: vec![],
+            filename_suffix: "".to_string(),
+        }],
         "batch" => vec![BuildConfig {
             features: vec![],
             filename_suffix: "".to_string(),
         }],
-        "bundle" => vec![
-            BuildConfig {
-                features: vec![],
-                filename_suffix: "_euclidv1".to_string(), // Suffix for Euclid v1
-            },
-            BuildConfig {
-                features: vec!["euclidv2".to_string()],
-                filename_suffix: "".to_string(), // No suffix for the default (Euclid v2)
-            },
-        ],
+        "bundle" => vec![BuildConfig {
+            features: vec![],
+            filename_suffix: "".to_string(),
+        }],
         _ => {
             // Use panic instead of unreachable for build scripts, providing a clearer error.
             panic!("{LOG_PREFIX} Unsupported project name: {project_name}");
@@ -180,7 +168,7 @@ fn run_stage2_root_verifier(project_names: &[&str], workspace_dir: &Path) -> Res
 fn run_stage3_exe_commits(project_names: &[&str], workspace_dir: &Path) -> Result<()> {
     println!("{LOG_PREFIX} === Stage 3: Generating Executable Commitments ===");
     for &project_name in project_names {
-        let project_dir = workspace_dir
+        let project_path = workspace_dir
             .join("crates")
             .join("circuits")
             .join(format!("{project_name}-circuit"));
@@ -195,21 +183,39 @@ fn run_stage3_exe_commits(project_names: &[&str], workspace_dir: &Path) -> Resul
             let start_time = Instant::now();
             println!("{LOG_PREFIX} Starting build for config: {build_config:?}...");
 
-            let project_dir = project_dir.to_str().expect("Invalid path");
+            let project_dir = project_path.to_str().expect("Invalid path");
             let app_config = builder::load_app_config(project_dir)?;
 
+            // Store current directory and change to project directory
+            let original_dir = env::current_dir()?;
+            env::set_current_dir(&project_path)?;
+            println!(
+                "{LOG_PREFIX} Changed working directory to: {}",
+                project_path.display()
+            );
+
             // 1. Build ELF
-            let elf = builder::build(project_dir, &build_config.features)?;
+            let elf = builder::build(
+                project_dir,
+                &build_config.features,
+                &app_config.app_vm_config,
+            )
+            .inspect_err(|_err| {
+                println!("{LOG_PREFIX} Building failed in {}", project_dir);
+            })?;
             println!("{LOG_PREFIX} Built ELF");
+
+            // Revert to original directory
+            env::set_current_dir(&original_dir)?;
+            println!(
+                "{LOG_PREFIX} Reverted working directory to: {}",
+                original_dir.display()
+            );
 
             // 2. Transpile ELF to VM Executable
             let vmexe_filename = format!("app{}.vmexe", build_config.filename_suffix);
-            let app_exe = builder::transpile(
-                project_dir,
-                elf,
-                Some(&vmexe_filename), // Pass filename directly
-                app_config.clone(),
-            )?;
+            let app_exe =
+                builder::transpile(project_dir, elf, Some(&vmexe_filename), app_config.clone())?;
             println!("{LOG_PREFIX} Transpiled to VM Executable: {vmexe_filename}");
 
             // 3. Commit VM Executable

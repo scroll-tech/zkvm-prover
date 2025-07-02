@@ -11,11 +11,14 @@ scroll-zkvm-types-chunk = { workspace = true }
 
 rkyv.workspace = true
 
-openvm = { workspace = true, features = ["std"] }
+openvm = { workspace = true, features = ["std", "getrandom-unsupported"] }
+openvm-k256 = { workspace = true }
+openvm-p256 = { workspace = true }
+openvm-pairing = { workspace = true, features = ["bn254"] }
 openvm-algebra-complex-macros = { workspace = true } 
 openvm-algebra-guest = { workspace = true }
 openvm-bigint-guest = { workspace = true }
-openvm-ecc-guest = { workspace = true, features = ["k256", "p256"] }
+openvm-ecc-guest = { workspace = true }
 openvm-keccak256-guest= { workspace = true }
 openvm-pairing-guest = { workspace = true, features = ["bn254"] }
 openvm-rv32im-guest= {  workspace = true }
@@ -23,4 +26,3 @@ openvm-rv32im-guest= {  workspace = true }
 [features]
 default = []
 openvm = ["scroll-zkvm-types-chunk/openvm"]
-

@@ -1,4 +1,4 @@
-use crate::task::ProvingTask;
+use crate::task::{ProvingTask, guest_version};
 use alloy_primitives::B256;
 use openvm_sdk::StdIn;
 use sbv_primitives::types::BlockWitness;
@@ -75,15 +75,16 @@ impl ProvingTask for ChunkProvingTask {
     }
 
     fn build_guest_input_inner(&self, stdin: &mut StdIn) -> Result<(), rkyv::rancor::Error> {
-        let witness = ChunkWitness {
-            blocks: self.block_witnesses.to_vec(),
-            prev_msg_queue_hash: self.prev_msg_queue_hash,
-            fork_name: self.fork_name.to_lowercase().as_str().into(),
-        };
+        let witness = ChunkWitness::new(
+            &self.block_witnesses,
+            self.prev_msg_queue_hash,
+            self.fork_name.to_lowercase().as_str().into(),
+        );
 
-        let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&witness)?;
+        let serialized = witness.rkyv_serialize(guest_version())?;
 
         stdin.write_bytes(&serialized);
+
         Ok(())
     }
 }

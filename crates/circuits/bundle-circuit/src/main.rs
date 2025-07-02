@@ -1,19 +1,16 @@
-use scroll_zkvm_types_circuit::{AggCircuit, Circuit, public_inputs::bundle};
+use scroll_zkvm_types_circuit::{AggCircuit, Circuit};
 
 mod circuit;
-#[cfg(feature = "euclidv2")]
-type C = circuit::BundleCircuit<bundle::BundleInfoV2>;
-#[cfg(not(feature = "euclidv2"))]
-type C = circuit::BundleCircuit<bundle::BundleInfoV1>;
+
+type C = circuit::BundleCircuit;
+
+// TODO: feature handling for feynman to use bundle info v3.
 
 openvm::entry!(main);
 
 mod child_commitments;
 
 fn main() {
-    // Setup openvm extensions for the circuit.
-    C::setup();
-
     // Read witness bytes from openvm StdIn.
     let witness_bytes = C::read_witness_bytes();
 

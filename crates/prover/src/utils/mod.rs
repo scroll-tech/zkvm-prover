@@ -134,7 +134,9 @@ pub mod point_eval {
 
     /// Get the KZG commitment from an EIP-4844 blob.
     pub fn blob_to_kzg_commitment(blob: &c_kzg::Blob) -> c_kzg::KzgCommitment {
-        c_kzg::KzgCommitment::blob_to_kzg_commitment(blob, c_kzg::ethereum_kzg_settings())
+        let settings = c_kzg::ethereum_kzg_settings(0);
+        settings
+            .blob_to_kzg_commitment(blob)
             .expect("blob to kzg commitment should succeed")
     }
 
@@ -153,13 +155,10 @@ pub mod point_eval {
     /// Generate KZG proof and evaluation given the blob (polynomial) and a random challenge.
     pub fn get_kzg_proof(blob: &c_kzg::Blob, challenge: H256) -> (c_kzg::KzgProof, U256) {
         let challenge = get_x_from_challenge(challenge);
-
-        let (proof, y) = c_kzg::KzgProof::compute_kzg_proof(
-            blob,
-            &c_kzg::Bytes32::new(challenge.to_be_bytes()),
-            c_kzg::ethereum_kzg_settings(),
-        )
-        .expect("kzg proof should succeed");
+        let settings = c_kzg::ethereum_kzg_settings(0);
+        let (proof, y) = settings
+            .compute_kzg_proof(blob, &c_kzg::Bytes32::new(challenge.to_be_bytes()))
+            .expect("kzg proof should succeed");
 
         (proof, U256::from_be_slice(y.as_slice()))
     }

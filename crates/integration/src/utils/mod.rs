@@ -1,6 +1,6 @@
 use sbv_primitives::{
     B256, U256,
-    types::{BlockWitness, Transaction, eips::Encodable2718, reth::TransactionSigned},
+    types::{BlockWitness, Transaction, eips::Encodable2718, reth::primitives::TransactionSigned},
 };
 use scroll_zkvm_prover::{
     ChunkProof,
@@ -85,6 +85,7 @@ impl From<&BatchHeaderV> for LastHeader {
         match value {
             BatchHeaderV::V6(h) => h.into(),
             BatchHeaderV::V7(h) => h.into(),
+            BatchHeaderV::V8(h) => h.into(),
         }
     }
 }
@@ -320,12 +321,13 @@ pub fn build_batch_task(
 #[test]
 fn test_build_and_parse_batch_task() -> eyre::Result<()> {
     use scroll_zkvm_prover::utils::{read_json, read_json_deep, write_json};
+    use scroll_zkvm_types::batch::{Envelope, Payload};
     #[cfg(not(feature = "euclidv2"))]
-    use scroll_zkvm_types::batch::{EnvelopeV6 as Envelope, PayloadV6 as Payload};
+    use scroll_zkvm_types::batch::{EnvelopeV6 as GenericEnvelope, PayloadV6 as GenericPayload};
     #[cfg(feature = "euclidv2")]
     use scroll_zkvm_types::{
-        batch::{EnvelopeV7 as Envelope, PayloadV7 as Payload},
-        chunk::ArchivedChunkInfo,
+        batch::{EnvelopeV7 as GenericEnvelope, PayloadV7 as GenericPayload},
+        chunk::{ArchivedChunkInfo, ChunkInfo},
     };
 
     // ./testdata/
@@ -383,19 +385,22 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
         .map(|proof| proof.metadata.chunk_info.clone())
         .collect::<Vec<_>>();
 
-    let enveloped = Envelope::from(task.blob_bytes.as_slice());
+    let enveloped = <GenericEnvelope as Envelope>::from_slice(task.blob_bytes.as_slice());
 
     #[cfg(feature = "euclidv2")]
     let header = task.batch_header.must_v7_header();
     #[cfg(not(feature = "euclidv2"))]
     let header = task.batch_header.must_v6_header();
     let serialized_bytes = rkyv::to_bytes::<rkyv::rancor::Error>(&chunk_infos).unwrap();
-    let archieved_chunk_info = rkyv::access::<
-        rkyv::vec::ArchivedVec<ArchivedChunkInfo>,
-        rkyv::rancor::Error,
-    >(&serialized_bytes)
-    .unwrap();
-    Payload::from(&enveloped).validate(header, archieved_chunk_info.as_slice());
+    let chunk_infos =
+        rkyv::access::<rkyv::vec::ArchivedVec<ArchivedChunkInfo>, rkyv::rancor::Error>(
+            &serialized_bytes,
+        )
+        .unwrap()
+        .iter()
+        .map(|ci| ci.into())
+        .collect::<Vec<ChunkInfo>>();
+    <GenericPayload as Payload>::from_envelope(&enveloped).validate(header, chunk_infos.as_slice());
 
     // depressed task output for pre-v2
     #[cfg(feature = "euclidv2")]
@@ -410,8 +415,8 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
 fn test_batch_task_payload() -> eyre::Result<()> {
     use scroll_zkvm_prover::utils::read_json_deep;
     use scroll_zkvm_types::{
-        batch::{EnvelopeV7, PayloadV7},
-        chunk::ArchivedChunkInfo,
+        batch::{Envelope, EnvelopeV7, Payload, PayloadV7},
+        chunk::{ArchivedChunkInfo, ChunkInfo},
     };
 
     // ./testdata/
@@ -423,7 +428,7 @@ fn test_batch_task_payload() -> eyre::Result<()> {
         read_json_deep::<_, BatchProvingTask>(path_testdata.join("batch-task.json")).unwrap();
 
     println!("blob {:?}", &task.blob_bytes[..32]);
-    let enveloped = EnvelopeV7::from(task.blob_bytes.as_slice());
+    let enveloped = <EnvelopeV7 as Envelope>::from_slice(task.blob_bytes.as_slice());
 
     let chunk_infos = task
         .chunk_proofs
@@ -432,15 +437,16 @@ fn test_batch_task_payload() -> eyre::Result<()> {
         .collect::<Vec<_>>();
 
     let serialized_bytes = rkyv::to_bytes::<rkyv::rancor::Error>(&chunk_infos).unwrap();
-    let archieved_chunk_info = rkyv::access::<
-        rkyv::vec::ArchivedVec<ArchivedChunkInfo>,
-        rkyv::rancor::Error,
-    >(&serialized_bytes)
-    .unwrap();
-    PayloadV7::from(&enveloped).validate(
-        task.batch_header.must_v7_header(),
-        archieved_chunk_info.as_slice(),
-    );
+    let chunk_infos =
+        rkyv::access::<rkyv::vec::ArchivedVec<ArchivedChunkInfo>, rkyv::rancor::Error>(
+            &serialized_bytes,
+        )
+        .unwrap()
+        .iter()
+        .map(|ci| ci.into())
+        .collect::<Vec<ChunkInfo>>();
+    <PayloadV7 as Payload>::from_envelope(&enveloped)
+        .validate(task.batch_header.must_v7_header(), chunk_infos.as_slice());
 
     Ok(())
 }

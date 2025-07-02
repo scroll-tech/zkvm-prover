@@ -2,20 +2,13 @@ use std::sync::LazyLock;
 
 use algebra::{Field, IntMod};
 use alloy_primitives::U256;
+use halo2curves_axiom::bls12_381::{
+    Fq as Bls12_381_Fq, G1Affine as Bls12_381_G1, G2Affine as Bls12_381_G2,
+};
 use itertools::Itertools;
-use openvm_ecc_guest::{
-    AffinePoint, CyclicGroup,
-    halo2curves::bls12_381::{
-        Fq as Bls12_381_Fq, G1Affine as Bls12_381_G1, G2Affine as Bls12_381_G2,
-    },
-    msm,
-    weierstrass::WeierstrassPoint,
-};
-use openvm_pairing_guest::{
-    algebra,
-    bls12_381::{Bls12_381, Fp, Fp2, G1Affine, G2Affine, Scalar},
-    pairing::PairingCheck,
-};
+use openvm_ecc_guest::{AffinePoint, CyclicGroup, msm, weierstrass::WeierstrassPoint};
+use openvm_pairing::bls12_381::{Bls12_381, Fp, Fp2, G1Affine, G2Affine, Scalar};
+use openvm_pairing_guest::{algebra, pairing::PairingCheck};
 
 use super::{BLOB_WIDTH, LOG_BLOB_WIDTH};
 
@@ -95,7 +88,7 @@ impl EccToPairing for Bls12_381_Fq {
 
     fn convert(&self) -> Self::PairingType {
         let bytes = self.to_bytes();
-        Fp::from_le_bytes(&bytes)
+        Fp::from_le_bytes_unchecked(&bytes)
     }
 }
 
@@ -150,10 +143,10 @@ pub fn point_evaluation(
     //
     // also termed P(x)
     let coefficients_as_scalars =
-        coefficients.map(|coeff| Scalar::from_le_bytes(coeff.as_le_slice()));
+        coefficients.map(|coeff| Scalar::from_le_bytes_unchecked(coeff.as_le_slice()));
 
     let challenge = challenge_digest % *BLS_MODULUS;
-    let challenge = Scalar::from_le_bytes(challenge.as_le_slice());
+    let challenge = Scalar::from_le_bytes_unchecked(challenge.as_le_slice());
 
     // y = P(z)
     let evaluation = interpolate(&challenge, &coefficients_as_scalars);
@@ -165,7 +158,7 @@ pub fn point_evaluation(
 ///
 /// We use the [`openvm_sha256_guest`] extension to compute the SHA-256 digest.
 pub fn kzg_to_versioned_hash(kzg_commitment: &[u8]) -> [u8; 32] {
-    let mut hash = openvm_sha256_guest::sha256(kzg_commitment);
+    let mut hash = openvm_sha2::sha256(kzg_commitment);
     hash[0] = VERSIONED_HASH_VERSION_KZG;
     hash
 }
@@ -213,6 +206,7 @@ mod test {
     fn test_kzg_compute_proof_verify() {
         use c_kzg::{Blob, Bytes32, Bytes48};
         // Initialize the blob with a single field element
+        let settings = c_kzg::ethereum_kzg_settings(0);
         let field_elem =
             Bytes32::from_hex("69386e69dbae0357b399b8d645a57a3062dfbe00bd8e97170b9bdd6bc6168a13")
                 .unwrap();
@@ -221,34 +215,25 @@ mod test {
             bt[..32].copy_from_slice(field_elem.as_ref());
             bt
         });
-        let commitment =
-            c_kzg::KzgCommitment::blob_to_kzg_commitment(&blob, c_kzg::ethereum_kzg_settings())
-                .unwrap();
+        let commitment = settings.blob_to_kzg_commitment(&blob).unwrap();
 
         let input_val =
             Bytes32::from_hex("03ea4fb841b4f9e01aa917c5e40dbd67efb4b8d4d9052069595f0647feba320d")
                 .unwrap();
 
         let expected_proof_byte48 = Bytes48::from_hex("b21f8f9b85e52fd9c4a6d4fb4e9a27ebdc5a09c3f5ca17f6bcd85c26f04953b0e6925607aaebed1087e5cc2fe4b2b356").unwrap();
-        let (proof, y) =
-            c_kzg::KzgProof::compute_kzg_proof(&blob, &input_val, c_kzg::ethereum_kzg_settings())
-                .unwrap();
+        let (proof, y) = settings.compute_kzg_proof(&blob, &input_val).unwrap();
 
         // assert_eq!(Bytes32::from_hex("69386e69dbae0357b399b8d645a57a3062dfbe00bd8e97170b9bdd6bc6168a13").unwrap(), y);
         assert_eq!(expected_proof_byte48, proof.to_bytes());
 
-        let ret = c_kzg::KzgProof::verify_kzg_proof(
-            &commitment.to_bytes(),
-            &input_val,
-            &y,
-            &proof.to_bytes(),
-            c_kzg::ethereum_kzg_settings(),
-        )
-        .unwrap();
+        let ret = settings
+            .verify_kzg_proof(&commitment.to_bytes(), &input_val, &y, &proof.to_bytes())
+            .unwrap();
         assert!(ret, "failed at sanity check verify");
 
-        let z = Scalar::from_be_bytes(input_val.as_ref());
-        let y = Scalar::from_be_bytes(y.as_ref());
+        let z = Scalar::from_be_bytes_unchecked(input_val.as_ref());
+        let y = Scalar::from_be_bytes_unchecked(y.as_ref());
         let commitment = Bls12_381_G1::from_compressed_be(commitment.to_bytes().as_ref())
             .unwrap()
             .convert();

@@ -1,7 +1,9 @@
 use alloy_primitives::B256;
+
 pub mod batch;
 pub mod bundle;
 pub mod chunk;
+pub use crate::fork_name::ForkName;
 
 /// Defines behaviour to be implemented by types representing the public-input values of a circuit.
 pub trait PublicInputs {
@@ -11,56 +13,6 @@ pub trait PublicInputs {
 
     /// Validation logic between public inputs of two contiguous instances.
     fn validate(&self, prev_pi: &Self);
-}
-
-#[derive(
-    Default,
-    Debug,
-    Copy,
-    Clone,
-    PartialEq,
-    Eq,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    serde::Deserialize,
-    serde::Serialize,
-)]
-#[rkyv(derive(Debug))]
-pub enum ForkName {
-    #[default]
-    EuclidV1,
-    EuclidV2,
-}
-
-impl From<&ArchivedForkName> for ForkName {
-    fn from(archived: &ArchivedForkName) -> Self {
-        match archived {
-            ArchivedForkName::EuclidV1 => ForkName::EuclidV1,
-            ArchivedForkName::EuclidV2 => ForkName::EuclidV2,
-        }
-    }
-}
-
-impl From<Option<&str>> for ForkName {
-    fn from(value: Option<&str>) -> Self {
-        match value {
-            None => Default::default(),
-            Some("euclidv1") => ForkName::EuclidV1,
-            Some("euclidv2") => ForkName::EuclidV2,
-            Some(s) => unreachable!("hardfork not accepted: {s}"),
-        }
-    }
-}
-
-impl From<&str> for ForkName {
-    fn from(value: &str) -> Self {
-        match value {
-            "euclidv1" => ForkName::EuclidV1,
-            "euclidv2" => ForkName::EuclidV2,
-            s => unreachable!("hardfork not accepted: {s}"),
-        }
-    }
 }
 
 /// helper trait to extend PublicInputs
