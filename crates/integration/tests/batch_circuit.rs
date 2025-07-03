@@ -52,7 +52,6 @@ fn e2e() -> eyre::Result<()> {
     Ok(())
 }
 
-#[cfg(feature = "euclidv2")]
 #[test]
 fn verify_batch_hash_invariant() -> eyre::Result<()> {
     use scroll_zkvm_integration::testers::chunk::gen_multi_tasks as gen_multi_chunk_tasks;
@@ -72,11 +71,11 @@ fn verify_batch_hash_invariant() -> eyre::Result<()> {
     assert_eq!(
         batch_task_1
             .batch_header
-            .must_v7_header()
+            .must_v8_header()
             .blob_versioned_hash,
         batch_task_2
             .batch_header
-            .must_v7_header()
+            .must_v8_header()
             .blob_versioned_hash
     );
 
