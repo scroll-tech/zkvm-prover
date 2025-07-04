@@ -11,7 +11,6 @@ use scroll_zkvm_prover::{
     task::{ProvingTask, chunk::ChunkProvingTask},
     utils::{self, vm::ExecutionResult},
 };
-use tokio::io::AsyncWriteExt;
 
 fn exec_chunk(task: &ChunkProvingTask) -> eyre::Result<(ExecutionResult, u64)> {
     let (_path_app_config, app_config, path_exe) =
