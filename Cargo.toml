@@ -96,6 +96,7 @@ snark-verifier-sdk = { version = "=0.2.1", default-features = false, features = 
     "display",
     "revm",
 ] }
+sysinfo = { version = "0.35", default-features = false }
 tiny-keccak = "2.0"
 tracing = "0.1"
 tokio = "1"

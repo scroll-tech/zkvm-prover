@@ -14,6 +14,7 @@ use scroll_zkvm_types::{
     batch::{BatchHeader, BatchHeaderV6, BatchHeaderV7},
     utils::keccak256,
 };
+use std::env;
 use vm_zstd::zstd_encode;
 
 fn is_l1_tx(tx: &Transaction) -> bool {
@@ -51,6 +52,31 @@ pub fn phase_base_directory() -> &'static str {
     } else {
         "phase1"
     }
+}
+
+pub fn get_rayon_threads() -> usize {
+    const MEMORY_PRESERVED_EACH_THREAD: u64 = 10 * 1024 * 1024 * 1024; // 10GB
+
+    if let Some(threads) = env::var("RAYON_NUM_THREADS")
+        .ok()
+        .and_then(|s| s.parse().ok())
+    {
+        eprintln!("RAYON_NUM_THREADS set, using {} threads", threads);
+        return threads;
+    }
+
+    let mut system = sysinfo::System::new();
+    system.refresh_cpu_list(sysinfo::CpuRefreshKind::nothing().with_frequency());
+    system.refresh_memory_specifics(sysinfo::MemoryRefreshKind::nothing().with_ram());
+    let free_memory = system.free_memory();
+    let max_threads = (free_memory / MEMORY_PRESERVED_EACH_THREAD) as usize;
+    let n_cpus = system.cpus().len();
+    let threads = std::cmp::min(max_threads, n_cpus);
+    eprintln!(
+        "RAYON_NUM_THREADS not set, using {} threads ({} CPUs, {} free memory)",
+        threads, n_cpus, free_memory
+    );
+    threads
 }
 
 #[derive(Debug)]

@@ -32,6 +32,7 @@ eyre.workspace = true
 futures.workspace = true
 rayon.workspace = true
 vm-zstd = { workspace = true, features = ["zstd"] }
+sysinfo = { workspace = true, features = ["system"] }
 tokio = { workspace = true, features = ["full", "macros"] }
 url.workspace = true
 

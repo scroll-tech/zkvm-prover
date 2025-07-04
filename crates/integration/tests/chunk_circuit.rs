@@ -1,7 +1,9 @@
 use eyre::{Context, ContextCompat};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use scroll_zkvm_integration::{
     ProverTester, prove_verify_multi, prove_verify_single,
     testers::chunk::{ChunkProverTester, MultiChunkProverTester, read_block_witness_from_testdata},
+    utils::get_rayon_threads,
 };
 use scroll_zkvm_prover::{
     ChunkProverType, ProverType,
@@ -9,6 +11,7 @@ use scroll_zkvm_prover::{
     task::{ProvingTask, chunk::ChunkProvingTask},
     utils::{self, vm::ExecutionResult},
 };
+use tokio::io::AsyncWriteExt;
 
 fn exec_chunk(task: &ChunkProvingTask) -> eyre::Result<(ExecutionResult, u64)> {
     let (_path_app_config, app_config, path_exe) =
@@ -132,18 +135,18 @@ fn execute_multi(
     proving_tasks: Vec<ChunkProvingTask>,
 ) -> impl FnOnce() -> (u64, u64, u64) + Send + Sync + 'static {
     || {
-        let init = (0u64, 0u64, 0u64);
-        let adder = |(gas1, cycle1, tick1): (u64, u64, u64),
-                     (gas2, cycle2, tick2): (u64, u64, u64)| {
-            (gas1 + gas2, cycle1 + cycle2, tick1 + tick2)
-        };
         proving_tasks
-            .into_iter()
+            .into_par_iter()
             .map(|task| -> (u64, u64, u64) {
                 let (exec_result, gas) = exec_chunk(&task).unwrap();
                 (gas, exec_result.total_cycle, exec_result.total_tick)
             })
-            .fold(init, adder)
+            .reduce(
+                || (0u64, 0u64, 0u64),
+                |(gas1, cycle1, tick1): (u64, u64, u64), (gas2, cycle2, tick2): (u64, u64, u64)| {
+                    (gas1 + gas2, cycle1 + cycle2, tick1 + tick2)
+                },
+            )
     }
 }
 
@@ -153,10 +156,9 @@ fn test_execute_multi() -> eyre::Result<()> {
 
     MultiChunkProverTester::setup()?;
 
-    // Initialize Rayon thread pool with 8 threads
-    let parallel = 8;
+    // Initialize Rayon thread pool
     let pool = rayon::ThreadPoolBuilder::new()
-        .num_threads(parallel)
+        .num_threads(get_rayon_threads())
         .build()
         .unwrap();
     // Execute tasks in parallel
@@ -300,9 +302,8 @@ async fn test_scanner() -> eyre::Result<()> {
         })
         .collect::<Vec<_>>();
 
-    let parallel = 8;
     let pool = rayon::ThreadPoolBuilder::new()
-        .num_threads(parallel)
+        .num_threads(get_rayon_threads().min(n_chunks as usize))
         .build()
         .unwrap();
 
