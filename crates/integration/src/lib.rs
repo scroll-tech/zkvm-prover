@@ -28,7 +28,7 @@ pub static WORKSPACE_ROOT: LazyLock<&Path> = LazyLock::new(|| {
         .expect("failed to execute cargo-metadata")
         .workspace_root
         .into_std_path_buf();
-    eprintln!("PROJECT_ROOT_DIR = {}", path.display());
+    eprintln!("WORKSPACE_ROOT = {}", path.display());
     Box::leak(path.into_boxed_path())
 });
 
