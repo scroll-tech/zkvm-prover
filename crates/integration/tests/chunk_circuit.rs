@@ -2,6 +2,7 @@ use eyre::Ok;
 use scroll_zkvm_integration::{
     ProverTester, prove_verify_multi, prove_verify_single,
     testers::chunk::{ChunkProverTester, MultiChunkProverTester, read_block_witness_from_testdata},
+    utils::testing_hardfork,
 };
 use scroll_zkvm_prover::{
     ChunkProverType, ProverType,
@@ -49,11 +50,7 @@ fn test_cycle() -> eyre::Result<()> {
         let task = ChunkProvingTask {
             block_witnesses: vec![read_block_witness_from_testdata(blk)?],
             prev_msg_queue_hash: Default::default(),
-            fork_name: if cfg!(feature = "euclidv2") {
-                String::from("euclidv2")
-            } else {
-                String::from("euclidv1")
-            },
+            fork_name: testing_hardfork().to_string(),
         };
         let (exec_result, gas) = exec_chunk(&task)?;
         let cycle_per_gas = exec_result.total_cycle / gas;

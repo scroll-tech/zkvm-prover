@@ -2,17 +2,10 @@ use std::path::Path;
 
 use scroll_zkvm_prover::{ProverType, task::bundle::BundleProvingTask, utils::read_json_deep};
 
-#[cfg(not(feature = "euclidv2"))]
-use scroll_zkvm_prover::BundleProverTypeEuclidV1 as BundleProverType;
-#[cfg(feature = "euclidv2")]
+// Only related to hardcoded commitments. Can be refactored later.
 use scroll_zkvm_prover::BundleProverTypeEuclidV2 as BundleProverType;
 
-use crate::{ProverTester, testers::PATH_TESTDATA};
-
-#[cfg(not(feature = "euclidv2"))]
-use openvm_sdk::config::{AppConfig, SdkVmConfig};
-#[cfg(not(feature = "euclidv2"))]
-use std::path::PathBuf;
+use crate::{ProverTester, testers::PATH_TESTDATA, utils::testing_hardfork};
 
 pub struct BundleProverTester;
 
@@ -34,13 +27,8 @@ impl ProverTester for BundleProverTester {
                 ))?,
             ],
             bundle_info: None,
-            fork_name: "euclidv1".to_string(),
+            fork_name: testing_hardfork().to_string(),
         })
-    }
-
-    #[cfg(not(feature = "euclidv2"))]
-    fn load() -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
-        Self::load_with_exe_fd("app_euclidv1.vmexe")
     }
 }
 
@@ -57,10 +45,5 @@ impl ProverTester for BundleLocalTaskTester {
         Ok(read_json_deep(
             Path::new(PATH_TESTDATA).join("bundle-task.json"),
         )?)
-    }
-
-    #[cfg(not(feature = "euclidv2"))]
-    fn load() -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
-        Self::load_with_exe_fd("app_euclidv1.vmexe")
     }
 }

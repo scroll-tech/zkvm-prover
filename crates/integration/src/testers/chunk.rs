@@ -7,14 +7,19 @@ use sbv_primitives::{B256, types::BlockWitness};
 use scroll_zkvm_prover::{
     ChunkProverType, ChunkProverTypeRv32, ProverType, task::chunk::ChunkProvingTask,
 };
+use scroll_zkvm_types::public_inputs::ForkName;
 
-use crate::{ProverTester, testers::PATH_TESTDATA, utils::phase_base_directory};
+use crate::{
+    ProverTester,
+    testers::PATH_TESTDATA,
+    utils::{testdata_fork_directory, testing_hardfork},
+};
 
 /// Load a file <block_n>.json in the <PATH_BLOCK_WITNESS> directory.
 pub fn read_block_witness_from_testdata(block_n: usize) -> eyre::Result<BlockWitness> {
     read_block_witness(
         Path::new(PATH_TESTDATA)
-            .join(phase_base_directory())
+            .join(testdata_fork_directory())
             .join("witnesses")
             .join(format!("{}.json", block_n)),
     )
@@ -53,15 +58,16 @@ impl ProverTester for ChunkProverTester {
                 paths
             }
             Err(_) => {
-                #[cfg(not(feature = "euclidv2"))]
-                let blocks = 12508460usize..=12508463usize;
-                #[cfg(feature = "euclidv2")]
-                let blocks = 1usize..=4usize;
+                let blocks = match testing_hardfork() {
+                    ForkName::EuclidV1 => 12508460usize..=12508463usize,
+                    ForkName::EuclidV2 => 1usize..=4usize,
+                    ForkName::Feynman => 16525000usize..=16525003usize,
+                };
                 blocks
                     .into_iter()
                     .map(|block_n| {
                         Path::new(PATH_TESTDATA)
-                            .join(phase_base_directory())
+                            .join(testdata_fork_directory())
                             .join("witnesses")
                             .join(format!("{}.json", block_n))
                     })
@@ -74,16 +80,8 @@ impl ProverTester for ChunkProverTester {
                 .iter()
                 .map(read_block_witness)
                 .collect::<eyre::Result<Vec<BlockWitness>>>()?,
-            prev_msg_queue_hash: if cfg!(feature = "euclidv2") {
-                B256::repeat_byte(1u8)
-            } else {
-                B256::ZERO
-            },
-            fork_name: if cfg!(feature = "euclidv2") {
-                String::from("euclidv2")
-            } else {
-                String::from("euclidv1")
-            },
+            prev_msg_queue_hash: B256::repeat_byte(1u8),
+            fork_name: testing_hardfork().to_string(),
         })
     }
 }
@@ -123,7 +121,7 @@ pub fn gen_multi_tasks(
                     .into_iter()
                     .map(|block_n| {
                         Path::new(PATH_TESTDATA)
-                            .join(phase_base_directory())
+                            .join(testdata_fork_directory())
                             .join("witnesses")
                             .join(format!("{}.json", block_n))
                     })
@@ -141,16 +139,8 @@ pub fn gen_multi_tasks(
                 .collect::<eyre::Result<Vec<BlockWitness>>>()?;
             Ok(ChunkProvingTask {
                 block_witnesses,
-                prev_msg_queue_hash: if cfg!(feature = "euclidv2") {
-                    B256::repeat_byte(1u8)
-                } else {
-                    B256::ZERO
-                },
-                fork_name: if cfg!(feature = "euclidv2") {
-                    String::from("euclidv2")
-                } else {
-                    String::from("euclidv1")
-                },
+                prev_msg_queue_hash: B256::repeat_byte(1u8),
+                fork_name: testing_hardfork().to_string(),
             })
         })
         .collect::<eyre::Result<Vec<ChunkProvingTask>>>()?;
@@ -175,10 +165,11 @@ impl ProverTester for MultiChunkProverTester {
     /// [block-2]
     /// [block-3, block-4]
     fn gen_multi_proving_tasks() -> eyre::Result<Vec<<Self::Prover as ProverType>::ProvingTask>> {
-        #[cfg(not(feature = "euclidv2"))]
-        let blocks = [vec![12508460], vec![12508461], vec![12508462, 12508463]];
-        #[cfg(feature = "euclidv2")]
-        let blocks = [vec![1], vec![2], vec![3, 4]];
+        let blocks = match testing_hardfork() {
+            ForkName::EuclidV1 => [vec![12508460], vec![12508461], vec![12508462, 12508463]],
+            ForkName::EuclidV2 => [vec![1], vec![2], vec![3, 4]],
+            ForkName::Feynman => [vec![16525000], vec![16525001], vec![16525002, 16525003]],
+        };
         gen_multi_tasks(blocks)
     }
 }

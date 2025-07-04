@@ -7,7 +7,7 @@ use scroll_zkvm_prover::{
 use crate::{
     ProverTester,
     testers::{PATH_TESTDATA, chunk::ChunkProverTester},
-    utils::{build_batch_task, phase_base_directory},
+    utils::{build_batch_task, testdata_fork_directory},
 };
 
 pub struct BatchProverTester;
@@ -22,7 +22,7 @@ impl ProverTester for BatchProverTester {
     fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask> {
         Ok(read_json_deep(
             Path::new(PATH_TESTDATA)
-                .join(phase_base_directory())
+                .join(testdata_fork_directory())
                 .join("tasks")
                 .join("batch-task.json"),
         )?)
@@ -42,7 +42,7 @@ impl ProverTester for BatchTaskBuildingTester {
         let chunk_task = ChunkProverTester::gen_proving_task()?;
 
         let proof_path = Path::new(PATH_TESTDATA)
-            .join(phase_base_directory())
+            .join(testdata_fork_directory())
             .join("proofs")
             .join(format!("chunk-{}.json", chunk_task.identifier()));
         println!("proof_path: {:?}", proof_path);

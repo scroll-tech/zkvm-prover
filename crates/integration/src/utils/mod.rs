@@ -12,6 +12,7 @@ use scroll_zkvm_prover::{
 };
 use scroll_zkvm_types::{
     batch::{BatchHeader, BatchHeaderV6, BatchHeaderV7},
+    public_inputs::ForkName,
     utils::keccak256,
 };
 use vm_zstd::zstd_encode;
@@ -45,12 +46,12 @@ fn blks_tx_bytes<'a>(blks: impl Iterator<Item = &'a BlockWitness>) -> Vec<u8> {
         })
 }
 
-pub fn phase_base_directory() -> &'static str {
-    if cfg!(feature = "euclidv2") {
-        "phase2"
-    } else {
-        "phase1"
-    }
+pub fn testing_hardfork() -> ForkName {
+    ForkName::Feynman
+}
+
+pub fn testdata_fork_directory() -> String {
+    testing_hardfork().to_string()
 }
 
 #[derive(Debug)]
@@ -70,7 +71,7 @@ impl Default for LastHeader {
 
         Self {
             batch_index: 123,
-            version: if cfg!(feature = "euclidv2") { 7 } else { 6 },
+            version: testing_hardfork().to_protocol_version(),
             batch_hash: B256::new([
                 0xab, 0xac, 0xad, 0xae, 0xaf, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -155,13 +156,12 @@ pub fn build_batch_task(
     };
 
     // collect all data together for payload
-    let mut payload = if cfg!(feature = "euclidv2") {
+    let mut payload = if testing_hardfork() >= ForkName::EuclidV2 {
         Vec::new()
     } else {
         meta_chunk_bytes.clone()
     };
-    #[cfg(feature = "euclidv2")]
-    {
+    if testing_hardfork() >= ForkName::EuclidV2 {
         let num_blocks = chunk_tasks
             .iter()
             .map(|t| t.block_witnesses.len())
@@ -200,10 +200,10 @@ pub fn build_batch_task(
     // compress ...
     let compressed_payload = zstd_encode(&payload);
 
-    let version = 7u32;
+    let version = ForkName::Feynman.to_protocol_version() as u32;
     let heading = compressed_payload.len() as u32 + (version << 24);
 
-    let blob_bytes = if cfg!(feature = "euclidv2") {
+    let blob_bytes = if testing_hardfork() >= ForkName::EuclidV2 {
         let mut blob_bytes = Vec::from(heading.to_be_bytes());
         blob_bytes.push(1u8); // compressed flag
         blob_bytes.extend(compressed_payload);
@@ -220,7 +220,7 @@ pub fn build_batch_task(
     let blob_versioned_hash = point_eval::get_versioned_hash(&kzg_commitment);
 
     // primage = keccak(payload) + blob_versioned_hash
-    let chg_preimage = if cfg!(feature = "euclidv2") {
+    let chg_preimage = if testing_hardfork() >= ForkName::EuclidV2 {
         let mut chg_preimage = keccak256(&blob_bytes).to_vec();
         chg_preimage.extend(blob_versioned_hash.0);
         chg_preimage
@@ -245,62 +245,71 @@ pub fn build_batch_task(
     let x = point_eval::get_x_from_challenge(challenge_digest);
     let (kzg_proof, z) = point_eval::get_kzg_proof(&kzg_blob, challenge_digest);
 
-    #[cfg(feature = "euclidv2")]
-    let batch_header = {
-        // avoid unused variant warning
-        let _ = x + z;
-        BatchHeaderV::V7(BatchHeaderV7 {
-            version: last_header.version,
-            batch_index: last_header.batch_index + 1,
-            parent_batch_hash: last_header.batch_hash,
-            blob_versioned_hash,
-        })
-    };
-
-    #[cfg(not(feature = "euclidv2"))]
-    let batch_header = {
-        // collect required fields for batch header
-        let last_l1_message_index: u64 = chunk_tasks
-            .iter()
-            .flat_map(|t| &t.block_witnesses)
-            .map(final_l1_index)
-            .reduce(|last, cur| if cur == 0 { last } else { cur })
-            .expect("at least one chunk");
-        let last_l1_message_index = if last_l1_message_index == 0 {
-            last_header.l1_message_index
-        } else {
-            last_l1_message_index
-        };
-
-        let last_block_timestamp = chunk_tasks.last().map_or(0u64, |t| {
-            t.block_witnesses
-                .last()
-                .map_or(0, |trace| trace.header.timestamp)
-        });
-
-        let point_evaluations = [x, z];
-
-        let data_hash = keccak256(
-            chunk_proofs
+    let batch_header: BatchHeaderV = match testing_hardfork() {
+        ForkName::EuclidV1 => {
+            // collect required fields for batch header
+            let last_l1_message_index: u64 = chunk_tasks
                 .iter()
-                .map(|proof| &proof.metadata.chunk_info.data_hash)
-                .fold(Vec::new(), |mut bytes, h| {
-                    bytes.extend_from_slice(&h.0);
-                    bytes
-                }),
-        );
+                .flat_map(|t| &t.block_witnesses)
+                .map(final_l1_index)
+                .reduce(|last, cur| if cur == 0 { last } else { cur })
+                .expect("at least one chunk");
+            let last_l1_message_index = if last_l1_message_index == 0 {
+                last_header.l1_message_index
+            } else {
+                last_l1_message_index
+            };
 
-        BatchHeaderV::V6(BatchHeaderV6 {
-            version: last_header.version,
-            batch_index: last_header.batch_index + 1,
-            l1_message_popped: last_l1_message_index - last_header.l1_message_index,
-            last_block_timestamp,
-            total_l1_message_popped: last_l1_message_index,
-            parent_batch_hash: last_header.batch_hash,
-            data_hash,
-            blob_versioned_hash,
-            blob_data_proof: point_evaluations.map(|u| B256::new(u.to_be_bytes())),
-        })
+            let last_block_timestamp = chunk_tasks.last().map_or(0u64, |t| {
+                t.block_witnesses
+                    .last()
+                    .map_or(0, |trace| trace.header.timestamp)
+            });
+
+            let point_evaluations = [x, z];
+
+            let data_hash = keccak256(
+                chunk_proofs
+                    .iter()
+                    .map(|proof| &proof.metadata.chunk_info.data_hash)
+                    .fold(Vec::new(), |mut bytes, h| {
+                        bytes.extend_from_slice(&h.0);
+                        bytes
+                    }),
+            );
+
+            BatchHeaderV::V6(BatchHeaderV6 {
+                version: last_header.version,
+                batch_index: last_header.batch_index + 1,
+                l1_message_popped: last_l1_message_index - last_header.l1_message_index,
+                last_block_timestamp,
+                total_l1_message_popped: last_l1_message_index,
+                parent_batch_hash: last_header.batch_hash,
+                data_hash,
+                blob_versioned_hash,
+                blob_data_proof: point_evaluations.map(|u| B256::new(u.to_be_bytes())),
+            })
+        }
+        ForkName::EuclidV2 => {
+            use scroll_zkvm_types::batch::BatchHeaderV7;
+            let _ = x + z;
+            BatchHeaderV::V7(BatchHeaderV7 {
+                version: last_header.version,
+                batch_index: last_header.batch_index + 1,
+                parent_batch_hash: last_header.batch_hash,
+                blob_versioned_hash,
+            })
+        }
+        ForkName::Feynman => {
+            use scroll_zkvm_types::batch::BatchHeaderV8;
+            let _ = x + z;
+            BatchHeaderV::V8(BatchHeaderV8 {
+                version: last_header.version,
+                batch_index: last_header.batch_index + 1,
+                parent_batch_hash: last_header.batch_hash,
+                blob_versioned_hash,
+            })
+        }
     };
 
     BatchProvingTask {
@@ -310,23 +319,15 @@ pub fn build_batch_task(
         challenge_digest: Some(U256::from_be_bytes(challenge_digest.0)),
         kzg_commitment: Some(kzg_commitment.to_bytes()),
         kzg_proof: Some(kzg_proof.to_bytes()),
-        fork_name: if cfg!(feature = "euclidv2") {
-            String::from("euclidv2")
-        } else {
-            String::from("euclidv1")
-        },
+        fork_name: testing_hardfork().to_string(),
     }
 }
 
 #[test]
 fn test_build_and_parse_batch_task() -> eyre::Result<()> {
     use scroll_zkvm_prover::utils::{read_json, read_json_deep, write_json};
-    use scroll_zkvm_types::batch::{Envelope, Payload};
-    #[cfg(not(feature = "euclidv2"))]
-    use scroll_zkvm_types::batch::{EnvelopeV6 as GenericEnvelope, PayloadV6 as GenericPayload};
-    #[cfg(feature = "euclidv2")]
     use scroll_zkvm_types::{
-        batch::{EnvelopeV7 as GenericEnvelope, PayloadV7 as GenericPayload},
+        batch::{Envelope, EnvelopeV8 as GenericEnvelope, Payload, PayloadV8 as GenericPayload},
         chunk::{ArchivedChunkInfo, ChunkInfo},
     };
 
@@ -334,8 +335,10 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
     let path_testdata = std::path::Path::new("testdata");
 
     // read block witnesses.
-    let paths_block_witnesses = if cfg!(feature = "euclidv2") {
-        let path_testdata = path_testdata.join("phase2").join("witnesses");
+    let path_testdata = path_testdata
+        .join(testing_hardfork().to_string())
+        .join("witnesses");
+    let paths_block_witnesses = if testing_hardfork() >= ForkName::EuclidV2 {
         [
             path_testdata.join("1.json"),
             path_testdata.join("2.json"),
@@ -343,7 +346,6 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
             path_testdata.join("4.json"),
         ]
     } else {
-        let path_testdata = path_testdata.join("phase1").join("witnesses");
         [
             path_testdata.join("12508460.json"),
             path_testdata.join("12508461.json"),
@@ -358,23 +360,18 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
             .map(read_block_witness)
             .collect::<eyre::Result<Vec<BlockWitness>>>()?,
         prev_msg_queue_hash: Default::default(),
-        fork_name: if cfg!(feature = "euclidv2") {
-            String::from("euclidv2")
-        } else {
-            String::from("euclidv1")
-        },
+        fork_name: testing_hardfork().to_string(),
     };
 
     // read chunk proof.
-    let path_chunk_proof =
-        path_testdata
-            .join("phase2")
-            .join("proofs")
-            .join(if cfg!(feature = "euclidv2") {
-                "chunk-1-4.json"
-            } else {
-                "chunk-12508460-12508463.json"
-            });
+    let path_chunk_proof = path_testdata
+        .join(testing_hardfork().to_string())
+        .join("proofs")
+        .join(if testing_hardfork() >= ForkName::EuclidV2 {
+            "chunk-1-4.json"
+        } else {
+            "chunk-12508460-12508463.json"
+        });
     let chunk_proof = read_json_deep::<_, ChunkProof>(&path_chunk_proof)?;
 
     let task = build_batch_task(&[chunk_task], &[chunk_proof], Default::default());
@@ -387,10 +384,7 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
 
     let enveloped = <GenericEnvelope as Envelope>::from_slice(task.blob_bytes.as_slice());
 
-    #[cfg(feature = "euclidv2")]
-    let header = task.batch_header.must_v7_header();
-    #[cfg(not(feature = "euclidv2"))]
-    let header = task.batch_header.must_v6_header();
+    let header = task.batch_header.must_v8_header();
     let serialized_bytes = rkyv::to_bytes::<rkyv::rancor::Error>(&chunk_infos).unwrap();
     let chunk_infos =
         rkyv::access::<rkyv::vec::ArchivedVec<ArchivedChunkInfo>, rkyv::rancor::Error>(
@@ -402,15 +396,10 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
         .collect::<Vec<ChunkInfo>>();
     <GenericPayload as Payload>::from_envelope(&enveloped).validate(header, chunk_infos.as_slice());
 
-    // depressed task output for pre-v2
-    #[cfg(feature = "euclidv2")]
     write_json(path_testdata.join("batch-task-test-out.json"), &task).unwrap();
-    #[cfg(not(feature = "euclidv2"))]
-    write_json(path_testdata.join("batch-task-legacy-test-out.json"), &task).unwrap();
     Ok(())
 }
 
-#[cfg(feature = "euclidv2")]
 #[test]
 fn test_batch_task_payload() -> eyre::Result<()> {
     use scroll_zkvm_prover::utils::read_json_deep;
@@ -421,7 +410,7 @@ fn test_batch_task_payload() -> eyre::Result<()> {
 
     // ./testdata/
     let path_testdata = std::path::Path::new("testdata")
-        .join("phase2")
+        .join("euclidv2")
         .join("tasks");
 
     let task =

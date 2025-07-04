@@ -46,6 +46,5 @@ halo2curves-axiom = "0.7.0"
 glob = "0.3"
 
 [features]
-default = ["euclidv2"]
-euclidv2 = []
+default = []
 limit-logs = []

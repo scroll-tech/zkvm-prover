@@ -6,13 +6,14 @@ use scroll_zkvm_integration::{
         bundle::{BundleLocalTaskTester, BundleProverTester},
         chunk::{ChunkProverRv32Tester, ChunkProverTester, MultiChunkProverTester},
     },
-    utils::{LastHeader, build_batch_task},
+    utils::{LastHeader, build_batch_task, testing_hardfork},
 };
 use scroll_zkvm_prover::{
     AsRootProof, BatchProof, ChunkProof, IntoEvmProof,
     task::{bundle::BundleProvingTask, chunk::ChunkProvingTask},
     utils::{read_json_deep, write_json},
 };
+use scroll_zkvm_types::public_inputs::ForkName;
 use std::str::FromStr;
 
 fn load_recent_batch_proofs() -> eyre::Result<BundleProvingTask> {
@@ -25,11 +26,7 @@ fn load_recent_batch_proofs() -> eyre::Result<BundleProvingTask> {
     let task = BundleProvingTask {
         batch_proofs: vec![batch_proof],
         bundle_info: None,
-        fork_name: if cfg!(feature = "euclidv2") {
-            String::from("euclidv2")
-        } else {
-            String::from("euclidv1")
-        },
+        fork_name: testing_hardfork().to_string(),
     };
     Ok(task)
 }
@@ -130,11 +127,7 @@ fn e2e() -> eyre::Result<()> {
 
     let outcome = prove_verify_multi::<BatchProverTester>(Some(&[batch_task_1, batch_task_2]))?;
 
-    let fork_name = if cfg!(feature = "euclidv2") {
-        String::from("euclidv2")
-    } else {
-        String::from("euclidv1")
-    };
+    let fork_name = testing_hardfork().to_string();
     // Construct bundle task using batch tasks and batch proofs.
     let bundle_task = BundleProvingTask {
         batch_proofs: outcome.proofs,
@@ -164,12 +157,21 @@ fn e2e() -> eyre::Result<()> {
     for proof in bundle_task.batch_proofs.iter() {
         assert!(verifier.verify_proof(proof.as_root_proof()));
     }
-    #[cfg(not(feature = "euclidv2"))]
-    let verifier = verifier.to_bundle_verifier_v1();
-    #[cfg(feature = "euclidv2")]
-    let verifier = verifier.to_bundle_verifier_v2();
+
     let evm_proof = outcome.proofs[0].clone().into_evm_proof();
-    assert!(verifier.verify_proof_evm(&evm_proof));
+    if testing_hardfork() >= ForkName::EuclidV2 {
+        assert!(
+            verifier
+                .to_bundle_verifier_v2()
+                .verify_proof_evm(&evm_proof)
+        );
+    } else {
+        assert!(
+            verifier
+                .to_bundle_verifier_v1()
+                .verify_proof_evm(&evm_proof)
+        );
+    }
 
     let expected_pi_hash = &outcome.proofs[0].metadata.bundle_pi_hash;
     let observed_instances = &evm_proof.instances;
@@ -187,10 +189,10 @@ fn e2e() -> eyre::Result<()> {
     }
 
     // Sanity check for pi of bundle hash, update the expected hash if block witness changed
-    let pi_str = if cfg!(feature = "euclidv2") {
-        "2028510c403837c6ed77660fd92814ba61d7b746e7268cc8dfc14d163d45e6bd"
-    } else {
-        "3cc70faf6b5a4bd565694a4c64de59befb735f4aac2a4b9e6a6fc2ee950b8a72"
+    let pi_str = match testing_hardfork() {
+        ForkName::EuclidV1 => "3cc70faf6b5a4bd565694a4c64de59befb735f4aac2a4b9e6a6fc2ee950b8a72",
+        ForkName::EuclidV2 => "2028510c403837c6ed77660fd92814ba61d7b746e7268cc8dfc14d163d45e6bd",
+        ForkName::Feynman => "80523a61b2b94b2922638ec90edd084b1022798e1e5539c3a079d2b0736e4f32",
     };
     // sanity check for pi of bundle hash, update the expected hash if block witness changed
     assert_eq!(
