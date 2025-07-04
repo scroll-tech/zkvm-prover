@@ -27,6 +27,7 @@ alloy-provider = { workspace = true }
 alloy-rpc-client.workspace = true
 alloy-transport = { workspace = true, features = ["throttle"] }
 alloy-primitives.workspace = true
+cargo_metadata.workspace = true
 eyre.workspace = true
 futures.workspace = true
 rayon.workspace = true

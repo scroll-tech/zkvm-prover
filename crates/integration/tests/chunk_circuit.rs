@@ -280,18 +280,15 @@ async fn test_scanner() -> eyre::Result<()> {
         "blocks = {start_block}..={latest_block}; {chunk_size} blocks chunk, {n_chunks} chunks"
     );
 
-    let witnesses = futures::future::try_join_all(
-        (start_block..=latest_block)
-            .map(|block| {
-                let provider = provider.clone();
-                async move {
-                    provider
-                        .dump_block_witness(block.into())
-                        .await
-                        .map(|w| w.unwrap())
-                }
-            })
-    )
+    let witnesses = futures::future::try_join_all((start_block..=latest_block).map(|block| {
+        let provider = provider.clone();
+        async move {
+            provider
+                .dump_block_witness(block.into())
+                .await
+                .map(|w| w.unwrap())
+        }
+    }))
     .await?;
 
     let proving_tasks = witnesses
