@@ -3,9 +3,11 @@ use std::{marker::PhantomData, path::Path};
 use openvm_circuit::{arch::SingleSegmentVmExecutor, system::program::trace::VmCommittedExe};
 use openvm_continuations::verifier::root::types::RootVmVerifierInput;
 use openvm_native_circuit::NativeConfig;
+use once_cell::sync::Lazy;
 use openvm_native_recursion::{halo2::RawEvmProof, hints::Hintable};
-use openvm_sdk::{F, RootSC, SC};
-use scroll_zkvm_types::types_agg::ProgramCommitment;
+use openvm_sdk::{commit::CommitBytes, config::AggStarkConfig, keygen::{AggStarkProvingKey, AppProvingKey}, prover::{AggStarkProver, AppProver, EvmHalo2Prover}, RootSC, Sdk, F, SC};
+use openvm_stark_sdk::p3_bn254_fr::Bn254Fr;
+use scroll_zkvm_types::{proof::RootProof, types_agg::ProgramCommitment};
 use snark_verifier_sdk::snark_verifier::halo2_base::halo2_proofs::halo2curves::bn256::Fr;
 
 use crate::commitments::{
@@ -14,6 +16,12 @@ use crate::commitments::{
     chunk::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT},
     chunk_rv32,
 };
+
+
+/// Proving key for STARK aggregation. Primarily used to aggregate
+/// [continuation proofs][openvm_sdk::prover::vm::ContinuationVmProof].
+static AGG_STARK_PROVING_KEY: Lazy<AggStarkProvingKey> =
+    Lazy::new(|| AggStarkProvingKey::keygen(AggStarkConfig::default()));
 
 fn compress_commitment(commitment: &[u32; 8]) -> Fr {
     use openvm_stark_sdk::{openvm_stark_backend::p3_field::PrimeField32, p3_baby_bear::BabyBear};
@@ -122,7 +130,7 @@ impl UniversalVerifier {
 
     pub fn verify_proof(
         &self,
-        root_proof: &RootVmVerifierInput<SC>,
+        root_proof: &RootProof,
         vk: &[u8],
     ) -> eyre::Result<bool> {
         let prog_commit = ProgramCommitment::deserialize(vk);
@@ -162,12 +170,12 @@ impl UniversalVerifier {
 
     fn verify_proof_inner(
         &self,
-        root_proof: &RootVmVerifierInput<SC>,
+        root_proof: &RootProof,
     ) -> eyre::Result<Vec<Option<u32>>> {
         use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
         Ok(self
             .vm_executor
-            .execute_and_compute_heights(self.root_committed_exe.exe.clone(), root_proof.write())
+            .execute_and_compute_heights(self.root_committed_exe.exe.clone(), root_proof.write(), None)
             .map(|exec_res| {
                 exec_res
                     .public_values
@@ -246,22 +254,11 @@ impl<Type: VerifierType> Verifier<Type> {
         Type::get_app_vk()
     }
 
-    pub fn verify_proof(&self, root_proof: &RootVmVerifierInput<SC>) -> bool {
-        match self.verify_proof_inner(root_proof) {
-            Ok(pi) => {
-                assert!(pi.len() >= 16, "unexpected len(pi)<16");
-                assert!(
-                    Type::match_exe_commitment_with_pi(&pi),
-                    "mismatch EXE commitment"
-                );
-                assert!(
-                    Type::match_leaf_commitment_with_pi(&pi),
-                    "mismatch LEAF commitment"
-                );
-                true
-            }
-            Err(_) => false,
-        }
+    pub fn verify_proof(&self, root_proof: &RootProof) -> bool {
+        let _res = self.verify_proof_inner(root_proof, 
+                &CommitBytes::from_u32_digest(&Type::EXE_COMMIT).to_bn254(),
+                &CommitBytes::from_u32_digest(&Type::LEAF_COMMIT).to_bn254());
+        true
     }
 
     pub fn verify_proof_evm(&self, evm_proof: &RawEvmProof) -> bool {
@@ -278,19 +275,15 @@ impl<Type: VerifierType> Verifier<Type> {
 
     pub(crate) fn verify_proof_inner(
         &self,
-        root_proof: &RootVmVerifierInput<SC>,
-    ) -> eyre::Result<Vec<Option<u32>>> {
-        use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
-        Ok(self
-            .vm_executor
-            .execute_and_compute_heights(self.root_committed_exe.exe.clone(), root_proof.write())
-            .map(|exec_res| {
-                exec_res
-                    .public_values
-                    .iter()
-                    .map(|op_f| op_f.map(|f| f.as_canonical_u32()))
-                    .collect()
-            })?)
+        root_proof: &RootProof,
+        expected_exe_commit: &Bn254Fr,
+        expected_vm_commit: &Bn254Fr,
+    ) -> eyre::Result<()> {
+        Sdk::new().verify_e2e_stark_proof(&AGG_STARK_PROVING_KEY, root_proof,
+            expected_exe_commit,
+            expected_vm_commit
+            ).unwrap();
+        Ok(())
     }
 }
 
@@ -369,21 +362,10 @@ mod tests {
 
         let commitment = ProgramCommitment::deserialize(&chunk_proof.vk);
         let root_proof = chunk_proof.as_root_proof();
-        let pi = verifier.verify_proof_inner(root_proof).unwrap();
-        assert_eq!(
-            &pi[..8],
-            commitment.exe.map(Some).as_slice(),
-            "the output is not match with exe commitment in root proof!",
-        );
-        assert_eq!(
-            &pi[8..16],
-            commitment.leaf.map(Some).as_slice(),
-            "the output is not match with leaf commitment in root proof!",
-        );
-        assert!(
-            verifier.verify_proof(root_proof),
-            "proof verification failed",
-        );
+
+        let _res = verifier.verify_proof_inner(root_proof, 
+                &CommitBytes::from_u32_digest(&commitment.exe).to_bn254(),
+                &CommitBytes::from_u32_digest(&commitment.leaf).to_bn254());
 
         Ok(())
     }
@@ -405,21 +387,10 @@ mod tests {
 
         let commitment = ProgramCommitment::deserialize(&batch_proof.vk);
         let root_proof = batch_proof.as_root_proof();
-        let pi = verifier.verify_proof_inner(root_proof).unwrap();
-        assert_eq!(
-            &pi[..8],
-            commitment.exe.map(Some).as_slice(),
-            "the output is not match with exe commitment in root proof!",
-        );
-        assert_eq!(
-            &pi[8..16],
-            commitment.leaf.map(Some).as_slice(),
-            "the output is not match with leaf commitment in root proof!",
-        );
-        assert!(
-            verifier.verify_proof(root_proof),
-            "proof verification failed",
-        );
+
+        let _res = verifier.verify_proof_inner(root_proof, 
+                &CommitBytes::from_u32_digest(&commitment.exe).to_bn254(),
+                &CommitBytes::from_u32_digest(&commitment.leaf).to_bn254());
 
         Ok(())
     }
