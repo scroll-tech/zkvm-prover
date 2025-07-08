@@ -18,7 +18,7 @@ types-base = { path = "../base", package = "scroll-zkvm-types-base" }
 openvm = { workspace = true, features = ["std"] }
 openvm-ecc-guest = { workspace = true, features = ["halo2curves"] }
 openvm-pairing-guest = { workspace = true, features = ["halo2curves"] }
-openvm-pairing = { workspace = true, features = ["bls12_381"] }
+openvm-pairing = { workspace = true, features = ["bls12_381", "halo2curves"] }
 openvm-sha2.workspace = true
 openvm-sha256-guest.workspace = true
 halo2curves-axiom = "0.7.0"
