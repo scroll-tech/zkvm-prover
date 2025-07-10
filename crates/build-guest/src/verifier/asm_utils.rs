@@ -76,6 +76,15 @@ pub fn op_jal() -> usize {
 
 /////////////////// debug //////////////////////////
 
+pub fn print_imm(imm: F) -> Vec<Instruction<F>> {
+    vec![Instruction::<F>::phantom(
+        PhantomDiscriminant(NativePhantom::Print as u16),
+        imm,
+        F::from_canonical_usize(0),
+        AS_IMM as u16,
+    )]
+}
+
 pub fn print_native(mem_addr: F) -> Vec<Instruction<F>> {
     vec![Instruction::<F>::phantom(
         PhantomDiscriminant(NativePhantom::Print as u16),
@@ -132,13 +141,22 @@ pub fn load_register_to_native(dst: F, register_idx: usize) -> Vec<Instruction<F
         f: as_imm(),
         g: F::from_canonical_usize(0),
     };
-    vec![
-        add_op((zero, as_imm()), (4 * register_idx + 3, as_register())),
-        shift_op(),
-        add_op((dst, as_native()), (4 * register_idx + 2, as_register())),
-        shift_op(),
-        add_op((dst, as_native()), (4 * register_idx + 1, as_register())),
-        shift_op(),
-        add_op((dst, as_native()), (4 * register_idx, as_register())),
-    ]
+    let mut ops = Vec::new();
+    ops.extend(print_native(dst));
+    ops.push(add_op((zero, as_imm()), (4 * register_idx + 3, as_register())));
+    ops.extend(print_native(dst));
+    ops.push(shift_op());
+    ops.extend(print_native(dst));
+    ops.push(add_op((dst, as_native()), (4 * register_idx + 2, as_register())));
+    ops.extend(print_native(dst));
+    ops.push(shift_op());
+    ops.extend(print_native(dst));
+    ops.push(add_op((dst, as_native()), (4 * register_idx + 1, as_register())));
+    ops.extend(print_native(dst));
+    ops.push(shift_op());
+    ops.extend(print_native(dst));
+    ops.push(add_op((dst, as_native()), (4 * register_idx, as_register())));
+    ops.extend(print_native(dst));
+    ops.extend(print_imm(F::from_canonical_usize(1234567)));
+    ops
 }

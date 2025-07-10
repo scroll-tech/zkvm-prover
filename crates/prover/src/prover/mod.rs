@@ -22,6 +22,7 @@ use openvm_sdk::{
     prover::{AggStarkProver, AppProver, EvmHalo2Prover},
 };
 use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Engine;
+use scroll_zkvm_verifier::verifier::verify_proof_inner;
 use tracing::{debug, instrument};
 
 // Re-export from openvm_sdk.
@@ -36,7 +37,6 @@ use crate::{
 
 use scroll_zkvm_types::{
     proof::{EvmProof, ProofEnum, RootProof},
-    types_agg::AggregationInput,
 };
 
 mod batch;
@@ -276,6 +276,8 @@ impl<Type: ProverType> Prover<Type> {
             if let Ok(proof) =
                 <WrappedProof<Type::ProofMetadata> as PersistableProof>::from_json(&path_proof)
             {
+                let pi = verify_proof_inner(proof.proof.as_root_proof().unwrap()).unwrap();
+                println!("verify pi {:?}", pi);
                 debug!(name: "early_return_proof", ?task_id);
                 return Ok(proof);
             }
@@ -370,42 +372,6 @@ impl<Type: ProverType> Prover<Type> {
         Type::metadata_with_prechecks(task)
     }
 
-    /// Verify a [root proof][root_proof].
-    /// TODO: currently this method is only used in testing. Move it else
-    /// [root_proof][RootProof]
-    #[instrument("Prover::verify_proof", skip_all, fields(?metadata = proof.metadata))]
-    pub fn verify_proof(&self, proof: &WrappedProof<Type::ProofMetadata>) -> Result<(), Error> {
-        let agg_stark_pk = &AGG_STARK_PROVING_KEY;
-
-        let root_verifier_pk = &agg_stark_pk.root_verifier_pk;
-        let vm_executor = SingleSegmentVmExecutor::new(root_verifier_pk.vm_pk.vm_config.clone());
-        let exe: &VmCommittedExe<_> = &root_verifier_pk.root_committed_exe;
-
-        let root_proof = proof.proof.as_root_proof().ok_or(Error::VerifyProof(
-            "verify_proof expects RootProof".to_string(),
-        ))?;
-        vm_executor
-            .execute_and_compute_heights(exe.exe.clone(), root_proof.write())
-            .map_err(|e| Error::VerifyProof(e.to_string()))?;
-
-        let aggregation_input = AggregationInput::from(proof);
-        if aggregation_input.commitment.exe != Type::EXE_COMMIT {
-            return Err(Error::VerifyProof(format!(
-                "EXE_COMMIT mismatch: expected={:?}, got={:?}",
-                Type::EXE_COMMIT,
-                aggregation_input.commitment.exe,
-            )));
-        }
-        if aggregation_input.commitment.leaf != Type::LEAF_COMMIT {
-            return Err(Error::VerifyProof(format!(
-                "LEAF_COMMIT mismatch: expected={:?}, got={:?}",
-                Type::LEAF_COMMIT,
-                aggregation_input.commitment.leaf,
-            )));
-        }
-
-        Ok(())
-    }
 
     /// Verify an [evm proof][evm_proof].
     ///
@@ -543,6 +509,9 @@ impl<Type: ProverType> Prover<Type> {
             Default::default(),
         );
         let proof = agg_prover.generate_root_verifier_input(app_proof);
+        println!("verifing root proof");
+        verify_proof_inner(&proof).unwrap();
+        println!("verifing root proof done");
         Ok(proof)
     }
 

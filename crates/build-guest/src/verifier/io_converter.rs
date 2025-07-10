@@ -31,19 +31,26 @@ pub fn convert_publish(op: Instruction<F>, idx: usize) -> Vec<Instruction<F>> {
             g: F::from_canonical_usize(0),
         },
     ];
+    results.extend(print_register(X30));
     results.extend(load_register_to_native(tmp_slot, X30));
     // if [A0-1] == [pi_value_addr], pc += 8
     // else, panic
-    let bad_path = vec![Instruction::<F> {
+    let mut bad_path = print_imm(F::from_canonical_usize(1000000));
+    bad_path.extend(print_native(tmp_slot));
+    bad_path.extend(print_native(pi_value_addr));
+    bad_path.extend(vec![Instruction::<F> {
         opcode: SystemOpcode::TERMINATE.global_opcode(),
         a: F::from_canonical_usize(0),
         b: F::from_canonical_usize(0),
-        c: F::from_canonical_usize(8),
+        c: F::from_canonical_usize(7), // exit code
         d: F::from_canonical_usize(0),
         e: F::from_canonical_usize(0),
         f: F::from_canonical_usize(0),
         g: F::from_canonical_usize(0),
-    }];
+    }]);
+    bad_path.extend(print_imm(F::from_canonical_usize(1234569)));
+
+    results.extend(print_imm(F::from_canonical_usize(1234568)));
     results.extend(vec![Instruction::<F> {
         opcode: op_native_beq(),
         a: tmp_slot,
@@ -55,5 +62,6 @@ pub fn convert_publish(op: Instruction<F>, idx: usize) -> Vec<Instruction<F>> {
         g: F::from_canonical_usize(0),
     }]);
     results.extend(bad_path);
+    results.extend(print_imm(F::from_canonical_usize(1234566)));
     results
 }

@@ -68,4 +68,7 @@ pub fn dump_verifier(path: &str) {
 
     println!("generating root_verifier.asm");
     dump_root_program(&agg_stark_pk, path);
+
+    let asm = openvm_sdk::Sdk::new().generate_root_verifier_asm(&agg_stark_pk);
+    std::fs::write("sdk.root_verifier.asm", asm).expect("fail to write");
 }
