@@ -102,6 +102,24 @@ fn verify_proof(commitment: &ProgramCommitment, public_inputs: &[u32]) {
     // Sanity check for the number of public-input values.
     assert_eq!(public_inputs.len(), NUM_PUBLIC_VALUES);
 
+    const HEAP_START_ADDRESS: u32 = 1 << 24;
+    const FIELDS_PER_U32: u32 = 4;
+
+// Store the expected public values into the beginning of the native heap.
+            let mut native_addr = HEAP_START_ADDRESS;
+            for &x in &commitment.exe {
+                openvm::io::store_u32_to_native(native_addr, x);
+                native_addr += FIELDS_PER_U32;
+            }
+            for &x in &commitment.leaf {
+                openvm::io::store_u32_to_native(native_addr, x);
+                native_addr += FIELDS_PER_U32;
+            }
+            for &x in public_inputs {
+                openvm::io::store_u32_to_native(native_addr, x as u32);
+                native_addr += FIELDS_PER_U32;
+            }
+            
     // Extend the public-input values by prepending the commitments to the root verifier's exe and
     // leaf.
     let mut extended_public_inputs = vec![];
@@ -120,7 +138,7 @@ fn exec_kernel(_pi_ptr: *const u32) {
     #[cfg(all(target_os = "zkvm", target_arch = "riscv32"))]
     unsafe {
         std::arch::asm!(
-            include_str!("../../../build-guest/root_verifier.asm"),
+            include_str!("../../../build-guest/sdk.root_verifier.asm"),
             in("x29") _pi_ptr,
             inout("x30") _buf1,
             inout("x31") _buf2,
