@@ -1,5 +1,5 @@
 use crate::util::{as_base64, vec_as_base64};
-use openvm_continuations::verifier::internal::types::VmStarkProof;
+use openvm_continuations::verifier::root::types::RootVmVerifierInput;
 use openvm_sdk::SC;
 use openvm_stark_sdk::{
     openvm_stark_backend::{p3_field::PrimeField32, proof::Proof},
@@ -8,7 +8,7 @@ use openvm_stark_sdk::{
 use serde::{Deserialize, Serialize};
 
 /// Alias for convenience.
-pub type RootProof = VmStarkProof<SC>;
+pub type RootProof = RootVmVerifierInput<SC>;
 
 /// Helper type for convenience that implements [`From`] and [`Into`] traits between
 /// [`OpenVmEvmProof`]. The difference is that the instances in [`EvmProof`] are the byte-encoding
@@ -22,6 +22,18 @@ pub struct EvmProof {
     /// proof.
     #[serde(with = "vec_as_base64")]
     pub instances: Vec<u8>,
+}
+
+/// Helper to modify serde implementations on the remote [`RootProof`] type.
+#[derive(Serialize, Deserialize)]
+#[serde(remote = "RootProof")]
+struct RootProofDef {
+    /// The proofs.
+    #[serde(with = "as_base64")]
+    proofs: Vec<Proof<SC>>,
+    /// The public values for the proof.
+    #[serde(with = "as_base64")]
+    public_values: Vec<BabyBear>,
 }
 
 pub use openvm_native_recursion::halo2::RawEvmProof as OpenVmEvmProof;
@@ -83,6 +95,7 @@ impl From<EvmProof> for OpenVmEvmProof {
 #[serde(untagged)]
 pub enum ProofEnum {
     /// Represents a STARK proof used for intermediary layers, i.e. chunk and batch.
+    #[serde(with = "RootProofDef")]
     Root(RootProof),
     /// Represents a SNARK proof used for the final layer to be verified on-chain, i.e. bundle.
     Evm(EvmProof),
@@ -139,7 +152,7 @@ impl ProofEnum {
     pub fn public_values(&self) -> Vec<u32> {
         match self {
             Self::Root(root_proof) => root_proof
-                .user_public_values
+                .public_values
                 .iter()
                 .map(|x| x.as_canonical_u32())
                 .collect::<Vec<u32>>(),

@@ -106,6 +106,7 @@ fn verify_proof(commitment: &ProgramCommitment, public_inputs: &[u32]) {
     // leaf.
     let mut extended_public_inputs = vec![];
     extended_public_inputs.extend(commitment.exe);
+    println!("commitment.exe {:?}", commitment.exe);
     extended_public_inputs.extend(commitment.leaf);
     extended_public_inputs.extend_from_slice(public_inputs);
     // Pass through kernel and verify against root verifier's ASM.

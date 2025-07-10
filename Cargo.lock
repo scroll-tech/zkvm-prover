@@ -6727,6 +6727,7 @@ dependencies = [
  "scroll-zkvm-types",
  "serde",
  "snark-verifier-sdk",
+ "tracing",
 ]
 
 [[package]]

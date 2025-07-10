@@ -15,9 +15,14 @@ use openvm_native_recursion::{
     hints::Hintable,
 };
 use openvm_sdk::{
-    commit::{AppExecutionCommit, CommitBytes}, config::{AggConfig, AggStarkConfig, SdkVmConfig}, keygen::{AggStarkProvingKey, AppProvingKey}, prover::{AggStarkProver, AppProver, EvmHalo2Prover}, DefaultStaticVerifierPvHandler, NonRootCommittedExe, Sdk, StdIn
+    DefaultStaticVerifierPvHandler, NonRootCommittedExe, Sdk, StdIn,
+    commit::AppExecutionCommit,
+    config::{AggConfig, AggStarkConfig, SdkVmConfig},
+    keygen::{AggStarkProvingKey, AppProvingKey},
+    prover::{AggStarkProver, AppProver, EvmHalo2Prover},
 };
 use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Engine;
+use scroll_zkvm_verifier::verifier::verify_proof_inner;
 use tracing::{debug, instrument};
 
 // Re-export from openvm_sdk.
@@ -32,7 +37,6 @@ use crate::{
 
 use scroll_zkvm_types::{
     proof::{EvmProof, ProofEnum, RootProof},
-    types_agg::AggregationInput,
 };
 
 mod batch;
@@ -272,6 +276,8 @@ impl<Type: ProverType> Prover<Type> {
             if let Ok(proof) =
                 <WrappedProof<Type::ProofMetadata> as PersistableProof>::from_json(&path_proof)
             {
+                let pi = verify_proof_inner(proof.proof.as_root_proof().unwrap()).unwrap();
+                println!("verify pi {:?}", pi);
                 debug!(name: "early_return_proof", ?task_id);
                 return Ok(proof);
             }
@@ -366,25 +372,6 @@ impl<Type: ProverType> Prover<Type> {
         Type::metadata_with_prechecks(task)
     }
 
-    /// Verify a [root proof][root_proof].
-    /// TODO: currently this method is only used in testing. Move it else
-    /// [root_proof][RootProof]
-    #[instrument("Prover::verify_proof", skip_all, fields(?metadata = proof.metadata))]
-    pub fn verify_proof(&self, proof: &WrappedProof<Type::ProofMetadata>) -> Result<(), Error> {
-
-        let root_proof = proof.proof.as_root_proof().ok_or(Error::VerifyProof(
-            "verify_proof expects RootProof".to_string(),
-        ))?;
-
-        println!("before everify_e2e_stark_proof ");
-        let _res =  Sdk::new().verify_e2e_stark_proof(&AGG_STARK_PROVING_KEY,
-                root_proof, 
-                &CommitBytes::from_u32_digest(&Type::EXE_COMMIT).to_bn254(),
-                &CommitBytes::from_u32_digest(&Type::LEAF_COMMIT).to_bn254());
-
-        println!("after everify_e2e_stark_proof ");
-        Ok(())
-    }
 
     /// Verify an [evm proof][evm_proof].
     ///
@@ -497,7 +484,6 @@ impl<Type: ProverType> Prover<Type> {
     ///
     /// [root_proof][openvm_sdk::verifier::root::types::RootVmVerifierInput]
     fn gen_proof_stark(&self, task: &impl ProvingTask) -> Result<RootProof, Error> {
-        //generate_e2e_stark_proof
         let stdin = task
             .build_guest_input()
             .map_err(|e| Error::GenProof(e.to_string()))?;
@@ -510,11 +496,22 @@ impl<Type: ProverType> Prover<Type> {
         let task_id = task.identifier();
 
         tracing::debug!(name: "generate_root_verifier_input", ?task_id);
-        let proof = Sdk::new().generate_e2e_stark_proof(self.app_pk.clone(),
-            self.app_committed_exe.clone(), 
+        let app_prover = AppProver::<_, BabyBearPoseidon2Engine>::new(
+            self.app_pk.app_vm_pk.clone(),
+            self.app_committed_exe.clone(),
+        );
+        // TODO: should we cache the app_proof?
+        let app_proof = app_prover.generate_app_proof(stdin);
+        tracing::info!("app proof generated for {} task {task_id}", Type::NAME);
+        let agg_prover = AggStarkProver::<BabyBearPoseidon2Engine>::new(
             AGG_STARK_PROVING_KEY.clone(),
-            stdin
-        ).unwrap();
+            self.app_pk.leaf_committed_exe.clone(),
+            Default::default(),
+        );
+        let proof = agg_prover.generate_root_verifier_input(app_proof);
+        println!("verifing root proof");
+        verify_proof_inner(&proof).unwrap();
+        println!("verifing root proof done");
         Ok(proof)
     }
 

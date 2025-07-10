@@ -13,6 +13,7 @@ use scroll_zkvm_prover::{
     setup::{read_app_config, read_app_exe},
     task::ProvingTask,
 };
+use scroll_zkvm_verifier::verifier::verify_proof_inner;
 use tracing::instrument;
 use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -245,7 +246,7 @@ where
     let proof = prover.gen_proof(&task)?;
 
     // Verify proof.
-    prover.verify_proof(&proof)?;
+    verify_proof_inner(&proof.proof.as_root_proof().unwrap()).unwrap();
 
     Ok(ProveVerifyOutcome::single(task, proof))
 }
@@ -285,7 +286,7 @@ where
         .iter()
         .map(|task| {
             let proof = prover.gen_proof(task)?;
-            prover.verify_proof(&proof)?;
+            verify_proof_inner(&proof.proof.as_root_proof().unwrap()).unwrap();
             Ok(proof)
         })
         .collect::<eyre::Result<Vec<WrappedProof<<T::Prover as ProverType>::ProofMetadata>>>>()?;
