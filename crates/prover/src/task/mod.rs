@@ -2,12 +2,6 @@ use openvm_native_recursion::hints::Hintable;
 use openvm_sdk::StdIn;
 use scroll_zkvm_types::{public_inputs::ForkName, task::ProvingTask as UniversalProvingTask};
 
-pub mod batch;
-
-pub mod chunk;
-
-pub mod bundle;
-
 /// Every proving task must have an identifier. The identifier will be appended to a prefix while
 /// storing/reading proof to/from disc.
 pub trait ProvingTask: serde::de::DeserializeOwned {
