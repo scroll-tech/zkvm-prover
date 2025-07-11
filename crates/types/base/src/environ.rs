@@ -1,4 +1,3 @@
-use rkyv::util::AlignedVec;
 use std::{borrow::Cow, collections::BTreeMap};
 
 #[cfg(target_os = "zkvm")]
@@ -18,7 +17,7 @@ pub struct EnvironStub(BTreeMap<String, String>);
 impl EnvironStub {
     /// Creates a new `EnvironStub` from the current environment variables.
     #[cfg(not(target_os = "zkvm"))]
-    pub fn from_env() -> Result<AlignedVec, rkyv::rancor::Error> {
+    pub fn from_env() -> Result<rkyv::util::AlignedVec, rkyv::rancor::Error> {
         let map = std::env::vars()
             .filter(|(k, _)| ENVIRON_KEY_ALLOW_LIST.contains(&k.as_str()))
             .collect();

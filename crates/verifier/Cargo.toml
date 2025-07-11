@@ -16,7 +16,9 @@ openvm-continuations.workspace = true
 openvm-stark-sdk.workspace = true
 
 itertools.workspace = true
-snark-verifier-sdk = {workspace = true, default-features = false, features = ["loader_evm"]}
+snark-verifier-sdk = { workspace = true, default-features = false, features = [
+  "loader_evm",
+] }
 
 bincode_v1.workspace = true
 eyre = "0.6"

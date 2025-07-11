@@ -8,10 +8,10 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
-types-base = { path = "base", package = "scroll-zkvm-types-base"}
-types-chunk = { path = "chunk", package = "scroll-zkvm-types-chunk"}
-types-batch = { path = "batch", package = "scroll-zkvm-types-batch"}
-types-bundle = { path = "bundle", package = "scroll-zkvm-types-bundle"}
+types-base = { path = "base", package = "scroll-zkvm-types-base" }
+types-chunk = { path = "chunk", package = "scroll-zkvm-types-chunk" }
+types-batch = { path = "batch", package = "scroll-zkvm-types-batch" }
+types-bundle = { path = "bundle", package = "scroll-zkvm-types-bundle" }
 
 openvm-sdk = { workspace = true }
 openvm-continuations.workspace = true

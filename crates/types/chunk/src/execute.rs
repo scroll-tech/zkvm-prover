@@ -19,7 +19,7 @@ use sbv_primitives::{
         scroll::ChunkInfoBuilder,
     },
 };
-use std::sync::Arc;
+use std::{collections::BTreeMap, sync::Arc};
 use types_base::{fork_name::ForkName, public_inputs::chunk::ChunkInfo};
 
 type Witness = ArchivedChunkWitness;
@@ -192,8 +192,11 @@ fn execute_inner(
                 .execute()
                 .map_err(|e| format!("failed to execute block: {}", e))?
         );
-        db.update(nodes_provider, output.state.state.iter())
-            .map_err(|e| format!("failed to update db: {}", e))?;
+        db.update(
+            nodes_provider,
+            BTreeMap::from_iter(output.state.state.clone()).iter(),
+        )
+        .map_err(|e| format!("failed to update db: {}", e))?;
         if !defer_commit {
             db.commit_changes();
         }

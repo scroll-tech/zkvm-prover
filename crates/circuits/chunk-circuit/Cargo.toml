@@ -15,13 +15,13 @@ openvm = { workspace = true, features = ["std", "getrandom-unsupported"] }
 openvm-k256 = { workspace = true }
 openvm-p256 = { workspace = true }
 openvm-pairing = { workspace = true, features = ["bn254"] }
-openvm-algebra-complex-macros = { workspace = true } 
+openvm-algebra-complex-macros = { workspace = true }
 openvm-algebra-guest = { workspace = true }
 openvm-bigint-guest = { workspace = true }
 openvm-ecc-guest = { workspace = true }
-openvm-keccak256-guest= { workspace = true }
+openvm-keccak256-guest = { workspace = true }
 openvm-pairing-guest = { workspace = true, features = ["bn254"] }
-openvm-rv32im-guest= {  workspace = true }
+openvm-rv32im-guest = { workspace = true }
 
 [features]
 default = []

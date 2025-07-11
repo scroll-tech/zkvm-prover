@@ -1,0 +1,19 @@
+[package]
+name = "profile-lib"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+rkyv.workspace = true
+scroll-zkvm-types-base.workspace = true
+sbv-trie = { workspace = true }
+sbv-primitives = { workspace = true, features = [
+  "hardforks",
+  "scroll-hardforks",
+  "scroll-revm-types",
+] }
+sbv-kv = { workspace = true }

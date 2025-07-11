@@ -1,0 +1,23 @@
+[package]
+name = "profile"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+sp1-sdk = { version = "5.0", features = ["profiling"] }
+rkyv.workspace = true
+profile-lib = { path = "../profile-lib" }
+serde_json.workspace = true
+scroll-zkvm-types-base.workspace = true
+sbv-primitives = { workspace = true, features = [
+  "hardforks",
+  "scroll-hardforks",
+  "scroll-revm-types",
+] }
+
+[build-dependencies]
+sp1-build = "5.0"

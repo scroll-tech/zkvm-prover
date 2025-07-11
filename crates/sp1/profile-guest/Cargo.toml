@@ -1,0 +1,23 @@
+[package]
+name = "sp1-profile"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+sp1-zkvm = "5.0"
+rkyv.workspace = true
+scroll-zkvm-types-base.workspace = true
+sbv-trie = { workspace = true }
+sbv-core = { workspace = true }
+sbv-primitives = { workspace = true, features = [
+  "hardforks",
+  "scroll-hardforks",
+  "scroll-revm-types",
+] }
+sbv-kv = { workspace = true }
+itertools.workspace = true
+profile-lib = { path = "../profile-lib" }

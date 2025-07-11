@@ -13,6 +13,9 @@ members = [
   "crates/verifier",
   "crates/integration",
   "crates/build-guest",
+  "crates/sp1/profile-guest",
+    "crates/sp1/profile",
+    "crates/sp1/profile-lib",
 ]
 resolver = "2"
 
@@ -58,8 +61,8 @@ openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", rev = "f48090c9febd021f8ee0349bc929a775fb1fa3ad" }
 p3-field = { git = "https://github.com/Plonky3/Plonky3.git", rev = "539bbc84085efb609f4f62cb03cf49588388abdb" }
 
-sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/upgrade", features = ["scroll"] }
-sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/upgrade", features = ["scroll", "serde", "rkyv"] }
+sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/upgrade", features = ["scroll", "sp1"] }
+sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/upgrade", features = ["scroll", "serde", "rkyv", "sp1"] }
 sbv-kv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/upgrade" }
 sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/upgrade" }
 
