@@ -17,6 +17,8 @@ sbv-primitives = { workspace = true, features = [
   "hardforks",
   "scroll-hardforks",
   "scroll-revm-types",
+  "scroll-chainspec",
+  "scroll-compress-ratio"
 ] }
 
 [build-dependencies]
