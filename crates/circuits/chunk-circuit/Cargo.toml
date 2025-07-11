@@ -25,5 +25,5 @@ openvm-pairing-guest = { workspace = true, features = ["bn254"] }
 openvm-rv32im-guest= {  workspace = true }
 
 [features]
-default = [] # FIXME
+default = ["openvm"]
 openvm = ["scroll-zkvm-types-chunk/openvm", "sbv-precompile/scroll-openvm"]
