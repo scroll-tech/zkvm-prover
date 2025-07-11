@@ -62,6 +62,8 @@ sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", br
 sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = ["scroll", "serde", "rkyv"] }
 sbv-kv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
 sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
+sbv-precompile = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
+ 
 scroll-alloy-evm = { git = "https://github.com/scroll-tech/reth", rev = "aad1706d3deaf50e0b92a1d005f7228ac52082f8", default-features = false }
 
 

@@ -6773,6 +6773,7 @@ dependencies = [
  "openvm-rv32im-guest 1.3.0-rc.1",
  "p256 0.13.2 (git+https://github.com/openvm-org/openvm.git?rev=3c800070d363237832a66dbe5501d3c365f3c549)",
  "rkyv",
+ "sbv-precompile",
  "scroll-zkvm-types-chunk",
  "scroll-zkvm-types-circuit",
 ]
