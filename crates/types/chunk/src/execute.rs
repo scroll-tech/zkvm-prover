@@ -37,6 +37,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
         return Err("All witnesses must have sequential block numbers in chunk mode".into());
     }
     // Get the blocks to build the basic chunk-info.
+    println!("#0000");
     let blocks = manually_drop_on_zkvm!(
         witness
             .blocks
@@ -52,6 +53,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
 
     // SCROLL_DEV_HARDFORKS will enable all forks
     let mut hardforks = (*SCROLL_DEV_HARDFORKS).clone();
+    println!("#0001");
     use sbv_primitives::{chainspec::ForkCondition, hardforks::ScrollHardfork};
     if fork_name < ForkName::Feynman {
         hardforks.insert(ScrollHardfork::Feynman, ForkCondition::Never);
@@ -68,6 +70,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     let config = ScrollChainConfig::mainnet();
     let chain_spec = Arc::new(ScrollChainSpec { inner, config });
 
+    println!("#0002");
     let (code_db, nodes_provider, block_hashes) = make_providers(&witness.blocks);
     let code_db = manually_drop_on_zkvm!(code_db);
     let nodes_provider = manually_drop_on_zkvm!(nodes_provider);
@@ -83,6 +86,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
         .map(|b| b.iter().map(|c| c.into()).collect())
         .collect::<Vec<Vec<U256>>>();
 
+    println!("#0003");
     let (post_state_root, withdraw_root) = match state_commit_mode {
         ArchivedStateCommitMode::Chunk | ArchivedStateCommitMode::Block => execute_inner(
             &code_db,
@@ -122,6 +126,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
         },
     };
 
+    println!("#0100");
     let mut rlp_buffer = manually_drop_on_zkvm!(Vec::with_capacity(2048));
     let (tx_data_length, tx_data_digest) = blocks
         .iter()
@@ -136,6 +141,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
         }
         builder.build(withdraw_root)
     };
+    println!("#0101");
     if post_state_root != sbv_chunk_info.post_state_root() {
         return Err(format!(
             "state root mismatch: expected={}, found={}",
@@ -165,6 +171,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
         block_ctxs: blocks.iter().map(Into::into).collect(),
     };
 
+    println!("#0102");
     openvm::io::println(format!("withdraw_root = {:?}", withdraw_root));
     openvm::io::println(format!("tx_bytes_hash = {:?}", tx_data_digest));
 
@@ -186,19 +193,24 @@ fn execute_inner(
         EvmDatabase::new_from_root(code_db, prev_state_root, nodes_provider, block_hashes)
             .map_err(|e| format!("failed to create EvmDatabase: {}", e))?
     );
+    println!("#0004");
     for (block, compression_ratios) in blocks.iter().zip_eq(compression_ratios.into_iter()) {
         let output = manually_drop_on_zkvm!(
             EvmExecutor::new(chain_spec.clone(), &db, block, Some(compression_ratios))
                 .execute()
                 .map_err(|e| format!("failed to execute block: {}", e))?
         );
+        println!("#0005");
         db.update(nodes_provider, output.state.state.iter())
             .map_err(|e| format!("failed to update db: {}", e))?;
+        println!("#0006");
         if !defer_commit {
             db.commit_changes();
         }
+        println!("#0007");
     }
     let post_state_root = db.commit_changes();
+    println!("#0008");
     let withdraw_root = db
         .withdraw_root()
         .map_err(|e| format!("failed to get withdraw root: {}", e))?;
