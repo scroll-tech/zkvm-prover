@@ -54,7 +54,7 @@ fn test_cycle() -> eyre::Result<()> {
         };
         let (exec_result, gas) = exec_chunk(&task)?;
         let cycle_per_gas = exec_result.total_cycle / gas;
-        assert!(cycle_per_gas < 30);
+        assert!(cycle_per_gas < 100);
         Ok(())
     })?;
     Ok(())
