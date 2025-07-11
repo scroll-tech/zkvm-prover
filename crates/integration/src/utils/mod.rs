@@ -47,7 +47,7 @@ fn blks_tx_bytes<'a>(blks: impl Iterator<Item = &'a BlockWitness>) -> Vec<u8> {
 }
 
 pub fn testing_hardfork() -> ForkName {
-    ForkName::EuclidV2
+    ForkName::Feynman
 }
 
 pub fn testdata_fork_directory() -> String {
