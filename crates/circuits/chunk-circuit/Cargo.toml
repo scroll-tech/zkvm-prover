@@ -8,6 +8,7 @@ version = "0.4.0"
 [dependencies]
 scroll-zkvm-types-circuit = { workspace = true }
 scroll-zkvm-types-chunk = { workspace = true }
+sbv-precompile = { workspace = true }
 
 rkyv.workspace = true
 
@@ -24,5 +25,5 @@ openvm-pairing-guest = { workspace = true, features = ["bn254"] }
 openvm-rv32im-guest= {  workspace = true }
 
 [features]
-default = []
-openvm = ["scroll-zkvm-types-chunk/openvm"]
+default = ["openvm"]
+openvm = ["scroll-zkvm-types-chunk/openvm", "sbv-precompile/scroll-openvm"]

@@ -58,10 +58,11 @@ openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", rev = "f48090c9febd021f8ee0349bc929a775fb1fa3ad" }
 p3-field = { git = "https://github.com/Plonky3/Plonky3.git", rev = "539bbc84085efb609f4f62cb03cf49588388abdb" }
 
-sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/upgrade", features = ["scroll"] }
-sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/upgrade", features = ["scroll", "serde", "rkyv"] }
-sbv-kv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/upgrade" }
-sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/upgrade" }
+sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", rev = "2d079e7b0a88cd75d5df6887978bd26c121316ff", features = ["scroll"] }
+sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", rev = "2d079e7b0a88cd75d5df6887978bd26c121316ff", features = ["scroll", "serde", "rkyv"] }
+sbv-kv = { git = "https://github.com/scroll-tech/stateless-block-verifier", rev = "2d079e7b0a88cd75d5df6887978bd26c121316ff" }
+sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", rev = "2d079e7b0a88cd75d5df6887978bd26c121316ff" }
+sbv-precompile = { git = "https://github.com/scroll-tech/stateless-block-verifier", rev = "2d079e7b0a88cd75d5df6887978bd26c121316ff" }
 
 alloy-primitives = { version = "1.2", default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
 alloy-serde = { version = "1.0", default-features = false }
