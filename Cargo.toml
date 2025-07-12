@@ -58,13 +58,17 @@ openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", rev = "f48090c9febd021f8ee0349bc929a775fb1fa3ad" }
 p3-field = { git = "https://github.com/Plonky3/Plonky3.git", rev = "539bbc84085efb609f4f62cb03cf49588388abdb" }
 
-sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/upgrade", features = ["scroll"] }
-sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/upgrade", features = ["scroll", "serde", "rkyv"] }
-sbv-kv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/upgrade" }
-sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/upgrade" }
+sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = ["scroll"] }
+sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = ["scroll", "serde", "rkyv"] }
+sbv-kv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
+sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
+sbv-precompile = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
+ 
+scroll-alloy-evm = { git = "https://github.com/scroll-tech/reth", rev = "aad1706d3deaf50e0b92a1d005f7228ac52082f8", default-features = false }
+
 
 alloy-primitives = { version = "1.2", default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
-alloy-serde = { version = "1.0", default-features = false }
+alloy-serde = { version = "1.0.13", default-features = false }
 bitcode = { version = "0.6.5", default-features = false, features = ["serde", "derive"] }
 bincode_v1 = { version = "1.3", package = "bincode"}
 bincode = { version = "2.0" }
@@ -107,18 +111,18 @@ scroll-zkvm-prover = { path = "crates/prover" }
 scroll-zkvm-verifier = { path = "crates/verifier" }
 
 [patch.crates-io]
-revm = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
-revm-bytecode = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
-revm-context = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
-revm-context-interface = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
-revm-database = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
-revm-database-interface = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
-revm-handler = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
-revm-inspector = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
-revm-interpreter = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
-revm-precompile = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
-revm-primitives = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
-revm-state = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
+revm = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v78" }
+revm-bytecode = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v78" }
+revm-context = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v78" }
+revm-context-interface = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v78" }
+revm-database = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v78" }
+revm-database-interface = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v78" }
+revm-handler = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v78" }
+revm-inspector = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v78" }
+revm-interpreter = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v78" }
+revm-precompile = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v78" }
+revm-primitives = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v78" }
+revm-state = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v78" }
 
 ruint = { git = "https://github.com/scroll-tech/uint.git", branch = "v1.15.0" }
 alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "v1.2.0" }

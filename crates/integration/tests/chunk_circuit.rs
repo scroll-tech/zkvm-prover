@@ -32,7 +32,8 @@ fn exec_chunk(task: &ChunkProvingTask) -> eyre::Result<(ExecutionResult, u64)> {
     let cycle_count = exec_result.total_cycle as u64;
     let cycle_per_gas = cycle_count / stats.total_gas_used;
     println!(
-        "blk {blk}, cycle {cycle_count}, gas {}, cycle-per-gas {cycle_per_gas}, tick-per-gas {}",
+        "blk {blk}->{}, cycle {cycle_count}, gas {}, cycle-per-gas {cycle_per_gas}, tick-per-gas {}",
+        task.block_witnesses.last().unwrap().header.number,
         stats.total_gas_used,
         exec_result.total_tick as u64 / stats.total_gas_used,
     );
@@ -65,8 +66,10 @@ fn test_execute() -> eyre::Result<()> {
     ChunkProverTester::setup()?;
 
     let task = ChunkProverTester::gen_proving_task()?;
-    exec_chunk(&task)?;
-
+    let (exec_result, total_gas_used) = exec_chunk(&task)?;
+    let cycle_per_gas = exec_result.total_cycle / total_gas_used;
+    assert_ne!(cycle_per_gas, 0);
+    assert!(cycle_per_gas <= 35);
     Ok(())
 }
 
