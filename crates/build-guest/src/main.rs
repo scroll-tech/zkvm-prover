@@ -19,9 +19,6 @@ use openvm_sdk::{config::SdkVmConfig, Sdk, F};
 use openvm_stark_sdk::{openvm_stark_backend::p3_field::PrimeField32, p3_baby_bear::BabyBear};
 use snark_verifier_sdk::snark_verifier::loader::halo2::halo2_ecc::halo2_base::halo2_proofs::halo2curves::bn256::Fr;
 
-mod verifier;
-use verifier::dump_verifier;
-
 mod builder;
 
 const LOG_PREFIX: &str = "[build-guest]";
@@ -56,39 +53,9 @@ fn compress_commitment(commitment: &[u32; DIGEST_SIZE]) -> Fr {
     compressed_value
 }
 
-/// Configuration for building a specific variant of a guest program.
-#[derive(Debug)]
-pub(crate) struct BuildConfig {
-    /// Cargo features to enable for this build.
-    pub(crate) features: Vec<String>,
-    /// Suffix to append to generated filenames (e.g., "_rv32"). Empty string for default.
-    pub(crate) filename_suffix: String,
-}
-
-/// Returns the build configurations for a given project name.
-fn get_build_configs(project_name: &str) -> Vec<BuildConfig> {
-    match project_name {
-        "chunk" => vec![BuildConfig {
-            features: vec![],
-            filename_suffix: "".to_string(),
-        }],
-        "batch" => vec![BuildConfig {
-            features: vec![],
-            filename_suffix: "".to_string(),
-        }],
-        "bundle" => vec![BuildConfig {
-            features: vec![],
-            filename_suffix: "".to_string(),
-        }],
-        _ => {
-            // Use panic instead of unreachable for build scripts, providing a clearer error.
-            panic!("{LOG_PREFIX} Unsupported project name: {project_name}");
-        }
-    }
-}
-
 /// Generates the root verifier assembly code if required by the selected projects.
 fn generate_root_verifier(project_names: &[&str], workspace_dir: &Path) -> Result<()> {
+    use openvm_sdk::{config::AggStarkConfig, keygen::AggStarkProvingKey};
     // Only generate if "batch" or "bundle" is being built, as they use recursive verification.
     if project_names
         .iter()
@@ -99,7 +66,15 @@ fn generate_root_verifier(project_names: &[&str], workspace_dir: &Path) -> Resul
             .join("crates")
             .join("build-guest")
             .join("root_verifier.asm");
-        dump_verifier(root_verifier_path.to_str().expect("Invalid path")); // Use expect for build script paths
+
+        println!("generating AggStarkProvingKey");
+        let (agg_stark_pk, _) =
+            AggStarkProvingKey::dummy_proof_and_keygen(AggStarkConfig::default());
+
+        println!("generating root_verifier.asm");
+        let asm = openvm_sdk::Sdk::new().generate_root_verifier_asm(&agg_stark_pk);
+        std::fs::write(&root_verifier_path, asm).expect("fail to write");
+
         println!(
             "{LOG_PREFIX} Root verifier generated at: {}",
             root_verifier_path.display()
@@ -172,99 +147,82 @@ fn run_stage3_exe_commits(project_names: &[&str], workspace_dir: &Path) -> Resul
             .join("crates")
             .join("circuits")
             .join(format!("{project_name}-circuit"));
-        let build_configs = get_build_configs(project_name);
 
+        println!("{LOG_PREFIX} Processing project: {project_name}");
+
+        let start_time = Instant::now();
+        println!("{LOG_PREFIX} Starting build...");
+
+        let project_dir = project_path.to_str().expect("Invalid path");
+        let app_config = builder::load_app_config(project_dir)?;
+
+        // Store current directory and change to project directory
+        let original_dir = env::current_dir()?;
+        env::set_current_dir(&project_path)?;
         println!(
-            "{LOG_PREFIX} Processing project: {project_name} ({} build configs)",
-            build_configs.len()
+            "{LOG_PREFIX} Changed working directory to: {}",
+            project_path.display()
         );
 
-        for build_config in build_configs {
-            let start_time = Instant::now();
-            println!("{LOG_PREFIX} Starting build for config: {build_config:?}...");
-
-            let project_dir = project_path.to_str().expect("Invalid path");
-            let app_config = builder::load_app_config(project_dir)?;
-
-            // Store current directory and change to project directory
-            let original_dir = env::current_dir()?;
-            env::set_current_dir(&project_path)?;
-            println!(
-                "{LOG_PREFIX} Changed working directory to: {}",
-                project_path.display()
-            );
-
-            // 1. Build ELF
-            let elf = builder::build(
-                project_dir,
-                &build_config.features,
-                &app_config.app_vm_config,
-            )
+        // 1. Build ELF
+        let elf = builder::build(project_dir, Vec::<String>::new(), &app_config.app_vm_config)
             .inspect_err(|_err| {
                 println!("{LOG_PREFIX} Building failed in {}", project_dir);
             })?;
-            println!("{LOG_PREFIX} Built ELF");
+        println!("{LOG_PREFIX} Built ELF");
 
-            // Revert to original directory
-            env::set_current_dir(&original_dir)?;
+        // Revert to original directory
+        env::set_current_dir(&original_dir)?;
+        println!(
+            "{LOG_PREFIX} Reverted working directory to: {}",
+            original_dir.display()
+        );
+
+        // 2. Transpile ELF to VM Executable
+        let vmexe_filename = String::from("app.vmexe");
+        let app_exe =
+            builder::transpile(project_dir, elf, Some(&vmexe_filename), app_config.clone())?;
+        println!("{LOG_PREFIX} Transpiled to VM Executable: {vmexe_filename}");
+
+        // 3. Commit VM Executable
+        let app_committed_exe =
+            Sdk::new().commit_app_exe(app_config.app_fri_params.fri_params, app_exe)?;
+
+        // 4. Compute and Write Executable Commitment
+        use openvm_circuit::arch::VmConfig;
+        let exe_commit_f: [F; DIGEST_SIZE] = app_committed_exe
+            .compute_exe_commit(
+                &<SdkVmConfig as VmConfig<F>>::system(&app_config.app_vm_config).memory_config,
+            )
+            .into();
+        let exe_commit_u32: [u32; DIGEST_SIZE] = exe_commit_f.map(|f| f.as_canonical_u32());
+
+        let commit_filename = format!("{project_name}_exe_commit.rs");
+        let output_path = Path::new(project_dir).join(&commit_filename);
+        write_commitment(output_path.to_str().expect("Invalid path"), exe_commit_u32)?;
+
+        // Special handling for bundle project: generate digest_1
+        if project_name == "bundle" {
+            println!("{LOG_PREFIX} Generating digest_1 for bundle project...",);
+            let digest_1_bytes = compress_commitment(&exe_commit_u32)
+                .to_bytes()
+                .into_iter()
+                .rev() // Ensure correct byte order
+                .collect::<Vec<u8>>();
+            let digest_1_filename = String::from("digest_1");
+            let digest_1_path = Path::new(project_dir).join(&digest_1_filename);
+            std::fs::write(&digest_1_path, &digest_1_bytes)?;
             println!(
-                "{LOG_PREFIX} Reverted working directory to: {}",
-                original_dir.display()
-            );
-
-            // 2. Transpile ELF to VM Executable
-            let vmexe_filename = format!("app{}.vmexe", build_config.filename_suffix);
-            let app_exe =
-                builder::transpile(project_dir, elf, Some(&vmexe_filename), app_config.clone())?;
-            println!("{LOG_PREFIX} Transpiled to VM Executable: {vmexe_filename}");
-
-            // 3. Commit VM Executable
-            let app_committed_exe =
-                Sdk::new().commit_app_exe(app_config.app_fri_params.fri_params, app_exe)?;
-
-            // 4. Compute and Write Executable Commitment
-            use openvm_circuit::arch::VmConfig;
-            let exe_commit_f: [F; DIGEST_SIZE] = app_committed_exe
-                .compute_exe_commit(
-                    &<SdkVmConfig as VmConfig<F>>::system(&app_config.app_vm_config).memory_config,
-                )
-                .into();
-            let exe_commit_u32: [u32; DIGEST_SIZE] = exe_commit_f.map(|f| f.as_canonical_u32());
-
-            let commit_filename = format!(
-                "{project_name}_exe{}_commit.rs",
-                build_config.filename_suffix
-            );
-            let output_path = Path::new(project_dir).join(&commit_filename);
-            write_commitment(output_path.to_str().expect("Invalid path"), exe_commit_u32)?;
-
-            // Special handling for bundle project: generate digest_1
-            if project_name == "bundle" {
-                println!(
-                    "{LOG_PREFIX} Generating digest_1{} for bundle project...",
-                    build_config.filename_suffix
-                );
-                let digest_1_bytes = compress_commitment(&exe_commit_u32)
-                    .to_bytes()
-                    .into_iter()
-                    .rev() // Ensure correct byte order
-                    .collect::<Vec<u8>>();
-                let digest_1_filename = format!("digest_1{}", build_config.filename_suffix,);
-                let digest_1_path = Path::new(project_dir).join(&digest_1_filename);
-                std::fs::write(&digest_1_path, &digest_1_bytes)?;
-                println!(
-                    "{LOG_PREFIX} Wrote {} to {}",
-                    digest_1_filename,
-                    digest_1_path.display()
-                );
-            }
-
-            println!(
-                "{LOG_PREFIX} Finished build for config: {:?} in {:?}",
-                build_config,
-                start_time.elapsed()
+                "{LOG_PREFIX} Wrote {} to {}",
+                digest_1_filename,
+                digest_1_path.display()
             );
         }
+
+        println!(
+            "{LOG_PREFIX} Finished build for config in {:?}",
+            start_time.elapsed()
+        );
     }
     println!("{LOG_PREFIX} === Stage 3 Finished ===");
     Ok(())

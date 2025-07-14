@@ -1,10 +1,10 @@
 use sbv_primitives::B256;
 use scroll_zkvm_integration::{
-    ProverTester, prove_verify_multi, prove_verify_single, prove_verify_single_evm,
+    ProverTester, prove_verify_multi, prove_verify_single_evm,
     testers::{
         batch::BatchProverTester,
         bundle::{BundleLocalTaskTester, BundleProverTester},
-        chunk::{ChunkProverRv32Tester, ChunkProverTester, MultiChunkProverTester},
+        chunk::MultiChunkProverTester,
     },
     utils::{LastHeader, build_batch_task, testing_hardfork},
 };
@@ -87,24 +87,8 @@ fn verify_bundle_info_pi() {
 }
 
 fn build_chunk_outcome() -> eyre::Result<(Vec<ChunkProvingTask>, Vec<ChunkProof>)> {
-    let rv32_hybrid = false;
-    if rv32_hybrid {
-        let mut proofs = Vec::new();
-        let tasks = MultiChunkProverTester::gen_multi_proving_tasks()?;
-        for (idx, task) in tasks.iter().enumerate() {
-            if idx % 2 == 0 {
-                let outcome = prove_verify_single::<ChunkProverTester>(Some(task.clone()))?;
-                proofs.push(outcome.proofs[0].clone());
-            } else {
-                let outcome = prove_verify_single::<ChunkProverRv32Tester>(Some(task.clone()))?;
-                proofs.push(outcome.proofs[0].clone());
-            }
-        }
-        Ok((tasks, proofs))
-    } else {
-        let outcome = prove_verify_multi::<MultiChunkProverTester>(None)?;
-        Ok((outcome.tasks, outcome.proofs))
-    }
+    let outcome = prove_verify_multi::<MultiChunkProverTester>(None)?;
+    Ok((outcome.tasks, outcome.proofs))
 }
 
 #[test]
@@ -159,19 +143,12 @@ fn e2e() -> eyre::Result<()> {
     }
 
     let evm_proof = outcome.proofs[0].clone().into_evm_proof();
-    if testing_hardfork() >= ForkName::EuclidV2 {
-        assert!(
-            verifier
-                .to_bundle_verifier_v2()
-                .verify_proof_evm(&evm_proof)
-        );
-    } else {
-        assert!(
-            verifier
-                .to_bundle_verifier_v1()
-                .verify_proof_evm(&evm_proof)
-        );
-    }
+
+    assert!(
+        verifier
+            .to_bundle_verifier_v2()
+            .verify_proof_evm(&evm_proof)
+    );
 
     let expected_pi_hash = &outcome.proofs[0].metadata.bundle_pi_hash;
     let observed_instances = &evm_proof.instances;
