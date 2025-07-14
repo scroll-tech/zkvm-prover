@@ -179,7 +179,7 @@ fn run_stage3_exe_commits(project_names: &[&str], workspace_dir: &Path) -> Resul
         );
 
         // 2. Transpile ELF to VM Executable
-        let vmexe_filename = format!("app.vmexe");
+        let vmexe_filename = String::from("app.vmexe");
         let app_exe =
             builder::transpile(project_dir, elf, Some(&vmexe_filename), app_config.clone())?;
         println!("{LOG_PREFIX} Transpiled to VM Executable: {vmexe_filename}");
@@ -209,7 +209,7 @@ fn run_stage3_exe_commits(project_names: &[&str], workspace_dir: &Path) -> Resul
                 .into_iter()
                 .rev() // Ensure correct byte order
                 .collect::<Vec<u8>>();
-            let digest_1_filename = format!("digest_1");
+            let digest_1_filename = String::from("digest_1");
             let digest_1_path = Path::new(project_dir).join(&digest_1_filename);
             std::fs::write(&digest_1_path, &digest_1_bytes)?;
             println!(
