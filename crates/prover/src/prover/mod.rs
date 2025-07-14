@@ -396,14 +396,10 @@ impl<Type: ProverType> Prover<Type> {
     }
 
     /// Execute the guest program to get the cycle count.
-    pub fn execute_and_check(&self, stdin: &StdIn, mock_prove: bool) -> Result<u64, Error> {
+    pub fn execute_and_check(&self, stdin: &StdIn) -> Result<u64, Error> {
         let config = self.app_pk.app_vm_pk.vm_config.clone();
         let exe = self.app_committed_exe.exe.clone();
-        let debug_input = crate::utils::vm::DebugInput {
-            mock_prove,
-            commited_exe: mock_prove.then(|| self.app_committed_exe.clone()),
-        };
-        let exec_result = crate::utils::vm::execute_guest(config, exe, stdin, &debug_input)?;
+        let exec_result = crate::utils::vm::execute_guest(config, exe, stdin)?;
         Ok(exec_result.total_cycle as u64)
     }
 
@@ -488,10 +484,9 @@ impl<Type: ProverType> Prover<Type> {
             .build_guest_input()
             .map_err(|e| Error::GenProof(e.to_string()))?;
 
-        let mock_prove = std::env::var("MOCK_PROVE").as_deref() == Ok("true");
         // Here we always do an execution of the guest program to get the cycle count.
         // and do precheck before proving like ensure PI != 0
-        self.execute_and_check(&stdin, mock_prove)?;
+        self.execute_and_check(&stdin)?;
 
         let task_id = task.identifier();
 

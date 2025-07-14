@@ -14,7 +14,6 @@ use crate::Error;
 
 pub struct ExecutionResult {
     pub total_cycle: u64,
-    pub total_tick: u64,
     #[allow(dead_code)]
     pub public_values: Vec<F>,
 }
@@ -29,16 +28,15 @@ pub fn execute_guest(
     vm_config: SdkVmConfig,
     exe: VmExe<F>,
     stdin: &StdIn,
-    aux_args: &DebugInput,
 ) -> Result<ExecutionResult, Error> {
     use openvm_circuit::arch::VmConfig;
     use openvm_stark_sdk::openvm_stark_backend::p3_field::Field;
 
     let vm = VmExecutor::new(vm_config.clone());
 
-    let mut total_cycle: u64 = 0;
-    let mut total_tick: u64 = 0;
-    let final_memory = vm.execute_e1(exe, stdin.clone(), None).unwrap().memory;
+    let state = vm.execute_e1(exe, stdin.clone(), None).unwrap();
+    let final_memory = state.memory;
+    let total_cycle = state.instret;
         
     let system_config = <SdkVmConfig as VmConfig<F>>::system(&vm_config);
     let public_values: Vec<F> = extract_public_values(
@@ -52,7 +50,6 @@ pub fn execute_guest(
 
     Ok(ExecutionResult {
         total_cycle,
-        total_tick,
         public_values,
     })
 }
