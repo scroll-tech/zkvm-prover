@@ -1,4 +1,4 @@
-use std::{fs::read_to_string, path::Path};
+use std::{collections::BTreeMap, fs::read_to_string, path::Path};
 
 use openvm_circuit::arch::instructions::{
     exe::{FnBounds, VmExe},
@@ -7,22 +7,51 @@ use openvm_circuit::arch::instructions::{
 };
 use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
 use openvm_sdk::{
+    F,
     DefaultStaticVerifierPvHandler, Sdk,
     commit::AppExecutionCommit,
     config::{AggConfig, AppConfig, SdkVmConfig},
     fs::{read_app_pk_from_file, read_exe_from_file, read_from_file_bitcode},
     keygen::{AggProvingKey, AppProvingKey},
 };
-use openvm_stark_sdk::p3_baby_bear::BabyBear;
+use openvm_stark_sdk::{openvm_stark_backend::p3_field::{ExtensionField, PackedValue}, p3_baby_bear::BabyBear};
 
 use crate::Error;
 
-/// Alias for convenience.
-pub type F = BabyBear;
-
 /// Wrapper around [`openvm_sdk::fs::read_exe_from_file`].
 pub fn read_app_exe<P: AsRef<Path>>(path: P) -> Result<VmExe<F>, Error> {
-    Ok(read_exe_from_file(&path).unwrap())
+
+
+    /// Executable program for OpenVM.
+    #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
+    #[serde(bound(
+        serialize = "F: serde::Serialize",
+        deserialize = "F: std::cmp::Ord + serde::Deserialize<'de>"
+    ))]
+    pub struct OldVmExe<F> {
+        /// Program to execute.
+        pub program: Program<F>,
+        /// Start address of pc.
+        pub pc_start: u32,
+        /// Initial memory image.
+        pub init_memory: BTreeMap<(u32, u32), F>,
+        /// Starting + ending bounds for each function.
+        pub fn_bounds: FnBounds,
+    }
+
+    let exe: OldVmExe<F> = read_from_file_bitcode(&path).unwrap();
+    use openvm_stark_sdk::openvm_stark_backend::p3_field::FieldAlgebra;
+    use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
+    let exe = VmExe::<F> {
+        program: exe.program,
+        pc_start: exe.pc_start,
+        init_memory: exe.init_memory.into_iter().map(|(k, v)| {
+         assert!(v < F::from_canonical_u32(256u32));
+         (k, v.as_canonical_u32() as u8)   
+        }).collect(),
+        fn_bounds: exe.fn_bounds,
+    };
+    Ok(exe)
 }
 
 /// Wrapper around [`openvm_sdk::fs::read_app_pk_from_file`].

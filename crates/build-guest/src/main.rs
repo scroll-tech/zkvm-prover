@@ -10,12 +10,13 @@
 //! - `BUILD_PROJECT`: Comma-separated list of projects to build (e.g., "chunk,batch"). Defaults to "chunk,batch,bundle".
 //! - `BUILD_STAGES`: Comma-separated list of stages to run (e.g., "stage1,stage3"). Defaults to "stage1,stage2,stage3".
 
-use std::{collections::HashSet, env, path::Path, time::Instant};
+use std::{collections::{BTreeMap, HashSet}, env, path::Path, time::Instant};
 
 use dotenv::dotenv;
-use eyre::Result; // Use eyre::Result directly
+use eyre::Result; use openvm_instructions::{exe::{FnBounds, VmExe}, program::Program};
+// Use eyre::Result directly
 use openvm_native_compiler::ir::DIGEST_SIZE;
-use openvm_sdk::{config::SdkVmConfig, Sdk, F};
+use openvm_sdk::{config::SdkVmConfig, fs::read_from_file_bitcode, Sdk, F};
 use openvm_stark_sdk::{openvm_stark_backend::p3_field::PrimeField32, p3_baby_bear::BabyBear};
 use snark_verifier_sdk::snark_verifier::loader::halo2::halo2_ecc::halo2_base::halo2_proofs::halo2curves::bn256::Fr;
 
@@ -193,6 +194,10 @@ fn run_stage3_exe_commits(project_names: &[&str], workspace_dir: &Path) -> Resul
                 "{LOG_PREFIX} Changed working directory to: {}",
                 project_path.display()
             );
+            let vmexe_filename = format!("app{}.vmexe", build_config.filename_suffix);
+
+
+            if false {
 
             // 1. Build ELF
             let elf = builder::build(
@@ -213,15 +218,18 @@ fn run_stage3_exe_commits(project_names: &[&str], workspace_dir: &Path) -> Resul
             );
 
             // 2. Transpile ELF to VM Executable
-            let vmexe_filename = format!("app{}.vmexe", build_config.filename_suffix);
             let app_exe =
                 builder::transpile(project_dir, elf, Some(&vmexe_filename), app_config.clone())?;
             println!("{LOG_PREFIX} Transpiled to VM Executable: {vmexe_filename}");
+        }
 
+        let p = Path::new(project_dir).join("openvm").join(vmexe_filename);
+        let app_exe = read_app_exe(p).unwrap();
             // 3. Commit VM Executable
             let app_committed_exe =
                 Sdk::new().commit_app_exe(app_config.app_fri_params.fri_params, app_exe)?;
 
+        
             // 4. Compute and Write Executable Commitment
             use openvm_circuit::arch::VmConfig;
             let exe_commit_f: [F; DIGEST_SIZE] = app_committed_exe
@@ -231,6 +239,8 @@ fn run_stage3_exe_commits(project_names: &[&str], workspace_dir: &Path) -> Resul
                 .into();
             let exe_commit_u32: [u32; DIGEST_SIZE] = exe_commit_f.map(|f| f.as_canonical_u32());
 
+            println!("exe commit {:?}", exe_commit_u32);
+            panic!("ok");
             let commit_filename = format!(
                 "{project_name}_exe{}_commit.rs",
                 build_config.filename_suffix
@@ -334,4 +344,41 @@ pub fn main() -> Result<()> {
 
     println!("{LOG_PREFIX} Build process completed successfully.");
     Ok(())
+}
+
+
+/// Wrapper around [`openvm_sdk::fs::read_exe_from_file`].
+pub fn read_app_exe<P: AsRef<Path>>(path: P) -> Result<VmExe<F>, eyre::Error> {
+
+
+    /// Executable program for OpenVM.
+    #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
+    #[serde(bound(
+        serialize = "F: serde::Serialize",
+        deserialize = "F: std::cmp::Ord + serde::Deserialize<'de>"
+    ))]
+    pub struct OldVmExe<F> {
+        /// Program to execute.
+        pub program: Program<F>,
+        /// Start address of pc.
+        pub pc_start: u32,
+        /// Initial memory image.
+        pub init_memory: BTreeMap<(u32, u32), F>,
+        /// Starting + ending bounds for each function.
+        pub fn_bounds: FnBounds,
+    }
+
+    let exe: OldVmExe<F> = read_from_file_bitcode(&path).unwrap();
+    use openvm_stark_sdk::openvm_stark_backend::p3_field::FieldAlgebra;
+    use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
+    let exe = VmExe::<F> {
+        program: exe.program,
+        pc_start: exe.pc_start,
+        init_memory: exe.init_memory.into_iter().map(|(k, v)| {
+         assert!(v < F::from_canonical_u32(256u32));
+         (k, v.as_canonical_u32() as u8)   
+        }).collect(),
+        fn_bounds: exe.fn_bounds,
+    };
+    Ok(exe)
 }
