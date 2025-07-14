@@ -2,31 +2,23 @@ use scroll_zkvm_types::{bundle::BundleInfo, public_inputs::ForkName};
 
 use crate::{
     Error, Prover, ProverType,
-    commitments::{bundle, bundle_euclidv1},
+    commitments::bundle,
     proof::BundleProofMetadata,
     task::{ProvingTask, bundle::BundleProvingTask},
 };
 
 use super::Commitments;
 
-pub struct BundleCircuitV1;
 pub struct BundleCircuitV2;
-
-impl Commitments for BundleCircuitV1 {
-    const EXE_COMMIT: [u32; 8] = bundle_euclidv1::EXE_COMMIT;
-    const LEAF_COMMIT: [u32; 8] = bundle_euclidv1::LEAF_COMMIT;
-}
 
 impl Commitments for BundleCircuitV2 {
     const EXE_COMMIT: [u32; 8] = bundle::EXE_COMMIT;
     const LEAF_COMMIT: [u32; 8] = bundle::LEAF_COMMIT;
 }
 
-pub type BundleProverTypeEuclidV1 = GenericBundleProverType<BundleCircuitV1>;
 pub type BundleProverTypeEuclidV2 = GenericBundleProverType<BundleCircuitV2>;
 
 /// Prover for [`BundleCircuit`].
-pub type BundleProverEuclidV1 = Prover<BundleProverTypeEuclidV1>;
 pub type BundleProverEuclidV2 = Prover<BundleProverTypeEuclidV2>;
 
 pub struct GenericBundleProverType<C: Commitments>(std::marker::PhantomData<C>);

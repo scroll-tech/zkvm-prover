@@ -22,24 +22,24 @@ edition = "2021"
 homepage = "https://github.com/scroll-tech/zkvm-prover"
 readme = "README.md"
 repository = "https://github.com/scroll-tech/zkvm-prover"
-version = "0.4.0"
+version = "0.5.0"
 
 [workspace.dependencies]
 # openvm guest libs
-openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549" }
-openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
-openvm-custom-insn = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
-openvm-sha2 = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549" }
-openvm-sha256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
-openvm-p256 = { git = "https://github.com/openvm-org/openvm.git", package = "p256", rev = "3c800070d363237832a66dbe5501d3c365f3c549", features = ["std"] }
-openvm-k256 = { git = "https://github.com/openvm-org/openvm.git", package = "k256", rev = "3c800070d363237832a66dbe5501d3c365f3c549", features = ["std"] }
-openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549" }
-openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
-openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
-openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
-openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
-openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
-openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
+openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "4973d38cb3f2e14ebdd59e03802e65bb657ee422" }
+openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "4973d38cb3f2e14ebdd59e03802e65bb657ee422", default-features = false }
+openvm-custom-insn = { git = "https://github.com/openvm-org/openvm.git", rev = "4973d38cb3f2e14ebdd59e03802e65bb657ee422", default-features = false }
+openvm-sha2 = { git = "https://github.com/openvm-org/openvm.git", rev = "4973d38cb3f2e14ebdd59e03802e65bb657ee422" }
+openvm-sha256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "4973d38cb3f2e14ebdd59e03802e65bb657ee422", default-features = false }
+openvm-p256 = { git = "https://github.com/openvm-org/openvm.git", package = "p256", rev = "4973d38cb3f2e14ebdd59e03802e65bb657ee422", features = ["std"] }
+openvm-k256 = { git = "https://github.com/openvm-org/openvm.git", package = "k256", rev = "4973d38cb3f2e14ebdd59e03802e65bb657ee422", features = ["std"] }
+openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", rev = "4973d38cb3f2e14ebdd59e03802e65bb657ee422" }
+openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "4973d38cb3f2e14ebdd59e03802e65bb657ee422", default-features = false }
+openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "4973d38cb3f2e14ebdd59e03802e65bb657ee422", default-features = false }
+openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "4973d38cb3f2e14ebdd59e03802e65bb657ee422", default-features = false }
+openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "4973d38cb3f2e14ebdd59e03802e65bb657ee422", default-features = false }
+openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "4973d38cb3f2e14ebdd59e03802e65bb657ee422", default-features = false }
+openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "4973d38cb3f2e14ebdd59e03802e65bb657ee422", default-features = false }
 
 # openvm guest libs
 openvm-build = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.1-rc.1", default-features = false }
@@ -58,11 +58,11 @@ openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", rev = "f48090c9febd021f8ee0349bc929a775fb1fa3ad" }
 p3-field = { git = "https://github.com/Plonky3/Plonky3.git", rev = "539bbc84085efb609f4f62cb03cf49588388abdb" }
 
-sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = ["scroll"] }
-sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = ["scroll", "serde", "rkyv"] }
-sbv-kv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
-sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
-sbv-precompile = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
+sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/openvm-1.3", features = ["scroll"] }
+sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/openvm-1.3", features = ["scroll", "serde", "rkyv"] }
+sbv-kv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/openvm-1.3" }
+sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/openvm-1.3" }
+sbv-precompile = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/openvm-1.3" }
  
 scroll-alloy-evm = { git = "https://github.com/scroll-tech/reth", rev = "aad1706d3deaf50e0b92a1d005f7228ac52082f8", default-features = false }
 

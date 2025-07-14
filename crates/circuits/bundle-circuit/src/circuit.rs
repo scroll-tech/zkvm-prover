@@ -9,7 +9,7 @@ use scroll_zkvm_types_circuit::{
     },
 };
 
-use crate::child_commitments::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT};
+use crate::child_commitments;
 
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use openvm_keccak256_guest;
@@ -41,14 +41,18 @@ impl AggCircuit for BundleCircuit {
 
     fn verify_commitments(commitment: &ProgramCommitment) {
         assert_eq!(
-            commitment.exe, BATCH_EXE_COMMIT,
-            "mismatch batch-proof exe commitment: expected={:?}, got={:?}",
-            BATCH_EXE_COMMIT, commitment.exe,
+            commitment.leaf,
+            child_commitments::LEAF_COMMIT,
+            "mismatch batch-proof leaf commitment: expected={:?}, got={:?}",
+            child_commitments::LEAF_COMMIT,
+            commitment.leaf,
         );
         assert_eq!(
-            commitment.leaf, BATCH_LEAF_COMMIT,
-            "mismatch batch-proof leaf commitment: expected={:?}, got={:?}",
-            BATCH_LEAF_COMMIT, commitment.leaf,
+            commitment.exe,
+            child_commitments::EXE_COMMIT,
+            "mismatch batch-proof exe commitment: expected={:?}, got={:?}",
+            child_commitments::EXE_COMMIT,
+            commitment.exe,
         );
     }
 
