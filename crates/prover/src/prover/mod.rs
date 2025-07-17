@@ -5,12 +5,10 @@ use std::{
 
 use once_cell::sync::Lazy;
 use openvm_circuit::{arch::SingleSegmentVmExecutor, system::program::trace::VmCommittedExe};
-use openvm_native_recursion::{
-    halo2::{
-        RawEvmProof,
-        utils::{CacheHalo2ParamsReader, Halo2ParamsReader},
-        wrapper::Halo2WrapperProvingKey,
-    },
+use openvm_native_recursion::halo2::{
+    RawEvmProof,
+    utils::{CacheHalo2ParamsReader, Halo2ParamsReader},
+    wrapper::Halo2WrapperProvingKey,
 };
 use openvm_sdk::{
     DefaultStaticVerifierPvHandler, NonRootCommittedExe, Sdk, StdIn,
@@ -64,7 +62,7 @@ pub struct EvmProverVerifier {
 /// Generic prover.
 pub struct Prover {
     /// Prover name
-    pub prover_name: String,    
+    pub prover_name: String,
     /// Commitment to app exe.
     pub app_committed_exe: Arc<NonRootCommittedExe>,
     /// App specific proving key.
@@ -227,14 +225,26 @@ impl Prover {
         task: &impl ProvingTask,
         with_snark: bool,
     ) -> Result<ProofEnum, Error> {
-        // Generate a new proof.
-        Ok(if !with_snark {
-            self.gen_proof_stark(task)?.into()
-        } else {
-            EvmProof::from(self.gen_proof_snark(task)?).into()
-        })
-    }
 
+        let task_id = task.identifier();
+        tracing::debug!(name: "generate_root_verifier_input", task_id);
+
+        let stdin = task.build_guest_input()
+        .map_err(|e| Error::GenProof(e.to_string()))?;
+
+        // Generate a new proof.
+        let proof = if !with_snark {
+            self.gen_proof_stark(stdin)?.into()           
+        } else {
+            EvmProof::from(self.gen_proof_snark(stdin)?).into()
+        };
+
+        tracing::info!(
+            "app proof generated for {}, task id {task_id}, isevm {with_snark}",
+            self.prover_name
+        ); 
+        Ok(proof)
+    }
 
     /// Execute the guest program to get the cycle count.
     pub fn execute_and_check(&self, stdin: &StdIn, mock_prove: bool) -> Result<u64, Error> {
@@ -317,26 +327,19 @@ impl Prover {
     /// Generate a [root proof][root_proof].
     ///
     /// [root_proof][openvm_sdk::verifier::root::types::RootVmVerifierInput]
-    fn gen_proof_stark(&self, task: &impl ProvingTask) -> Result<RootProof, Error> {
-        let stdin = task
-            .build_guest_input()
-            .map_err(|e| Error::GenProof(e.to_string()))?;
-
+    pub fn gen_proof_stark(&self, stdin: StdIn) -> Result<RootProof, Error> {
         let mock_prove = std::env::var("MOCK_PROVE").as_deref() == Ok("true");
         // Here we always do an execution of the guest program to get the cycle count.
         // and do precheck before proving like ensure PI != 0
         self.execute_and_check(&stdin, mock_prove)?;
 
-        let task_id = task.identifier();
-
-        tracing::debug!(name: "generate_root_verifier_input", ?task_id);
         let app_prover = AppProver::<_, BabyBearPoseidon2Engine>::new(
             self.app_pk.app_vm_pk.clone(),
             self.app_committed_exe.clone(),
         );
         // TODO: should we cache the app_proof?
         let app_proof = app_prover.generate_app_proof(stdin);
-        tracing::info!("app proof generated for {}, task {task_id}", self.prover_name);
+
         let agg_prover = AggStarkProver::<BabyBearPoseidon2Engine>::new(
             AGG_STARK_PROVING_KEY.clone(),
             self.app_pk.leaf_committed_exe.clone(),
@@ -349,10 +352,7 @@ impl Prover {
     /// Generate an [evm proof][evm_proof].
     ///
     /// [evm_proof][openvm_native_recursion::halo2::EvmProof]
-    fn gen_proof_snark(&self, task: &impl ProvingTask) -> Result<RawEvmProof, Error> {
-        let stdin = task
-            .build_guest_input()
-            .map_err(|e| Error::GenProof(e.to_string()))?;
+    pub fn gen_proof_snark(&self, stdin: StdIn) -> Result<RawEvmProof, Error> {
 
         let evm_proof: RawEvmProof = self
             .evm_prover
@@ -365,5 +365,4 @@ impl Prover {
 
         Ok(evm_proof)
     }
-
 }
