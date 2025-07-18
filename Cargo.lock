@@ -7029,6 +7029,7 @@ dependencies = [
  "scroll-zkvm-prover",
  "scroll-zkvm-types",
  "serde",
+ "serde_json",
  "snark-verifier-sdk",
 ]
 
