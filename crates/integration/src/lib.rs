@@ -1,13 +1,17 @@
 use cargo_metadata::MetadataCommand;
 use once_cell::sync::OnceCell;
 use openvm_sdk::{
-    F, Sdk,
+    F, Sdk, StdIn,
     config::{AppConfig, SdkVmConfig},
 };
+use scroll_zkvm_types::{
+    public_inputs::ForkName,
+    proof::{RootProof, EvmProof, ProofEnum},
+};
 use scroll_zkvm_prover::{
-    ProverType, WrappedProof,
     setup::{read_app_config, read_app_exe},
-    task::ProvingTask,
+    task::ProvingTaskBase,
+    utils::{read_json, write_json},
 };
 use std::{
     path::{Path, PathBuf},
@@ -62,8 +66,14 @@ static DIR_TESTRUN: OnceCell<PathBuf> = OnceCell::new();
 
 /// Circuit that implements functionality required to run e2e tests.
 pub trait ProverTester {
-    /// Prover type that is being tested.
-    type Prover: ProverType;
+    /// Tester witness type
+    type Witness: rkyv::Archive + ProvingTaskBase;
+
+    /// Tester metadata type
+    type Metadata: for<'a>TryFrom<&'a <Self::Witness as rkyv::Archive>::Archived>;
+
+    /// Naming for tester
+    const NAME: &str;
 
     /// Path to the corresponding circuit's project directory.
     const PATH_PROJECT_ROOT: &str;
@@ -124,31 +134,39 @@ pub trait ProverTester {
         FD_APP_EXE.to_string()
     }
 
-    /// Generate proving task for test purposes.
-    fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask>;
-
-    /// Generate multiple proving tasks for test purposes.
-    fn gen_multi_proving_tasks() -> eyre::Result<Vec<<Self::Prover as ProverType>::ProvingTask>> {
-        unimplemented!("must be implemented by MultiTester");
+    /// File descriptor for the proof saved to disc.
+    #[instrument("Prover::fd_proof", skip_all, fields(task_id = task.identifier(), path_proof))]
+    fn fd_proof(task: &impl ProvingTaskBase) -> String {
+        let path_proof = format!("{}-{}.json", Self::NAME, task.identifier());
+        path_proof
     }
 
-    /// Light weight testing to simply execute the vm program for test
-    #[instrument("ProverTester::execute", skip_all, fields(task_id))]
-    fn execute(
-        app_config: AppConfig<SdkVmConfig>,
-        task: &<Self::Prover as ProverType>::ProvingTask,
-        exe_path: impl AsRef<Path>,
-    ) -> eyre::Result<Vec<F>> {
-        let stdin = task.build_guest_input()?;
+    /// Generate proving witnesses for test purposes.
+    fn gen_proving_witnesses() -> eyre::Result<Vec<Self::Witness>>;
 
-        Ok(Sdk::new().execute(read_app_exe(exe_path)?, app_config.app_vm_config, stdin)?)
-    }
+    /// Generate proofs for the proving witness it has generated
+    fn gen_witnesses_proof() -> eyre::Result<Vec<ProofEnum>>;
 
-    fn execute_with_proving_task(
-        app_config: AppConfig<SdkVmConfig>,
-        exe_path: impl AsRef<Path>,
-    ) -> eyre::Result<Vec<F>> {
-        Self::execute(app_config, &Self::gen_proving_task()?, exe_path)
+    fn build_guest_input<'a>(
+        witness: &Self::Witness,
+        aggregated_proofs: impl Iterator<Item=&'a RootProof>,
+    ) -> Result<StdIn, rkyv::rancor::Error> {
+        use openvm_native_recursion::hints::Hintable;
+        
+        let mut stdin = StdIn::default();
+        witness.write_guest_input(&mut stdin);
+
+        for proof in aggregated_proofs {
+            let streams = if witness.fork_name() >= ForkName::Feynman {
+                proof.proofs[0].write()
+            } else {
+                proof.write()
+            };
+            for s in &streams {
+                stdin.write_field(s);
+            }
+        }
+        Ok(stdin)        
     }
 }
 
@@ -207,76 +225,37 @@ fn setup_logger() -> eyre::Result<()> {
 }
 
 /// Alias for convenience.
-type ProveVerifyRes<T> = eyre::Result<
-    ProveVerifyOutcome<
-        <<T as ProverTester>::Prover as ProverType>::ProvingTask,
-        WrappedProof<<<T as ProverTester>::Prover as ProverType>::ProofMetadata>,
-    >,
->;
-
-/// Alias for convenience.
-type ProveVerifyEvmRes<T> = eyre::Result<(
-    ProveVerifyOutcome<
-        <<T as ProverTester>::Prover as ProverType>::ProvingTask,
-        WrappedProof<<<T as ProverTester>::Prover as ProverType>::ProofMetadata>,
-    >,
-    scroll_zkvm_verifier::verifier::Verifier<scroll_zkvm_verifier::verifier::AnyVerifier>,
+type ProveVerifyEvmRes = eyre::Result<(
+    ProofEnum,
+    scroll_zkvm_verifier::verifier::UniversalVerifier,
     PathBuf,
 )>;
 
-/// End-to-end test for a single proving task.
-#[instrument(name = "prove_verify_single", skip_all)]
-pub fn prove_verify_single<T>(
-    task: Option<<T::Prover as ProverType>::ProvingTask>,
-) -> ProveVerifyRes<T>
-where
-    T: ProverTester,
-    <T::Prover as ProverType>::ProvingTask: Clone,
-    <T::Prover as ProverType>::ProofMetadata: Clone,
-{
-    let (path_app_config, _, path_app_exe) = T::load()?;
 
-    let cache_dir = DIR_TESTRUN
-        .get()
-        .ok_or(eyre::eyre!("missing assets dir"))?
-        .join(T::DIR_ASSETS)
-        .join(DIR_PROOFS);
-    std::fs::create_dir_all(&cache_dir)?;
+/// Light weight testing to simply execute the vm program for test
+#[instrument("tester_execute", skip_all)]
+pub fn tester_execute<'a, T: ProverTester>(
+    app_config: AppConfig<SdkVmConfig>,
+    witness: &T::Witness,
+    proofs:  &[ProofEnum],
+    exe_path: impl AsRef<Path>,
+) -> eyre::Result<Vec<F>> {
+    let stdin = T::build_guest_input(
+        witness, 
+        proofs.iter().map(|p|p.as_root_proof().expect("must be root proof")),
+    )?;
 
-    // Generate proving task for the circuit.
-    let task = if let Some(t) = task {
-        t
-    } else {
-        T::gen_proving_task()?
-    };
-
-    // Setup prover.
-    let config = scroll_zkvm_prover::ProverConfig {
-        path_app_exe,
-        path_app_config,
-        dir_cache: Some(cache_dir),
-        ..Default::default()
-    };
-    let prover = scroll_zkvm_prover::Prover::<T::Prover>::setup(config)?;
-
-    // Construct root proof for the circuit.
-    let proof = prover.gen_proof(&task)?;
-
-    // Verify proof.
-    prover.verify_proof(&proof)?;
-
-    Ok(ProveVerifyOutcome::single(task, proof))
+    Ok(Sdk::new().execute(read_app_exe(exe_path)?, app_config.app_vm_config, stdin)?)
 }
 
-/// End-to-end test for multiple proving tasks of the same prover.
-#[instrument(name = "prove_verify_multi", skip_all)]
-pub fn prove_verify_multi<T>(
-    tasks: Option<&[<T::Prover as ProverType>::ProvingTask]>,
-) -> ProveVerifyRes<T>
+/// End-to-end test for proving witnesses of the same prover.
+#[instrument(name = "prove_verify_multi", skip_all, fields(task_id))]
+pub fn prove_verify<'b, 'a: 'b, T>(
+    tasks: impl Iterator<Item = &'b(T::Witness, &'a [ProofEnum])>,
+) -> eyre::Result<Vec<ProofEnum>>
 where
+    T::Witness: 'a,
     T: ProverTester,
-    <T::Prover as ProverType>::ProvingTask: Clone,
-    <T::Prover as ProverType>::ProofMetadata: Clone,
 {
     let (path_app_config, _, path_app_exe) = T::load()?;
 
@@ -290,36 +269,54 @@ where
     let config = scroll_zkvm_prover::ProverConfig {
         path_app_exe,
         path_app_config,
-        dir_cache: Some(cache_dir),
+        dir_cache: Some(cache_dir.clone()),
         ..Default::default()
     };
-    let prover = scroll_zkvm_prover::Prover::<T::Prover>::setup(config)?;
-
-    // Generate proving task for the circuit.
-    let tasks = tasks.map_or_else(|| T::gen_multi_proving_tasks(), |tasks| Ok(tasks.to_vec()))?;
+    let prover = scroll_zkvm_prover::Prover::setup(config, false, Some(T::NAME))?;
+    let vk = prover.get_app_vk();
+    let verifier = prover.dump_universal_verifier(None::<String>)?;
 
     // For each of the tasks, generate and verify proof.
-    let proofs = tasks
-        .iter()
-        .map(|task| {
-            let proof = prover.gen_proof(task)?;
-            prover.verify_proof(&proof)?;
-            Ok(proof)
-        })
-        .collect::<eyre::Result<Vec<WrappedProof<<T::Prover as ProverType>::ProofMetadata>>>>()?;
+    let proofs = tasks.map(|(witness, proofs)| {
+            // Try reading proof from cache if available, and early return in that case.
+            let task_id = witness.identifier();
 
-    Ok(ProveVerifyOutcome::multi(&tasks, &proofs))
+            let path_proof = cache_dir.join(T::fd_proof(witness));
+            tracing::debug!(name: "try_read_proof", ?task_id, ?path_proof);
+
+            let proof = if let Ok(proof) = read_json::<_, ProofEnum>(&path_proof){
+                tracing::debug!(name: "early_return_proof", ?task_id);
+                proof
+            } else {
+                let stdin = T::build_guest_input(
+                    witness, 
+                    proofs.iter().map(|p|p.as_root_proof().expect("must be root proof")),
+                )?;                
+                // Construct root proof for the circuit.
+                let proof = prover.gen_proof_stark(stdin)?.into();
+                write_json(&path_proof, &proof)?;
+                tracing::debug!(name: "cached_proof", ?task_id);
+
+                proof
+            };
+            
+            // Verify proof.
+            assert!(verifier.verify_proof(proof.as_root_proof().expect("should be root proof"), &vk)?);            
+            
+            Ok(proof)
+    }).collect::<eyre::Result<Vec<ProofEnum>>>()?;
+
+    Ok(proofs)
 }
 
 /// End-to-end test for a single proving task to generate an EVM-verifiable SNARK proof.
 #[instrument(name = "prove_verify_single_evm", skip_all)]
 pub fn prove_verify_single_evm<T>(
-    task: Option<<T::Prover as ProverType>::ProvingTask>,
-) -> ProveVerifyEvmRes<T>
+    witness: &T::Witness,
+    proofs:  &[ProofEnum],
+) -> ProveVerifyEvmRes
 where
     T: ProverTester,
-    <T::Prover as ProverType>::ProvingTask: Clone,
-    <T::Prover as ProverType>::ProofMetadata: Clone,
 {
     let (path_app_config, _, path_app_exe) = T::load()?;
 
@@ -333,10 +330,10 @@ where
     let config = scroll_zkvm_prover::ProverConfig {
         path_app_exe,
         path_app_config,
-        dir_cache: Some(cache_dir),
+        dir_cache: Some(cache_dir.clone()),
         ..Default::default()
     };
-    let prover = scroll_zkvm_prover::Prover::<T::Prover>::setup(config)?;
+    let prover = scroll_zkvm_prover::Prover::setup(config, true, Some(T::NAME))?;
 
     // Dump verifier-only assets to disk.
     let (path_vm_config, path_root_committed_exe) = prover.dump_verifier(&path_assets)?;
@@ -344,23 +341,39 @@ where
         .join(T::PATH_PROJECT_ROOT)
         .join("openvm")
         .join("verifier.bin");
-    let verifier = scroll_zkvm_verifier::verifier::Verifier::setup(
+    let verifier = scroll_zkvm_verifier::verifier::UniversalVerifier::setup(
         &path_vm_config,
         &path_root_committed_exe,
         &path_verifier_code,
     )?;
 
-    // Generate proving task for the circuit.
-    let task = task.map_or_else(|| T::gen_proving_task(), Ok)?;
+    // Try reading proof from cache if available, and early return in that case.
+    let task_id = witness.identifier();
 
-    // Construct root proof for the circuit.
-    let proof = prover.gen_proof_evm(&task)?;
+    let path_proof = cache_dir.join(T::fd_proof(witness));
+    tracing::debug!(name: "try_read_evm_proof", ?task_id, ?path_proof);
 
+    let proof = if let Ok(proof) = read_json::<_, ProofEnum>(&path_proof){
+        tracing::debug!(name: "early_return_evm_proof", ?task_id);
+        proof
+    } else {
+        let stdin = T::build_guest_input(
+            witness, 
+            proofs.iter().map(|p|p.as_root_proof().expect("must be root proof")),
+        )?;        
+        // Construct root proof for the circuit.
+        let proof : EvmProof = prover.gen_proof_snark(stdin)?.into();
+        write_json(&path_proof, &proof)?;
+        tracing::debug!(name: "cached_evm_proof", ?task_id);
+        proof.into()
+    };
+
+    let vk = prover.get_app_vk();
     // Verify proof.
-    prover.verify_proof_evm(&proof)?;
+    verifier.verify_proof_evm(&proof.clone().into_evm_proof().expect("must be evm proof").into(), &vk)?;
 
     Ok((
-        ProveVerifyOutcome::single(task, proof),
+        proof,
         verifier,
         path_assets,
     ))
