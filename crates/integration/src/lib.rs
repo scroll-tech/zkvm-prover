@@ -10,7 +10,6 @@ use scroll_zkvm_types::{
 };
 use scroll_zkvm_prover::{
     setup::{read_app_config, read_app_exe},
-    task::ProvingTaskBase,
     utils::{read_json, write_json},
 };
 use std::{
@@ -24,6 +23,14 @@ use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::Subsc
 pub mod testers;
 
 pub mod utils;
+
+pub trait PartialProvingTask {
+    fn identifier(&self) -> String;
+
+    fn write_guest_input(&self, stdin: &mut StdIn) -> Result<(), rkyv::rancor::Error>;
+
+    fn fork_name(&self) -> ForkName;
+}
 
 pub static WORKSPACE_ROOT: LazyLock<&Path> = LazyLock::new(|| {
     let path = MetadataCommand::new()
@@ -67,7 +74,7 @@ static DIR_TESTRUN: OnceCell<PathBuf> = OnceCell::new();
 /// Circuit that implements functionality required to run e2e tests.
 pub trait ProverTester {
     /// Tester witness type
-    type Witness: rkyv::Archive + ProvingTaskBase;
+    type Witness: rkyv::Archive + PartialProvingTask;
 
     /// Tester metadata type
     type Metadata: for<'a>TryFrom<&'a <Self::Witness as rkyv::Archive>::Archived>;
@@ -136,7 +143,7 @@ pub trait ProverTester {
 
     /// File descriptor for the proof saved to disc.
     #[instrument("Prover::fd_proof", skip_all, fields(task_id = task.identifier(), path_proof))]
-    fn fd_proof(task: &impl ProvingTaskBase) -> String {
+    fn fd_proof(task: &impl PartialProvingTask) -> String {
         let path_proof = format!("{}-{}.json", Self::NAME, task.identifier());
         path_proof
     }

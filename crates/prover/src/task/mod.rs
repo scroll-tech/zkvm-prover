@@ -4,20 +4,28 @@ use scroll_zkvm_types::{public_inputs::ForkName, task::ProvingTask as UniversalP
 
 /// Every proving task must have an identifier. The identifier will be appended to a prefix while
 /// storing/reading proof to/from disc.
-pub trait ProvingTaskBase: serde::de::DeserializeOwned {
+/// Every proving task must have an identifier. The identifier will be appended to a prefix while
+/// storing/reading proof to/from disc.
+pub trait ProvingTask: serde::de::DeserializeOwned {
     fn identifier(&self) -> String;
 
-    fn write_guest_input(&self, stdin: &mut StdIn) -> Result<(), rkyv::rancor::Error>;
+    fn build_guest_input_inner(&self, stdin: &mut StdIn) -> Result<(), rkyv::rancor::Error>;
+
+    fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error> {
+        let mut stdin = StdIn::default();
+        self.build_guest_input_inner(&mut stdin)?;
+        Ok(stdin)
+    }
 
     fn fork_name(&self) -> ForkName;
 }
 
-impl ProvingTaskBase for UniversalProvingTask {
+impl ProvingTask for UniversalProvingTask {
     fn identifier(&self) -> String {
         self.identifier.clone()
     }
 
-    fn write_guest_input(&self, stdin: &mut StdIn) -> Result<(), rkyv::rancor::Error> {
+    fn build_guest_input_inner(&self, stdin: &mut StdIn) -> Result<(), rkyv::rancor::Error> {
         for witness in &self.serialized_witness {
             stdin.write_bytes(witness);
         }
@@ -39,15 +47,6 @@ impl ProvingTaskBase for UniversalProvingTask {
         ForkName::from(self.fork_name.as_str())
     }
 }
-
-pub trait ProvingTask: ProvingTaskBase {
-    fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error> {
-        let mut stdin = StdIn::default();
-        self.write_guest_input(&mut stdin)?;
-        Ok(stdin)
-    }
-}
-
 /// Read the 'GUEST_VERSION' from the environment variable.
 /// Mainly used for testing purposes to specify the guest version
 pub fn guest_version() -> Option<ForkName> {
