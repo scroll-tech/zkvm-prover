@@ -4,7 +4,7 @@ pub mod verifier;
 
 #[cfg(test)]
 mod test {
-    use scroll_zkvm_types::{proof::ProofEnum, util::vec_as_base64};
+    use scroll_zkvm_types::{proof::ProofEnum, utils::vec_as_base64};
     use std::path::Path;
 
     #[derive(Clone, serde::Deserialize)]
@@ -18,9 +18,8 @@ mod test {
         pub fn from_json(path: impl AsRef<Path>) -> eyre::Result<Self> {
             let fd = std::fs::File::open(path)?;
             let reader = std::io::BufReader::new(fd);
-            let ret : WrappedProof = serde_json::from_reader(reader)?;
+            let ret: WrappedProof = serde_json::from_reader(reader)?;
             Ok(ret)
         }
     }
-
 }

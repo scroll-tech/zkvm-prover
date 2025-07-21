@@ -3,17 +3,12 @@ use sbv_primitives::{
     types::{BlockWitness, Transaction, eips::Encodable2718, reth::primitives::TransactionSigned},
 };
 use crate::testing_hardfork;
-use scroll_zkvm_prover::{
-    Prover,
-    task::ProvingTask,
-    utils::point_eval,
-};
 use scroll_zkvm_types::{
     chunk::{ChunkInfo, ChunkWitness},
     batch::{BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchWitness, ReferenceHeader, PointEvalWitness},
-    public_inputs::{ForkName, chunk::BlockContextV2},
-    types_agg::ProgramCommitment,
-    utils::keccak256,
+    public_inputs::{ForkName, MultiVersionPublicInputs},
+    types_agg::{AggregationInput, ProgramCommitment},
+    utils::{keccak256, point_eval},
 };
 use vm_zstd::zstd_encode;
 
@@ -111,7 +106,10 @@ pub fn build_batch_witnesses(
     prover_vk: &[u8], // notice we supppose all proof is (would be) generated from the same prover
     last_header: LastHeader,
 ) -> BatchWitness {
-    
+
+    // Sanity check.
+    assert_eq!(chunks.len(), chunk_infos.len());
+
     // collect tx bytes from chunk tasks
     let (meta_chunk_sizes, chunk_digests, chunk_tx_bytes) = chunks.iter().fold(
         (Vec::new(), Vec::new(), Vec::new()),
@@ -159,14 +157,18 @@ pub fn build_batch_witnesses(
             .sum::<usize>() as u16;
         let prev_msg_queue_hash = chunks[0].prev_msg_queue_hash;
         let initial_block_number = chunks[0].blocks[0].header.number;
+        let post_msg_queue_hash = chunk_infos
+            .last()
+            .expect("at least one chunk")
+            .post_msg_queue_hash;
 
         payload.extend_from_slice(prev_msg_queue_hash.as_slice());
         payload.extend_from_slice(post_msg_queue_hash.as_slice());
         payload.extend(initial_block_number.to_be_bytes());
         payload.extend(num_blocks.to_be_bytes());
         assert_eq!(payload.len(), 74);
-        for proof in chunk_proofs {
-            for ctx in &proof.metadata.chunk_info.block_ctxs {
+        for chunk_info in chunk_infos {
+            for ctx in &chunk_info.block_ctxs {
                 payload.extend(ctx.to_bytes());
             }
         }
@@ -245,9 +247,9 @@ pub fn build_batch_witnesses(
             let point_evaluations = [x, z];
 
             let data_hash = keccak256(
-                chunk_proofs
+                chunk_infos
                     .iter()
-                    .map(|proof| &proof.metadata.chunk_info.data_hash)
+                    .map(|chunk_info| &chunk_info.data_hash)
                     .fold(Vec::new(), |mut bytes, h| {
                         bytes.extend_from_slice(&h.0);
                         bytes
@@ -288,6 +290,16 @@ pub fn build_batch_witnesses(
         }
     };
 
+    let fork_name = testing_hardfork();
+    let commitment = ProgramCommitment::deserialize(prover_vk);
+    let chunk_proofs = chunk_infos.iter().map(|chunk_info|{
+        let pi_hash = chunk_info.pi_hash_by_fork(fork_name);
+        AggregationInput { 
+            public_values: pi_hash.as_slice().iter().map(|&b|b as u32).collect::<Vec<_>>(),
+            commitment: commitment.clone(),
+        }
+    }).collect::<Vec<_>>();
+
     BatchWitness {
         chunk_proofs: Vec::from(chunk_proofs),
         chunk_infos: Vec::new(),
@@ -297,7 +309,7 @@ pub fn build_batch_witnesses(
             kzg_commitment: *kzg_commitment.to_bytes().as_ref(),
             kzg_proof: *kzg_proof.to_bytes().as_ref(),
         },
-        fork_name: testing_hardfork(),
+        fork_name,
     }
 }
 
