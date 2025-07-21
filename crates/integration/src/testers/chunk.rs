@@ -4,13 +4,18 @@ use std::{
 };
 
 use sbv_primitives::{B256, types::BlockWitness};
-use scroll_zkvm_prover::{ChunkProverType, ProverType, task::chunk::ChunkProvingTask};
-use scroll_zkvm_types::public_inputs::ForkName;
+use scroll_zkvm_types::{
+    proof::ProofEnum,
+    public_inputs::ForkName,
+    chunk::{ChunkInfo, ChunkWitness},
+};
+use scroll_zkvm_prover::Prover;
 
 use crate::{
-    ProverTester,
+    ProverTester, PartialProvingTask, TestTaskBuilder,
+    prove_verify,
+    testdata_fork_directory, testing_hardfork,
     testers::PATH_TESTDATA,
-    utils::{testdata_fork_directory, testing_hardfork},
 };
 
 /// Load a file <block_n>.json in the <PATH_BLOCK_WITNESS> directory.
@@ -38,117 +43,104 @@ where
 
 pub struct ChunkProverTester;
 
+impl PartialProvingTask for ChunkWitness {
+    fn identifier(&self) -> String {
+        let (first, last) = (
+            self.blocks
+                .first()
+                .expect("MUST NOT EMPTY")
+                .header
+                .number,
+            self.blocks
+                .last()
+                .expect("MUST NOT EMPTY")
+                .header
+                .number,
+        );
+         format!("{first}-{last}")
+    }
+
+    fn write_guest_input(&self, stdin: &mut openvm_sdk::StdIn) -> Result<(), rkyv::rancor::Error> {
+        
+        stdin.write_bytes(self.rkyv_serialize(None)?.as_slice());
+        Ok(())
+    }
+
+    fn fork_name(&self) -> ForkName {
+        ForkName::from(self.fork_name.as_str())
+    }    
+}
+
 impl ProverTester for ChunkProverTester {
-    type Prover = ChunkProverType;
+
+    type Metadata = ChunkInfo;
+
+    type Witness = ChunkWitness;
+
+    const NAME: &str = "chunk";
 
     const PATH_PROJECT_ROOT: &str = "crates/circuits/chunk-circuit";
 
     const DIR_ASSETS: &str = "chunk";
-
-    /// [block-1, block-2, block-3, block-4]
-    fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask> {
-        let paths: Vec<PathBuf> = match std::env::var("TRACE_PATH") {
-            Ok(paths) => {
-                let paths: Vec<_> = glob::glob(&paths)?.filter_map(|entry| entry.ok()).collect();
-                if paths.is_empty() {
-                    return Err(eyre::eyre!("No files found in the given path"));
-                }
-                paths
-            }
-            Err(_) => {
-                let blocks = match testing_hardfork() {
-                    ForkName::EuclidV1 => 12508460usize..=12508463usize,
-                    ForkName::EuclidV2 => 1usize..=4usize,
-                    ForkName::Feynman => 16525000usize..=16525003usize,
-                };
-                blocks
-                    .into_iter()
-                    .map(|block_n| {
-                        Path::new(PATH_TESTDATA)
-                            .join(testdata_fork_directory())
-                            .join("witnesses")
-                            .join(format!("{}.json", block_n))
-                    })
-                    .collect()
-            }
-        };
-
-        Ok(ChunkProvingTask {
-            block_witnesses: paths
-                .iter()
-                .map(read_block_witness)
-                .collect::<eyre::Result<Vec<BlockWitness>>>()?,
-            prev_msg_queue_hash: B256::repeat_byte(1u8),
-            fork_name: testing_hardfork().to_string(),
-        })
-    }
 }
 
-/// helper func to gen a series of proving tasks, specified by the block number
-pub fn gen_multi_tasks(
-    blocks: impl IntoIterator<Item = Vec<i32>>,
-) -> eyre::Result<Vec<<ChunkProverType as ProverType>::ProvingTask>> {
-    let paths: Vec<Vec<PathBuf>> = match std::env::var("TRACE_PATH") {
-        Ok(paths) => glob::glob(&paths)?
-            .filter_map(|entry| entry.ok())
-            .map(|p| vec![p])
-            .collect(),
-        Err(_) => blocks
-            .into_iter()
-            .map(|block_group| {
-                block_group
-                    .into_iter()
-                    .map(|block_n| {
-                        Path::new(PATH_TESTDATA)
-                            .join(testdata_fork_directory())
-                            .join("witnesses")
-                            .join(format!("{}.json", block_n))
-                    })
-                    .collect()
-            })
-            .collect(),
-    };
+/// Generator collect a range of block witnesses from test data
+pub struct ChunkTaskGenerator {
+    pub block_range: std::ops::Range<u64>, 
+    pub prev_message_hash: Option<B256>,
+}
 
-    let tasks = paths
-        .into_iter()
-        .map(|block_group| -> eyre::Result<_> {
-            let block_witnesses = block_group
+impl TestTaskBuilder<ChunkProverTester> for ChunkTaskGenerator {
+
+    fn gen_proving_witnesses(&self) -> eyre::Result<ChunkWitness>{
+
+        let paths: Vec<PathBuf> = self.block_range.clone()
+                .map(|block_n| {
+                    Path::new(PATH_TESTDATA)
+                        .join(testdata_fork_directory())
+                        .join("witnesses")
+                        .join(format!("{}.json", block_n))
+                })
+                .collect();
+
+        let block_witnesses = paths
                 .iter()
                 .map(read_block_witness)
                 .collect::<eyre::Result<Vec<BlockWitness>>>()?;
-            Ok(ChunkProvingTask {
-                block_witnesses,
-                prev_msg_queue_hash: B256::repeat_byte(1u8),
-                fork_name: testing_hardfork().to_string(),
-            })
-        })
-        .collect::<eyre::Result<Vec<ChunkProvingTask>>>()?;
+        Ok(ChunkWitness::new(
+            &block_witnesses,
+            self.prev_message_hash.unwrap_or_else(||B256::repeat_byte(1u8)),
+            testing_hardfork(),
+        ))        
+    }
 
-    Ok(tasks)
+    fn gen_witnesses_proof(&self, prover: &Prover) -> eyre::Result<ProofEnum>{
+        prove_verify::<ChunkProverTester>(
+            prover,
+            &self.gen_proving_witnesses()?,
+            &[],
+        )
+    }    
 }
 
-pub struct MultiChunkProverTester;
+/// helper func to gen a series of proving tasks, specified by the block number
+pub fn get_witness_from_env_or_builder(
+    fallback_generator: &ChunkTaskGenerator,
+) -> eyre::Result<ChunkWitness> {
+    let paths: Vec<PathBuf> = match std::env::var("TRACE_PATH") {
+        Ok(paths) => glob::glob(&paths)?
+            .filter_map(|entry| entry.ok())
+            .collect(),
+        Err(_) => return fallback_generator.gen_proving_witnesses(),
+    };
 
-impl ProverTester for MultiChunkProverTester {
-    type Prover = ChunkProverType;
-
-    const PATH_PROJECT_ROOT: &str = "crates/circuits/chunk-circuit";
-
-    const DIR_ASSETS: &str = "chunk";
-
-    fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask> {
-        unreachable!("Use gen_multi_proving_tasks");
-    }
-
-    /// [block-1]
-    /// [block-2]
-    /// [block-3, block-4]
-    fn gen_multi_proving_tasks() -> eyre::Result<Vec<<Self::Prover as ProverType>::ProvingTask>> {
-        let blocks = match testing_hardfork() {
-            ForkName::EuclidV1 => [vec![12508460], vec![12508461], vec![12508462, 12508463]],
-            ForkName::EuclidV2 => [vec![1], vec![2], vec![3, 4]],
-            ForkName::Feynman => [vec![16525000], vec![16525001], vec![16525002, 16525003]],
-        };
-        gen_multi_tasks(blocks)
-    }
+    let block_witnesses = paths
+            .iter()
+            .map(read_block_witness)
+            .collect::<eyre::Result<Vec<BlockWitness>>>()?;
+    Ok(ChunkWitness::new(
+        &block_witnesses,
+        B256::repeat_byte(1u8),
+        testing_hardfork(),
+    ))
 }

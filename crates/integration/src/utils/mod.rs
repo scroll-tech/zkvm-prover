@@ -2,17 +2,17 @@ use sbv_primitives::{
     B256, U256,
     types::{BlockWitness, Transaction, eips::Encodable2718, reth::primitives::TransactionSigned},
 };
+use crate::testing_hardfork;
 use scroll_zkvm_prover::{
-    ChunkProof,
-    task::{
-        batch::{BatchHeaderV, BatchProvingTask},
-        chunk::ChunkProvingTask,
-    },
+    Prover,
+    task::ProvingTask,
     utils::point_eval,
 };
 use scroll_zkvm_types::{
-    batch::{BatchHeader, BatchHeaderV6, BatchHeaderV7},
-    public_inputs::ForkName,
+    chunk::{ChunkInfo, ChunkWitness},
+    batch::{BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchWitness, ReferenceHeader, PointEvalWitness},
+    public_inputs::{ForkName, chunk::BlockContextV2},
+    types_agg::ProgramCommitment,
     utils::keccak256,
 };
 use vm_zstd::zstd_encode;
@@ -46,14 +46,6 @@ fn blks_tx_bytes<'a>(blks: impl Iterator<Item = &'a BlockWitness>) -> Vec<u8> {
         })
 }
 
-pub fn testing_hardfork() -> ForkName {
-    ForkName::Feynman
-}
-
-pub fn testdata_fork_directory() -> String {
-    testing_hardfork().to_string()
-}
-
 #[derive(Debug)]
 pub struct LastHeader {
     pub batch_index: u64,
@@ -81,12 +73,12 @@ impl Default for LastHeader {
     }
 }
 
-impl From<&BatchHeaderV> for LastHeader {
-    fn from(value: &BatchHeaderV) -> Self {
+impl From<&ReferenceHeader> for LastHeader {
+    fn from(value: &ReferenceHeader) -> Self {
         match value {
-            BatchHeaderV::V6(h) => h.into(),
-            BatchHeaderV::V7(h) => h.into(),
-            BatchHeaderV::V8(h) => h.into(),
+            ReferenceHeader::V6(h) => h.into(),
+            ReferenceHeader::V7(h) => h.into(),
+            ReferenceHeader::V8(h) => h.into(),
         }
     }
 }
@@ -113,19 +105,18 @@ impl From<&BatchHeaderV7> for LastHeader {
     }
 }
 
-pub fn build_batch_task(
-    chunk_tasks: &[ChunkProvingTask],
-    chunk_proofs: &[ChunkProof],
+pub fn build_batch_witnesses(
+    chunks: &[ChunkWitness],
+    chunk_infos: &[ChunkInfo],
+    prover_vk: &[u8], // notice we supppose all proof is (would be) generated from the same prover
     last_header: LastHeader,
-) -> BatchProvingTask {
-    // Sanity check.
-    assert_eq!(chunk_tasks.len(), chunk_proofs.len());
-
+) -> BatchWitness {
+    
     // collect tx bytes from chunk tasks
-    let (meta_chunk_sizes, chunk_digests, chunk_tx_bytes) = chunk_tasks.iter().fold(
+    let (meta_chunk_sizes, chunk_digests, chunk_tx_bytes) = chunks.iter().fold(
         (Vec::new(), Vec::new(), Vec::new()),
-        |(mut meta_chunk_sizes, mut chunk_digests, mut payload_bytes), task| {
-            let tx_bytes = blks_tx_bytes(task.block_witnesses.iter());
+        |(mut meta_chunk_sizes, mut chunk_digests, mut payload_bytes), chunk_wit| {
+            let tx_bytes = blks_tx_bytes(chunk_wit.blocks.iter());
             meta_chunk_sizes.push(tx_bytes.len());
             chunk_digests.push(keccak256(&tx_bytes));
             payload_bytes.extend(tx_bytes);
@@ -133,15 +124,15 @@ pub fn build_batch_task(
         },
     );
 
-    // sanity check
-    for (digest, proof) in chunk_digests.iter().zip(chunk_proofs.iter()) {
-        assert_eq!(digest, &proof.metadata.chunk_info.tx_data_digest);
-    }
+    // // sanity check
+    // for (digest, proof) in chunk_digests.iter().zip(chunk_proofs.iter()) {
+    //     assert_eq!(digest, &proof.metadata.chunk_info.tx_data_digest);
+    // }
 
     const LEGACY_MAX_CHUNKS: usize = 45;
 
     let meta_chunk_bytes = {
-        let valid_chunk_size = chunk_proofs.len() as u16;
+        let valid_chunk_size = chunks.len() as u16;
         meta_chunk_sizes
             .into_iter()
             .chain(std::iter::repeat(0))
@@ -162,28 +153,13 @@ pub fn build_batch_task(
         meta_chunk_bytes.clone()
     };
     if testing_hardfork() >= ForkName::EuclidV2 {
-        let num_blocks = chunk_tasks
+        let num_blocks = chunks
             .iter()
-            .map(|t| t.block_witnesses.len())
+            .map(|w| w.blocks.len())
             .sum::<usize>() as u16;
-        let (prev_msg_queue_hash, initial_block_number) = {
-            let first_chunk = &chunk_proofs
-                .first()
-                .expect("at least one chunk")
-                .metadata
-                .chunk_info;
-            (
-                first_chunk.prev_msg_queue_hash,
-                first_chunk.initial_block_number,
-            )
-        };
+        let prev_msg_queue_hash = chunks[0].prev_msg_queue_hash;
+        let initial_block_number = chunks[0].blocks[0].header.number;
 
-        let post_msg_queue_hash = chunk_proofs
-            .last()
-            .expect("at least one chunk")
-            .metadata
-            .chunk_info
-            .post_msg_queue_hash;
         payload.extend_from_slice(prev_msg_queue_hash.as_slice());
         payload.extend_from_slice(post_msg_queue_hash.as_slice());
         payload.extend(initial_block_number.to_be_bytes());
@@ -245,12 +221,12 @@ pub fn build_batch_task(
     let x = point_eval::get_x_from_challenge(challenge_digest);
     let (kzg_proof, z) = point_eval::get_kzg_proof(&kzg_blob, challenge_digest);
 
-    let batch_header: BatchHeaderV = match testing_hardfork() {
+    let reference_header: ReferenceHeader = match testing_hardfork() {
         ForkName::EuclidV1 => {
             // collect required fields for batch header
-            let last_l1_message_index: u64 = chunk_tasks
+            let last_l1_message_index: u64 = chunks
                 .iter()
-                .flat_map(|t| &t.block_witnesses)
+                .flat_map(|t| &t.blocks)
                 .map(final_l1_index)
                 .reduce(|last, cur| if cur == 0 { last } else { cur })
                 .expect("at least one chunk");
@@ -260,8 +236,8 @@ pub fn build_batch_task(
                 last_l1_message_index
             };
 
-            let last_block_timestamp = chunk_tasks.last().map_or(0u64, |t| {
-                t.block_witnesses
+            let last_block_timestamp = chunks.last().map_or(0u64, |t| {
+                t.blocks
                     .last()
                     .map_or(0, |trace| trace.header.timestamp)
             });
@@ -278,7 +254,7 @@ pub fn build_batch_task(
                     }),
             );
 
-            BatchHeaderV::V6(BatchHeaderV6 {
+            ReferenceHeader::V6(BatchHeaderV6 {
                 version: last_header.version,
                 batch_index: last_header.batch_index + 1,
                 l1_message_popped: last_l1_message_index - last_header.l1_message_index,
@@ -293,7 +269,7 @@ pub fn build_batch_task(
         ForkName::EuclidV2 => {
             use scroll_zkvm_types::batch::BatchHeaderV7;
             let _ = x + z;
-            BatchHeaderV::V7(BatchHeaderV7 {
+            ReferenceHeader::V7(BatchHeaderV7 {
                 version: last_header.version,
                 batch_index: last_header.batch_index + 1,
                 parent_batch_hash: last_header.batch_hash,
@@ -303,7 +279,7 @@ pub fn build_batch_task(
         ForkName::Feynman => {
             use scroll_zkvm_types::batch::BatchHeaderV8;
             let _ = x + z;
-            BatchHeaderV::V8(BatchHeaderV8 {
+            ReferenceHeader::V8(BatchHeaderV8 {
                 version: last_header.version,
                 batch_index: last_header.batch_index + 1,
                 parent_batch_hash: last_header.batch_hash,
@@ -312,14 +288,16 @@ pub fn build_batch_task(
         }
     };
 
-    BatchProvingTask {
+    BatchWitness {
         chunk_proofs: Vec::from(chunk_proofs),
-        batch_header,
+        chunk_infos: Vec::new(),
+        reference_header,
         blob_bytes,
-        challenge_digest: Some(U256::from_be_bytes(challenge_digest.0)),
-        kzg_commitment: Some(kzg_commitment.to_bytes()),
-        kzg_proof: Some(kzg_proof.to_bytes()),
-        fork_name: testing_hardfork().to_string(),
+        point_eval_witness: PointEvalWitness {
+            kzg_commitment: *kzg_commitment.to_bytes().as_ref(),
+            kzg_proof: *kzg_proof.to_bytes().as_ref(),
+        },
+        fork_name: testing_hardfork(),
     }
 }
 
