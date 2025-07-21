@@ -225,16 +225,16 @@ impl Prover {
         task: &impl ProvingTask,
         with_snark: bool,
     ) -> Result<ProofEnum, Error> {
-
         let task_id = task.identifier();
         tracing::debug!(name: "generate_root_verifier_input", task_id);
 
-        let stdin = task.build_guest_input()
-        .map_err(|e| Error::GenProof(e.to_string()))?;
+        let stdin = task
+            .build_guest_input()
+            .map_err(|e| Error::GenProof(e.to_string()))?;
 
         // Generate a new proof.
         let proof = if !with_snark {
-            self.gen_proof_stark(stdin)?.into()           
+            self.gen_proof_stark(stdin)?.into()
         } else {
             EvmProof::from(self.gen_proof_snark(stdin)?).into()
         };
@@ -242,13 +242,15 @@ impl Prover {
         tracing::info!(
             "app proof generated for {}, task id {task_id}, isevm {with_snark}",
             self.prover_name
-        ); 
+        );
         Ok(proof)
     }
 
     /// Execute the guest program to get the cycle count.
     pub fn execute_and_check_with_full_result(
-        &self, stdin: &StdIn, mock_prove: bool,
+        &self,
+        stdin: &StdIn,
+        mock_prove: bool,
     ) -> Result<crate::utils::vm::ExecutionResult, Error> {
         let config = self.app_pk.app_vm_pk.vm_config.clone();
         let exe = self.app_committed_exe.exe.clone();
@@ -262,7 +264,8 @@ impl Prover {
 
     /// Execute the guest program to get the cycle count.
     pub fn execute_and_check(&self, stdin: &StdIn, mock_prove: bool) -> Result<u64, Error> {
-        self.execute_and_check_with_full_result(stdin, mock_prove).map(|res|res.total_cycle)
+        self.execute_and_check_with_full_result(stdin, mock_prove)
+            .map(|res| res.total_cycle)
     }
 
     /// Setup the EVM prover-verifier.
@@ -360,7 +363,6 @@ impl Prover {
     ///
     /// [evm_proof][openvm_native_recursion::halo2::EvmProof]
     pub fn gen_proof_snark(&self, stdin: StdIn) -> Result<RawEvmProof, Error> {
-
         let evm_proof: RawEvmProof = self
             .evm_prover
             .as_ref()

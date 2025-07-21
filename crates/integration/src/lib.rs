@@ -4,14 +4,14 @@ use openvm_sdk::{
     F, StdIn,
     config::{AppConfig, SdkVmConfig},
 };
-use scroll_zkvm_types::{
-    public_inputs::ForkName,
-    proof::{RootProof, EvmProof, ProofEnum},
-};
 use scroll_zkvm_prover::{
     Prover,
     setup::read_app_config,
     utils::{read_json, write_json},
+};
+use scroll_zkvm_types::{
+    proof::{EvmProof, ProofEnum, RootProof},
+    public_inputs::ForkName,
 };
 use std::{
     path::{Path, PathBuf},
@@ -78,7 +78,7 @@ pub trait ProverTester {
     type Witness: rkyv::Archive + PartialProvingTask;
 
     /// Tester metadata type
-    type Metadata: for<'a>TryFrom<&'a <Self::Witness as rkyv::Archive>::Archived>;
+    type Metadata: for<'a> TryFrom<&'a <Self::Witness as rkyv::Archive>::Archived>;
 
     /// Naming for tester
     const NAME: &str;
@@ -139,7 +139,7 @@ pub trait ProverTester {
 
     /// Load the prover
     #[instrument("Prover::load_prover")]
-    fn load_prover(with_evm: bool) -> eyre::Result<Prover>{
+    fn load_prover(with_evm: bool) -> eyre::Result<Prover> {
         let (path_app_config, _, path_app_exe) = Self::load()?;
 
         let path_assets = DIR_TESTRUN
@@ -172,10 +172,10 @@ pub trait ProverTester {
 
     fn build_guest_input<'a>(
         witness: &Self::Witness,
-        aggregated_proofs: impl Iterator<Item=&'a RootProof>,
+        aggregated_proofs: impl Iterator<Item = &'a RootProof>,
     ) -> Result<StdIn, rkyv::rancor::Error> {
         use openvm_native_recursion::hints::Hintable;
-        
+
         let mut stdin = StdIn::default();
         witness.write_guest_input(&mut stdin)?;
 
@@ -189,7 +189,7 @@ pub trait ProverTester {
                 stdin.write_field(s);
             }
         }
-        Ok(stdin)        
+        Ok(stdin)
     }
 }
 
@@ -273,20 +273,23 @@ type ProveVerifyEvmRes = eyre::Result<(
     PathBuf,
 )>;
 
-
 /// Light weight testing to simply execute the vm program for test
 #[instrument("tester_execute", skip_all)]
-pub fn tester_execute<'a, T: ProverTester>(
+pub fn tester_execute<T: ProverTester>(
     prover: &Prover,
     witness: &T::Witness,
-    proofs:  &[ProofEnum],
+    proofs: &[ProofEnum],
 ) -> eyre::Result<Vec<F>> {
     let stdin = T::build_guest_input(
-        witness, 
-        proofs.iter().map(|p|p.as_root_proof().expect("must be root proof")),
+        witness,
+        proofs
+            .iter()
+            .map(|p| p.as_root_proof().expect("must be root proof")),
     )?;
 
-    Ok(prover.execute_and_check_with_full_result(&stdin, false)?.public_values)
+    Ok(prover
+        .execute_and_check_with_full_result(&stdin, false)?
+        .public_values)
 }
 
 /// End-to-end test for proving witnesses of the same prover.
@@ -294,8 +297,8 @@ pub fn tester_execute<'a, T: ProverTester>(
 pub fn prove_verify<T: ProverTester>(
     prover: &Prover,
     witness: &T::Witness,
-    proofs:  &[ProofEnum],
-) -> eyre::Result<ProofEnum>{
+    proofs: &[ProofEnum],
+) -> eyre::Result<ProofEnum> {
     // Setup prover.
     let cache_dir = DIR_TESTRUN
         .get()
@@ -312,14 +315,16 @@ pub fn prove_verify<T: ProverTester>(
     let path_proof = cache_dir.join(T::fd_proof(witness));
     tracing::debug!(name: "try_read_proof", ?task_id, ?path_proof);
 
-    let proof = if let Ok(proof) = read_json::<_, ProofEnum>(&path_proof){
+    let proof = if let Ok(proof) = read_json::<_, ProofEnum>(&path_proof) {
         tracing::debug!(name: "early_return_proof", ?task_id);
         proof
     } else {
         let stdin = T::build_guest_input(
-            witness, 
-            proofs.iter().map(|p|p.as_root_proof().expect("must be root proof")),
-        )?;                
+            witness,
+            proofs
+                .iter()
+                .map(|p| p.as_root_proof().expect("must be root proof")),
+        )?;
         // Construct root proof for the circuit.
         let proof = prover.gen_proof_stark(stdin)?.into();
         write_json(&path_proof, &proof)?;
@@ -327,12 +332,11 @@ pub fn prove_verify<T: ProverTester>(
 
         proof
     };
-    
-    // Verify proof.
-    assert!(verifier.verify_proof(proof.as_root_proof().expect("should be root proof"), &vk)?);            
-    
-    Ok(proof)
 
+    // Verify proof.
+    assert!(verifier.verify_proof(proof.as_root_proof().expect("should be root proof"), &vk)?);
+
+    Ok(proof)
 }
 
 /// End-to-end test for a single proving task to generate an EVM-verifiable SNARK proof.
@@ -340,12 +344,11 @@ pub fn prove_verify<T: ProverTester>(
 pub fn prove_verify_single_evm<T>(
     prover: &Prover,
     witness: &T::Witness,
-    proofs:  &[ProofEnum],
+    proofs: &[ProofEnum],
 ) -> ProveVerifyEvmRes
 where
     T: ProverTester,
 {
-
     // Setup prover.
     let path_assets = DIR_TESTRUN
         .get()
@@ -372,16 +375,18 @@ where
     let path_proof = cache_dir.join(T::fd_proof(witness));
     tracing::debug!(name: "try_read_evm_proof", ?task_id, ?path_proof);
 
-    let proof = if let Ok(proof) = read_json::<_, ProofEnum>(&path_proof){
+    let proof = if let Ok(proof) = read_json::<_, ProofEnum>(&path_proof) {
         tracing::debug!(name: "early_return_evm_proof", ?task_id);
         proof
     } else {
         let stdin = T::build_guest_input(
-            witness, 
-            proofs.iter().map(|p|p.as_root_proof().expect("must be root proof")),
-        )?;        
+            witness,
+            proofs
+                .iter()
+                .map(|p| p.as_root_proof().expect("must be root proof")),
+        )?;
         // Construct root proof for the circuit.
-        let proof : EvmProof = prover.gen_proof_snark(stdin)?.into();
+        let proof: EvmProof = prover.gen_proof_snark(stdin)?.into();
         write_json(&path_proof, &proof)?;
         tracing::debug!(name: "cached_evm_proof", ?task_id);
         proof.into()
@@ -389,13 +394,16 @@ where
 
     let vk = prover.get_app_vk();
     // Verify proof.
-    verifier.verify_proof_evm(&proof.clone().into_evm_proof().expect("must be evm proof").into(), &vk)?;
+    verifier.verify_proof_evm(
+        &proof
+            .clone()
+            .into_evm_proof()
+            .expect("must be evm proof")
+            .into(),
+        &vk,
+    )?;
 
-    Ok((
-        proof,
-        verifier,
-        path_assets,
-    ))
+    Ok((proof, verifier, path_assets))
 }
 
 #[test]

@@ -58,7 +58,8 @@ fn test_verify_evm_proof() -> eyre::Result<()> {
         Path::new(PATH_TESTDATA)
             .join("proofs")
             .join("bundle-proof-phase2.json"),
-    )?.proof;
+    )?
+    .proof;
 
     let evm_verifier: Vec<u8> =
         scroll_zkvm_prover::utils::read(Path::new(PATH_TESTDATA).join("verifier.bin"))?;

@@ -111,12 +111,11 @@ impl UniversalVerifier {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
     use crate::test::WrappedProof;
     use scroll_zkvm_types::types_agg::ProgramCommitment;
+    use std::path::Path;
 
     use super::*;
 
@@ -149,14 +148,8 @@ mod tests {
             Path::new(PATH_TESTDATA).join("verifier.bin"),
         )?;
 
-        verifier.verify_proof(
-            chunk_proof.proof.as_root_proof().unwrap(),
-            &chunk_proof.vk,
-        )?;
-        verifier.verify_proof(
-            batch_proof.proof.as_root_proof().unwrap(),
-            &batch_proof.vk,
-        )?;
+        verifier.verify_proof(chunk_proof.proof.as_root_proof().unwrap(), &chunk_proof.vk)?;
+        verifier.verify_proof(batch_proof.proof.as_root_proof().unwrap(), &batch_proof.vk)?;
         verifier.verify_proof_evm(
             &evm_proof.proof.into_evm_proof().unwrap().into(),
             &evm_proof.vk,
@@ -254,7 +247,10 @@ mod tests {
             Path::new(PATH_TESTDATA).join("verifier.bin"),
         )?;
 
-        assert!(verifier.verify_proof_evm(&evm_proof.proof.into_evm_proof().unwrap().into(), &evm_proof.vk)?);
+        assert!(verifier.verify_proof_evm(
+            &evm_proof.proof.into_evm_proof().unwrap().into(),
+            &evm_proof.vk
+        )?);
 
         Ok(())
     }

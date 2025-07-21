@@ -1,34 +1,29 @@
-
-
 use scroll_zkvm_types::{
-    proof::ProofEnum,
-    public_inputs::ForkName,
     batch::{BatchInfo, BatchWitness},
     bundle::{BundleInfo, BundleWitness},
+    proof::ProofEnum,
+    public_inputs::ForkName,
 };
 
 // Only related to hardcoded commitments. Can be refactored later.
 use scroll_zkvm_prover::Prover;
 
 use crate::{
-    ProverTester, PartialProvingTask, TestTaskBuilder, prove_verify_single_evm, testing_hardfork,
-    testers::{UnsafeSendWrappedProver, batch::{BatchProverTester, BatchTaskGenerator}},
+    PartialProvingTask, ProverTester, TestTaskBuilder, prove_verify_single_evm,
+    testers::{
+        UnsafeSendWrappedProver,
+        batch::{BatchProverTester, BatchTaskGenerator},
+    },
+    testing_hardfork,
 };
 
 use std::sync::{Mutex, OnceLock};
 
-
 impl PartialProvingTask for BundleWitness {
     fn identifier(&self) -> String {
         let (first, last) = (
-            self.batch_infos
-                .first()
-                .expect("MUST NOT EMPTY")
-                .batch_hash,
-            self.batch_infos
-                .last()
-                .expect("MUST NOT EMPTY")
-                .batch_hash,
+            self.batch_infos.first().expect("MUST NOT EMPTY").batch_hash,
+            self.batch_infos.last().expect("MUST NOT EMPTY").batch_hash,
         );
 
         format!("{first}-{last}")
@@ -42,13 +37,12 @@ impl PartialProvingTask for BundleWitness {
 
     fn fork_name(&self) -> ForkName {
         ForkName::from(self.fork_name.as_str())
-    }    
+    }
 }
 
 pub struct BundleProverTester;
 
 impl ProverTester for BundleProverTester {
-
     type Metadata = BundleInfo;
 
     type Witness = BundleWitness;
@@ -75,16 +69,18 @@ impl ProverTester for BundleProverTester {
     // }
 }
 
-
 impl BundleProverTester {
-    fn instrinsic_batch_prover() -> eyre::Result<&'static Mutex<UnsafeSendWrappedProver>>{
-        static BATCH_PROVER: OnceLock<eyre::Result<Mutex<UnsafeSendWrappedProver>>> = OnceLock::new();
-        BATCH_PROVER.get_or_init(||
-            BatchProverTester::load_prover(false)
-            .map(UnsafeSendWrappedProver)
-            .map(Mutex::new)
-            ).as_ref()
-            .map_err(|e|eyre::eyre!("{e}"))
+    fn instrinsic_batch_prover() -> eyre::Result<&'static Mutex<UnsafeSendWrappedProver>> {
+        static BATCH_PROVER: OnceLock<eyre::Result<Mutex<UnsafeSendWrappedProver>>> =
+            OnceLock::new();
+        BATCH_PROVER
+            .get_or_init(|| {
+                BatchProverTester::load_prover(false)
+                    .map(UnsafeSendWrappedProver)
+                    .map(Mutex::new)
+            })
+            .as_ref()
+            .map_err(|e| eyre::eyre!("{e}"))
     }
 }
 
@@ -96,43 +92,47 @@ fn metadata_from_batch_witnesses(witness: &BatchWitness) -> eyre::Result<BatchIn
     use scroll_zkvm_types::batch::ArchivedBatchWitness;
     let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(witness)?;
     let archieved_wit = rkyv::access::<ArchivedBatchWitness, rkyv::rancor::BoxedError>(&bytes)?;
-    archieved_wit.try_into()
-    .map_err(|e|eyre::eyre!("get batch metadata fail {e}"))
+    Ok(archieved_wit.into())
 }
 
-
 impl TestTaskBuilder<BundleProverTester> for BundleTaskGenerator {
-    fn gen_proving_witnesses(&self) -> eyre::Result<BundleWitness>{
+    fn gen_proving_witnesses(&self) -> eyre::Result<BundleWitness> {
         self.calculate_bundle_witness()
     }
 
-    fn gen_witnesses_proof(&self, prover: &Prover) -> eyre::Result<ProofEnum>{
+    fn gen_witnesses_proof(&self, prover: &Prover) -> eyre::Result<ProofEnum> {
         let wit = self.gen_proving_witnesses()?;
 
-        let batch_prover = &BundleProverTester::instrinsic_batch_prover()?.lock().unwrap().0;
-        let batch_proofs = self.batch_generators.iter().map(|generator|
-            generator.gen_witnesses_proof(&batch_prover)
-        ).collect::<Result<Vec<ProofEnum>, _>>()?;
+        let batch_prover = &BundleProverTester::instrinsic_batch_prover()?
+            .lock()
+            .unwrap()
+            .0;
+        let batch_proofs = self
+            .batch_generators
+            .iter()
+            .map(|generator| generator.gen_witnesses_proof(batch_prover))
+            .collect::<Result<Vec<ProofEnum>, _>>()?;
 
-        let (ret, _, _) = prove_verify_single_evm::<BundleProverTester>(
-            prover,
-            &wit,
-            &batch_proofs,
-        )?;
+        let (ret, _, _) =
+            prove_verify_single_evm::<BundleProverTester>(prover, &wit, &batch_proofs)?;
 
         Ok(ret)
     }
 }
 
 impl BundleTaskGenerator {
-    fn calculate_bundle_witness(&self) -> eyre::Result<BundleWitness>{
+    fn calculate_bundle_witness(&self) -> eyre::Result<BundleWitness> {
         use scroll_zkvm_types::{
             public_inputs::MultiVersionPublicInputs,
             types_agg::{AggregationInput, ProgramCommitment},
         };
 
         let fork_name = testing_hardfork();
-        let vk = BundleProverTester::instrinsic_batch_prover()?.lock().unwrap().0.get_app_vk();
+        let vk = BundleProverTester::instrinsic_batch_prover()?
+            .lock()
+            .unwrap()
+            .0
+            .get_app_vk();
         let commitment = ProgramCommitment::deserialize(&vk);
         let mut batch_proofs = Vec::new();
         let mut batch_infos = Vec::new();
@@ -142,8 +142,12 @@ impl BundleTaskGenerator {
             let info = metadata_from_batch_witnesses(&wit)?;
 
             let pi_hash = info.pi_hash_by_fork(fork_name);
-            let proof = AggregationInput { 
-                public_values: pi_hash.as_slice().iter().map(|&b|b as u32).collect::<Vec<_>>(),
+            let proof = AggregationInput {
+                public_values: pi_hash
+                    .as_slice()
+                    .iter()
+                    .map(|&b| b as u32)
+                    .collect::<Vec<_>>(),
                 commitment: commitment.clone(),
             };
             batch_proofs.push(proof);
@@ -155,6 +159,5 @@ impl BundleTaskGenerator {
             batch_proofs,
             fork_name,
         })
-
     }
 }

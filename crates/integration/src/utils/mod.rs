@@ -1,11 +1,13 @@
+use crate::testing_hardfork;
 use sbv_primitives::{
     B256,
     types::{BlockWitness, Transaction, eips::Encodable2718, reth::primitives::TransactionSigned},
 };
-use crate::testing_hardfork;
 use scroll_zkvm_types::{
+    batch::{
+        BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchWitness, PointEvalWitness, ReferenceHeader,
+    },
     chunk::{ChunkInfo, ChunkWitness},
-    batch::{BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchWitness, ReferenceHeader, PointEvalWitness},
     public_inputs::{ForkName, MultiVersionPublicInputs},
     types_agg::{AggregationInput, ProgramCommitment},
     utils::{keccak256, point_eval},
@@ -104,8 +106,9 @@ pub fn metadata_from_chunk_witnesses(witness: &ChunkWitness) -> eyre::Result<Chu
     use scroll_zkvm_types::chunk::ArchivedChunkWitness;
     let bytes = witness.rkyv_serialize(None)?;
     let archieved_wit = rkyv::access::<ArchivedChunkWitness, rkyv::rancor::BoxedError>(&bytes)?;
-    archieved_wit.try_into()
-    .map_err(|e|eyre::eyre!("get chunk metadata fail {e}"))
+    archieved_wit
+        .try_into()
+        .map_err(|e| eyre::eyre!("get chunk metadata fail {e}"))
 }
 
 pub fn build_batch_witnesses(
@@ -114,7 +117,6 @@ pub fn build_batch_witnesses(
     prover_vk: &[u8], // notice we supppose all proof is (would be) generated from the same prover
     last_header: LastHeader,
 ) -> BatchWitness {
-
     // Sanity check.
     assert_eq!(chunks.len(), chunk_infos.len());
 
@@ -159,10 +161,7 @@ pub fn build_batch_witnesses(
         meta_chunk_bytes.clone()
     };
     if testing_hardfork() >= ForkName::EuclidV2 {
-        let num_blocks = chunks
-            .iter()
-            .map(|w| w.blocks.len())
-            .sum::<usize>() as u16;
+        let num_blocks = chunks.iter().map(|w| w.blocks.len()).sum::<usize>() as u16;
         let prev_msg_queue_hash = chunks[0].prev_msg_queue_hash;
         let initial_block_number = chunks[0].blocks[0].header.number;
         let post_msg_queue_hash = chunk_infos
@@ -247,9 +246,7 @@ pub fn build_batch_witnesses(
             };
 
             let last_block_timestamp = chunks.last().map_or(0u64, |t| {
-                t.blocks
-                    .last()
-                    .map_or(0, |trace| trace.header.timestamp)
+                t.blocks.last().map_or(0, |trace| trace.header.timestamp)
             });
 
             let point_evaluations = [x, z];
@@ -300,17 +297,24 @@ pub fn build_batch_witnesses(
 
     let fork_name = testing_hardfork();
     let commitment = ProgramCommitment::deserialize(prover_vk);
-    let chunk_proofs = chunk_infos.iter().map(|chunk_info|{
-        let pi_hash = chunk_info.pi_hash_by_fork(fork_name);
-        AggregationInput { 
-            public_values: pi_hash.as_slice().iter().map(|&b|b as u32).collect::<Vec<_>>(),
-            commitment: commitment.clone(),
-        }
-    }).collect::<Vec<_>>();
+    let chunk_proofs = chunk_infos
+        .iter()
+        .map(|chunk_info| {
+            let pi_hash = chunk_info.pi_hash_by_fork(fork_name);
+            AggregationInput {
+                public_values: pi_hash
+                    .as_slice()
+                    .iter()
+                    .map(|&b| b as u32)
+                    .collect::<Vec<_>>(),
+                commitment: commitment.clone(),
+            }
+        })
+        .collect::<Vec<_>>();
 
     BatchWitness {
-        chunk_proofs: Vec::from(chunk_proofs),
-        chunk_infos: Vec::new(),
+        chunk_proofs,
+        chunk_infos: chunk_infos.to_vec(),
         reference_header,
         blob_bytes,
         point_eval_witness: PointEvalWitness {
@@ -323,10 +327,8 @@ pub fn build_batch_witnesses(
 
 #[test]
 fn test_build_and_parse_batch_task() -> eyre::Result<()> {
-    use scroll_zkvm_types::{
-        batch::{self, Envelope, Payload},
-    };
     use crate::{TestTaskBuilder, testers::chunk::ChunkTaskGenerator};
+    use scroll_zkvm_types::batch::{self, Envelope, Payload};
 
     let witness = match testing_hardfork() {
         ForkName::EuclidV2 => ChunkTaskGenerator {
@@ -341,27 +343,33 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
             block_range: 16525000..16525002,
             prev_message_hash: None,
         },
-    }.gen_proving_witnesses()?;
+    }
+    .gen_proving_witnesses()?;
 
     let info = metadata_from_chunk_witnesses(&witness)?;
     let witnesses = [witness];
     let infos = [info];
 
-    let task_wit = build_batch_witnesses(&witnesses, &infos, &ProgramCommitment::default().serialize(), Default::default());
+    let task_wit = build_batch_witnesses(
+        &witnesses,
+        &infos,
+        &ProgramCommitment::default().serialize(),
+        Default::default(),
+    );
 
     match &task_wit.reference_header {
         ReferenceHeader::V6(h) => {
             let enveloped = batch::EnvelopeV6::from_slice(&task_wit.blob_bytes);
             <batch::PayloadV6 as Payload>::from_envelope(&enveloped).validate(h, &infos);
-        },
+        }
         ReferenceHeader::V7(h) => {
             let enveloped = batch::EnvelopeV7::from_slice(&task_wit.blob_bytes);
             <batch::PayloadV7 as Payload>::from_envelope(&enveloped).validate(h, &infos);
-        },
+        }
         ReferenceHeader::V8(h) => {
             let enveloped = batch::EnvelopeV8::from_slice(&task_wit.blob_bytes);
             <batch::PayloadV8 as Payload>::from_envelope(&enveloped).validate(h, &infos);
-        },                
+        }
     }
 
     Ok(())
