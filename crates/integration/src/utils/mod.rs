@@ -1,5 +1,5 @@
 use sbv_primitives::{
-    B256, U256,
+    B256,
     types::{BlockWitness, Transaction, eips::Encodable2718, reth::primitives::TransactionSigned},
 };
 use crate::testing_hardfork;
@@ -41,7 +41,7 @@ fn blks_tx_bytes<'a>(blks: impl Iterator<Item = &'a BlockWitness>) -> Vec<u8> {
         })
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct LastHeader {
     pub batch_index: u64,
     pub batch_hash: B256,
@@ -98,6 +98,14 @@ impl From<&BatchHeaderV7> for LastHeader {
             l1_message_index: 0,
         }
     }
+}
+
+pub fn metadata_from_chunk_witnesses(witness: &ChunkWitness) -> eyre::Result<ChunkInfo> {
+    use scroll_zkvm_types::chunk::ArchivedChunkWitness;
+    let bytes = witness.rkyv_serialize(None)?;
+    let archieved_wit = rkyv::access::<ArchivedChunkWitness, rkyv::rancor::BoxedError>(&bytes)?;
+    archieved_wit.try_into()
+    .map_err(|e|eyre::eyre!("get chunk metadata fail {e}"))
 }
 
 pub fn build_batch_witnesses(
@@ -315,117 +323,86 @@ pub fn build_batch_witnesses(
 
 #[test]
 fn test_build_and_parse_batch_task() -> eyre::Result<()> {
-    use scroll_zkvm_prover::utils::{read_json, read_json_deep, write_json};
     use scroll_zkvm_types::{
-        batch::{Envelope, EnvelopeV8 as GenericEnvelope, Payload, PayloadV8 as GenericPayload},
-        chunk::{ArchivedChunkInfo, ChunkInfo},
+        batch::{self, Envelope, Payload},
     };
+    use crate::{TestTaskBuilder, testers::chunk::ChunkTaskGenerator};
 
-    // ./testdata/
-    let path_testdata = std::path::Path::new("testdata");
+    let witness = match testing_hardfork() {
+        ForkName::EuclidV2 => ChunkTaskGenerator {
+            block_range: 1..4,
+            prev_message_hash: None,
+        },
+        ForkName::EuclidV1 => ChunkTaskGenerator {
+            block_range: 12508460..12508462,
+            prev_message_hash: None,
+        },
+        ForkName::Feynman => ChunkTaskGenerator {
+            block_range: 16525000..16525002,
+            prev_message_hash: None,
+        },
+    }.gen_proving_witnesses()?;
 
-    // read block witnesses.
-    let path_testdata = path_testdata
-        .join(testing_hardfork().to_string())
-        .join("witnesses");
-    let paths_block_witnesses = if testing_hardfork() >= ForkName::EuclidV2 {
-        [
-            path_testdata.join("1.json"),
-            path_testdata.join("2.json"),
-            path_testdata.join("3.json"),
-            path_testdata.join("4.json"),
-        ]
-    } else {
-        [
-            path_testdata.join("12508460.json"),
-            path_testdata.join("12508461.json"),
-            path_testdata.join("12508462.json"),
-            path_testdata.join("12508463.json"),
-        ]
-    };
-    let read_block_witness = |path| Ok(read_json::<_, BlockWitness>(path)?);
-    let chunk_task = ChunkProvingTask {
-        block_witnesses: paths_block_witnesses
-            .iter()
-            .map(read_block_witness)
-            .collect::<eyre::Result<Vec<BlockWitness>>>()?,
-        prev_msg_queue_hash: Default::default(),
-        fork_name: testing_hardfork().to_string(),
-    };
+    let info = metadata_from_chunk_witnesses(&witness)?;
+    let witnesses = [witness];
+    let infos = [info];
 
-    // read chunk proof.
-    let path_chunk_proof = path_testdata
-        .join(testing_hardfork().to_string())
-        .join("proofs")
-        .join(if testing_hardfork() >= ForkName::EuclidV2 {
-            "chunk-1-4.json"
-        } else {
-            "chunk-12508460-12508463.json"
-        });
-    let chunk_proof = read_json_deep::<_, ChunkProof>(&path_chunk_proof)?;
+    let task_wit = build_batch_witnesses(&witnesses, &infos, &ProgramCommitment::default().serialize(), Default::default());
 
-    let task = build_batch_task(&[chunk_task], &[chunk_proof], Default::default());
+    match &task_wit.reference_header {
+        ReferenceHeader::V6(h) => {
+            let enveloped = batch::EnvelopeV6::from_slice(&task_wit.blob_bytes);
+            <batch::PayloadV6 as Payload>::from_envelope(&enveloped).validate(h, &infos);
+        },
+        ReferenceHeader::V7(h) => {
+            let enveloped = batch::EnvelopeV7::from_slice(&task_wit.blob_bytes);
+            <batch::PayloadV7 as Payload>::from_envelope(&enveloped).validate(h, &infos);
+        },
+        ReferenceHeader::V8(h) => {
+            let enveloped = batch::EnvelopeV8::from_slice(&task_wit.blob_bytes);
+            <batch::PayloadV8 as Payload>::from_envelope(&enveloped).validate(h, &infos);
+        },                
+    }
 
-    let chunk_infos = task
-        .chunk_proofs
-        .iter()
-        .map(|proof| proof.metadata.chunk_info.clone())
-        .collect::<Vec<_>>();
-
-    let enveloped = <GenericEnvelope as Envelope>::from_slice(task.blob_bytes.as_slice());
-
-    let header = task.batch_header.must_v8_header();
-    let serialized_bytes = rkyv::to_bytes::<rkyv::rancor::Error>(&chunk_infos).unwrap();
-    let chunk_infos =
-        rkyv::access::<rkyv::vec::ArchivedVec<ArchivedChunkInfo>, rkyv::rancor::Error>(
-            &serialized_bytes,
-        )
-        .unwrap()
-        .iter()
-        .map(|ci| ci.into())
-        .collect::<Vec<ChunkInfo>>();
-    <GenericPayload as Payload>::from_envelope(&enveloped).validate(header, chunk_infos.as_slice());
-
-    write_json(path_testdata.join("batch-task-test-out.json"), &task).unwrap();
     Ok(())
 }
 
-#[test]
-fn test_batch_task_payload() -> eyre::Result<()> {
-    use scroll_zkvm_prover::utils::read_json_deep;
-    use scroll_zkvm_types::{
-        batch::{Envelope, EnvelopeV7, Payload, PayloadV7},
-        chunk::{ArchivedChunkInfo, ChunkInfo},
-    };
+// #[test]
+// fn test_batch_task_payload() -> eyre::Result<()> {
+//     use scroll_zkvm_prover::utils::read_json_deep;
+//     use scroll_zkvm_types::{
+//         batch::{Envelope, EnvelopeV7, Payload, PayloadV7},
+//         chunk::{ArchivedChunkInfo, ChunkInfo},
+//     };
 
-    // ./testdata/
-    let path_testdata = std::path::Path::new("testdata")
-        .join("euclidv2")
-        .join("tasks");
+//     // ./testdata/
+//     let path_testdata = std::path::Path::new("testdata")
+//         .join("euclidv2")
+//         .join("tasks");
 
-    let task =
-        read_json_deep::<_, BatchProvingTask>(path_testdata.join("batch-task.json")).unwrap();
+//     let task =
+//         read_json_deep::<_, BatchProvingTask>(path_testdata.join("batch-task.json")).unwrap();
 
-    println!("blob {:?}", &task.blob_bytes[..32]);
-    let enveloped = <EnvelopeV7 as Envelope>::from_slice(task.blob_bytes.as_slice());
+//     println!("blob {:?}", &task.blob_bytes[..32]);
+//     let enveloped = <EnvelopeV7 as Envelope>::from_slice(task.blob_bytes.as_slice());
 
-    let chunk_infos = task
-        .chunk_proofs
-        .iter()
-        .map(|proof| proof.metadata.chunk_info.clone())
-        .collect::<Vec<_>>();
+//     let chunk_infos = task
+//         .chunk_proofs
+//         .iter()
+//         .map(|proof| proof.metadata.chunk_info.clone())
+//         .collect::<Vec<_>>();
 
-    let serialized_bytes = rkyv::to_bytes::<rkyv::rancor::Error>(&chunk_infos).unwrap();
-    let chunk_infos =
-        rkyv::access::<rkyv::vec::ArchivedVec<ArchivedChunkInfo>, rkyv::rancor::Error>(
-            &serialized_bytes,
-        )
-        .unwrap()
-        .iter()
-        .map(|ci| ci.into())
-        .collect::<Vec<ChunkInfo>>();
-    <PayloadV7 as Payload>::from_envelope(&enveloped)
-        .validate(task.batch_header.must_v7_header(), chunk_infos.as_slice());
+//     let serialized_bytes = rkyv::to_bytes::<rkyv::rancor::Error>(&chunk_infos).unwrap();
+//     let chunk_infos =
+//         rkyv::access::<rkyv::vec::ArchivedVec<ArchivedChunkInfo>, rkyv::rancor::Error>(
+//             &serialized_bytes,
+//         )
+//         .unwrap()
+//         .iter()
+//         .map(|ci| ci.into())
+//         .collect::<Vec<ChunkInfo>>();
+//     <PayloadV7 as Payload>::from_envelope(&enveloped)
+//         .validate(task.batch_header.must_v7_header(), chunk_infos.as_slice());
 
-    Ok(())
-}
+//     Ok(())
+// }

@@ -1,7 +1,7 @@
 use cargo_metadata::MetadataCommand;
 use once_cell::sync::OnceCell;
 use openvm_sdk::{
-    F, Sdk, StdIn,
+    F, StdIn,
     config::{AppConfig, SdkVmConfig},
 };
 use scroll_zkvm_types::{
@@ -10,7 +10,7 @@ use scroll_zkvm_types::{
 };
 use scroll_zkvm_prover::{
     Prover,
-    setup::{read_app_config, read_app_exe},
+    setup::read_app_config,
     utils::{read_json, write_json},
 };
 use std::{
@@ -138,14 +138,20 @@ pub trait ProverTester {
     }
 
     /// Load the prover
-    #[instrument("Prover::load_prover", skip(cache_dir))]
-    fn load_prover<T: AsRef<Path>>(with_evm: bool, cache_dir: Option<T>) -> eyre::Result<Prover>{
+    #[instrument("Prover::load_prover")]
+    fn load_prover(with_evm: bool) -> eyre::Result<Prover>{
         let (path_app_config, _, path_app_exe) = Self::load()?;
+
+        let path_assets = DIR_TESTRUN
+            .get()
+            .ok_or(eyre::eyre!("missing testrun dir"))?
+            .join(Self::DIR_ASSETS);
+        std::fs::create_dir_all(&path_assets)?;
 
         let config = scroll_zkvm_prover::ProverConfig {
             path_app_exe,
             path_app_config,
-            dir_cache: cache_dir.map(|p|p.as_ref().to_path_buf()),
+            dir_cache: Some(path_assets),
             ..Default::default()
         };
         let prover = scroll_zkvm_prover::Prover::setup(config, with_evm, Some(Self::NAME))?;
@@ -171,7 +177,7 @@ pub trait ProverTester {
         use openvm_native_recursion::hints::Hintable;
         
         let mut stdin = StdIn::default();
-        witness.write_guest_input(&mut stdin);
+        witness.write_guest_input(&mut stdin)?;
 
         for proof in aggregated_proofs {
             let streams = if witness.fork_name() >= ForkName::Feynman {

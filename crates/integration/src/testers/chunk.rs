@@ -85,6 +85,7 @@ impl ProverTester for ChunkProverTester {
 }
 
 /// Generator collect a range of block witnesses from test data
+#[derive(Clone, Debug)]
 pub struct ChunkTaskGenerator {
     pub block_range: std::ops::Range<u64>, 
     pub prev_message_hash: Option<B256>,
