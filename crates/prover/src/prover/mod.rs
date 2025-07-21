@@ -247,7 +247,9 @@ impl Prover {
     }
 
     /// Execute the guest program to get the cycle count.
-    pub fn execute_and_check(&self, stdin: &StdIn, mock_prove: bool) -> Result<u64, Error> {
+    pub fn execute_and_check_with_full_result(
+        &self, stdin: &StdIn, mock_prove: bool,
+    ) -> Result<crate::utils::vm::ExecutionResult, Error> {
         let config = self.app_pk.app_vm_pk.vm_config.clone();
         let exe = self.app_committed_exe.exe.clone();
         let debug_input = crate::utils::vm::DebugInput {
@@ -255,7 +257,12 @@ impl Prover {
             commited_exe: mock_prove.then(|| self.app_committed_exe.clone()),
         };
         let exec_result = crate::utils::vm::execute_guest(config, exe, stdin, &debug_input)?;
-        Ok(exec_result.total_cycle as u64)
+        Ok(exec_result)
+    }
+
+    /// Execute the guest program to get the cycle count.
+    pub fn execute_and_check(&self, stdin: &StdIn, mock_prove: bool) -> Result<u64, Error> {
+        self.execute_and_check_with_full_result(stdin, mock_prove).map(|res|res.total_cycle)
     }
 
     /// Setup the EVM prover-verifier.
