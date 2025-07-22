@@ -164,7 +164,11 @@ impl ProvingTask for BatchProvingTask {
             kzg_proof: kzg_proof.into_inner(),
         };
 
-        let reference_header = self.batch_header.clone().into();
+        let reference_header = match fork_name {
+            ForkName::EuclidV1 => ReferenceHeader::V6(*self.batch_header.must_v6_header()),
+            ForkName::EuclidV2 => ReferenceHeader::V7(*self.batch_header.must_v7_header()),
+            ForkName::Feynman => ReferenceHeader::V8(*self.batch_header.must_v8_header()),
+        };
 
         let witness = BatchWitness {
             fork_name,
