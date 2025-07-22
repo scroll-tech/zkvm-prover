@@ -1,64 +1,160 @@
-use std::path::Path;
-
-use scroll_zkvm_prover::{
-    BatchProverType, ChunkProof, ProverType, task::ProvingTask, utils::read_json_deep,
+use scroll_zkvm_prover::Prover;
+use scroll_zkvm_types::{
+    batch::{BatchHeader, BatchInfo, BatchWitness, ReferenceHeader},
+    chunk::ChunkInfo,
+    proof::ProofEnum,
+    public_inputs::ForkName,
 };
 
 use crate::{
-    ProverTester,
-    testers::{PATH_TESTDATA, chunk::ChunkProverTester},
-    utils::{build_batch_task, testdata_fork_directory},
+    PartialProvingTask, ProverTester, TestTaskBuilder, prove_verify,
+    testers::{
+        UnsafeSendWrappedProver,
+        chunk::{ChunkProverTester, ChunkTaskGenerator},
+    },
+    utils::{LastHeader, build_batch_witnesses, metadata_from_chunk_witnesses},
 };
+
+use std::sync::{Mutex, OnceLock};
+
+impl PartialProvingTask for BatchWitness {
+    fn identifier(&self) -> String {
+        let header_hash = match &self.reference_header {
+            ReferenceHeader::V6(h) => h.batch_hash(),
+            ReferenceHeader::V7(h) => h.batch_hash(),
+            ReferenceHeader::V8(h) => h.batch_hash(),
+        };
+        header_hash.to_string()
+    }
+
+    fn write_guest_input(&self, stdin: &mut openvm_sdk::StdIn) -> Result<(), rkyv::rancor::Error> {
+        let b = rkyv::to_bytes::<rkyv::rancor::Error>(self)?;
+        stdin.write_bytes(b.as_slice());
+        Ok(())
+    }
+
+    fn fork_name(&self) -> ForkName {
+        ForkName::from(self.fork_name.as_str())
+    }
+}
 
 pub struct BatchProverTester;
 
 impl ProverTester for BatchProverTester {
-    type Prover = BatchProverType;
+    type Metadata = BatchInfo;
+
+    type Witness = BatchWitness;
+
+    const NAME: &str = "batch";
 
     const PATH_PROJECT_ROOT: &str = "crates/circuits/batch-circuit";
 
     const DIR_ASSETS: &str = "batch";
+}
 
-    fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask> {
-        Ok(read_json_deep(
-            Path::new(PATH_TESTDATA)
-                .join(testdata_fork_directory())
-                .join("tasks")
-                .join("batch-task.json"),
-        )?)
+impl BatchProverTester {
+    fn instrinsic_chunk_prover() -> eyre::Result<&'static Mutex<UnsafeSendWrappedProver>> {
+        static CHUNK_PROVER: OnceLock<eyre::Result<Mutex<UnsafeSendWrappedProver>>> =
+            OnceLock::new();
+        CHUNK_PROVER
+            .get_or_init(|| {
+                ChunkProverTester::load_prover(false)
+                    .map(UnsafeSendWrappedProver)
+                    .map(Mutex::new)
+            })
+            .as_ref()
+            .map_err(|e| eyre::eyre!("{e}"))
     }
 }
 
-pub struct BatchTaskBuildingTester;
+#[derive(Clone, Debug)]
+pub struct BatchTaskGenerator {
+    result: OnceLock<BatchWitness>,
+    chunk_generators: Vec<ChunkTaskGenerator>,
+    last_header: Option<LastHeader>,
+}
 
-impl ProverTester for BatchTaskBuildingTester {
-    type Prover = BatchProverType;
+impl TestTaskBuilder<BatchProverTester> for BatchTaskGenerator {
+    fn gen_proving_witnesses(&self) -> eyre::Result<BatchWitness> {
+        Ok(self
+            .result
+            .get_or_init(|| self.calculate_batch_witness().unwrap())
+            .clone())
+    }
 
-    const PATH_PROJECT_ROOT: &str = "crates/circuits/batch-circuit";
+    fn gen_witnesses_proof(&self, prover: &Prover) -> eyre::Result<ProofEnum> {
+        let wit = self.gen_proving_witnesses()?;
 
-    const DIR_ASSETS: &str = "batch";
+        let chunk_prover = &BatchProverTester::instrinsic_chunk_prover()?
+            .lock()
+            .unwrap()
+            .0;
+        let chunk_proofs = self
+            .chunk_generators
+            .iter()
+            .map(|generator| generator.gen_witnesses_proof(chunk_prover))
+            .collect::<Result<Vec<ProofEnum>, _>>()?;
 
-    fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask> {
-        let chunk_task = ChunkProverTester::gen_proving_task()?;
-
-        let proof_path = Path::new(PATH_TESTDATA)
-            .join(testdata_fork_directory())
-            .join("proofs")
-            .join(format!("chunk-{}.json", chunk_task.identifier()));
-        println!("proof_path: {:?}", proof_path);
-
-        let chunk_proof = read_json_deep::<_, ChunkProof>(&proof_path)?;
-
-        let task = build_batch_task(&[chunk_task], &[chunk_proof], Default::default());
-        Ok(task)
+        prove_verify::<BatchProverTester>(prover, &wit, &chunk_proofs)
     }
 }
 
-#[test]
-fn batch_task_parsing() {
-    use scroll_zkvm_prover::task::ProvingTask;
+impl BatchTaskGenerator {
+    fn calculate_batch_witness(&self) -> eyre::Result<BatchWitness> {
+        let mut chunks = Vec::new();
+        let mut chunk_infos = Vec::new();
+        let mut last_info: Option<ChunkInfo> = None;
 
-    let task = BatchProverTester::gen_proving_task().unwrap();
+        for chunk_generator in &self.chunk_generators {
+            let canonical_generator = ChunkTaskGenerator {
+                block_range: chunk_generator.block_range.clone(),
+                prev_message_hash: last_info.as_ref().map(|info| info.post_msg_queue_hash),
+            };
 
-    let _ = task.build_guest_input().unwrap();
+            let chunk_wit = canonical_generator.gen_proving_witnesses()?;
+
+            if let Some(info) = &last_info {
+                // validate some data
+                assert_eq!(
+                    info.post_state_root, chunk_wit.blocks[0].pre_state_root,
+                    "state root"
+                );
+                assert_eq!(info.chain_id, chunk_wit.blocks[0].chain_id, "chain id");
+                assert_eq!(
+                    info.initial_block_number + info.block_ctxs.len() as u64,
+                    chunk_wit.blocks[0].header.number,
+                    "block number",
+                );
+            }
+            let info = metadata_from_chunk_witnesses(&chunk_wit)?;
+
+            last_info.replace(info.clone());
+            chunks.push(chunk_wit);
+            chunk_infos.push(info);
+        }
+
+        Ok(build_batch_witnesses(
+            &chunks,
+            &chunk_infos,
+            &BatchProverTester::instrinsic_chunk_prover()?
+                .lock()
+                .unwrap()
+                .0
+                .get_app_vk(),
+            self.last_header.clone().unwrap_or_default(),
+        ))
+    }
+
+    /// accept a series of ChunkTaskGenerator, validate them are continuous
+    /// and fill a valid prev_message_hash
+    pub fn from_chunk_tasks(
+        ref_chunks: &[ChunkTaskGenerator],
+        last_witness: Option<BatchWitness>,
+    ) -> Self {
+        Self {
+            result: OnceLock::new(),
+            chunk_generators: ref_chunks.to_vec(),
+            last_header: last_witness.map(|wit| (&wit.reference_header).into()),
+        }
+    }
 }

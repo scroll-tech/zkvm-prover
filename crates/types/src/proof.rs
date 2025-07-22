@@ -1,4 +1,4 @@
-use crate::util::{as_base64, vec_as_base64};
+use crate::utils::{as_base64, vec_as_base64};
 use openvm_continuations::verifier::root::types::RootVmVerifierInput;
 use openvm_sdk::SC;
 use openvm_stark_sdk::{

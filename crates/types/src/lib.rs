@@ -56,11 +56,11 @@ pub mod chunk {
     }
 }
 
-pub use types_base::{aggregation as types_agg, environ, public_inputs, utils};
+pub use types_base::{aggregation as types_agg, environ, public_inputs};
 
 pub mod proof;
 
 pub mod task;
 pub use task::ProvingTask;
 
-pub mod util;
+pub mod utils;
