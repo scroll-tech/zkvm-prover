@@ -85,8 +85,7 @@ impl From<&BatchHeaderV> for LastHeader {
     fn from(value: &BatchHeaderV) -> Self {
         match value {
             BatchHeaderV::V6(h) => h.into(),
-            BatchHeaderV::V7(h) => h.into(),
-            BatchHeaderV::V8(h) => h.into(),
+            BatchHeaderV::V7_8(h) => h.into(),
         }
     }
 }
@@ -293,7 +292,7 @@ pub fn build_batch_task(
         ForkName::EuclidV2 => {
             use scroll_zkvm_types::batch::BatchHeaderV7;
             let _ = x + z;
-            BatchHeaderV::V7(BatchHeaderV7 {
+            BatchHeaderV::V7_8(BatchHeaderV7 {
                 version: last_header.version,
                 batch_index: last_header.batch_index + 1,
                 parent_batch_hash: last_header.batch_hash,
@@ -303,7 +302,7 @@ pub fn build_batch_task(
         ForkName::Feynman => {
             use scroll_zkvm_types::batch::BatchHeaderV8;
             let _ = x + z;
-            BatchHeaderV::V8(BatchHeaderV8 {
+            BatchHeaderV::V7_8(BatchHeaderV8 {
                 version: last_header.version,
                 batch_index: last_header.batch_index + 1,
                 parent_batch_hash: last_header.batch_hash,
