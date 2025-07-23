@@ -6778,6 +6778,7 @@ dependencies = [
 name = "scroll-zkvm-build-guest"
 version = "0.5.0"
 dependencies = [
+ "base64",
  "bitcode",
  "cargo_metadata 0.19.2",
  "dotenv",
@@ -6796,6 +6797,7 @@ dependencies = [
  "openvm-stark-sdk",
  "openvm-transpiler",
  "p3-field 0.1.0",
+ "scroll-zkvm-types",
  "serde",
  "serde_json",
  "serde_with",
