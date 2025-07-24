@@ -76,10 +76,8 @@ fn run_stage1_leaf_commitments(
 
         // Generate public key (which includes leaf commitment)
         let app_pk = Sdk::new().app_keygen(app_config.clone())?;
-        let leaf_vm_verifier_commit_f: [F; DIGEST_SIZE] = app_pk
-            .leaf_committed_exe
-            .commitment
-            .into();
+        let leaf_vm_verifier_commit_f: [F; DIGEST_SIZE] =
+            app_pk.leaf_committed_exe.commitment.into();
         let leaf_vm_verifier_commit_u32 = leaf_vm_verifier_commit_f.map(|f| f.as_canonical_u32());
         leaf_commitments.insert(project_name.to_string(), leaf_vm_verifier_commit_u32);
 
@@ -123,8 +121,7 @@ fn run_stage2_root_verifier(project_names: &[&str], workspace_dir: &Path) -> Res
             .join("root_verifier.asm");
 
         println!("generating AggStarkProvingKey");
-        let agg_stark_pk =
-            AggStarkProvingKey::keygen(AggStarkConfig::default())?;
+        let agg_stark_pk = AggStarkProvingKey::keygen(AggStarkConfig::default())?;
 
         println!("generating root_verifier.asm");
         let asm = openvm_sdk::Sdk::new().generate_root_verifier_asm(&agg_stark_pk);
@@ -171,8 +168,7 @@ fn run_stage3_exe_commits(
             "{LOG_PREFIX} Changed working directory to: {}",
             project_path.display()
         );
-            let vmexe_filename = format!("app.vmexe");
-
+        let vmexe_filename = format!("app.vmexe");
 
         // 1. Build ELF
         let elf = builder::build(project_dir, Vec::<String>::new(), &app_config.app_vm_config)
@@ -193,7 +189,6 @@ fn run_stage3_exe_commits(
         let app_exe =
             builder::transpile(project_dir, elf, Some(&vmexe_filename), app_config.clone())?;
         println!("{LOG_PREFIX} Transpiled to VM Executable: {vmexe_filename}");
-        
 
         //let p = Path::new(project_dir).join("openvm").join(vmexe_filename);
         //let app_exe = read_app_exe(p).unwrap();
@@ -201,19 +196,16 @@ fn run_stage3_exe_commits(
         let app_committed_exe =
             Sdk::new().commit_app_exe(app_config.app_fri_params.fri_params, app_exe)?;
 
-        
         // 4. Compute and Write Executable Commitment
         use openvm_circuit::arch::VmConfig;
         let exe_commit_f: [F; DIGEST_SIZE] = app_committed_exe
-            .compute_exe_commit(
-                &app_config.app_vm_config.as_ref().memory_config
-            )
+            .compute_exe_commit(&app_config.app_vm_config.as_ref().memory_config)
             .into();
         let exe_commit_u32: [u32; DIGEST_SIZE] = exe_commit_f.map(|f| f.as_canonical_u32());
         exe_commitments.insert(project_name.to_string(), exe_commit_u32);
 
         let commit_filename = format!("{project_name}_exe_commit.rs");
-            
+
         let output_path = Path::new(project_dir).join(&commit_filename);
         write_commitment(output_path.to_str().expect("Invalid path"), exe_commit_u32)?;
 
@@ -368,7 +360,7 @@ pub fn main() -> Result<()> {
     Ok(())
 }
 
-/* 
+/*
 /// Wrapper around [`openvm_sdk::fs::read_exe_from_file`].
 pub fn read_app_exe<P: AsRef<Path>>(path: P) -> Result<VmExe<F>, eyre::Error> {
 
@@ -398,7 +390,7 @@ pub fn read_app_exe<P: AsRef<Path>>(path: P) -> Result<VmExe<F>, eyre::Error> {
         pc_start: exe.pc_start,
         init_memory: exe.init_memory.into_iter().map(|(k, v)| {
          assert!(v < F::from_canonical_u32(256u32));
-         (k, v.as_canonical_u32() as u8)   
+         (k, v.as_canonical_u32() as u8)
         }).collect(),
         fn_bounds: exe.fn_bounds,
     };

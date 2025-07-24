@@ -213,7 +213,7 @@ fn e2e() -> eyre::Result<()> {
     assert!(
         verifier
             .to_bundle_verifier_v2()
-            .verify_proof_evm(&evm_proof)
+            .verify_evm_proof(&evm_proof)
     );
 
     let expected_pi_hash = &outcome.proofs[0].metadata.bundle_pi_hash;
@@ -225,8 +225,7 @@ fn e2e() -> eyre::Result<()> {
         .enumerate()
     {
         assert_eq!(
-            expected,
-            observed,
+            expected, observed,
             "pi inconsistent at index {i}: expected={expected}, observed={observed:?}"
         );
     }

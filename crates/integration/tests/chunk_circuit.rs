@@ -143,10 +143,8 @@ fn test_execute_multi() -> eyre::Result<()> {
     let (total_gas, total_cycle) = pool.install(|| {
         let tasks = MultiChunkProverTester::gen_multi_proving_tasks().unwrap();
         let init = (0u64, 0u64);
-        let adder = |(gas1, cycle1): (u64, u64),
-                     (gas2, cycle2): (u64, u64)| {
-            (gas1 + gas2, cycle1 + cycle2)
-        };
+        let adder =
+            |(gas1, cycle1): (u64, u64), (gas2, cycle2): (u64, u64)| (gas1 + gas2, cycle1 + cycle2);
         tasks
             .into_iter()
             .map(|task| -> (u64, u64) {

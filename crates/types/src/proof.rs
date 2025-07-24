@@ -1,6 +1,10 @@
 use crate::util::{as_base64, vec_as_base64};
-use openvm_continuations::verifier::{internal::types::VmStarkProof, root::types::RootVmVerifierInput};
-use openvm_sdk::{commit::{AppExecutionCommit, CommitBytes}, types::ProofData, SC};
+use openvm_continuations::verifier::internal::types::VmStarkProof;
+use openvm_sdk::{
+    SC,
+    commit::{AppExecutionCommit, CommitBytes},
+    types::ProofData,
+};
 use openvm_stark_sdk::{
     openvm_stark_backend::{p3_field::PrimeField32, proof::Proof},
     p3_baby_bear::BabyBear,
@@ -8,7 +12,7 @@ use openvm_stark_sdk::{
 use serde::{Deserialize, Serialize};
 
 /// Alias for convenience.
-pub type RootProof = VmStarkProof<SC>;
+pub type StarkProof = VmStarkProof<SC>;
 
 /// Helper type for convenience that implements [`From`] and [`Into`] traits between
 /// [`OpenVmEvmProof`]. The difference is that the instances in [`EvmProof`] are the byte-encoding
@@ -31,7 +35,7 @@ pub struct EvmProof {
 
 /// Helper to modify serde implementations on the remote [`RootProof`] type.
 #[derive(Serialize, Deserialize)]
-#[serde(remote = "RootProof")]
+#[serde(remote = "StarkProof")]
 struct RootProofDef {
     /// The proofs.
     #[serde(with = "as_base64")]
@@ -42,9 +46,6 @@ struct RootProofDef {
 }
 
 pub use openvm_sdk::types::EvmProof as OpenVmEvmProof;
-use snark_verifier_sdk::snark_verifier::{
-    halo2_base::halo2_proofs::halo2curves::bn256::Fr, util::arithmetic::PrimeField,
-};
 
 impl From<OpenVmEvmProof> for EvmProof {
     fn from(value: OpenVmEvmProof) -> Self {
@@ -65,11 +66,11 @@ impl From<EvmProof> for OpenVmEvmProof {
             proof_data: ProofData {
                 accumulator: value.accumulator,
                 proof: value.proof,
-                },
+            },
             app_commit: AppExecutionCommit {
                 app_exe_commit: CommitBytes::from_u32_digest(&value.digest1),
                 app_vm_commit: CommitBytes::from_u32_digest(&value.digest2),
-            }
+            },
         }
     }
 }
@@ -80,13 +81,13 @@ impl From<EvmProof> for OpenVmEvmProof {
 pub enum ProofEnum {
     /// Represents a STARK proof used for intermediary layers, i.e. chunk and batch.
     #[serde(with = "RootProofDef")]
-    Root(RootProof),
+    Root(StarkProof),
     /// Represents a SNARK proof used for the final layer to be verified on-chain, i.e. bundle.
     Evm(EvmProof),
 }
 
-impl From<RootProof> for ProofEnum {
-    fn from(value: RootProof) -> Self {
+impl From<StarkProof> for ProofEnum {
+    fn from(value: StarkProof) -> Self {
         Self::Root(value)
     }
 }
@@ -99,7 +100,7 @@ impl From<EvmProof> for ProofEnum {
 
 impl ProofEnum {
     /// Get the root proof as reference.
-    pub fn as_root_proof(&self) -> Option<&RootProof> {
+    pub fn as_root_proof(&self) -> Option<&StarkProof> {
         match self {
             Self::Root(proof) => Some(proof),
             _ => None,
@@ -117,7 +118,7 @@ impl ProofEnum {
     }
 
     /// Consumes the proof enum and returns the contained root proof.
-    pub fn into_root_proof(self) -> Option<RootProof> {
+    pub fn into_root_proof(self) -> Option<StarkProof> {
         match self {
             Self::Root(proof) => Some(proof),
             _ => None,

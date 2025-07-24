@@ -32,7 +32,7 @@ impl<C: Commitments> ProverType for GenericChunkProverType<C> {
 
     const EXE_COMMIT: [u32; 8] = C::EXE_COMMIT;
 
-    const LEAF_COMMIT: [u32; 8] = C::LEAF_COMMIT;
+    const VM_COMMIT: [u32; 8] = C::LEAF_COMMIT;
 
     type ProvingTask = ChunkProvingTask;
 

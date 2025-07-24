@@ -35,9 +35,7 @@ impl ProvingTask for UniversalProvingTask {
         }
 
         for proof in &self.aggregated_proofs {
-            let streams = 
-                proof.write()
-            ;
+            let streams = proof.write();
             for s in &streams {
                 stdin.write_field(s);
             }

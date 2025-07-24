@@ -19,7 +19,7 @@ impl ProverType for BatchProverType {
 
     const EXE_COMMIT: [u32; 8] = BATCH_EXE_COMMIT;
 
-    const LEAF_COMMIT: [u32; 8] = BATCH_LEAF_COMMIT;
+    const VM_COMMIT: [u32; 8] = BATCH_LEAF_COMMIT;
 
     type ProvingTask = BatchProvingTask;
 

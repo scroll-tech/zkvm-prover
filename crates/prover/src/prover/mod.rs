@@ -5,7 +5,7 @@ use std::{
 };
 
 use once_cell::sync::Lazy;
-use openvm_circuit::{system::program::trace::VmCommittedExe};
+use openvm_circuit::system::program::trace::VmCommittedExe;
 use openvm_native_recursion::{
     halo2::{
         RawEvmProof,
@@ -14,14 +14,18 @@ use openvm_native_recursion::{
     },
     hints::Hintable,
 };
+use openvm_sdk::config::SdkVmCpuBuilder;
 use openvm_sdk::{
+    DefaultStaticVerifierPvHandler, NonRootCommittedExe, Sdk, StdIn,
+    commit::AppExecutionCommit,
+    config::{AggConfig, AggStarkConfig, SdkVmConfig},
+    keygen::{AggProvingKey, AggStarkProvingKey, AppProvingKey},
+    prover::{AggStarkProver, AppProver, EvmHalo2Prover},
     types::EvmProof as OpenVmEvmProf,
-    commit::AppExecutionCommit, config::{AggConfig, AggStarkConfig, SdkVmConfig}, keygen::{AggProvingKey, AggStarkProvingKey, AppProvingKey}, prover::{AggStarkProver, AppProver, EvmHalo2Prover}, DefaultStaticVerifierPvHandler, NonRootCommittedExe, Sdk, StdIn
 };
 use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Engine;
-use scroll_zkvm_verifier::verifier::verify_proof_inner;
+use scroll_zkvm_verifier::verifier::verify_stark_proof;
 use tracing::{debug, instrument};
-use openvm_sdk::config::SdkVmCpuBuilder;
 
 // Re-export from openvm_sdk.
 pub use openvm_sdk::{self, SC};
@@ -33,9 +37,7 @@ use crate::{
     task::ProvingTask,
 };
 
-use scroll_zkvm_types::{
-    proof::{EvmProof, ProofEnum, RootProof},
-};
+use scroll_zkvm_types::proof::{EvmProof, ProofEnum, StarkProof};
 
 mod batch;
 pub use batch::{BatchProver, BatchProverType};
@@ -197,23 +199,20 @@ impl<Type: ProverType> Prover<Type> {
     }
 
     /// Dump assets required to setup verifier-only mode.
-    pub fn dump_verifier<P: AsRef<Path>>(&self, dir: P) -> Result<(PathBuf, PathBuf), Error> {
+    pub fn dump_verifier<P: AsRef<Path>>(&self, dir: P) -> Result<PathBuf, Error> {
         if !Type::EVM {
             return Err(Error::Custom(
                 "dump_verifier only at bundle-prover".to_string(),
             ));
         };
         let root_verifier_pk = &AGG_STARK_PROVING_KEY.root_verifier_pk;
-        let vm_config = root_verifier_pk.vm_pk.vm_config.clone();
         let root_committed_exe: &VmCommittedExe<_> = &root_verifier_pk.root_committed_exe;
 
-        let path_vm_config = dir.as_ref().join(FD_ROOT_VERIFIER_VM_CONFIG);
         let path_root_committed_exe = dir.as_ref().join(FD_ROOT_VERIFIER_COMMITTED_EXE);
 
-        crate::utils::write_bin(&path_vm_config, &vm_config)?;
         crate::utils::write_bin(&path_root_committed_exe, &root_committed_exe)?;
 
-        Ok((path_vm_config, path_root_committed_exe))
+        Ok(path_root_committed_exe)
     }
 
     /// Pick up loaded app commit as "vk" in proof, to distinguish from which circuit the proof comes
@@ -236,7 +235,9 @@ impl<Type: ProverType> Prover<Type> {
         self.evm_prover
             .as_ref()
             .map(|evm_prover| {
-                scroll_zkvm_verifier::evm::serialize_vk(evm_prover.agg_pk.halo2_pk.wrapper.pinning.pk.get_vk())
+                scroll_zkvm_verifier::evm::serialize_vk(
+                    evm_prover.agg_pk.halo2_pk.wrapper.pinning.pk.get_vk(),
+                )
             })
             .unwrap_or_default()
     }
@@ -275,11 +276,12 @@ impl<Type: ProverType> Prover<Type> {
             if let Ok(proof) =
                 <WrappedProof<Type::ProofMetadata> as PersistableProof>::from_json(&path_proof)
             {
-                verify_proof_inner(
+                verify_stark_proof(
                     proof.proof.as_root_proof().unwrap(),
                     Type::EXE_COMMIT,
-                    Type::LEAF_COMMIT,
-                ).unwrap();
+                    Type::VM_COMMIT,
+                )
+                .unwrap();
                 debug!(name: "early_return_proof", ?task_id);
                 return Ok(proof);
             }
@@ -347,8 +349,8 @@ impl<Type: ProverType> Prover<Type> {
             "commitment is not match in generate evm proof",
         );
         assert_eq!(
-           proof.app_commit.app_vm_commit.to_u32_digest(),
-            Type::LEAF_COMMIT,
+            proof.app_commit.app_vm_commit.to_u32_digest(),
+            Type::VM_COMMIT,
             "commitment is not match in generate evm proof",
         );
 
@@ -373,7 +375,6 @@ impl<Type: ProverType> Prover<Type> {
     pub fn metadata_with_prechecks(task: &Type::ProvingTask) -> Result<Type::ProofMetadata, Error> {
         Type::metadata_with_prechecks(task)
     }
-
 
     /// Verify an [evm proof][evm_proof].
     ///
@@ -420,7 +421,7 @@ impl<Type: ProverType> Prover<Type> {
             .clone()
             .ok_or(std::env::var(ENV_HALO2_PARAMS_DIR))
             .unwrap_or(Path::new(DEFAULT_PARAMS_DIR).to_path_buf());
-                
+
         let halo2_params_reader = CacheHalo2ParamsReader::new(&dir_halo2_params);
         let agg_pk = Sdk::new()
             .agg_keygen(
@@ -455,19 +456,6 @@ impl<Type: ProverType> Prover<Type> {
             crate::utils::write(path, &verifier_contract)?;
         }
 
-
-        //let halo2_pk = agg_pk.halo2_pk.wrapper.clone();
-        /* 
-        let halo2_prover = EvmHalo2Prover::new(
-            &halo2_params_reader,
-            SdkVmCpuBuilder,
-            Arc::clone(app_pk),
-            Arc::clone(app_committed_exe),
-            agg_pk,
-            Default::default(),
-        );
-        */
-
         Ok(EvmProverVerifier {
             reader: halo2_params_reader,
             //halo2_prover,
@@ -486,7 +474,7 @@ impl<Type: ProverType> Prover<Type> {
     /// Generate a [root proof][root_proof].
     ///
     /// [root_proof][openvm_sdk::verifier::root::types::RootVmVerifierInput]
-    fn gen_proof_stark(&self, task: &impl ProvingTask) -> Result<RootProof, Error> {
+    fn gen_proof_stark(&self, task: &impl ProvingTask) -> Result<StarkProof, Error> {
         let stdin = task
             .build_guest_input()
             .map_err(|e| Error::GenProof(e.to_string()))?;
@@ -499,10 +487,17 @@ impl<Type: ProverType> Prover<Type> {
 
         tracing::debug!(name: "generate_root_verifier_input", ?task_id);
         let sdk = Sdk::new();
-        let proof = sdk.generate_e2e_stark_proof(SdkVmCpuBuilder, self.app_pk.clone(), self.app_committed_exe.clone(), 
-                AGG_STARK_PROVING_KEY.clone(), stdin).unwrap();
-println!("verifing root proof");
-        verify_proof_inner(&proof, Type::EXE_COMMIT, Type::LEAF_COMMIT).unwrap();
+        let proof = sdk
+            .generate_e2e_stark_proof(
+                SdkVmCpuBuilder,
+                self.app_pk.clone(),
+                self.app_committed_exe.clone(),
+                AGG_STARK_PROVING_KEY.clone(),
+                stdin,
+            )
+            .unwrap();
+        println!("verifing root proof");
+        verify_stark_proof(&proof, Type::EXE_COMMIT, Type::VM_COMMIT).unwrap();
         println!("verifing root proof done");
         Ok(proof)
     }
@@ -515,22 +510,25 @@ println!("verifing root proof");
             .build_guest_input()
             .map_err(|e| Error::GenProof(e.to_string()))?;
         let sdk = Sdk::new();
-        let dir_halo2_params = self.config
+        let dir_halo2_params = self
+            .config
             .dir_halo2_params
             .clone()
             .ok_or(std::env::var(ENV_HALO2_PARAMS_DIR))
             .unwrap_or(Path::new(DEFAULT_PARAMS_DIR).to_path_buf());
-                
+
         let halo2_params_reader = CacheHalo2ParamsReader::new(&dir_halo2_params);
-        
-        let evm_proof = sdk.generate_evm_proof(
-                    &halo2_params_reader,
-                    SdkVmCpuBuilder,
-                    self.app_pk.clone(),
-                    self.app_committed_exe.clone(),
-                    self.evm_prover.as_ref().unwrap().agg_pk.clone(),
-                    stdin,
-                ).unwrap();
+
+        let evm_proof = sdk
+            .generate_evm_proof(
+                &halo2_params_reader,
+                SdkVmCpuBuilder,
+                self.app_pk.clone(),
+                self.app_committed_exe.clone(),
+                self.evm_prover.as_ref().unwrap().agg_pk.clone(),
+                stdin,
+            )
+            .unwrap();
 
         Ok(evm_proof)
     }
@@ -557,7 +555,7 @@ println!("verifing root proof");
 
         assert_eq!(
             vm_commit,
-            Type::LEAF_COMMIT,
+            Type::VM_COMMIT,
             "read unmatched app commitment from app"
         );
         assert_eq!(
@@ -584,8 +582,8 @@ pub trait ProverType {
     /// The app program's exe commitment.
     const EXE_COMMIT: [u32; 8];
 
-    /// The app program's leaf commitment.
-    const LEAF_COMMIT: [u32; 8];
+    /// The app program's vm commitment.
+    const VM_COMMIT: [u32; 8];
 
     /// The task provided as argument during proof generation process.
     type ProvingTask: ProvingTask;
