@@ -23,8 +23,11 @@ openvm-native-transpiler = { workspace = true, default-features = false }
 openvm-transpiler = { workspace = true, default-features = false }
 
 alloy-primitives.workspace = true
+base64.workspace = true
+cargo_metadata.workspace = true
 eyre.workspace = true
 rayon.workspace = true
+serde.workspace = true
 vm-zstd = { workspace = true, features = ["zstd"] }
 
 chrono = "0.4"

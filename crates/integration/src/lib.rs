@@ -1,8 +1,4 @@
-use std::{
-    path::{Path, PathBuf},
-    process,
-};
-
+use cargo_metadata::MetadataCommand;
 use once_cell::sync::OnceCell;
 use openvm_sdk::{
     F, Sdk,
@@ -14,6 +10,11 @@ use scroll_zkvm_prover::{
     task::ProvingTask,
 };
 use scroll_zkvm_verifier::verifier::verify_proof_inner;
+use std::{
+    path::{Path, PathBuf},
+    process,
+    sync::LazyLock,
+};
 use tracing::instrument;
 use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -21,8 +22,24 @@ pub mod testers;
 
 pub mod utils;
 
+pub static WORKSPACE_ROOT: LazyLock<&Path> = LazyLock::new(|| {
+    let path = MetadataCommand::new()
+        .no_deps()
+        .exec()
+        .expect("failed to execute cargo-metadata")
+        .workspace_root
+        .into_std_path_buf();
+    eprintln!("PROJECT_ROOT_DIR = {}", path.display());
+    Box::leak(path.into_boxed_path())
+});
+
 /// Path to store release assets, root directory of zkvm-prover repository.
-const DIR_OUTPUT: &str = "./../../.output";
+static DIR_OUTPUT: LazyLock<&Path> = LazyLock::new(|| {
+    let path = WORKSPACE_ROOT.join(".output");
+    std::fs::create_dir_all(&path).expect("failed to create output directory");
+    eprintln!("DIR_OUTPUT = {}", path.display());
+    Box::leak(path.into_boxed_path())
+});
 
 /// Directory to store proofs on disc.
 const DIR_PROOFS: &str = "proofs";
@@ -75,7 +92,7 @@ pub trait ProverTester {
                 Self::DIR_ASSETS,
                 chrono::Utc::now().format("%Y%m%d_%H%M%S"),
             );
-            Path::new(DIR_OUTPUT).join(testrun)
+            DIR_OUTPUT.join(testrun)
         };
 
         // Set the path for the current test-run.
@@ -90,9 +107,10 @@ pub trait ProverTester {
     fn load_with_exe_fd(
         app_exe_fd: &str,
     ) -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
-        let path_app_config = Path::new(Self::PATH_PROJECT_ROOT).join(FD_APP_CONFIG);
+        let project_root = WORKSPACE_ROOT.join(Self::PATH_PROJECT_ROOT);
+        let path_app_config = project_root.join(FD_APP_CONFIG);
         let app_config = read_app_config(&path_app_config)?;
-        let path_assets = Path::new(Self::PATH_PROJECT_ROOT).join("openvm");
+        let path_assets = project_root.join("openvm");
         let path_app_exe = path_assets.join(app_exe_fd);
         Ok((path_app_config, app_config, path_app_exe))
     }
@@ -323,7 +341,8 @@ where
 
     // Dump verifier-only assets to disk.
     let (path_vm_config, path_root_committed_exe) = prover.dump_verifier(&path_assets)?;
-    let path_verifier_code = Path::new(T::PATH_PROJECT_ROOT)
+    let path_verifier_code = WORKSPACE_ROOT
+        .join(T::PATH_PROJECT_ROOT)
         .join("openvm")
         .join("verifier.bin");
     let verifier = scroll_zkvm_verifier::verifier::Verifier::setup(
@@ -346,4 +365,26 @@ where
         verifier,
         path_assets,
     ))
+}
+
+#[test]
+fn test_project_root() {
+    println!("Project root directory: {}", WORKSPACE_ROOT.display());
+    assert!(
+        WORKSPACE_ROOT.exists(),
+        "Project root directory does not exist"
+    );
+    let crates = WORKSPACE_ROOT.join("crates");
+    assert!(
+        crates.exists(),
+        "Expected 'crates' directory in project root"
+    );
+    assert!(
+        crates.join("circuits").exists(),
+        "Expected 'circuits' directory in project root"
+    );
+    assert!(
+        crates.join("integration").exists(),
+        "Expected 'integration' directory in project root"
+    );
 }

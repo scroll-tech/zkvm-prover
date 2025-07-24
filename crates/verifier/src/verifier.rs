@@ -13,9 +13,8 @@ use tracing::{debug, instrument};
 
 use crate::commitments::{
     batch::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT},
-    bundle, bundle_euclidv1,
+    bundle,
     chunk::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT},
-    chunk_rv32,
 };
 
 
@@ -73,25 +72,15 @@ impl VerifierType for ChunkVerifierType {
     const LEAF_COMMIT: [u32; 8] = CHUNK_LEAF_COMMIT;
     fn match_exe_commitment_with_pi(pi: &[Option<u32>]) -> bool {
         &pi[..8] == Self::EXE_COMMIT.map(Some).as_slice()
-            || Rv32ChunkVerifierType::match_exe_commitment_with_pi(pi)
     }
     fn match_leaf_commitment_with_pi(pi: &[Option<u32>]) -> bool {
         &pi[8..16] == Self::LEAF_COMMIT.map(Some).as_slice()
-            || Rv32ChunkVerifierType::match_leaf_commitment_with_pi(pi)
     }
 }
 
-impl VerifierType for Rv32ChunkVerifierType {
-    const EXE_COMMIT: [u32; 8] = chunk_rv32::EXE_COMMIT;
-    const LEAF_COMMIT: [u32; 8] = chunk_rv32::LEAF_COMMIT;
-}
 impl VerifierType for BatchVerifierType {
     const EXE_COMMIT: [u32; 8] = BATCH_EXE_COMMIT;
     const LEAF_COMMIT: [u32; 8] = BATCH_LEAF_COMMIT;
-}
-impl VerifierType for BundleVerifierTypeEuclidV1 {
-    const EXE_COMMIT: [u32; 8] = bundle_euclidv1::EXE_COMMIT;
-    const LEAF_COMMIT: [u32; 8] = bundle_euclidv1::LEAF_COMMIT;
 }
 impl VerifierType for BundleVerifierTypeEuclidV2 {
     const EXE_COMMIT: [u32; 8] = bundle::EXE_COMMIT;

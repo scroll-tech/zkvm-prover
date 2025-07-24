@@ -60,7 +60,11 @@ impl ProvingTask for BundleProvingTask {
         stdin.write_bytes(&serialized);
         for batch_proof in &self.batch_proofs {
             let root_input = &batch_proof.as_root_proof();
-            let streams = root_input.proofs[0].write();
+            let streams = if self.fork_name() >= ForkName::Feynman {
+                root_input.proofs[0].write()
+            } else {
+                root_input.write()
+            };
             for s in &streams {
                 stdin.write_field(s);
             }

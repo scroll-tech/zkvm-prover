@@ -41,10 +41,9 @@ jobs:
 
       - name: Build guest and check diff
         run: |
-          make build-guest
-# disable the checking of commitment temporarily          
-#          git diff
-#          git diff --quiet && echo "no diff" || (echo "diff"; exit 1)
+          make build-guest     
+          git diff
+          git diff --quiet && echo "no diff" || (echo "diff"; exit 1)
 
       - name: Upload artifact (chunk app.vmexe)
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2

@@ -10,18 +10,20 @@
 //! - `BUILD_PROJECT`: Comma-separated list of projects to build (e.g., "chunk,batch"). Defaults to "chunk,batch,bundle".
 //! - `BUILD_STAGES`: Comma-separated list of stages to run (e.g., "stage1,stage3"). Defaults to "stage1,stage2,stage3".
 
-use std::{collections::{BTreeMap, HashSet}, env, path::Path, time::Instant};
+use std::{
+    collections::{HashMap, HashSet},
+    env,
+    path::Path,
+    time::Instant,
+};
 
 use dotenv::dotenv;
-use eyre::Result; use openvm_instructions::{exe::{FnBounds, VmExe}, program::Program};
+use eyre::Result;
 // Use eyre::Result directly
 use openvm_native_compiler::ir::DIGEST_SIZE;
 use openvm_sdk::{config::SdkVmConfig, fs::read_from_file_bitcode, Sdk, F};
 use openvm_stark_sdk::{openvm_stark_backend::p3_field::PrimeField32, p3_baby_bear::BabyBear};
 use snark_verifier_sdk::snark_verifier::loader::halo2::halo2_ecc::halo2_base::halo2_proofs::halo2curves::bn256::Fr;
-
-mod verifier;
-use verifier::dump_verifier;
 
 mod builder;
 
@@ -57,65 +59,13 @@ fn compress_commitment(commitment: &[u32; DIGEST_SIZE]) -> Fr {
     compressed_value
 }
 
-/// Configuration for building a specific variant of a guest program.
-#[derive(Debug)]
-pub(crate) struct BuildConfig {
-    /// Cargo features to enable for this build.
-    pub(crate) features: Vec<String>,
-    /// Suffix to append to generated filenames (e.g., "_rv32"). Empty string for default.
-    pub(crate) filename_suffix: String,
-}
-
-/// Returns the build configurations for a given project name.
-fn get_build_configs(project_name: &str) -> Vec<BuildConfig> {
-    match project_name {
-        "chunk" => vec![BuildConfig {
-            features: vec![],
-            filename_suffix: "".to_string(),
-        }],
-        "batch" => vec![BuildConfig {
-            features: vec![],
-            filename_suffix: "".to_string(),
-        }],
-        "bundle" => vec![BuildConfig {
-            features: vec![],
-            filename_suffix: "".to_string(),
-        }],
-        _ => {
-            // Use panic instead of unreachable for build scripts, providing a clearer error.
-            panic!("{LOG_PREFIX} Unsupported project name: {project_name}");
-        }
-    }
-}
-
-/// Generates the root verifier assembly code if required by the selected projects.
-fn generate_root_verifier(project_names: &[&str], workspace_dir: &Path) -> Result<()> {
-    // Only generate if "batch" or "bundle" is being built, as they use recursive verification.
-    if project_names
-        .iter()
-        .any(|&name| name == "batch" || name == "bundle")
-    {
-        println!("{LOG_PREFIX} Generating root verifier assembly...");
-        let root_verifier_path = workspace_dir
-            .join("crates")
-            .join("build-guest")
-            .join("root_verifier.asm");
-        dump_verifier(root_verifier_path.to_str().expect("Invalid path")); // Use expect for build script paths
-        println!(
-            "{LOG_PREFIX} Root verifier generated at: {}",
-            root_verifier_path.display()
-        );
-    } else {
-        println!(
-            "{LOG_PREFIX} Skipping root verifier generation (not needed for selected projects)."
-        );
-    }
-    Ok(())
-}
-
 /// Stage 1: Generates and writes leaf commitments for each specified project.
-fn run_stage1_leaf_commitments(project_names: &[&str], workspace_dir: &Path) -> Result<()> {
+fn run_stage1_leaf_commitments(
+    project_names: &[&str],
+    workspace_dir: &Path,
+) -> Result<HashMap<String, [u32; DIGEST_SIZE]>> {
     println!("{LOG_PREFIX} === Stage 1: Generating Leaf Commitments ===");
+    let mut leaf_commitments = HashMap::new();
     for &project_name in project_names {
         println!("{LOG_PREFIX} Processing project: {project_name}");
         let project_dir = workspace_dir
@@ -132,6 +82,7 @@ fn run_stage1_leaf_commitments(project_names: &[&str], workspace_dir: &Path) -> 
             .commitment
             .into();
         let leaf_vm_verifier_commit_u32 = leaf_vm_verifier_commit_f.map(|f| f.as_canonical_u32());
+        leaf_commitments.insert(project_name.to_string(), leaf_vm_verifier_commit_u32);
 
         // Write the commitment to a .rs file
         let output_path = project_dir.join(format!("{project_name}_leaf_commit.rs"));
@@ -154,129 +105,196 @@ fn run_stage1_leaf_commitments(project_names: &[&str], workspace_dir: &Path) -> 
         }
     }
     println!("{LOG_PREFIX} === Stage 1 Finished ===");
-    Ok(())
+    Ok(leaf_commitments)
 }
 
 /// Stage 2: Generates the root verifier assembly code.
 fn run_stage2_root_verifier(project_names: &[&str], workspace_dir: &Path) -> Result<()> {
     println!("{LOG_PREFIX} === Stage 2: Generating Root Verifier ===");
-    generate_root_verifier(project_names, workspace_dir)?;
+    use openvm_sdk::{config::AggStarkConfig, keygen::AggStarkProvingKey};
+    // Only generate if "batch" or "bundle" is being built, as they use recursive verification.
+    if project_names
+        .iter()
+        .any(|&name| name == "batch" || name == "bundle")
+    {
+        println!("{LOG_PREFIX} Generating root verifier assembly...");
+        let root_verifier_path = workspace_dir
+            .join("crates")
+            .join("build-guest")
+            .join("root_verifier.asm");
+
+        println!("generating AggStarkProvingKey");
+        let (agg_stark_pk, _) =
+            AggStarkProvingKey::dummy_proof_and_keygen(AggStarkConfig::default());
+
+        println!("generating root_verifier.asm");
+        let asm = openvm_sdk::Sdk::new().generate_root_verifier_asm(&agg_stark_pk);
+        std::fs::write(&root_verifier_path, asm).expect("fail to write");
+
+        println!(
+            "{LOG_PREFIX} Root verifier generated at: {}",
+            root_verifier_path.display()
+        );
+    } else {
+        println!(
+            "{LOG_PREFIX} Skipping root verifier generation (not needed for selected projects)."
+        );
+    }
     println!("{LOG_PREFIX} === Stage 2 Finished ===");
     Ok(())
 }
 
 /// Stage 3: Builds guest programs, transpiles them, and generates executable commitments.
-fn run_stage3_exe_commits(project_names: &[&str], workspace_dir: &Path) -> Result<()> {
+fn run_stage3_exe_commits(
+    project_names: &[&str],
+    workspace_dir: &Path,
+) -> Result<HashMap<String, [u32; DIGEST_SIZE]>> {
     println!("{LOG_PREFIX} === Stage 3: Generating Executable Commitments ===");
+    let mut exe_commitments = HashMap::new();
     for &project_name in project_names {
         let project_path = workspace_dir
             .join("crates")
             .join("circuits")
             .join(format!("{project_name}-circuit"));
-        let build_configs = get_build_configs(project_name);
 
+        println!("{LOG_PREFIX} Processing project: {project_name}");
+
+        let start_time = Instant::now();
+        println!("{LOG_PREFIX} Starting build...");
+
+        let project_dir = project_path.to_str().expect("Invalid path");
+        let app_config = builder::load_app_config(project_dir)?;
+
+        // Store current directory and change to project directory
+        let original_dir = env::current_dir()?;
+        env::set_current_dir(&project_path)?;
         println!(
-            "{LOG_PREFIX} Processing project: {project_name} ({} build configs)",
-            build_configs.len()
+            "{LOG_PREFIX} Changed working directory to: {}",
+            project_path.display()
         );
-
-        for build_config in build_configs {
-            let start_time = Instant::now();
-            println!("{LOG_PREFIX} Starting build for config: {build_config:?}...");
-
-            let project_dir = project_path.to_str().expect("Invalid path");
-            let app_config = builder::load_app_config(project_dir)?;
-
-            // Store current directory and change to project directory
-            let original_dir = env::current_dir()?;
-            env::set_current_dir(&project_path)?;
-            println!(
-                "{LOG_PREFIX} Changed working directory to: {}",
-                project_path.display()
-            );
             let vmexe_filename = format!("app{}.vmexe", build_config.filename_suffix);
 
 
             if false {
 
-            // 1. Build ELF
-            let elf = builder::build(
-                project_dir,
-                &build_config.features,
-                &app_config.app_vm_config,
-            )
+        // 1. Build ELF
+        let elf = builder::build(project_dir, Vec::<String>::new(), &app_config.app_vm_config)
             .inspect_err(|_err| {
                 println!("{LOG_PREFIX} Building failed in {}", project_dir);
             })?;
-            println!("{LOG_PREFIX} Built ELF");
+        println!("{LOG_PREFIX} Built ELF");
 
-            // Revert to original directory
-            env::set_current_dir(&original_dir)?;
-            println!(
-                "{LOG_PREFIX} Reverted working directory to: {}",
-                original_dir.display()
-            );
+        // Revert to original directory
+        env::set_current_dir(&original_dir)?;
+        println!(
+            "{LOG_PREFIX} Reverted working directory to: {}",
+            original_dir.display()
+        );
 
-            // 2. Transpile ELF to VM Executable
-            let app_exe =
-                builder::transpile(project_dir, elf, Some(&vmexe_filename), app_config.clone())?;
-            println!("{LOG_PREFIX} Transpiled to VM Executable: {vmexe_filename}");
+        // 2. Transpile ELF to VM Executable
+        let vmexe_filename = String::from("app.vmexe");
+        let app_exe =
+            builder::transpile(project_dir, elf, Some(&vmexe_filename), app_config.clone())?;
+        println!("{LOG_PREFIX} Transpiled to VM Executable: {vmexe_filename}");
         }
 
         let p = Path::new(project_dir).join("openvm").join(vmexe_filename);
         let app_exe = read_app_exe(p).unwrap();
-            // 3. Commit VM Executable
-            let app_committed_exe =
-                Sdk::new().commit_app_exe(app_config.app_fri_params.fri_params, app_exe)?;
+        // 3. Commit VM Executable
+        let app_committed_exe =
+            Sdk::new().commit_app_exe(app_config.app_fri_params.fri_params, app_exe)?;
 
         
-            // 4. Compute and Write Executable Commitment
-            use openvm_circuit::arch::VmConfig;
-            let exe_commit_f: [F; DIGEST_SIZE] = app_committed_exe
-                .compute_exe_commit(
-                    &<SdkVmConfig as VmConfig<F>>::system(&app_config.app_vm_config).memory_config,
-                )
-                .into();
-            let exe_commit_u32: [u32; DIGEST_SIZE] = exe_commit_f.map(|f| f.as_canonical_u32());
+        // 4. Compute and Write Executable Commitment
+        use openvm_circuit::arch::VmConfig;
+        let exe_commit_f: [F; DIGEST_SIZE] = app_committed_exe
+            .compute_exe_commit(
+                &<SdkVmConfig as VmConfig<F>>::system(&app_config.app_vm_config).memory_config,
+            )
+            .into();
+        let exe_commit_u32: [u32; DIGEST_SIZE] = exe_commit_f.map(|f| f.as_canonical_u32());
+        exe_commitments.insert(project_name.to_string(), exe_commit_u32);
 
-            println!("exe commit {:?}", exe_commit_u32);
-            panic!("ok");
-            let commit_filename = format!(
-                "{project_name}_exe{}_commit.rs",
-                build_config.filename_suffix
-            );
-            let output_path = Path::new(project_dir).join(&commit_filename);
-            write_commitment(output_path.to_str().expect("Invalid path"), exe_commit_u32)?;
+        let commit_filename = format!("{project_name}_exe_commit.rs");
+            
+        let output_path = Path::new(project_dir).join(&commit_filename);
+        write_commitment(output_path.to_str().expect("Invalid path"), exe_commit_u32)?;
 
-            // Special handling for bundle project: generate digest_1
-            if project_name == "bundle" {
-                println!(
-                    "{LOG_PREFIX} Generating digest_1{} for bundle project...",
-                    build_config.filename_suffix
-                );
-                let digest_1_bytes = compress_commitment(&exe_commit_u32)
-                    .to_bytes()
-                    .into_iter()
-                    .rev() // Ensure correct byte order
-                    .collect::<Vec<u8>>();
-                let digest_1_filename = format!("digest_1{}", build_config.filename_suffix,);
-                let digest_1_path = Path::new(project_dir).join(&digest_1_filename);
-                std::fs::write(&digest_1_path, &digest_1_bytes)?;
-                println!(
-                    "{LOG_PREFIX} Wrote {} to {}",
-                    digest_1_filename,
-                    digest_1_path.display()
-                );
-            }
-
+        // Special handling for bundle project: generate digest_1
+        if project_name == "bundle" {
+            println!("{LOG_PREFIX} Generating digest_1 for bundle project...",);
+            let digest_1_bytes = compress_commitment(&exe_commit_u32)
+                .to_bytes()
+                .into_iter()
+                .rev() // Ensure correct byte order
+                .collect::<Vec<u8>>();
+            let digest_1_filename = String::from("digest_1");
+            let digest_1_path = Path::new(project_dir).join(&digest_1_filename);
+            std::fs::write(&digest_1_path, &digest_1_bytes)?;
             println!(
-                "{LOG_PREFIX} Finished build for config: {:?} in {:?}",
-                build_config,
-                start_time.elapsed()
+                "{LOG_PREFIX} Wrote {} to {}",
+                digest_1_filename,
+                digest_1_path.display()
             );
         }
+
+        println!(
+            "{LOG_PREFIX} Finished build for config in {:?}",
+            start_time.elapsed()
+        );
     }
     println!("{LOG_PREFIX} === Stage 3 Finished ===");
+    Ok(exe_commitments)
+}
+
+/// Stage 4: Dumps VK data to a JSON file if both exe and leaf commitments are available.
+fn run_stage4_dump_vk_json(
+    leaf_commitments: Option<HashMap<String, [u32; DIGEST_SIZE]>>,
+    exe_commitments: Option<HashMap<String, [u32; DIGEST_SIZE]>>,
+) -> Result<()> {
+    println!("{LOG_PREFIX} === Stage 4: Dumping VK JSON ===");
+
+    // Only dump VKs when both exe_commitments and leaf_commitments are available
+    if let (Some(exe_commitments), Some(leaf_commitments)) = (&exe_commitments, &leaf_commitments) {
+        #[derive(Default, Debug, serde::Serialize)]
+        struct VKDump {
+            pub chunk_vk: String,
+            pub batch_vk: String,
+            pub bundle_vk: String,
+        }
+        let [chunk_vk, batch_vk, bundle_vk] = ["chunk", "batch", "bundle"].map(|circuit| {
+            if let (Some(exe), Some(leaf)) =
+                (exe_commitments.get(circuit), leaf_commitments.get(circuit))
+            {
+                let app_vk = scroll_zkvm_types::types_agg::ProgramCommitment {
+                    exe: *exe,
+                    leaf: *leaf,
+                }
+                .serialize();
+
+                use base64::{Engine, prelude::BASE64_STANDARD};
+                let app_vk = BASE64_STANDARD.encode(app_vk);
+                println!("{circuit}: {app_vk}");
+                app_vk
+            } else {
+                String::new() // Empty string for circuits that weren't built
+            }
+        });
+
+        let dump = VKDump {
+            chunk_vk,
+            batch_vk,
+            bundle_vk,
+        };
+
+        let f = std::fs::File::create("openVmVk.json")?;
+        serde_json::to_writer(f, &dump)?;
+        println!(
+            "{LOG_PREFIX} openVmVk.json: {}",
+            serde_json::to_string_pretty(&dump)?
+        );
+        println!("{LOG_PREFIX} VK data written to openVmVk.json");
+    }
     Ok(())
 }
 
@@ -324,23 +342,30 @@ pub fn main() -> Result<()> {
     println!("{LOG_PREFIX} Stages to run: {:?}", stages_to_run);
 
     // Execute selected stages
-    if stages_to_run.contains("stage1") {
-        run_stage1_leaf_commitments(&projects_to_build, &workspace_dir)?;
+    let leaf_commitments = if stages_to_run.contains("stage1") {
+        Some(run_stage1_leaf_commitments(
+            &projects_to_build,
+            &workspace_dir,
+        )?)
     } else {
         println!("{LOG_PREFIX} Skipping Stage 1: Leaf Commitments");
-    }
+        None
+    };
 
     if stages_to_run.contains("stage2") {
         run_stage2_root_verifier(&projects_to_build, &workspace_dir)?;
     } else {
         println!("{LOG_PREFIX} Skipping Stage 2: Root Verifier");
-    }
+    };
 
-    if stages_to_run.contains("stage3") {
-        run_stage3_exe_commits(&projects_to_build, &workspace_dir)?;
+    let exe_commitments = if stages_to_run.contains("stage3") {
+        Some(run_stage3_exe_commits(&projects_to_build, &workspace_dir)?)
     } else {
         println!("{LOG_PREFIX} Skipping Stage 3: Exe Commits");
-    }
+        None
+    };
+
+    run_stage4_dump_vk_json(leaf_commitments, exe_commitments)?;
 
     println!("{LOG_PREFIX} Build process completed successfully.");
     Ok(())

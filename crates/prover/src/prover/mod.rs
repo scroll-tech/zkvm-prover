@@ -43,13 +43,10 @@ mod batch;
 pub use batch::{BatchProver, BatchProverType};
 
 mod bundle;
-pub use bundle::{
-    BundleProverEuclidV1, BundleProverEuclidV2, BundleProverTypeEuclidV1, BundleProverTypeEuclidV2,
-    GenericBundleProverType,
-};
+pub use bundle::{BundleProverEuclidV2, BundleProverTypeEuclidV2, GenericBundleProverType};
 
 mod chunk;
-pub use chunk::{ChunkProver, ChunkProverType, ChunkProverTypeRv32, GenericChunkProverType};
+pub use chunk::{ChunkProver, ChunkProverType, GenericChunkProverType};
 
 /// Proving key for STARK aggregation. Primarily used to aggregate
 /// [continuation proofs][openvm_sdk::prover::vm::ContinuationVmProof].

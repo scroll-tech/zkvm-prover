@@ -2,7 +2,7 @@ use scroll_zkvm_types::chunk::{ChunkWitness, ToArchievedWitness, execute};
 
 use crate::{
     Error, Prover, ProverType,
-    commitments::{chunk, chunk_rv32},
+    commitments::chunk,
     proof::ChunkProofMetadata,
     task::{ProvingTask, chunk::ChunkProvingTask},
 };
@@ -10,25 +10,16 @@ use crate::{
 use super::Commitments;
 
 pub struct ChunkCircuit;
-pub struct ChunkCircuitRv32;
 
 impl Commitments for ChunkCircuit {
     const EXE_COMMIT: [u32; 8] = chunk::EXE_COMMIT;
     const LEAF_COMMIT: [u32; 8] = chunk::LEAF_COMMIT;
 }
 
-impl Commitments for ChunkCircuitRv32 {
-    const EXE_COMMIT: [u32; 8] = chunk_rv32::EXE_COMMIT;
-    const LEAF_COMMIT: [u32; 8] = chunk_rv32::LEAF_COMMIT;
-}
-
 pub type ChunkProverType = GenericChunkProverType<ChunkCircuit>;
-pub type ChunkProverTypeRv32 = GenericChunkProverType<ChunkCircuitRv32>;
 
 /// Prover for [`ChunkCircuit`].
 pub type ChunkProver = Prover<ChunkProverType>;
-#[allow(dead_code)]
-pub type ChunkProverRv32 = Prover<ChunkProverTypeRv32>;
 
 pub struct GenericChunkProverType<C: Commitments>(std::marker::PhantomData<C>);
 
