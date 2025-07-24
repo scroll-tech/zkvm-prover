@@ -203,9 +203,7 @@ impl<Type: VerifierType> Verifier<Type> {
     }
 }
 
-/// Verify a [root proof][root_proof].
-/// TODO: currently this method is only used in testing. Move it else
-/// [root_proof][RootProof]
+/// Verify a stark proof.
 //#[instrument("Prover::verify_proof", skip_all, fields(?metadata = proof.metadata))]
 pub fn verify_stark_proof(
     root_proof: &StarkProof,

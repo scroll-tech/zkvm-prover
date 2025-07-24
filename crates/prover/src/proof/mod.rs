@@ -13,8 +13,8 @@ use scroll_zkvm_types::{
 };
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
-pub trait AsRootProof {
-    fn as_root_proof(&self) -> &StarkProof;
+pub trait AsStarkProof {
+    fn as_stark_proof(&self) -> &StarkProof;
 }
 
 pub trait AsEvmProof {
@@ -34,16 +34,16 @@ pub type BatchProof = WrappedProof<BatchProofMetadata>;
 /// Alias for convenience.
 pub type BundleProof = WrappedProof<BundleProofMetadata>;
 
-impl AsRootProof for ChunkProof {
-    fn as_root_proof(&self) -> &StarkProof {
+impl AsStarkProof for ChunkProof {
+    fn as_stark_proof(&self) -> &StarkProof {
         self.proof
             .as_root_proof()
             .expect("batch proof use root proof")
     }
 }
 
-impl AsRootProof for BatchProof {
-    fn as_root_proof(&self) -> &StarkProof {
+impl AsStarkProof for BatchProof {
+    fn as_stark_proof(&self) -> &StarkProof {
         self.proof
             .as_root_proof()
             .expect("batch proof use root proof")

@@ -127,7 +127,7 @@ impl<Type: ProverType> Prover<Type> {
         let (app_committed_exe, app_pk) = Self::init(&config)?;
 
         let evm_prover = Type::EVM
-            .then(|| Self::setup_evm_prover(&config, &app_committed_exe, &app_pk))
+            .then(|| Self::setup_evm_prover(&config))
             .transpose()?;
 
         Ok(Self {
@@ -409,8 +409,6 @@ impl<Type: ProverType> Prover<Type> {
     /// Setup the EVM prover-verifier.
     fn setup_evm_prover(
         config: &ProverConfig,
-        app_committed_exe: &Arc<NonRootCommittedExe>,
-        app_pk: &Arc<AppProvingKey<SdkVmConfig>>,
     ) -> Result<EvmProverVerifier, Error> {
         // The HALO2 directory is set in the following order:
         // 1. If the optional dir_halo2_params is set: use it.
@@ -434,33 +432,23 @@ impl<Type: ProverType> Prover<Type> {
                 src: e.to_string(),
             })?;
 
-        let halo2_params = halo2_params_reader
-            .read_params(agg_pk.halo2_pk.wrapper.pinning.metadata.config_params.k);
-        let path_verifier_sol = config
-            .path_app_exe
-            .parent()
-            .map(|dir| dir.join("verifier.sol"));
         let path_verifier_bin = config
             .path_app_exe
             .parent()
             .map(|dir| dir.join("verifier.bin"));
-        let verifier_contract = scroll_zkvm_verifier::evm::gen_evm_verifier::<
-            scroll_zkvm_verifier::evm::halo2_aggregation::AggregationCircuit,
-        >(
-            &halo2_params,
-            agg_pk.halo2_pk.wrapper.pinning.pk.get_vk(),
-            agg_pk.halo2_pk.wrapper.pinning.metadata.num_pvs.clone(),
-            path_verifier_sol.as_deref(),
-        );
+        let verifier_contract = Sdk::new().generate_halo2_verifier_solidity(
+            &halo2_params_reader,
+            &agg_pk,
+        ).unwrap();
         if let Some(path) = path_verifier_bin {
-            crate::utils::write(path, &verifier_contract)?;
+            crate::utils::write(path, &verifier_contract.artifact.bytecode)?;
         }
 
         Ok(EvmProverVerifier {
             reader: halo2_params_reader,
             //halo2_prover,
             agg_pk,
-            verifier_contract,
+            verifier_contract: verifier_contract.artifact.bytecode,
         })
     }
 

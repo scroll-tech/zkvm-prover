@@ -168,7 +168,6 @@ fn run_stage3_exe_commits(
             "{LOG_PREFIX} Changed working directory to: {}",
             project_path.display()
         );
-        let vmexe_filename = format!("app.vmexe");
 
         // 1. Build ELF
         let elf = builder::build(project_dir, Vec::<String>::new(), &app_config.app_vm_config)
@@ -190,14 +189,11 @@ fn run_stage3_exe_commits(
             builder::transpile(project_dir, elf, Some(&vmexe_filename), app_config.clone())?;
         println!("{LOG_PREFIX} Transpiled to VM Executable: {vmexe_filename}");
 
-        //let p = Path::new(project_dir).join("openvm").join(vmexe_filename);
-        //let app_exe = read_app_exe(p).unwrap();
         // 3. Commit VM Executable
         let app_committed_exe =
             Sdk::new().commit_app_exe(app_config.app_fri_params.fri_params, app_exe)?;
 
         // 4. Compute and Write Executable Commitment
-        use openvm_circuit::arch::VmConfig;
         let exe_commit_f: [F; DIGEST_SIZE] = app_committed_exe
             .compute_exe_commit(&app_config.app_vm_config.as_ref().memory_config)
             .into();

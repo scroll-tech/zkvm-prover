@@ -10,7 +10,7 @@ use scroll_zkvm_integration::{
     utils::{LastHeader, build_batch_task, testing_hardfork},
 };
 use scroll_zkvm_prover::{
-    AsRootProof, BatchProof, ChunkProof, IntoEvmProof,
+    AsStarkProof, BatchProof, ChunkProof, IntoEvmProof,
     setup::{read_app_config, read_app_exe},
     task::{bundle::BundleProvingTask, chunk::ChunkProvingTask},
     utils::{read_json_deep, write_json},
@@ -201,11 +201,11 @@ fn e2e() -> eyre::Result<()> {
     // Verifier all above proofs with the verifier-only mode.
     let verifier = verifier.to_chunk_verifier();
     for proof in chunk_proofs.iter() {
-        assert!(verifier.verify_proof(proof.as_root_proof()));
+        assert!(verifier.verify_proof(proof.as_stark_proof()));
     }
     let verifier = verifier.to_batch_verifier();
     for proof in bundle_task.batch_proofs.iter() {
-        assert!(verifier.verify_proof(proof.as_root_proof()));
+        assert!(verifier.verify_proof(proof.as_stark_proof()));
     }
 
     let evm_proof = outcome.proofs[0].clone().into_evm_proof();

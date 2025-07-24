@@ -6,7 +6,7 @@ use scroll_zkvm_types::{
 };
 
 use crate::{
-    AsRootProof, BatchProof,
+    AsStarkProof, BatchProof,
     task::{ProvingTask, guest_version},
 };
 
@@ -59,7 +59,7 @@ impl ProvingTask for BundleProvingTask {
         let serialized = witness.rkyv_serialize(guest_version())?;
         stdin.write_bytes(&serialized);
         for batch_proof in &self.batch_proofs {
-            let root_input = &batch_proof.as_root_proof();
+            let root_input = &batch_proof.as_stark_proof();
             let streams = root_input.write();
             for s in &streams {
                 stdin.write_field(s);
