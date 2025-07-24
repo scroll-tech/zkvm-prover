@@ -36,7 +36,7 @@ pub struct EvmProof {
 /// Helper to modify serde implementations on the remote [`RootProof`] type.
 #[derive(Serialize, Deserialize)]
 #[serde(remote = "StarkProof")]
-struct RootProofDef {
+struct StarkProofDef {
     /// The proofs.
     #[serde(with = "as_base64")]
     proof: Proof<SC>,
@@ -80,15 +80,15 @@ impl From<EvmProof> for OpenVmEvmProof {
 #[serde(untagged)]
 pub enum ProofEnum {
     /// Represents a STARK proof used for intermediary layers, i.e. chunk and batch.
-    #[serde(with = "RootProofDef")]
-    Root(StarkProof),
+    #[serde(with = "StarkProofDef")]
+    Stark(StarkProof),
     /// Represents a SNARK proof used for the final layer to be verified on-chain, i.e. bundle.
     Evm(EvmProof),
 }
 
 impl From<StarkProof> for ProofEnum {
     fn from(value: StarkProof) -> Self {
-        Self::Root(value)
+        Self::Stark(value)
     }
 }
 
@@ -100,9 +100,9 @@ impl From<EvmProof> for ProofEnum {
 
 impl ProofEnum {
     /// Get the root proof as reference.
-    pub fn as_root_proof(&self) -> Option<&StarkProof> {
+    pub fn as_stark_proof(&self) -> Option<&StarkProof> {
         match self {
-            Self::Root(proof) => Some(proof),
+            Self::Stark(proof) => Some(proof),
             _ => None,
         }
     }
@@ -118,9 +118,9 @@ impl ProofEnum {
     }
 
     /// Consumes the proof enum and returns the contained root proof.
-    pub fn into_root_proof(self) -> Option<StarkProof> {
+    pub fn into_stark_proof(self) -> Option<StarkProof> {
         match self {
-            Self::Root(proof) => Some(proof),
+            Self::Stark(proof) => Some(proof),
             _ => None,
         }
     }
@@ -136,14 +136,14 @@ impl ProofEnum {
     /// Extracts public input values from the proof.
     ///
     /// # Returns
-    /// - For Root proofs: A vector of u32 values converted from BabyBear field elements
+    /// - For Stark proofs: A vector of u32 values converted from BabyBear field elements
     /// - For EVM proofs: A vector of u32 values, each containing a single byte from the original vector
     ///
     /// Note: This method handles the different encoding formats between proof types.
     /// Each returned u32 typically only uses the lower 8 bits (one byte) of its capacity.
     pub fn public_values(&self) -> Vec<u32> {
         match self {
-            Self::Root(root_proof) => root_proof
+            Self::Stark(stark_proof) => stark_proof
                 .user_public_values
                 .iter()
                 .map(|x| x.as_canonical_u32())

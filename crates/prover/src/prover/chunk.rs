@@ -13,7 +13,7 @@ pub struct ChunkCircuit;
 
 impl Commitments for ChunkCircuit {
     const EXE_COMMIT: [u32; 8] = chunk::EXE_COMMIT;
-    const LEAF_COMMIT: [u32; 8] = chunk::LEAF_COMMIT;
+    const VM_COMMIT: [u32; 8] = chunk::VM_COMMIT;
 }
 
 pub type ChunkProverType = GenericChunkProverType<ChunkCircuit>;
@@ -32,7 +32,7 @@ impl<C: Commitments> ProverType for GenericChunkProverType<C> {
 
     const EXE_COMMIT: [u32; 8] = C::EXE_COMMIT;
 
-    const VM_COMMIT: [u32; 8] = C::LEAF_COMMIT;
+    const VM_COMMIT: [u32; 8] = C::VM_COMMIT;
 
     type ProvingTask = ChunkProvingTask;
 

@@ -1,16 +1,12 @@
 use std::sync::Arc;
 
 use openvm_circuit::{
-    arch::{GenerationError, VmExecutor, VmSegmentExecutor, instructions::exe::VmExe},
+    arch::{VmExecutor, instructions::exe::VmExe},
     system::{
         memory::merkle::public_values::extract_public_values, program::trace::VmCommittedExe,
     },
 };
 use openvm_sdk::{F, SC, StdIn, config::SdkVmConfig};
-use openvm_stark_sdk::{
-    config::{FriParameters, baby_bear_poseidon2::BabyBearPoseidon2Engine},
-    engine::StarkFriEngine,
-};
 
 use crate::Error;
 

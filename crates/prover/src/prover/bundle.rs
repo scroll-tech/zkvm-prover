@@ -13,7 +13,7 @@ pub struct BundleCircuitV2;
 
 impl Commitments for BundleCircuitV2 {
     const EXE_COMMIT: [u32; 8] = bundle::EXE_COMMIT;
-    const LEAF_COMMIT: [u32; 8] = bundle::LEAF_COMMIT;
+    const VM_COMMIT: [u32; 8] = bundle::VM_COMMIT;
 }
 
 pub type BundleProverTypeEuclidV2 = GenericBundleProverType<BundleCircuitV2>;
@@ -32,7 +32,7 @@ impl<C: Commitments> ProverType for GenericBundleProverType<C> {
 
     const EXE_COMMIT: [u32; 8] = C::EXE_COMMIT;
 
-    const VM_COMMIT: [u32; 8] = C::LEAF_COMMIT;
+    const VM_COMMIT: [u32; 8] = C::VM_COMMIT;
 
     type ProvingTask = BundleProvingTask;
 

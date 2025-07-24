@@ -37,7 +37,7 @@ pub type BundleProof = WrappedProof<BundleProofMetadata>;
 impl AsStarkProof for ChunkProof {
     fn as_stark_proof(&self) -> &StarkProof {
         self.proof
-            .as_root_proof()
+            .as_stark_proof()
             .expect("batch proof use root proof")
     }
 }
@@ -45,7 +45,7 @@ impl AsStarkProof for ChunkProof {
 impl AsStarkProof for BatchProof {
     fn as_stark_proof(&self) -> &StarkProof {
         self.proof
-            .as_root_proof()
+            .as_stark_proof()
             .expect("batch proof use root proof")
     }
 }
@@ -145,13 +145,13 @@ impl ProofMetadata for BundleProofMetadata {
 pub struct WrappedProof<Metadata> {
     /// Generic metadata carried by a proof.
     pub metadata: Metadata,
-    /// The inner proof, either a [`RootProof`] or [`EvmProof`] depending on the [`crate::ProverType`].
+    /// The inner proof, either a [`StarkProof`] or [`EvmProof`] depending on the [`crate::ProverType`].
     pub proof: ProofEnum,
     /// Represents the verifying key in serialized form. The purpose of including the verifying key
     /// along with the proof is to allow a verifier-only mode to identify the source of proof
     /// generation.
     ///
-    /// For [`RootProof`] the verifying key is denoted by the digest of the VM's program.
+    /// For [`StarkProof`] the verifying key is denoted by the digest of the VM's program.
     ///
     /// For [`EvmProof`] its the raw bytes of the halo2 circuit's `VerifyingKey`.
     ///

@@ -1,6 +1,6 @@
 use crate::{
     Error, Prover, ProverType,
-    commitments::batch::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT},
+    commitments::batch::{EXE_COMMIT as BATCH_EXE_COMMIT, VM_COMMIT as BATCH_LEAF_COMMIT},
     proof::BatchProofMetadata,
     task::batch::BatchProvingTask,
 };

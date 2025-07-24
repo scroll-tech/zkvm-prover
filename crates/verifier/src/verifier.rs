@@ -2,9 +2,6 @@ use once_cell::sync::Lazy;
 use std::{marker::PhantomData, path::Path};
 
 use openvm_circuit::system::program::trace::VmCommittedExe;
-use openvm_continuations::verifier::root::types::RootVmVerifierInput;
-use openvm_native_circuit::NativeConfig;
-use openvm_native_recursion::{halo2::RawEvmProof, hints::Hintable};
 use openvm_sdk::{
     F, RootSC, SC, Sdk,
     commit::{AppExecutionCommit, CommitBytes},
@@ -17,34 +14,19 @@ use scroll_zkvm_types::{
     proof::StarkProof,
     types_agg::{AggregationInput, ProgramCommitment},
 };
-use snark_verifier_sdk::snark_verifier::halo2_base::halo2_proofs::halo2curves::bn256::Fr;
 
 use tracing::{debug, instrument};
 
 use crate::commitments::{
-    batch::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT},
+    batch,
     bundle,
-    chunk::{EXE_COMMIT as CHUNK_EXE_COMMIT, LEAF_COMMIT as CHUNK_LEAF_COMMIT},
+    chunk,
 };
 
 /// Proving key for STARK aggregation. Primarily used to aggregate
 /// [continuation proofs][openvm_sdk::prover::vm::ContinuationVmProof].
 static AGG_STARK_PROVING_KEY: Lazy<AggStarkProvingKey> =
     Lazy::new(|| AggStarkProvingKey::keygen(AggStarkConfig::default()).unwrap());
-
-fn compress_commitment(commitment: &[u32; 8]) -> Fr {
-    use openvm_stark_sdk::{openvm_stark_backend::p3_field::PrimeField32, p3_baby_bear::BabyBear};
-    let order = Fr::from(BabyBear::ORDER_U32 as u64);
-    let mut base = Fr::one();
-    let mut ret = Fr::zero();
-
-    for v in commitment {
-        ret += Fr::from(*v as u64) * base;
-        base *= order;
-    }
-
-    ret
-}
 
 pub trait VerifierType {
     const EXE_COMMIT: [u32; 8];
@@ -58,24 +40,22 @@ pub trait VerifierType {
     }
 }
 
-pub struct Rv32ChunkVerifierType;
 pub struct ChunkVerifierType;
 pub struct BatchVerifierType;
-pub struct BundleVerifierTypeEuclidV1;
-pub struct BundleVerifierTypeEuclidV2;
+pub struct BundleVerifierType;
 
 impl VerifierType for ChunkVerifierType {
-    const EXE_COMMIT: [u32; 8] = CHUNK_EXE_COMMIT;
-    const VM_COMMIT: [u32; 8] = CHUNK_LEAF_COMMIT;
+    const EXE_COMMIT: [u32; 8] = chunk::EXE_COMMIT;
+    const VM_COMMIT: [u32; 8] = chunk::VM_COMMIT;
 }
 
 impl VerifierType for BatchVerifierType {
-    const EXE_COMMIT: [u32; 8] = BATCH_EXE_COMMIT;
-    const VM_COMMIT: [u32; 8] = BATCH_LEAF_COMMIT;
+    const EXE_COMMIT: [u32; 8] = batch::EXE_COMMIT;
+    const VM_COMMIT: [u32; 8] = batch::VM_COMMIT;
 }
-impl VerifierType for BundleVerifierTypeEuclidV2 {
+impl VerifierType for BundleVerifierType {
     const EXE_COMMIT: [u32; 8] = bundle::EXE_COMMIT;
-    const VM_COMMIT: [u32; 8] = bundle::LEAF_COMMIT;
+    const VM_COMMIT: [u32; 8] = bundle::VM_COMMIT;
 }
 
 pub struct UniversalVerifier {
@@ -126,7 +106,6 @@ impl UniversalVerifier {
 }
 
 pub struct Verifier<Type> {
-    //pub vm_executor: SingleSegmentVmExecutor<F, NativeConfig>,
     pub root_committed_exe: VmCommittedExe<RootSC>,
     pub evm_verifier: Vec<u8>,
 
@@ -136,8 +115,7 @@ pub struct Verifier<Type> {
 pub type AnyVerifier = Verifier<ChunkVerifierType>;
 pub type ChunkVerifier = Verifier<ChunkVerifierType>;
 pub type BatchVerifier = Verifier<BatchVerifierType>;
-pub type BundleVerifierEuclidV1 = Verifier<BundleVerifierTypeEuclidV1>;
-pub type BundleVerifierEuclidV2 = Verifier<BundleVerifierTypeEuclidV2>;
+pub type BundleVerifier = Verifier<BundleVerifierType>;
 
 impl<Type> Verifier<Type> {
     pub fn setup<P: AsRef<Path>>(
@@ -171,10 +149,7 @@ impl<Type> Verifier<Type> {
     pub fn to_batch_verifier(self) -> BatchVerifier {
         self.switch_to()
     }
-    pub fn to_bundle_verifier_v1(self) -> BundleVerifierEuclidV1 {
-        self.switch_to()
-    }
-    pub fn to_bundle_verifier_v2(self) -> BundleVerifierEuclidV2 {
+    pub fn to_bundle_verifier(self) -> BundleVerifier {
         self.switch_to()
     }
 }
@@ -204,7 +179,6 @@ impl<Type: VerifierType> Verifier<Type> {
 }
 
 /// Verify a stark proof.
-//#[instrument("Prover::verify_proof", skip_all, fields(?metadata = proof.metadata))]
 pub fn verify_stark_proof(
     root_proof: &StarkProof,
     exe_commit: [u32; 8],
@@ -271,7 +245,7 @@ mod tests {
         )?;
         verifier.verify_proof_evm(
             &evm_proof.into_evm_proof(),
-            &BundleVerifierTypeEuclidV2::get_app_vk(),
+            &BundleVerifierType::get_app_vk(),
         )?;
 
         Ok(())
@@ -334,7 +308,7 @@ mod tests {
                 .join("bundle-proof-phase2.json"),
         )?;
 
-        let verifier = BundleVerifierEuclidV2::setup(
+        let verifier = BundleVerifier::setup(
             Path::new(PATH_TESTDATA).join("root-verifier-committed-exe"),
             Path::new(PATH_TESTDATA).join("verifier.bin"),
         )?;

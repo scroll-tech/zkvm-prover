@@ -265,7 +265,7 @@ where
 
     // Verify proof.
     verify_stark_proof(
-        &proof.proof.as_root_proof().unwrap(),
+        &proof.proof.as_stark_proof().unwrap(),
         T::Prover::EXE_COMMIT,
         T::Prover::VM_COMMIT,
     )
@@ -310,7 +310,7 @@ where
         .map(|task| {
             let proof = prover.gen_proof(task)?;
             verify_stark_proof(
-                &proof.proof.as_root_proof().unwrap(),
+                &proof.proof.as_stark_proof().unwrap(),
                 T::Prover::EXE_COMMIT,
                 T::Prover::VM_COMMIT,
             )
@@ -350,7 +350,7 @@ where
     let prover = scroll_zkvm_prover::Prover::<T::Prover>::setup(config)?;
 
     // Dump verifier-only assets to disk.
-    let (path_root_committed_exe) = prover.dump_verifier(&path_assets)?;
+    let path_root_committed_exe = prover.dump_verifier(&path_assets)?;
     let path_verifier_code = WORKSPACE_ROOT
         .join(T::PATH_PROJECT_ROOT)
         .join("openvm")

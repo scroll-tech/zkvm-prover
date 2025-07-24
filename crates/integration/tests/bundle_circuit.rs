@@ -212,7 +212,7 @@ fn e2e() -> eyre::Result<()> {
 
     assert!(
         verifier
-            .to_bundle_verifier_v2()
+            .to_bundle_verifier()
             .verify_evm_proof(&evm_proof)
     );
 

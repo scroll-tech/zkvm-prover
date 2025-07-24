@@ -8,9 +8,7 @@ use once_cell::sync::Lazy;
 use openvm_circuit::system::program::trace::VmCommittedExe;
 use openvm_native_recursion::{
     halo2::{
-        RawEvmProof,
         utils::{CacheHalo2ParamsReader, Halo2ParamsReader},
-        wrapper::Halo2WrapperProvingKey,
     },
     hints::Hintable,
 };
@@ -20,10 +18,8 @@ use openvm_sdk::{
     commit::AppExecutionCommit,
     config::{AggConfig, AggStarkConfig, SdkVmConfig},
     keygen::{AggProvingKey, AggStarkProvingKey, AppProvingKey},
-    prover::{AggStarkProver, AppProver, EvmHalo2Prover},
     types::EvmProof as OpenVmEvmProf,
 };
-use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Engine;
 use scroll_zkvm_verifier::verifier::verify_stark_proof;
 use tracing::{debug, instrument};
 
@@ -68,7 +64,7 @@ const FD_ROOT_VERIFIER_COMMITTED_EXE: &str = "root-verifier-committed-exe";
 
 pub trait Commitments {
     const EXE_COMMIT: [u32; 8];
-    const LEAF_COMMIT: [u32; 8];
+    const VM_COMMIT: [u32; 8];
 }
 
 /// Types used in the outermost proof construction and verification, i.e. the EVM-compatible layer.
@@ -182,13 +178,11 @@ impl<Type: ProverType> Prover<Type> {
 
         Ok(if let Some(evm_prover) = &self.evm_prover {
             Verifier {
-                //vm_executor: SingleSegmentVmExecutor::new(vm_config),
                 root_committed_exe: root_committed_exe.clone(),
                 evm_verifier: evm_prover.verifier_contract.clone(),
             }
         } else {
             Verifier {
-                //vm_executor: SingleSegmentVmExecutor::new(vm_config),
                 root_committed_exe: root_committed_exe.clone(),
                 evm_verifier: Vec::new(),
             }
@@ -274,7 +268,7 @@ impl<Type: ProverType> Prover<Type> {
                 <WrappedProof<Type::ProofMetadata> as PersistableProof>::from_json(&path_proof)
             {
                 verify_stark_proof(
-                    proof.proof.as_root_proof().unwrap(),
+                    proof.proof.as_stark_proof().unwrap(),
                     Type::EXE_COMMIT,
                     Type::VM_COMMIT,
                 )
