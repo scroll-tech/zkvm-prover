@@ -29,19 +29,17 @@ pub fn execute_guest(
     exe: VmExe<F>,
     stdin: &StdIn,
 ) -> Result<ExecutionResult, Error> {
-    use openvm_circuit::arch::VmConfig;
     use openvm_stark_sdk::openvm_stark_backend::p3_field::Field;
 
-    let vm = VmExecutor::new(vm_config.clone());
+    let vm = VmExecutor::new(vm_config.clone()).unwrap();
 
     let state = vm.execute_e1(exe, stdin.clone(), None).unwrap();
     let final_memory = state.memory;
     let total_cycle = state.instret;
         
-    let system_config = <SdkVmConfig as VmConfig<F>>::system(&vm_config);
     let public_values: Vec<F> = extract_public_values(
-        system_config.num_public_values,
-        &final_memory,
+        vm_config.as_ref().num_public_values,
+        &final_memory.memory,
     );
     tracing::debug!(name: "public_values after guest execution", ?public_values);
     if public_values.iter().all(|x| x.is_zero()) {

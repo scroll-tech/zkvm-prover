@@ -264,7 +264,7 @@ where
     let proof = prover.gen_proof(&task)?;
 
     // Verify proof.
-    verify_proof_inner(&proof.proof.as_root_proof().unwrap()).unwrap();
+    verify_proof_inner(&proof.proof.as_root_proof().unwrap(), T::Prover::EXE_COMMIT, T::Prover::LEAF_COMMIT).unwrap();
 
     Ok(ProveVerifyOutcome::single(task, proof))
 }
@@ -304,7 +304,7 @@ where
         .iter()
         .map(|task| {
             let proof = prover.gen_proof(task)?;
-            verify_proof_inner(&proof.proof.as_root_proof().unwrap()).unwrap();
+            verify_proof_inner(&proof.proof.as_root_proof().unwrap(), T::Prover::EXE_COMMIT, T::Prover::LEAF_COMMIT).unwrap();
             Ok(proof)
         })
         .collect::<eyre::Result<Vec<WrappedProof<<T::Prover as ProverType>::ProofMetadata>>>>()?;

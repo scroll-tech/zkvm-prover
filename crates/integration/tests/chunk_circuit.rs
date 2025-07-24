@@ -32,7 +32,7 @@ fn exec_chunk(task: &ChunkProvingTask) -> eyre::Result<(ExecutionResult, u64)> {
     let cycle_count = exec_result.total_cycle as u64;
     let cycle_per_gas = cycle_count / stats.total_gas_used;
     println!(
-        "blk {blk}->{}, cycle {cycle_count}, gas {}, cycle-per-gas {cycle_per_gas}, tick-per-gas {}",
+        "blk {blk}->{}, cycle {cycle_count}, gas {}, cycle-per-gas {cycle_per_gas}",
         task.block_witnesses.last().unwrap().header.number,
         stats.total_gas_used,
     );

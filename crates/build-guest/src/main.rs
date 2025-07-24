@@ -195,8 +195,8 @@ fn run_stage3_exe_commits(
         println!("{LOG_PREFIX} Transpiled to VM Executable: {vmexe_filename}");
         
 
-        let p = Path::new(project_dir).join("openvm").join(vmexe_filename);
-        let app_exe = read_app_exe(p).unwrap();
+        //let p = Path::new(project_dir).join("openvm").join(vmexe_filename);
+        //let app_exe = read_app_exe(p).unwrap();
         // 3. Commit VM Executable
         let app_committed_exe =
             Sdk::new().commit_app_exe(app_config.app_fri_params.fri_params, app_exe)?;
@@ -206,7 +206,7 @@ fn run_stage3_exe_commits(
         use openvm_circuit::arch::VmConfig;
         let exe_commit_f: [F; DIGEST_SIZE] = app_committed_exe
             .compute_exe_commit(
-                &<SdkVmConfig as VmConfig<F>>::system(&app_config.app_vm_config).memory_config,
+                &app_config.app_vm_config.as_ref().memory_config
             )
             .into();
         let exe_commit_u32: [u32; DIGEST_SIZE] = exe_commit_f.map(|f| f.as_canonical_u32());
@@ -368,7 +368,7 @@ pub fn main() -> Result<()> {
     Ok(())
 }
 
-
+/* 
 /// Wrapper around [`openvm_sdk::fs::read_exe_from_file`].
 pub fn read_app_exe<P: AsRef<Path>>(path: P) -> Result<VmExe<F>, eyre::Error> {
 
@@ -404,3 +404,4 @@ pub fn read_app_exe<P: AsRef<Path>>(path: P) -> Result<VmExe<F>, eyre::Error> {
     };
     Ok(exe)
 }
+    */

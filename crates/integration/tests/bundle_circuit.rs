@@ -217,15 +217,15 @@ fn e2e() -> eyre::Result<()> {
     );
 
     let expected_pi_hash = &outcome.proofs[0].metadata.bundle_pi_hash;
-    let observed_instances = &evm_proof.instances;
+    let observed_instances = &evm_proof.user_public_values;
 
     for (i, (&expected, &observed)) in expected_pi_hash
         .iter()
-        .zip(observed_instances.iter().skip(14).take(32))
+        .zip(observed_instances.iter())
         .enumerate()
     {
         assert_eq!(
-            halo2curves_axiom::bn256::Fr::from(u64::from(expected)),
+            expected,
             observed,
             "pi inconsistent at index {i}: expected={expected}, observed={observed:?}"
         );

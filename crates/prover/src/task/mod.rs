@@ -35,11 +35,9 @@ impl ProvingTask for UniversalProvingTask {
         }
 
         for proof in &self.aggregated_proofs {
-            let streams = if self.fork_name() >= ForkName::Feynman {
-                proof.proofs[0].write()
-            } else {
+            let streams = 
                 proof.write()
-            };
+            ;
             for s in &streams {
                 stdin.write_field(s);
             }
