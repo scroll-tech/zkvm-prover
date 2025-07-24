@@ -14,7 +14,7 @@ use openvm_native_recursion::{
     },
     hints::Hintable,
 };
-use openvm_sdk::config::SdkVmCpuBuilder;
+use openvm_sdk::{config::SdkVmCpuBuilder, fs::read_exe_from_file};
 use openvm_sdk::{
     DefaultStaticVerifierPvHandler, NonRootCommittedExe, Sdk, StdIn,
     commit::AppExecutionCommit,
@@ -33,7 +33,7 @@ pub use openvm_sdk::{self, SC};
 use crate::{
     Error,
     proof::{PersistableProof, ProofMetadata, WrappedProof},
-    setup::{read_app_config, read_app_exe},
+    setup::{read_app_config},
     task::ProvingTask,
 };
 
@@ -140,7 +140,7 @@ impl<Type: ProverType> Prover<Type> {
     /// Read app exe, proving key and return committed data.
     #[instrument("Prover::init")]
     pub fn init(config: &ProverConfig) -> Result<InitRes, Error> {
-        let app_exe = read_app_exe(&config.path_app_exe)?;
+        let app_exe = read_exe_from_file(&config.path_app_exe).unwrap();
         let mut app_config = read_app_config(&config.path_app_config)?;
         let segment_len = config.segment_len.unwrap_or(Type::SEGMENT_SIZE);
         app_config.app_vm_config.system.config = app_config
