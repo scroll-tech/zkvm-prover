@@ -133,7 +133,14 @@ impl ProofEnum {
         }
     }
 
-    /// Derive public inputs from the proof.
+    /// Extracts public input values from the proof.
+    ///
+    /// # Returns
+    /// - For Root proofs: A vector of u32 values converted from BabyBear field elements
+    /// - For EVM proofs: A vector of u32 values, each containing a single byte from the original vector
+    ///
+    /// Note: This method handles the different encoding formats between proof types.
+    /// Each returned u32 typically only uses the lower 8 bits (one byte) of its capacity.
     pub fn public_values(&self) -> Vec<u32> {
         match self {
             Self::Root(root_proof) => root_proof
@@ -141,19 +148,11 @@ impl ProofEnum {
                 .iter()
                 .map(|x| x.as_canonical_u32())
                 .collect::<Vec<u32>>(),
-            Self::Evm(evm_proof) => {
-                // The first 12 scalars are accumulators.
-                // The next 2 scalars are digests.
-                // The next 32 scalars are the public input hash.
-                let pi_hash_bytes = evm_proof.user_public_values.clone();
-
-                // The 32 scalars of public input hash actually only have the LSB that is the
-                // meaningful byte.
-                pi_hash_bytes
-                    .chunks_exact(32)
-                    .map(|bytes32_chunk| bytes32_chunk[31] as u32)
-                    .collect::<Vec<u32>>()
-            }
+            Self::Evm(evm_proof) => evm_proof
+                .user_public_values
+                .iter()
+                .map(|byte| *byte as u32)
+                .collect::<Vec<u32>>(),
         }
     }
 }

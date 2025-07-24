@@ -227,7 +227,7 @@ mod tests {
     use std::path::Path;
 
     use scroll_zkvm_prover::{
-        AsRootProof, BatchProof, BundleProof, ChunkProof, IntoEvmProof, PersistableProof,
+        AsStarkProof, BatchProof, BundleProof, ChunkProof, IntoEvmProof, PersistableProof,
     };
     use scroll_zkvm_types::types_agg::ProgramCommitment;
 
@@ -262,11 +262,11 @@ mod tests {
         )?;
 
         verifier.verify_proof(
-            chunk_proof.as_root_proof(),
+            chunk_proof.as_stark_proof(),
             &ChunkVerifierType::get_app_vk(),
         )?;
         verifier.verify_proof(
-            batch_proof.as_root_proof(),
+            batch_proof.as_stark_proof(),
             &BatchVerifierType::get_app_vk(),
         )?;
         verifier.verify_proof_evm(
@@ -294,8 +294,8 @@ mod tests {
         )?;
 
         let commitment = ProgramCommitment::deserialize(&chunk_proof.vk);
-        let root_proof = chunk_proof.as_root_proof();
-        let pi = verify_stark_proof(root_proof, commitment.exe, commitment.leaf).unwrap();
+        let root_proof = chunk_proof.as_stark_proof();
+        verify_stark_proof(root_proof, commitment.exe, commitment.leaf).unwrap();
         assert!(
             verifier.verify_proof(root_proof),
             "proof verification failed",
@@ -313,13 +313,13 @@ mod tests {
                 .join("batch-proof-phase2.json"),
         )?;
 
-        let verifier = BatchVerifier::setup(
+        let _verifier = BatchVerifier::setup(
             Path::new(PATH_TESTDATA).join("root-verifier-committed-exe"),
             Path::new(PATH_TESTDATA).join("verifier.bin"),
         )?;
 
         let commitment = ProgramCommitment::deserialize(&batch_proof.vk);
-        let root_proof = batch_proof.as_root_proof();
+        let root_proof = batch_proof.as_stark_proof();
         verify_stark_proof(root_proof, commitment.exe, commitment.leaf).unwrap();
 
         Ok(())

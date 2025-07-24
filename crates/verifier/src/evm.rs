@@ -1,6 +1,4 @@
-use openvm_native_recursion::halo2::RawEvmProof;
 use openvm_sdk::types::EvmProof;
-use scroll_zkvm_types::proof::OpenVmEvmProof;
 // Re-export from snark_verifier_sdk.
 pub use snark_verifier_sdk::{
     evm::gen_evm_verifier_shplonk as gen_evm_verifier,
@@ -38,7 +36,6 @@ pub fn deserialize_vk<C: Circuit<Fr, Params = ()>>(raw_vk: &[u8]) -> VerifyingKe
 /// - Deploy [`EvmVerifier`].
 /// - Verify [`EvmProof`] encoded as calldata.
 pub fn verify_evm_proof(evm_verifier: &[u8], evm_proof: &EvmProof) -> Result<u64, String> {
-    let evm_proof = OpenVmEvmProof::from(evm_proof.clone());
     snark_verifier_sdk::snark_verifier::loader::evm::deploy_and_call(
         evm_verifier.to_vec(),
         evm_proof.clone().fallback_calldata(),

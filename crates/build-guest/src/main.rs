@@ -19,7 +19,6 @@ use std::{
 
 use dotenv::dotenv;
 use eyre::Result;
-// Use eyre::Result directly
 use openvm_native_compiler::ir::DIGEST_SIZE;
 use openvm_sdk::{config::SdkVmConfig, fs::read_from_file_bitcode, Sdk, F};
 use openvm_stark_sdk::{openvm_stark_backend::p3_field::PrimeField32, p3_baby_bear::BabyBear};

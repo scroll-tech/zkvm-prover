@@ -106,23 +106,6 @@ fn verify_proof(commitment: &ProgramCommitment, public_inputs: &[u32]) {
     const FIELDS_PER_U32: u32 = 4;
 
     // Store the expected public values into the beginning of the native heap.
-    let mut native_addr = HEAP_START_ADDRESS;
-    for &x in &commitment.exe {
-        openvm::io::store_u32_to_native(native_addr, x);
-        native_addr += FIELDS_PER_U32;
-    }
-    for &x in &commitment.leaf {
-        openvm::io::store_u32_to_native(native_addr, x);
-        native_addr += FIELDS_PER_U32;
-    }
-    for &x in public_inputs {
-        openvm::io::store_u32_to_native(native_addr, x as u32);
-        native_addr += FIELDS_PER_U32;
-    }
-
-    println!("commitment.exe {:?}", commitment.exe);
-
-    // Store the expected public values into the beginning of the native heap.
     // Copied from https://github.com/openvm-org/openvm/blob/4973d38cb3f2e14ebdd59e03802e65bb657ee422/guest-libs/verify_stark/src/lib.rs#L37
     let mut native_addr = HEAP_START_ADDRESS;
     for &x in &commitment.exe {

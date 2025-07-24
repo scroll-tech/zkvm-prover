@@ -72,13 +72,10 @@ pub trait Commitments {
 }
 
 /// Types used in the outermost proof construction and verification, i.e. the EVM-compatible layer.
+/// This is required only for [BundleProver].
 pub struct EvmProverVerifier {
     pub reader: CacheHalo2ParamsReader,
     pub agg_pk: AggProvingKey,
-    /// This is required only for [BundleProver].
-    //pub halo2_prover: EvmHalo2Prover<BabyBearPoseidon2Engine, SdkVmConfig, SdkVmCpuBuilder>,
-    /// The halo2 proving key.
-    //pub halo2_pk: Halo2WrapperProvingKey,
     /// The contract bytecode for the EVM verifier contract.
     pub verifier_contract: Vec<u8>,
 }
@@ -407,9 +404,7 @@ impl<Type: ProverType> Prover<Type> {
     }
 
     /// Setup the EVM prover-verifier.
-    fn setup_evm_prover(
-        config: &ProverConfig,
-    ) -> Result<EvmProverVerifier, Error> {
+    fn setup_evm_prover(config: &ProverConfig) -> Result<EvmProverVerifier, Error> {
         // The HALO2 directory is set in the following order:
         // 1. If the optional dir_halo2_params is set: use it.
         // 2. If the optional dir_halo2_params is not set: try to read from env variable.
@@ -436,10 +431,9 @@ impl<Type: ProverType> Prover<Type> {
             .path_app_exe
             .parent()
             .map(|dir| dir.join("verifier.bin"));
-        let verifier_contract = Sdk::new().generate_halo2_verifier_solidity(
-            &halo2_params_reader,
-            &agg_pk,
-        ).unwrap();
+        let verifier_contract = Sdk::new()
+            .generate_halo2_verifier_solidity(&halo2_params_reader, &agg_pk)
+            .unwrap();
         if let Some(path) = path_verifier_bin {
             crate::utils::write(path, &verifier_contract.artifact.bytecode)?;
         }
@@ -498,18 +492,9 @@ impl<Type: ProverType> Prover<Type> {
             .build_guest_input()
             .map_err(|e| Error::GenProof(e.to_string()))?;
         let sdk = Sdk::new();
-        let dir_halo2_params = self
-            .config
-            .dir_halo2_params
-            .clone()
-            .ok_or(std::env::var(ENV_HALO2_PARAMS_DIR))
-            .unwrap_or(Path::new(DEFAULT_PARAMS_DIR).to_path_buf());
-
-        let halo2_params_reader = CacheHalo2ParamsReader::new(&dir_halo2_params);
-
         let evm_proof = sdk
             .generate_evm_proof(
-                &halo2_params_reader,
+                &self.evm_prover.as_ref().unwrap().reader,
                 SdkVmCpuBuilder,
                 self.app_pk.clone(),
                 self.app_committed_exe.clone(),
