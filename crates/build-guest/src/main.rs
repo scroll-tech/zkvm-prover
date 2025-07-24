@@ -78,7 +78,6 @@ fn run_stage1_leaf_commitments(
         let app_pk = Sdk::new().app_keygen(app_config.clone())?;
         let leaf_vm_verifier_commit_f: [F; DIGEST_SIZE] = app_pk
             .leaf_committed_exe
-            .committed_program
             .commitment
             .into();
         let leaf_vm_verifier_commit_u32 = leaf_vm_verifier_commit_f.map(|f| f.as_canonical_u32());
@@ -124,8 +123,8 @@ fn run_stage2_root_verifier(project_names: &[&str], workspace_dir: &Path) -> Res
             .join("root_verifier.asm");
 
         println!("generating AggStarkProvingKey");
-        let (agg_stark_pk, _) =
-            AggStarkProvingKey::dummy_proof_and_keygen(AggStarkConfig::default());
+        let agg_stark_pk =
+            AggStarkProvingKey::keygen(AggStarkConfig::default())?;
 
         println!("generating root_verifier.asm");
         let asm = openvm_sdk::Sdk::new().generate_root_verifier_asm(&agg_stark_pk);
@@ -172,10 +171,8 @@ fn run_stage3_exe_commits(
             "{LOG_PREFIX} Changed working directory to: {}",
             project_path.display()
         );
-            let vmexe_filename = format!("app{}.vmexe", build_config.filename_suffix);
+            let vmexe_filename = format!("app.vmexe");
 
-
-            if false {
 
         // 1. Build ELF
         let elf = builder::build(project_dir, Vec::<String>::new(), &app_config.app_vm_config)
@@ -196,7 +193,7 @@ fn run_stage3_exe_commits(
         let app_exe =
             builder::transpile(project_dir, elf, Some(&vmexe_filename), app_config.clone())?;
         println!("{LOG_PREFIX} Transpiled to VM Executable: {vmexe_filename}");
-        }
+        
 
         let p = Path::new(project_dir).join("openvm").join(vmexe_filename);
         let app_exe = read_app_exe(p).unwrap();

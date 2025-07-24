@@ -10,8 +10,6 @@ scroll-zkvm-types.workspace = true
 scroll-zkvm-types-chunk = { workspace = true, features = ["scroll-compress-ratio"] }
 scroll-zkvm-verifier.workspace = true
 
-scroll-alloy-evm = { workspace = true, features = ["std", "zstd_compression"] }
-
 alloy-primitives = { workspace = true, features = ["tiny-keccak"] }
 rkyv.workspace = true
 bincode_v1.workspace = true
