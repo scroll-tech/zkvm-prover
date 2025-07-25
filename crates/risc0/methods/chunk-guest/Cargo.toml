@@ -35,22 +35,22 @@ sha2-10-8 = { package = "sha2", git = "https://github.com/risc0/RustCrypto-hashe
 sha2-9-9 = { package = "sha2", git = "https://github.com/risc0/RustCrypto-hashes", tag = "sha2-v0.9.9-risczero.0" }
 tiny-keccak = { git = "https://github.com/risc0/tiny-keccak", tag = "tiny-keccak/v2.0.2-risczero.0" }
 
-[patch.'https://github.com/scroll-tech/reth']
-reth-chainspec = { path = "../../../../../reth/crates/chainspec" }
-reth-evm = { path = "../../../../../reth/crates/evm/evm" }
-reth-evm-ethereum = { path = "../../../../../reth/crates/ethereum/evm" }
-reth-ethereum-forks = { path = "../../../../../reth/crates/ethereum/hardforks" }
-reth-execution-types = { path = "../../../../../reth/crates/evm/execution-types" }
-reth-primitives = { path = "../../../../../reth/crates/primitives" }
-reth-primitives-traits = { path = "../../../../../reth/crates/primitives-traits" }
-reth-storage-errors = { path = "../../../../../reth/crates/storage/errors" }
-reth-trie = { path = "../../../../../reth/crates/trie/trie" }
-reth-trie-sparse = { path = "../../../../../reth/crates/trie/sparse" }
-
-reth-scroll-chainspec = { path = "../../../../../reth/crates/scroll/chainspec" }
-reth-scroll-evm = { path = "../../../../../reth/crates/scroll/evm" }
-reth-scroll-forks = { path = "../../../../../reth/crates/scroll/hardforks" }
-reth-scroll-primitives = { path = "../../../../../reth/crates/scroll/primitives" }
-
-scroll-alloy-evm = { path = "../../../../../reth/crates/scroll/alloy/evm" }
-scroll-alloy-consensus = { path = "../../../../../reth/crates/scroll/alloy/consensus" }
+#[patch.'https://github.com/scroll-tech/reth']
+#reth-chainspec = { path = "../../../../../reth/crates/chainspec" }
+#reth-evm = { path = "../../../../../reth/crates/evm/evm" }
+#reth-evm-ethereum = { path = "../../../../../reth/crates/ethereum/evm" }
+#reth-ethereum-forks = { path = "../../../../../reth/crates/ethereum/hardforks" }
+#reth-execution-types = { path = "../../../../../reth/crates/evm/execution-types" }
+#reth-primitives = { path = "../../../../../reth/crates/primitives" }
+#reth-primitives-traits = { path = "../../../../../reth/crates/primitives-traits" }
+#reth-storage-errors = { path = "../../../../../reth/crates/storage/errors" }
+#reth-trie = { path = "../../../../../reth/crates/trie/trie" }
+#reth-trie-sparse = { path = "../../../../../reth/crates/trie/sparse" }
+#
+#reth-scroll-chainspec = { path = "../../../../../reth/crates/scroll/chainspec" }
+#reth-scroll-evm = { path = "../../../../../reth/crates/scroll/evm" }
+#reth-scroll-forks = { path = "../../../../../reth/crates/scroll/hardforks" }
+#reth-scroll-primitives = { path = "../../../../../reth/crates/scroll/primitives" }
+#
+#scroll-alloy-evm = { path = "../../../../../reth/crates/scroll/alloy/evm" }
+#scroll-alloy-consensus = { path = "../../../../../reth/crates/scroll/alloy/consensus" }
