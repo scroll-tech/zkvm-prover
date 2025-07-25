@@ -13,6 +13,8 @@ members = [
   "crates/verifier",
   "crates/integration",
   "crates/build-guest",
+  "crates/risc0/host",
+  "crates/risc0/methods",
 ]
 resolver = "2"
 

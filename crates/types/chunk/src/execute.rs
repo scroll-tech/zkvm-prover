@@ -108,7 +108,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
         ) {
             Ok((post_state_root, withdraw_root)) => (post_state_root, withdraw_root),
             Err(e) if e.starts_with("failed to update db:") => {
-                openvm::io::println(format!("{e}; retrying with defer commit disabled"));
+                // openvm::io::println(format!("{e}; retrying with defer commit disabled"));
                 execute_inner(
                     fork_name,
                     &code_db,
@@ -168,8 +168,8 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
         block_ctxs: blocks.iter().map(Into::into).collect(),
     };
 
-    openvm::io::println(format!("withdraw_root = {:?}", withdraw_root));
-    openvm::io::println(format!("tx_bytes_hash = {:?}", tx_data_digest));
+    // openvm::io::println(format!("withdraw_root = {:?}", withdraw_root));
+    // openvm::io::println(format!("tx_bytes_hash = {:?}", tx_data_digest));
 
     Ok(chunk_info)
 }

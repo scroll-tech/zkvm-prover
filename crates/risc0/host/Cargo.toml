@@ -1,0 +1,18 @@
+[package]
+name = "scroll-zkvm-risc0-host"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+scroll-zkvm-risc0-methods = { path = "../methods" }
+risc0-zkvm = { version = "^2.3.1" }
+rkyv.workspace = true
+cargo_metadata.workspace = true
+serde_json.workspace = true
+sbv-primitives = { workspace = true, features = ["scroll-compress-ratio"] }
+scroll-zkvm-types-base.workspace = true
+scroll-zkvm-types-chunk.workspace = true
