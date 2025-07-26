@@ -10,7 +10,7 @@ pub mod batch {
     use super::batch_leaf_commit;
 
     pub const EXE_COMMIT: [u32; 8] = batch_exe_commit::COMMIT;
-    pub const LEAF_COMMIT: [u32; 8] = batch_leaf_commit::COMMIT;
+    pub const VM_COMMIT: [u32; 8] = batch_leaf_commit::COMMIT;
 }
 
 pub mod bundle {
@@ -18,7 +18,7 @@ pub mod bundle {
     use super::bundle_leaf_commit;
 
     pub const EXE_COMMIT: [u32; 8] = bundle_exe_commit::COMMIT;
-    pub const LEAF_COMMIT: [u32; 8] = bundle_leaf_commit::COMMIT;
+    pub const VM_COMMIT: [u32; 8] = bundle_leaf_commit::COMMIT;
 }
 
 pub mod chunk {
@@ -26,5 +26,5 @@ pub mod chunk {
     use super::chunk_leaf_commit;
 
     pub const EXE_COMMIT: [u32; 8] = chunk_exe_commit::COMMIT;
-    pub const LEAF_COMMIT: [u32; 8] = chunk_leaf_commit::COMMIT;
+    pub const VM_COMMIT: [u32; 8] = chunk_leaf_commit::COMMIT;
 }

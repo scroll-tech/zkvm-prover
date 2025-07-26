@@ -21,9 +21,13 @@ pub struct PointEvalWitness {
     /// kzg commitment
     #[rkyv()]
     pub kzg_commitment: Bytes48,
+    #[rkyv()]
+    pub kzg_commitment_hint: [u8; 96],
     /// kzg proof
     #[rkyv()]
     pub kzg_proof: Bytes48,
+    #[rkyv()]
+    pub kzg_proof_hint: [u8; 96],
 }
 
 /// Witness to the batch circuit.
@@ -67,6 +71,7 @@ impl ProofCarryingWitness for ArchivedBatchWitness {
 
 impl From<&ArchivedBatchWitness> for BatchInfo {
     fn from(witness: &ArchivedBatchWitness) -> Self {
+        println!("6000");
         let chunk_infos: Vec<ChunkInfo> = witness.chunk_infos.iter().map(|ci| ci.into()).collect();
 
         match &witness.reference_header {
@@ -77,6 +82,8 @@ impl From<&ArchivedBatchWitness> for BatchInfo {
                     blob_bytes: witness.blob_bytes.to_vec(),
                     kzg_commitment: None,
                     kzg_proof: None,
+                    kzg_commitment_hint: None,
+                    kzg_proof_hint: None,
                 };
                 BatchInfoBuilderV6::build(args)
             }
@@ -87,6 +94,8 @@ impl From<&ArchivedBatchWitness> for BatchInfo {
                     blob_bytes: witness.blob_bytes.to_vec(),
                     kzg_commitment: Some(witness.point_eval_witness.kzg_commitment),
                     kzg_proof: Some(witness.point_eval_witness.kzg_proof),
+                    kzg_commitment_hint: Some(witness.point_eval_witness.kzg_commitment_hint),
+                    kzg_proof_hint: Some(witness.point_eval_witness.kzg_proof_hint),
                 };
                 BatchInfoBuilderV7::build(args)
             }
@@ -97,7 +106,11 @@ impl From<&ArchivedBatchWitness> for BatchInfo {
                     blob_bytes: witness.blob_bytes.to_vec(),
                     kzg_commitment: Some(witness.point_eval_witness.kzg_commitment),
                     kzg_proof: Some(witness.point_eval_witness.kzg_proof),
+                    kzg_commitment_hint: Some(witness.point_eval_witness.kzg_commitment_hint),
+                    kzg_proof_hint: Some(witness.point_eval_witness.kzg_proof_hint),
                 };
+
+                println!("6001");
                 BatchInfoBuilderV8::build(args)
             }
         }

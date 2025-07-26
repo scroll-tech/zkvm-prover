@@ -9,6 +9,7 @@ use scroll_zkvm_prover::{
     setup::{read_app_config, read_app_exe},
     task::ProvingTask,
 };
+use scroll_zkvm_verifier::verifier::verify_stark_proof;
 use std::{
     path::{Path, PathBuf},
     process,
@@ -263,7 +264,12 @@ where
     let proof = prover.gen_proof(&task)?;
 
     // Verify proof.
-    prover.verify_proof(&proof)?;
+    verify_stark_proof(
+        &proof.proof.as_stark_proof().unwrap(),
+        T::Prover::EXE_COMMIT,
+        T::Prover::VM_COMMIT,
+    )
+    .unwrap();
 
     Ok(ProveVerifyOutcome::single(task, proof))
 }
@@ -303,7 +309,12 @@ where
         .iter()
         .map(|task| {
             let proof = prover.gen_proof(task)?;
-            prover.verify_proof(&proof)?;
+            verify_stark_proof(
+                &proof.proof.as_stark_proof().unwrap(),
+                T::Prover::EXE_COMMIT,
+                T::Prover::VM_COMMIT,
+            )
+            .unwrap();
             Ok(proof)
         })
         .collect::<eyre::Result<Vec<WrappedProof<<T::Prover as ProverType>::ProofMetadata>>>>()?;
@@ -339,13 +350,12 @@ where
     let prover = scroll_zkvm_prover::Prover::<T::Prover>::setup(config)?;
 
     // Dump verifier-only assets to disk.
-    let (path_vm_config, path_root_committed_exe) = prover.dump_verifier(&path_assets)?;
+    let path_root_committed_exe = prover.dump_verifier(&path_assets)?;
     let path_verifier_code = WORKSPACE_ROOT
         .join(T::PATH_PROJECT_ROOT)
         .join("openvm")
         .join("verifier.bin");
     let verifier = scroll_zkvm_verifier::verifier::Verifier::setup(
-        &path_vm_config,
         &path_root_committed_exe,
         &path_verifier_code,
     )?;

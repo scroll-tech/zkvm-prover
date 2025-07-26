@@ -20,9 +20,8 @@ use std::{
 use dotenv::dotenv;
 use eyre::Result;
 use openvm_native_compiler::ir::DIGEST_SIZE;
-use openvm_sdk::{config::SdkVmConfig, Sdk, F};
-use openvm_stark_sdk::{openvm_stark_backend::p3_field::PrimeField32, p3_baby_bear::BabyBear};
-use snark_verifier_sdk::snark_verifier::loader::halo2::halo2_ecc::halo2_base::halo2_proofs::halo2curves::bn256::Fr;
+use openvm_sdk::{F, Sdk, commit::CommitBytes, config::SdkVmConfig, fs::read_from_file_bitcode};
+use openvm_stark_sdk::{openvm_stark_backend::p3_field::PrimeField32, p3_bn254_fr::Bn254Fr};
 
 mod builder;
 
@@ -40,22 +39,8 @@ fn write_commitment(output_path: &str, commitment: [u32; DIGEST_SIZE]) -> Result
 
 /// Compresses an 8-element u32 commitment into a single Fr element.
 /// Used for generating digests compatible with on-chain verifiers.
-fn compress_commitment(commitment: &[u32; DIGEST_SIZE]) -> Fr {
-    // Ensure DIGEST_SIZE is 8 for this specific compression logic
-    assert_eq!(
-        DIGEST_SIZE, 8,
-        "compress_commitment assumes DIGEST_SIZE is 8"
-    );
-    let order = Fr::from(BabyBear::ORDER_U32 as u64);
-    let mut base = Fr::one();
-    let mut compressed_value = Fr::zero();
-
-    for val in commitment {
-        compressed_value += Fr::from(*val as u64) * base;
-        base *= order;
-    }
-
-    compressed_value
+fn compress_commitment(commitment: &[u32; DIGEST_SIZE]) -> Bn254Fr {
+    CommitBytes::from_u32_digest(commitment).to_bn254()
 }
 
 /// Stage 1: Generates and writes leaf commitments for each specified project.
@@ -75,11 +60,8 @@ fn run_stage1_leaf_commitments(
 
         // Generate public key (which includes leaf commitment)
         let app_pk = Sdk::new().app_keygen(app_config.clone())?;
-        let leaf_vm_verifier_commit_f: [F; DIGEST_SIZE] = app_pk
-            .leaf_committed_exe
-            .committed_program
-            .commitment
-            .into();
+        let leaf_vm_verifier_commit_f: [F; DIGEST_SIZE] =
+            app_pk.leaf_committed_exe.commitment.into();
         let leaf_vm_verifier_commit_u32 = leaf_vm_verifier_commit_f.map(|f| f.as_canonical_u32());
         leaf_commitments.insert(project_name.to_string(), leaf_vm_verifier_commit_u32);
 
@@ -94,6 +76,7 @@ fn run_stage1_leaf_commitments(
         if project_name == "bundle" {
             println!("{LOG_PREFIX} Generating digest_2 for bundle project...");
             let digest_2_bytes = compress_commitment(&leaf_vm_verifier_commit_u32)
+                .value
                 .to_bytes()
                 .into_iter()
                 .rev() // Ensure correct byte order if needed (verify endianness requirement)
@@ -123,8 +106,7 @@ fn run_stage2_root_verifier(project_names: &[&str], workspace_dir: &Path) -> Res
             .join("root_verifier.asm");
 
         println!("generating AggStarkProvingKey");
-        let (agg_stark_pk, _) =
-            AggStarkProvingKey::dummy_proof_and_keygen(AggStarkConfig::default());
+        let agg_stark_pk = AggStarkProvingKey::keygen(AggStarkConfig::default())?;
 
         println!("generating root_verifier.asm");
         let asm = openvm_sdk::Sdk::new().generate_root_verifier_asm(&agg_stark_pk);
@@ -197,16 +179,14 @@ fn run_stage3_exe_commits(
             Sdk::new().commit_app_exe(app_config.app_fri_params.fri_params, app_exe)?;
 
         // 4. Compute and Write Executable Commitment
-        use openvm_circuit::arch::VmConfig;
         let exe_commit_f: [F; DIGEST_SIZE] = app_committed_exe
-            .compute_exe_commit(
-                &<SdkVmConfig as VmConfig<F>>::system(&app_config.app_vm_config).memory_config,
-            )
+            .compute_exe_commit(&app_config.app_vm_config.as_ref().memory_config)
             .into();
         let exe_commit_u32: [u32; DIGEST_SIZE] = exe_commit_f.map(|f| f.as_canonical_u32());
         exe_commitments.insert(project_name.to_string(), exe_commit_u32);
 
         let commit_filename = format!("{project_name}_exe_commit.rs");
+
         let output_path = Path::new(project_dir).join(&commit_filename);
         write_commitment(output_path.to_str().expect("Invalid path"), exe_commit_u32)?;
 
@@ -214,6 +194,7 @@ fn run_stage3_exe_commits(
         if project_name == "bundle" {
             println!("{LOG_PREFIX} Generating digest_1 for bundle project...",);
             let digest_1_bytes = compress_commitment(&exe_commit_u32)
+                .value
                 .to_bytes()
                 .into_iter()
                 .rev() // Ensure correct byte order
@@ -360,3 +341,41 @@ pub fn main() -> Result<()> {
     println!("{LOG_PREFIX} Build process completed successfully.");
     Ok(())
 }
+
+/*
+/// Wrapper around [`openvm_sdk::fs::read_exe_from_file`].
+pub fn read_app_exe<P: AsRef<Path>>(path: P) -> Result<VmExe<F>, eyre::Error> {
+
+
+    /// Executable program for OpenVM.
+    #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
+    #[serde(bound(
+        serialize = "F: serde::Serialize",
+        deserialize = "F: std::cmp::Ord + serde::Deserialize<'de>"
+    ))]
+    pub struct OldVmExe<F> {
+        /// Program to execute.
+        pub program: Program<F>,
+        /// Start address of pc.
+        pub pc_start: u32,
+        /// Initial memory image.
+        pub init_memory: BTreeMap<(u32, u32), F>,
+        /// Starting + ending bounds for each function.
+        pub fn_bounds: FnBounds,
+    }
+
+    let exe: OldVmExe<F> = read_from_file_bitcode(&path).unwrap();
+    use openvm_stark_sdk::openvm_stark_backend::p3_field::FieldAlgebra;
+    use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
+    let exe = VmExe::<F> {
+        program: exe.program,
+        pc_start: exe.pc_start,
+        init_memory: exe.init_memory.into_iter().map(|(k, v)| {
+         assert!(v < F::from_canonical_u32(256u32));
+         (k, v.as_canonical_u32() as u8)
+        }).collect(),
+        fn_bounds: exe.fn_bounds,
+    };
+    Ok(exe)
+}
+    */

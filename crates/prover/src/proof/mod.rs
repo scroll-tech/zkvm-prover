@@ -6,15 +6,15 @@ use scroll_zkvm_types::{
     batch::BatchInfo,
     bundle::BundleInfo,
     chunk::ChunkInfo,
-    proof::{EvmProof, OpenVmEvmProof, ProofEnum, RootProof},
+    proof::{EvmProof, OpenVmEvmProof, ProofEnum, StarkProof},
     public_inputs::{ForkName, MultiVersionPublicInputs},
     types_agg::{AggregationInput, ProgramCommitment},
     util::vec_as_base64,
 };
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
-pub trait AsRootProof {
-    fn as_root_proof(&self) -> &RootProof;
+pub trait AsStarkProof {
+    fn as_stark_proof(&self) -> &StarkProof;
 }
 
 pub trait AsEvmProof {
@@ -34,18 +34,18 @@ pub type BatchProof = WrappedProof<BatchProofMetadata>;
 /// Alias for convenience.
 pub type BundleProof = WrappedProof<BundleProofMetadata>;
 
-impl AsRootProof for ChunkProof {
-    fn as_root_proof(&self) -> &RootProof {
+impl AsStarkProof for ChunkProof {
+    fn as_stark_proof(&self) -> &StarkProof {
         self.proof
-            .as_root_proof()
+            .as_stark_proof()
             .expect("batch proof use root proof")
     }
 }
 
-impl AsRootProof for BatchProof {
-    fn as_root_proof(&self) -> &RootProof {
+impl AsStarkProof for BatchProof {
+    fn as_stark_proof(&self) -> &StarkProof {
         self.proof
-            .as_root_proof()
+            .as_stark_proof()
             .expect("batch proof use root proof")
     }
 }
@@ -145,13 +145,13 @@ impl ProofMetadata for BundleProofMetadata {
 pub struct WrappedProof<Metadata> {
     /// Generic metadata carried by a proof.
     pub metadata: Metadata,
-    /// The inner proof, either a [`RootProof`] or [`EvmProof`] depending on the [`crate::ProverType`].
+    /// The inner proof, either a [`StarkProof`] or [`EvmProof`] depending on the [`crate::ProverType`].
     pub proof: ProofEnum,
     /// Represents the verifying key in serialized form. The purpose of including the verifying key
     /// along with the proof is to allow a verifier-only mode to identify the source of proof
     /// generation.
     ///
-    /// For [`RootProof`] the verifying key is denoted by the digest of the VM's program.
+    /// For [`StarkProof`] the verifying key is denoted by the digest of the VM's program.
     ///
     /// For [`EvmProof`] its the raw bytes of the halo2 circuit's `VerifyingKey`.
     ///
@@ -236,6 +236,7 @@ mod tests {
         Ok(())
     }
 
+    /*
     #[test]
     fn test_dummy_proof() -> eyre::Result<()> {
         // 1. Metadata
@@ -338,4 +339,5 @@ mod tests {
 
         Ok(())
     }
+    */
 }

@@ -1,6 +1,6 @@
 use crate::{
     Error, Prover, ProverType,
-    commitments::batch::{EXE_COMMIT as BATCH_EXE_COMMIT, LEAF_COMMIT as BATCH_LEAF_COMMIT},
+    commitments::batch::{EXE_COMMIT as BATCH_EXE_COMMIT, VM_COMMIT as BATCH_LEAF_COMMIT},
     proof::BatchProofMetadata,
     task::batch::BatchProvingTask,
 };
@@ -19,7 +19,7 @@ impl ProverType for BatchProverType {
 
     const EXE_COMMIT: [u32; 8] = BATCH_EXE_COMMIT;
 
-    const LEAF_COMMIT: [u32; 8] = BATCH_LEAF_COMMIT;
+    const VM_COMMIT: [u32; 8] = BATCH_LEAF_COMMIT;
 
     type ProvingTask = BatchProvingTask;
 

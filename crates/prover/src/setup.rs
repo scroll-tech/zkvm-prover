@@ -1,62 +1,60 @@
-use std::{fs::read_to_string, path::Path};
+use std::{collections::BTreeMap, fs::read_to_string, path::Path};
 
 use openvm_circuit::arch::instructions::{
-    exe::{FnBounds, MemoryImage, VmExe},
+    exe::{FnBounds, VmExe},
     instruction::{DebugInfo, Instruction},
     program::Program,
 };
 use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
 use openvm_sdk::{
-    DefaultStaticVerifierPvHandler, Sdk,
+    DefaultStaticVerifierPvHandler, F, Sdk,
     commit::AppExecutionCommit,
     config::{AggConfig, AppConfig, SdkVmConfig},
     fs::{read_app_pk_from_file, read_exe_from_file, read_from_file_bitcode},
     keygen::{AggProvingKey, AppProvingKey},
 };
-use openvm_stark_sdk::p3_baby_bear::BabyBear;
+use openvm_stark_sdk::{
+    openvm_stark_backend::p3_field::{ExtensionField, PackedValue},
+    p3_baby_bear::BabyBear,
+};
 
 use crate::Error;
 
-/// Alias for convenience.
-pub type F = BabyBear;
-
 /// Wrapper around [`openvm_sdk::fs::read_exe_from_file`].
 pub fn read_app_exe<P: AsRef<Path>>(path: P) -> Result<VmExe<F>, Error> {
-    if let Ok(exe) = read_exe_from_file(&path) {
-        return Ok(exe);
-    }
-    println!("loading vmexe failed, trying old format..");
-    #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
-    pub struct OldProgram<F> {
-        pub instructions_and_debug_infos: Vec<Option<(Instruction<F>, Option<DebugInfo>)>>,
-        pub step: u32,
-        pub pc_base: u32,
-        pub max_num_public_values: usize,
-    }
+    return Ok(read_exe_from_file(path).unwrap());
+    /// Executable program for OpenVM.
     #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
     #[serde(bound(
         serialize = "F: serde::Serialize",
         deserialize = "F: std::cmp::Ord + serde::Deserialize<'de>"
     ))]
     pub struct OldVmExe<F> {
-        pub program: OldProgram<F>,
+        /// Program to execute.
+        pub program: Program<F>,
+        /// Start address of pc.
         pub pc_start: u32,
-        pub init_memory: MemoryImage<F>,
+        /// Initial memory image.
+        pub init_memory: BTreeMap<(u32, u32), F>,
+        /// Starting + ending bounds for each function.
         pub fn_bounds: FnBounds,
     }
-    let old_exe: OldVmExe<F> = read_from_file_bitcode(&path).map_err(|e| Error::Setup {
-        path: path.as_ref().into(),
-        src: e.to_string(),
-    })?;
+
+    let exe: OldVmExe<F> = read_from_file_bitcode(&path).unwrap();
+    use openvm_stark_sdk::openvm_stark_backend::p3_field::FieldAlgebra;
+    use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
     let exe = VmExe::<F> {
-        pc_start: old_exe.pc_start,
-        init_memory: old_exe.init_memory,
-        fn_bounds: old_exe.fn_bounds,
-        program: Program::<F> {
-            instructions_and_debug_infos: old_exe.program.instructions_and_debug_infos,
-            step: old_exe.program.step,
-            pc_base: old_exe.program.pc_base,
-        },
+        program: exe.program,
+        pc_start: exe.pc_start,
+        init_memory: exe
+            .init_memory
+            .into_iter()
+            .map(|(k, v)| {
+                assert!(v < F::from_canonical_u32(256u32));
+                (k, v.as_canonical_u32() as u8)
+            })
+            .collect(),
+        fn_bounds: exe.fn_bounds,
     };
     Ok(exe)
 }

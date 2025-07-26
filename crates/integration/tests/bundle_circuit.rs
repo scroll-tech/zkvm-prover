@@ -10,7 +10,7 @@ use scroll_zkvm_integration::{
     utils::{LastHeader, build_batch_task, testing_hardfork},
 };
 use scroll_zkvm_prover::{
-    AsRootProof, BatchProof, ChunkProof, IntoEvmProof,
+    AsStarkProof, BatchProof, ChunkProof, IntoEvmProof,
     setup::{read_app_config, read_app_exe},
     task::{bundle::BundleProvingTask, chunk::ChunkProvingTask},
     utils::{read_json_deep, write_json},
@@ -201,32 +201,27 @@ fn e2e() -> eyre::Result<()> {
     // Verifier all above proofs with the verifier-only mode.
     let verifier = verifier.to_chunk_verifier();
     for proof in chunk_proofs.iter() {
-        assert!(verifier.verify_proof(proof.as_root_proof()));
+        assert!(verifier.verify_proof(proof.as_stark_proof()));
     }
     let verifier = verifier.to_batch_verifier();
     for proof in bundle_task.batch_proofs.iter() {
-        assert!(verifier.verify_proof(proof.as_root_proof()));
+        assert!(verifier.verify_proof(proof.as_stark_proof()));
     }
 
     let evm_proof = outcome.proofs[0].clone().into_evm_proof();
 
-    assert!(
-        verifier
-            .to_bundle_verifier_v2()
-            .verify_proof_evm(&evm_proof)
-    );
+    assert!(verifier.to_bundle_verifier().verify_evm_proof(&evm_proof));
 
     let expected_pi_hash = &outcome.proofs[0].metadata.bundle_pi_hash;
-    let observed_instances = &evm_proof.instances;
+    let observed_instances = &evm_proof.user_public_values;
 
     for (i, (&expected, &observed)) in expected_pi_hash
         .iter()
-        .zip(observed_instances.iter().skip(14).take(32))
+        .zip(observed_instances.iter())
         .enumerate()
     {
         assert_eq!(
-            halo2curves_axiom::bn256::Fr::from(u64::from(expected)),
-            observed,
+            expected, observed,
             "pi inconsistent at index {i}: expected={expected}, observed={observed:?}"
         );
     }
