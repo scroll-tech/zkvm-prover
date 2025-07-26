@@ -1,14 +1,18 @@
 use std::sync::LazyLock;
 
-use algebra::{Field, IntMod};
 use alloy_primitives::U256;
 use halo2curves_axiom::bls12_381::{
-    Fq as Bls12_381_Fq, G1Affine as Bls12_381_G1, G2Affine as Bls12_381_G2,
+    G2Affine as Bls12_381_G2,
 };
 use itertools::Itertools;
+        use std::ops::{AddAssign, MulAssign};
+use openvm_algebra_guest::{Field, IntMod};
 use openvm_ecc_guest::{AffinePoint, CyclicGroup, msm, weierstrass::WeierstrassPoint};
-use openvm_pairing::bls12_381::{Bls12_381, Fp, Fp2, G1Affine, G2Affine, Scalar};
-use openvm_pairing_guest::{algebra, pairing::PairingCheck};
+use openvm_pairing::bls12_381::{Bls12_381, G1Affine, G2Affine, Scalar};
+use openvm_pairing_guest::{pairing::PairingCheck};
+
+use super::types::ToIntrinsic;
+use crate::blob_consistency::constants::KZG_G2_SETUP_BYTES;
 
 use super::{BLOB_WIDTH, LOG_BLOB_WIDTH};
 
@@ -20,14 +24,19 @@ static ROOTS_OF_UNITY: LazyLock<Vec<Scalar>> = LazyLock::new(|| {
     let modulus = *BLS_MODULUS;
 
     let exponent = (modulus - U256::from(1)) / U256::from(4096);
+    println!("r001");
     let root_of_unity = pow_bytes(&primitive_root_of_unity, &exponent.to_be_bytes::<32>());
+    println!("r002");
+    let mut ascending_order: Vec<Scalar> = Vec::new();
+    ascending_order.resize(BLOB_WIDTH, <Scalar as IntMod>::ZERO);
+    ascending_order[0] = <Scalar as IntMod>::ONE; // First element should be 1
 
-    let ascending_order: Vec<_> = std::iter::successors(Some(<Scalar as IntMod>::ONE), |x| {
-        Some(x.clone() * root_of_unity.clone())
-    })
-    .take(BLOB_WIDTH)
-    .collect();
-
+    for i in 1..BLOB_WIDTH {
+        let (left, right) = ascending_order.split_at_mut(i);
+        right[0].add_assign(&left[left.len() - 1]);
+        right[0].mul_assign(&root_of_unity);
+    }
+    println!("r003");
     (0..BLOB_WIDTH)
         .map(|i| {
             let j = u16::try_from(i).unwrap().reverse_bits() >> (16 - LOG_BLOB_WIDTH);
@@ -36,97 +45,48 @@ static ROOTS_OF_UNITY: LazyLock<Vec<Scalar>> = LazyLock::new(|| {
         .collect()
 });
 
-static G2_GENERATOR: LazyLock<G2Affine> = LazyLock::new(|| Bls12_381_G2::generator().convert());
+static G2_GENERATOR: LazyLock<G2Affine> = LazyLock::new(|| Bls12_381_G2::generator().to_intrinsic());
 
 static KZG_G2_SETUP: LazyLock<G2Affine> = LazyLock::new(|| {
-    // Use the second G2 field in kzg setup (G2[1]),
-    // the value of this G2 field is:
-    // b5bfd7dd8cdeb128
-    // 843bc287230af389
-    // 26187075cbfbefa8
-    // 1009a2ce615ac53d
-    // 2914e5870cb452d2
-    // afaaab24f3499f72
-    // 185cbfee53492714
-    // 734429b7b38608e2
-    // 3926c911cceceac9
-    // a36851477ba4c60b
-    // 087041de621000ed
-    // c98edada20c1def2
-    // extracted from https://github.com/ethereum/c-kzg-4844/blob/81a8949f29d27d225ca74ebb4e9061bdd100560a/src/trusted_setup.txt#L4100
-    const KZG_G2_SETUP_BYTES: [u8; 96] = [
-        0xb5, 0xbf, 0xd7, 0xdd, 0x8c, 0xde, 0xb1, 0x28, 0x84, 0x3b, 0xc2, 0x87, 0x23, 0x0a, 0xf3,
-        0x89, 0x26, 0x18, 0x70, 0x75, 0xcb, 0xfb, 0xef, 0xa8, 0x10, 0x09, 0xa2, 0xce, 0x61, 0x5a,
-        0xc5, 0x3d, 0x29, 0x14, 0xe5, 0x87, 0x0c, 0xb4, 0x52, 0xd2, 0xaf, 0xaa, 0xab, 0x24, 0xf3,
-        0x49, 0x9f, 0x72, 0x18, 0x5c, 0xbf, 0xee, 0x53, 0x49, 0x27, 0x14, 0x73, 0x44, 0x29, 0xb7,
-        0xb3, 0x86, 0x08, 0xe2, 0x39, 0x26, 0xc9, 0x11, 0xcc, 0xec, 0xea, 0xc9, 0xa3, 0x68, 0x51,
-        0x47, 0x7b, 0xa4, 0xc6, 0x0b, 0x08, 0x70, 0x41, 0xde, 0x62, 0x10, 0x00, 0xed, 0xc9, 0x8e,
-        0xda, 0xda, 0x20, 0xc1, 0xde, 0xf2,
-    ];
-
-    Bls12_381_G2::from_compressed_be(&KZG_G2_SETUP_BYTES)
+    Bls12_381_G2::from_uncompressed_unchecked_be(&KZG_G2_SETUP_BYTES)
         .expect("kzg G2 setup bytes")
-        .convert()
+        .to_intrinsic()
 });
 
 /// The version for KZG as per EIP-4844.
 const VERSIONED_HASH_VERSION_KZG: u8 = 1;
 
-/// Helper trait that provides functionality to convert types from [`openvm_ecc_guest`] to
-/// [`openvm_pairing_guest`].
-pub trait EccToPairing {
-    /// The desired converted type from [`openvm_pairing_guest`].
-    type PairingType;
-
-    /// Convert the given type from [`openvm_ecc_guest`] to the desired type from
-    /// [`openvm_pairing_guest`].
-    fn convert(&self) -> Self::PairingType;
-}
-
-impl EccToPairing for Bls12_381_Fq {
-    type PairingType = Fp;
-
-    fn convert(&self) -> Self::PairingType {
-        let bytes = self.to_bytes();
-        Fp::from_le_bytes_unchecked(&bytes)
-    }
-}
-
-impl EccToPairing for Bls12_381_G1 {
-    type PairingType = G1Affine;
-
-    fn convert(&self) -> Self::PairingType {
-        G1Affine::from_xy_unchecked(self.x.convert(), self.y.convert())
-    }
-}
-
-impl EccToPairing for Bls12_381_G2 {
-    type PairingType = G2Affine;
-
-    fn convert(&self) -> Self::PairingType {
-        G2Affine::from_xy_unchecked(
-            Fp2::new(self.x.c0.convert(), self.x.c1.convert()),
-            Fp2::new(self.y.c0.convert(), self.y.c1.convert()),
-        )
-    }
-}
-
 /// Verify KZG `proof` that `P(z) == y` where `P` is the EIP-4844 blob polynomial in its evaluation
 /// form, and `commitment` is the KZG commitment to the polynomial `P`.
 ///
 /// We use [`openvm_pairing_guest`] extension to implement this in guest program.
-pub fn verify_kzg_proof(z: Scalar, y: Scalar, commitment: G1Affine, proof: G1Affine) -> bool {
-    let proof_q = G1Affine::from_xy_nonidentity(proof.x().clone(), proof.y().clone())
-        .expect("kzg proof not G1 identity");
-    let p_minus_y = G1Affine::from_xy_nonidentity(commitment.x().clone(), commitment.y().clone())
-        .expect("kzg commitment not G1 identity")
-        - msm(&[y], &[G1Affine::GENERATOR.clone()]);
-    let x_minus_z = msm(&[z], &[G2_GENERATOR.clone()]) - KZG_G2_SETUP.clone();
+pub fn verify_kzg_proof(z: Scalar, y: Scalar, commitment: G1Affine, proof_q: G1Affine) -> bool {
+    println!("7001");
+
+    let p_minus_y = commitment - msm(&[y], &[G1Affine::GENERATOR.clone()]);
+    println!("7002");
+
+    let t = KZG_G2_SETUP.clone();
+    println!("70021");
+    let t3 = G2_GENERATOR.clone();
+    println!("70022");
+    let tt = msm(&[z], &[t3]);
+    println!("70023");
+    let x_minus_z = tt - t;
+    println!("7003");
 
     let p0_proof = AffinePoint::new(proof_q.x().clone(), proof_q.y().clone());
+    //let x = proof_q;
+    println!("7004");
+
     let q0 = AffinePoint::new(p_minus_y.x().clone(), p_minus_y.y().clone());
-    let p1 = AffinePoint::new(x_minus_z.x().clone(), x_minus_z.y().clone());
-    let q1 = AffinePoint::new(G2_GENERATOR.x().clone(), G2_GENERATOR.y().clone());
+    println!("7005");
+
+    let p1 = x_minus_z.into();
+    println!("7006");
+
+    let q1 = G2_GENERATOR.clone().into();
+    println!("7007");
 
     Bls12_381::pairing_check(&[q0, p0_proof], &[q1, p1]).is_ok()
 }
@@ -189,8 +149,11 @@ fn pow_bytes(base: &Scalar, bytes_be: &[u8]) -> Scalar {
 
 fn interpolate(z: &Scalar, coefficients: &[Scalar; BLOB_WIDTH]) -> Scalar {
     let blob_width = u64::try_from(BLOB_WIDTH).unwrap();
+    println!("before roots");
+    let roots = ROOTS_OF_UNITY.clone();
+    println!("after roots");
     (pow_bytes(z, &blob_width.to_be_bytes()) - <Scalar as IntMod>::ONE)
-        * ROOTS_OF_UNITY
+        * roots
             .iter()
             .zip_eq(coefficients)
             .map(|(root, f)| f * root * (z.clone() - root).invert())
@@ -201,6 +164,10 @@ fn interpolate(z: &Scalar, coefficients: &[Scalar; BLOB_WIDTH]) -> Scalar {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    use halo2curves_axiom::bls12_381::{
+        G1Affine as Bls12_381_G1,
+    };
 
     #[test]
     fn test_kzg_compute_proof_verify() {
@@ -236,10 +203,10 @@ mod test {
         let y = Scalar::from_be_bytes_unchecked(y.as_ref());
         let commitment = Bls12_381_G1::from_compressed_be(commitment.to_bytes().as_ref())
             .unwrap()
-            .convert();
+            .to_intrinsic();
         let proof = Bls12_381_G1::from_compressed_be(proof.to_bytes().as_ref())
             .unwrap()
-            .convert();
+            .to_intrinsic();
         let proof_ok = verify_kzg_proof(z, y, commitment, proof);
         assert!(proof_ok, "verify failed");
     }

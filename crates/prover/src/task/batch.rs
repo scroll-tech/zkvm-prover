@@ -10,6 +10,7 @@ use scroll_zkvm_types::{
     },
     public_inputs::ForkName,
 };
+use snark_verifier_sdk::snark_verifier::halo2_base::halo2_proofs::halo2curves::bls12_381;
 
 use crate::{
     AsStarkProof, ChunkProof,
@@ -159,9 +160,27 @@ impl ProvingTask for BatchProvingTask {
             assert_eq!(p, kzg_proof);
         }
 
+        let commitment_point = bls12_381::G1Affine::from_compressed_be(&kzg_commitment).unwrap();
+        let mut kzg_commitment_hint = [0u8; 96];
+        kzg_commitment_hint[0..48].copy_from_slice(&commitment_point.x.to_bytes_be());
+        kzg_commitment_hint[48..96].copy_from_slice(&commitment_point.y.to_bytes_be());
+        //[commitment_point_i.x().to_be_bytes(), commitment_point_i.y().to_be_bytes()].concat().try_into().unwrap();
+        //let commitment_point_i: G1Affine = commitment_point.convert();
+        //assert_eq!(kzg_commitment_hint.to_vec(), [commitment_point_i.x().to_be_bytes(), commitment_point_i.y().to_be_bytes()].concat());
+        println!("commitment encoded {:?}", kzg_commitment);
+        println!("commitment raw x {:?}", commitment_point.x.to_bytes_be());
+
+        let proof_point = bls12_381::G1Affine::from_compressed_be(&kzg_proof).unwrap();
+        let mut kzg_proof_hint = [0u8; 96];
+        kzg_proof_hint[0..48].copy_from_slice(&proof_point.x.to_bytes_be());
+        kzg_proof_hint[48..96].copy_from_slice(&proof_point.y.to_bytes_be());
+        //let proof_point_i: G1Affine = proof_point.convert();
+
         let point_eval_witness = PointEvalWitness {
             kzg_commitment: kzg_commitment.into_inner(),
             kzg_proof: kzg_proof.into_inner(),
+            kzg_commitment_hint,
+            kzg_proof_hint,
         };
 
         let reference_header = match fork_name {

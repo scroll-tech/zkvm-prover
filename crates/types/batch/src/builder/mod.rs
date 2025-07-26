@@ -17,6 +17,8 @@ pub struct BuilderArgs<Header: BatchHeader> {
     pub blob_bytes: Vec<u8>,
     pub kzg_commitment: Option<Bytes48>,
     pub kzg_proof: Option<Bytes48>,
+    pub kzg_commitment_hint: Option<[u8; 96]>,
+    pub kzg_proof_hint: Option<[u8; 96]>,
 }
 
 pub type BuilderArgsV6 = BuilderArgs<BatchHeaderV6>;

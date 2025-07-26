@@ -7,12 +7,9 @@ use std::{
 use once_cell::sync::Lazy;
 use openvm_circuit::system::program::trace::VmCommittedExe;
 use openvm_native_recursion::{
-    halo2::{
-        utils::{CacheHalo2ParamsReader, Halo2ParamsReader},
-    },
+    halo2::utils::{CacheHalo2ParamsReader, Halo2ParamsReader},
     hints::Hintable,
 };
-use openvm_sdk::{config::SdkVmCpuBuilder, fs::read_exe_from_file};
 use openvm_sdk::{
     DefaultStaticVerifierPvHandler, NonRootCommittedExe, Sdk, StdIn,
     commit::AppExecutionCommit,
@@ -20,6 +17,7 @@ use openvm_sdk::{
     keygen::{AggProvingKey, AggStarkProvingKey, AppProvingKey},
     types::EvmProof as OpenVmEvmProf,
 };
+use openvm_sdk::{config::SdkVmCpuBuilder, fs::read_exe_from_file};
 use scroll_zkvm_verifier::verifier::verify_stark_proof;
 use tracing::{debug, instrument};
 
@@ -29,7 +27,7 @@ pub use openvm_sdk::{self, SC};
 use crate::{
     Error,
     proof::{PersistableProof, ProofMetadata, WrappedProof},
-    setup::{read_app_config},
+    setup::read_app_config,
     task::ProvingTask,
 };
 
@@ -399,6 +397,7 @@ impl<Type: ProverType> Prover<Type> {
 
     /// Setup the EVM prover-verifier.
     fn setup_evm_prover(config: &ProverConfig) -> Result<EvmProverVerifier, Error> {
+        tracing::info!("setting up evm prover");
         // The HALO2 directory is set in the following order:
         // 1. If the optional dir_halo2_params is set: use it.
         // 2. If the optional dir_halo2_params is not set: try to read from env variable.
@@ -410,17 +409,32 @@ impl<Type: ProverType> Prover<Type> {
             .unwrap_or(Path::new(DEFAULT_PARAMS_DIR).to_path_buf());
 
         let halo2_params_reader = CacheHalo2ParamsReader::new(&dir_halo2_params);
-        let agg_pk = Sdk::new()
-            .agg_keygen(
-                AggConfig::default(),
-                &halo2_params_reader,
-                &DefaultStaticVerifierPvHandler,
-            )
-            .map_err(|e| Error::Setup {
-                path: dir_halo2_params,
-                src: e.to_string(),
-            })?;
+        tracing::info!("setting up evm prover 1");
+        let pk_file = std::env::var("HOME").unwrap() + "/.openvm/agg_halo2.pk";
+        println!("pk_file {pk_file}");
+        let is_pk_file_existed = std::path::Path::new(&pk_file).exists();
+        println!("is_pk_file_existed {is_pk_file_existed}");
+        let agg_pk = if is_pk_file_existed {
+            // 1.5min
+            AggProvingKey {
+                agg_stark_pk: AGG_STARK_PROVING_KEY.clone(),
+                halo2_pk: openvm_sdk::fs::read_agg_halo2_pk_from_file(pk_file).unwrap(),
+            }
+        } else {
+            // 5min
+            Sdk::new()
+                .agg_keygen(
+                    AggConfig::default(),
+                    &halo2_params_reader,
+                    &DefaultStaticVerifierPvHandler,
+                )
+                .map_err(|e| Error::Setup {
+                    path: dir_halo2_params,
+                    src: e.to_string(),
+                })?
+        };
 
+        tracing::info!("setting up evm prover 2");
         let path_verifier_bin = config
             .path_app_exe
             .parent()
@@ -428,10 +442,12 @@ impl<Type: ProverType> Prover<Type> {
         let verifier_contract = Sdk::new()
             .generate_halo2_verifier_solidity(&halo2_params_reader, &agg_pk)
             .unwrap();
+        tracing::info!("setting up evm prover 3");
         if let Some(path) = path_verifier_bin {
             crate::utils::write(path, &verifier_contract.artifact.bytecode)?;
         }
 
+        tracing::info!("sett up evm prover done");
         Ok(EvmProverVerifier {
             reader: halo2_params_reader,
             //halo2_prover,
@@ -457,8 +473,11 @@ impl<Type: ProverType> Prover<Type> {
 
         // Here we always do an execution of the guest program to get the cycle count.
         // and do precheck before proving like ensure PI != 0
-        self.execute_and_check(&stdin)?;
 
+        tracing::info!("===> cycle total");
+        let cycle = self.execute_and_check(&stdin)?;
+        tracing::info!("cycle total {}", cycle);
+        //unimplemented!("stop");
         let task_id = task.identifier();
 
         tracing::debug!(name: "generate_root_verifier_input", ?task_id);
@@ -485,6 +504,9 @@ impl<Type: ProverType> Prover<Type> {
         let stdin = task
             .build_guest_input()
             .map_err(|e| Error::GenProof(e.to_string()))?;
+        tracing::info!("===> cycle total");
+        let cycle = self.execute_and_check(&stdin)?;
+        tracing::info!("cycle total {}", cycle);
         let sdk = Sdk::new();
         let evm_proof = sdk
             .generate_evm_proof(

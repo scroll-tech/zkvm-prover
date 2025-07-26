@@ -9,6 +9,7 @@ version = "0.5.0"
 scroll-zkvm-types-circuit = { workspace = true }
 scroll-zkvm-types-chunk = { workspace = true }
 sbv-precompile = { workspace = true } 
+sbv-primitives = { workspace = true, features = ["scroll-consensus-types", "scroll-reth-types", "scroll-reth-primitives-types", "reth-primitives-types"] }
 
 rkyv.workspace = true
 

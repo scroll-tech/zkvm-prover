@@ -210,11 +210,7 @@ fn e2e() -> eyre::Result<()> {
 
     let evm_proof = outcome.proofs[0].clone().into_evm_proof();
 
-    assert!(
-        verifier
-            .to_bundle_verifier()
-            .verify_evm_proof(&evm_proof)
-    );
+    assert!(verifier.to_bundle_verifier().verify_evm_proof(&evm_proof));
 
     let expected_pi_hash = &outcome.proofs[0].metadata.bundle_pi_hash;
     let observed_instances = &evm_proof.user_public_values;

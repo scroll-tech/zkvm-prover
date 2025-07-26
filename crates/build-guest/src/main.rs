@@ -20,7 +20,7 @@ use std::{
 use dotenv::dotenv;
 use eyre::Result;
 use openvm_native_compiler::ir::DIGEST_SIZE;
-use openvm_sdk::{commit::CommitBytes, config::SdkVmConfig, fs::read_from_file_bitcode, Sdk, F};
+use openvm_sdk::{F, Sdk, commit::CommitBytes, config::SdkVmConfig, fs::read_from_file_bitcode};
 use openvm_stark_sdk::{openvm_stark_backend::p3_field::PrimeField32, p3_bn254_fr::Bn254Fr};
 
 mod builder;
@@ -75,7 +75,8 @@ fn run_stage1_leaf_commitments(
         // Special handling for bundle project: generate digest_2
         if project_name == "bundle" {
             println!("{LOG_PREFIX} Generating digest_2 for bundle project...");
-            let digest_2_bytes = compress_commitment(&leaf_vm_verifier_commit_u32).value
+            let digest_2_bytes = compress_commitment(&leaf_vm_verifier_commit_u32)
+                .value
                 .to_bytes()
                 .into_iter()
                 .rev() // Ensure correct byte order if needed (verify endianness requirement)
@@ -192,7 +193,8 @@ fn run_stage3_exe_commits(
         // Special handling for bundle project: generate digest_1
         if project_name == "bundle" {
             println!("{LOG_PREFIX} Generating digest_1 for bundle project...",);
-            let digest_1_bytes = compress_commitment(&exe_commit_u32).value
+            let digest_1_bytes = compress_commitment(&exe_commit_u32)
+                .value
                 .to_bytes()
                 .into_iter()
                 .rev() // Ensure correct byte order

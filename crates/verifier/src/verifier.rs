@@ -17,11 +17,7 @@ use scroll_zkvm_types::{
 
 use tracing::{debug, instrument};
 
-use crate::commitments::{
-    batch,
-    bundle,
-    chunk,
-};
+use crate::commitments::{batch, bundle, chunk};
 
 /// Proving key for STARK aggregation. Primarily used to aggregate
 /// [continuation proofs][openvm_sdk::prover::vm::ContinuationVmProof].

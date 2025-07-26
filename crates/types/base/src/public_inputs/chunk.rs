@@ -3,10 +3,6 @@ use crate::{
     utils::keccak256,
 };
 use alloy_primitives::{B256, U256};
-use sbv_primitives::types::{
-    consensus::BlockHeader,
-    reth::primitives::{Block, RecoveredBlock},
-};
 
 /// Number of bytes used to serialise [`BlockContextV2`].
 pub const SIZE_BLOCK_CTX: usize = 52;
@@ -66,26 +62,6 @@ impl From<&[u8]> for BlockContextV2 {
             gas_limit,
             num_txs,
             num_l1_msgs,
-        }
-    }
-}
-
-impl From<&RecoveredBlock<Block>> for BlockContextV2 {
-    fn from(block: &RecoveredBlock<Block>) -> BlockContextV2 {
-        BlockContextV2 {
-            timestamp: block.timestamp,
-            gas_limit: block.gas_limit,
-            base_fee: U256::from(block.base_fee_per_gas().expect("base_fee_expected")),
-            num_txs: u16::try_from(block.body().transactions.len()).expect("num txs u16"),
-            num_l1_msgs: u16::try_from(
-                block
-                    .body()
-                    .transactions
-                    .iter()
-                    .filter(|tx| tx.is_l1_message())
-                    .count(),
-            )
-            .expect("num l1 msgs u16"),
         }
     }
 }
