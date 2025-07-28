@@ -1,9 +1,17 @@
+#![feature(exit_status_error)]
+
 use cargo_metadata::MetadataCommand;
-use once_cell::sync::OnceCell;
+use eyre::Context;
+use metrics_tracing_context::TracingContextLayer;
+use metrics_util::{
+    debugging::{DebuggingRecorder, Snapshotter},
+    layers::Layer,
+};
 use openvm_sdk::{
     F, Sdk,
     config::{AppConfig, SdkVmConfig},
 };
+use openvm_stark_sdk::bench::serialize_metric_snapshot;
 use scroll_zkvm_prover::{
     ProverType, WrappedProof,
     setup::{read_app_config, read_app_exe},
@@ -12,7 +20,8 @@ use scroll_zkvm_prover::{
 use std::{
     path::{Path, PathBuf},
     process,
-    sync::LazyLock,
+    process::Command,
+    sync::{LazyLock, OnceLock},
 };
 use tracing::instrument;
 use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::SubscriberInitExt};
@@ -40,8 +49,19 @@ static DIR_OUTPUT: LazyLock<&Path> = LazyLock::new(|| {
     Box::leak(path.into_boxed_path())
 });
 
+pub static METRIC_SNAPSHOTTER: LazyLock<Snapshotter> = LazyLock::new(|| {
+    let recorder = DebuggingRecorder::new();
+    let snapshotter = recorder.snapshotter();
+    let recorder = TracingContextLayer::all().layer(recorder);
+    metrics::set_global_recorder(recorder).unwrap();
+    snapshotter
+});
+
 /// Directory to store proofs on disc.
 const DIR_PROOFS: &str = "proofs";
+
+/// Directory to store metrics on disc.
+const DIR_METRICS: &str = "metrics";
 
 /// File descriptor for app openvm config.
 const FD_APP_CONFIG: &str = "openvm.toml";
@@ -58,7 +78,7 @@ const ENV_OUTPUT_DIR: &str = "OUTPUT_DIR";
 /// - <DIR_OUTPUT>/chunk-tests-{timestamp}
 /// - <DIR_OUTPUT>/batch-tests-{timestamp}
 /// - <DIR_OUTPUT>/bundle-tests-{timestamp}
-static DIR_TESTRUN: OnceCell<PathBuf> = OnceCell::new();
+static DIR_TESTRUN: OnceLock<PathBuf> = OnceLock::new();
 
 /// Circuit that implements functionality required to run e2e tests.
 pub trait ProverTester {
@@ -150,6 +170,36 @@ pub trait ProverTester {
     ) -> eyre::Result<Vec<F>> {
         Self::execute(app_config, &Self::gen_proving_task()?, exe_path)
     }
+
+    fn export_metrics() -> eyre::Result<()> {
+        Self::export_metrics_with_name("default")
+    }
+
+    fn export_metrics_with_name(name: &str) -> eyre::Result<()> {
+        let snapshot = METRIC_SNAPSHOTTER.snapshot();
+
+        let dir = DIR_TESTRUN
+            .get()
+            .ok_or(eyre::eyre!("missing assets dir"))?
+            .join(Self::DIR_ASSETS)
+            .join(DIR_METRICS);
+        std::fs::create_dir_all(&dir)?;
+
+        let path = dir.join(format!("metrics-{name}")).with_extension("json");
+        tracing::info!("exporting metrics to {}", path.display());
+        let f = std::fs::File::create(&path).context("failed to create metrics file")?;
+
+        serde_json::to_writer_pretty(f, &serialize_metric_snapshot(snapshot))
+            .context("failed to serialize metrics snapshot")?;
+
+        Command::new("openvm-prof")
+            .arg("--json-paths")
+            .arg(&path)
+            .status()
+            .context("failed to run openvm-prof")?
+            .exit_ok()
+            .context("openvm-prof failed")
+    }
 }
 
 /// The outcome of a successful prove-verify run.
@@ -202,6 +252,8 @@ fn setup_logger() -> eyre::Result<()> {
             .with(metrics_tracing_context::MetricsLayer::new())
             .try_init()?;
     }
+
+    LazyLock::force(&METRIC_SNAPSHOTTER);
 
     Ok(())
 }
