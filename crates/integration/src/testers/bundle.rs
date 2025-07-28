@@ -84,6 +84,7 @@ impl BundleProverTester {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct BundleTaskGenerator {
     batch_generators: Vec<BatchTaskGenerator>,
 }
@@ -100,9 +101,7 @@ impl TestTaskBuilder<BundleProverTester> for BundleTaskGenerator {
         self.calculate_bundle_witness()
     }
 
-    fn gen_witnesses_proof(&self, prover: &Prover) -> eyre::Result<ProofEnum> {
-        let wit = self.gen_proving_witnesses()?;
-
+    fn gen_agg_proofs(&self) -> eyre::Result<Vec<ProofEnum>> {
         let batch_prover = &BundleProverTester::instrinsic_batch_prover()?
             .lock()
             .unwrap()
@@ -113,14 +112,28 @@ impl TestTaskBuilder<BundleProverTester> for BundleTaskGenerator {
             .map(|generator| generator.gen_witnesses_proof(batch_prover))
             .collect::<Result<Vec<ProofEnum>, _>>()?;
 
-        let (ret, _, _) =
-            prove_verify_single_evm::<BundleProverTester>(prover, &wit, &batch_proofs)?;
-
-        Ok(ret)
+        Ok(batch_proofs)
     }
+
+    fn gen_witnesses_proof(&self, prover: &Prover) -> eyre::Result<ProofEnum> {
+        let wit = self.gen_proving_witnesses()?;
+        let agg_proofs = self.gen_agg_proofs()?;
+        let (proof, _, _) = prove_verify_single_evm::<BundleProverTester>(prover, &wit, &agg_proofs)?;
+        Ok(proof)
+    }    
 }
 
 impl BundleTaskGenerator {
+
+    /// accept a series of BatchTaskGenerator, must be validated in advanced (continuous)
+    pub fn from_batch_tasks(
+        batches: &[BatchTaskGenerator],
+    ) -> Self {
+        Self {
+            batch_generators: batches.to_vec(),
+        }
+    }
+
     fn calculate_bundle_witness(&self) -> eyre::Result<BundleWitness> {
         use scroll_zkvm_types::{
             public_inputs::MultiVersionPublicInputs,

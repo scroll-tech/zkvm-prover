@@ -4,7 +4,6 @@ use std::{
 };
 
 use sbv_primitives::{B256, types::BlockWitness};
-use scroll_zkvm_prover::Prover;
 use scroll_zkvm_types::{
     chunk::{ChunkInfo, ChunkWitness},
     proof::ProofEnum,
@@ -12,7 +11,7 @@ use scroll_zkvm_types::{
 };
 
 use crate::{
-    PartialProvingTask, ProverTester, TestTaskBuilder, prove_verify, testdata_fork_directory,
+    PartialProvingTask, ProverTester, TestTaskBuilder, testdata_fork_directory,
     testers::PATH_TESTDATA, testing_hardfork,
 };
 
@@ -75,7 +74,7 @@ impl ProverTester for ChunkProverTester {
 /// Generator collect a range of block witnesses from test data
 #[derive(Clone, Debug)]
 pub struct ChunkTaskGenerator {
-    pub block_range: std::ops::Range<u64>,
+    pub block_range: std::ops::RangeInclusive<u64>,
     pub prev_message_hash: Option<B256>,
 }
 
@@ -104,8 +103,8 @@ impl TestTaskBuilder<ChunkProverTester> for ChunkTaskGenerator {
         ))
     }
 
-    fn gen_witnesses_proof(&self, prover: &Prover) -> eyre::Result<ProofEnum> {
-        prove_verify::<ChunkProverTester>(prover, &self.gen_proving_witnesses()?, &[])
+    fn gen_agg_proofs(&self) -> eyre::Result<Vec<ProofEnum>> {
+        Ok(Vec::new())
     }
 }
 
@@ -127,4 +126,44 @@ pub fn get_witness_from_env_or_builder(
         B256::repeat_byte(1u8),
         testing_hardfork(),
     ))
+}
+
+/// preset examples for single task
+pub fn preset_chunk() -> ChunkTaskGenerator {
+    let block_range = match testing_hardfork() {
+        ForkName::EuclidV1 => 12508460u64..=12508463u64,
+        ForkName::EuclidV2 => 1u64..=4u64,
+        ForkName::Feynman => 16525000u64..=16525003u64,
+    };
+    
+    ChunkTaskGenerator {
+        block_range,
+        prev_message_hash: None,
+    }
+}
+
+/// preset examples for multiple task
+pub fn preset_chunk_multiple() -> Vec<ChunkTaskGenerator> {
+
+    match testing_hardfork() {
+        ForkName::EuclidV1 => vec![
+            12508460u64..=12508460u64, 
+            12508461u64..=12508461u64,
+            12508462u64..=12508463u64,
+        ],
+        ForkName::EuclidV2 => vec![
+            1u64..=1u64,
+            2u64..=2u64,
+            3u64..=4u64,  
+        ],
+        ForkName::Feynman => vec![
+            16525000u64..=16525000u64,
+            16525001u64..=16525001u64,
+            16525002u64..=16525003u64,
+        ],
+    }.into_iter()
+    .map(|block_range|ChunkTaskGenerator{
+        block_range,
+        prev_message_hash: None
+    }).collect()
 }

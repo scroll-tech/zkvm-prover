@@ -1,4 +1,4 @@
-use scroll_zkvm_prover::Prover;
+
 use scroll_zkvm_types::{
     batch::{BatchHeader, BatchInfo, BatchWitness, ReferenceHeader},
     chunk::ChunkInfo,
@@ -7,7 +7,7 @@ use scroll_zkvm_types::{
 };
 
 use crate::{
-    PartialProvingTask, ProverTester, TestTaskBuilder, prove_verify,
+    PartialProvingTask, ProverTester, TestTaskBuilder,
     testers::{
         UnsafeSendWrappedProver,
         chunk::{ChunkProverTester, ChunkTaskGenerator},
@@ -82,9 +82,7 @@ impl TestTaskBuilder<BatchProverTester> for BatchTaskGenerator {
             .clone())
     }
 
-    fn gen_witnesses_proof(&self, prover: &Prover) -> eyre::Result<ProofEnum> {
-        let wit = self.gen_proving_witnesses()?;
-
+    fn gen_agg_proofs(&self) -> eyre::Result<Vec<ProofEnum>> {
         let chunk_prover = &BatchProverTester::instrinsic_chunk_prover()?
             .lock()
             .unwrap()
@@ -94,9 +92,9 @@ impl TestTaskBuilder<BatchProverTester> for BatchTaskGenerator {
             .iter()
             .map(|generator| generator.gen_witnesses_proof(chunk_prover))
             .collect::<Result<Vec<ProofEnum>, _>>()?;
-
-        prove_verify::<BatchProverTester>(prover, &wit, &chunk_proofs)
+        Ok(chunk_proofs)        
     }
+
 }
 
 impl BatchTaskGenerator {
@@ -157,4 +155,5 @@ impl BatchTaskGenerator {
             last_header: last_witness.map(|wit| (&wit.reference_header).into()),
         }
     }
+
 }

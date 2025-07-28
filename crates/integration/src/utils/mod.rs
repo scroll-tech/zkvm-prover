@@ -8,6 +8,7 @@ use scroll_zkvm_types::{
         BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchWitness, PointEvalWitness, ReferenceHeader,
     },
     chunk::{ChunkInfo, ChunkWitness},
+    bundle::{BundleInfo, BundleWitness},
     public_inputs::{ForkName, MultiVersionPublicInputs},
     types_agg::{AggregationInput, ProgramCommitment},
     utils::{keccak256, point_eval},
@@ -109,6 +110,15 @@ pub fn metadata_from_chunk_witnesses(witness: &ChunkWitness) -> eyre::Result<Chu
     archieved_wit
         .try_into()
         .map_err(|e| eyre::eyre!("get chunk metadata fail {e}"))
+}
+
+pub fn metadata_from_bundle_witnesses(witness: &BundleWitness) -> eyre::Result<BundleInfo> {
+    use scroll_zkvm_types::bundle::ArchivedBundleWitness;
+    let bytes = witness.rkyv_serialize(None)?;
+    let archieved_wit = rkyv::access::<ArchivedBundleWitness, rkyv::rancor::BoxedError>(&bytes)?;
+    archieved_wit
+        .try_into()
+        .map_err(|e| eyre::eyre!("get bundle metadata fail {e}"))
 }
 
 pub fn build_batch_witnesses(
@@ -332,15 +342,15 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
 
     let witness = match testing_hardfork() {
         ForkName::EuclidV2 => ChunkTaskGenerator {
-            block_range: 1..4,
+            block_range: 1..=3,
             prev_message_hash: None,
         },
         ForkName::EuclidV1 => ChunkTaskGenerator {
-            block_range: 12508460..12508462,
+            block_range: 12508460..=12508461,
             prev_message_hash: None,
         },
         ForkName::Feynman => ChunkTaskGenerator {
-            block_range: 16525000..16525002,
+            block_range: 16525000..=16525001,
             prev_message_hash: None,
         },
     }

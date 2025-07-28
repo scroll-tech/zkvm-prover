@@ -65,6 +65,13 @@ pub struct ChunkWitness {
     pub state_commit_mode: StateCommitMode,
 }
 
+#[derive(Clone, Debug)]
+pub struct ChunkDetails {
+    pub num_blocks: usize,
+    pub num_txs: usize,
+    pub total_gas_used: u64,
+}
+
 impl ChunkWitness {
     pub fn new(blocks: &[BlockWitness], prev_msg_queue_hash: B256, fork_name: ForkName) -> Self {
         let num_codes = blocks.iter().map(|w| w.codes.len()).sum();
@@ -133,6 +140,26 @@ impl ChunkWitness {
             rkyv::to_bytes::<rkyv::rancor::Error>(&self.clone().into_euclid())
         }
     }
+
+    pub fn stats(&self) -> ChunkDetails {
+        let num_blocks = self.blocks.len();
+        let num_txs = self
+            .blocks
+            .iter()
+            .map(|b| b.transaction.len())
+            .sum::<usize>();
+        let total_gas_used = self
+            .blocks
+            .iter()
+            .map(|b| b.header.gas_used)
+            .sum::<u64>();
+
+        ChunkDetails {
+            num_blocks,
+            num_txs,
+            total_gas_used,
+        }
+    }    
 }
 
 impl TryFrom<&ArchivedChunkWitness> for ChunkInfo {

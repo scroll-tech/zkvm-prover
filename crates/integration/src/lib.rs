@@ -1,13 +1,13 @@
 use cargo_metadata::MetadataCommand;
 use once_cell::sync::OnceCell;
 use openvm_sdk::{
-    F, StdIn,
+    StdIn,
     config::{AppConfig, SdkVmConfig},
 };
 use scroll_zkvm_prover::{
     Prover,
     setup::read_app_config,
-    utils::{read_json, write_json},
+    utils::{read_json, write_json, vm::ExecutionResult},
 };
 use scroll_zkvm_types::{
     proof::{EvmProof, ProofEnum, RootProof},
@@ -198,8 +198,15 @@ pub trait TestTaskBuilder<T: ProverTester> {
     /// Generate proving witnesses for test purposes.
     fn gen_proving_witnesses(&self) -> eyre::Result<T::Witness>;
 
+    /// Generate aggregated proofs for proving witness
+    fn gen_agg_proofs(&self) -> eyre::Result<Vec<ProofEnum>>;
+
     /// Generate proofs for the proving witness it has generated
-    fn gen_witnesses_proof(&self, prover: &Prover) -> eyre::Result<ProofEnum>;
+    fn gen_witnesses_proof(&self, prover: &Prover) -> eyre::Result<ProofEnum> {
+        let wit = self.gen_proving_witnesses()?;
+        let agg_proofs = self.gen_agg_proofs()?;
+        prove_verify::<T>(prover, &wit, &agg_proofs)        
+    }
 }
 
 /// Enviroment settings for test: fork
@@ -279,7 +286,7 @@ pub fn tester_execute<T: ProverTester>(
     prover: &Prover,
     witness: &T::Witness,
     proofs: &[ProofEnum],
-) -> eyre::Result<Vec<F>> {
+) -> eyre::Result<ExecutionResult> {
     let stdin = T::build_guest_input(
         witness,
         proofs
@@ -287,9 +294,8 @@ pub fn tester_execute<T: ProverTester>(
             .map(|p| p.as_root_proof().expect("must be root proof")),
     )?;
 
-    Ok(prover
-        .execute_and_check_with_full_result(&stdin, false)?
-        .public_values)
+    let ret = prover.execute_and_check_with_full_result(&stdin, false)?;
+    Ok(ret)
 }
 
 /// End-to-end test for proving witnesses of the same prover.
