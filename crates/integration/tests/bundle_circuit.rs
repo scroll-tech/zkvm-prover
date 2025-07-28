@@ -1,3 +1,4 @@
+use openvm_sdk::commit::AppExecutionCommit;
 use sbv_primitives::B256;
 use scroll_zkvm_integration::{
     ProverTester, prove_verify_multi, prove_verify_single_evm,
@@ -10,6 +11,7 @@ use scroll_zkvm_integration::{
 };
 use scroll_zkvm_prover::{
     AsRootProof, BatchProof, ChunkProof, IntoEvmProof,
+    setup::{read_app_config, read_app_exe},
     task::{bundle::BundleProvingTask, chunk::ChunkProvingTask},
     utils::{read_json_deep, write_json},
 };
@@ -29,6 +31,70 @@ fn load_recent_batch_proofs() -> eyre::Result<BundleProvingTask> {
         fork_name: testing_hardfork().to_string(),
     };
     Ok(task)
+}
+
+#[test]
+fn print_vks() -> eyre::Result<()> {
+    #[derive(Default, Debug, serde::Serialize)]
+    struct VKDump {
+        pub chunk_vk: String,
+        pub batch_vk: String,
+        pub bundle_vk: String,
+    }
+    let [chunk_vk, batch_vk, bundle_vk] = ["chunk", "batch", "bundle"].map(|circuit| {
+        let dev_mode = true;
+        let (path_app_exe, path_app_config) = if dev_mode {
+            (
+                format!("../../crates/circuits/{circuit}-circuit/openvm/app.vmexe").into(),
+                format!("../../crates/circuits/{circuit}-circuit/openvm.toml").into(),
+            )
+        } else {
+            let version = "0.5.0";
+            (
+                format!("../../{version}/{circuit}/app.vmexe").into(),
+                format!("../../{version}/{circuit}/openvm.toml").into(),
+            )
+        };
+
+        let config = scroll_zkvm_prover::ProverConfig {
+            path_app_exe,
+            path_app_config,
+            ..Default::default()
+        };
+
+        let app_exe = read_app_exe(&config.path_app_exe).unwrap();
+        let app_config = read_app_config(&config.path_app_config).unwrap();
+        let sdk = openvm_sdk::Sdk::new();
+        let app_pk = sdk.app_keygen(app_config).unwrap();
+        let app_committed_exe = sdk
+            .commit_app_exe(app_pk.app_fri_params(), app_exe)
+            .unwrap();
+        let commits = AppExecutionCommit::compute(
+            &app_pk.app_vm_pk.vm_config,
+            &app_committed_exe,
+            &app_pk.leaf_committed_exe,
+        );
+
+        let exe = commits.app_exe_commit.to_u32_digest();
+        let leaf = commits.app_vm_commit.to_u32_digest();
+
+        let app_vk = scroll_zkvm_types::types_agg::ProgramCommitment { exe, leaf }.serialize();
+
+        use base64::{Engine, prelude::BASE64_STANDARD};
+        let app_vk = BASE64_STANDARD.encode(app_vk);
+        println!("{circuit}: {app_vk}");
+        app_vk
+    });
+
+    let dump = VKDump {
+        chunk_vk,
+        batch_vk,
+        bundle_vk,
+    };
+
+    let f = std::fs::File::create("openVmVk.json")?;
+    serde_json::to_writer(f, &dump)?;
+    Ok(())
 }
 
 #[test]

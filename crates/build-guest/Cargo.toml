@@ -4,6 +4,8 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+scroll-zkvm-types.workspace = true
+
 openvm-instructions.workspace = true
 openvm-native-compiler.workspace = true
 openvm-native-recursion.workspace = true
@@ -19,6 +21,7 @@ openvm-circuit = { workspace = true }
 tracing.workspace = true
 tracing-subscriber.workspace = true
 
+base64.workspace = true
 bitcode.workspace = true
 halo2curves-axiom.workspace = true
 eyre.workspace = true

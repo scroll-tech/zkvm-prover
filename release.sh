@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # release version
-SCROLL_ZKVM_TESTRUN_DIR=`realpath .output/bundle-tests-20250703_1141191`
-SCROLL_ZKVM_VERSION=0.5.0rc0
+SCROLL_ZKVM_TESTRUN_DIR=`realpath .output/bundle-tests-20250722_234931/`
+SCROLL_ZKVM_VERSION=0.5.2
 if [ -z "${SCROLL_ZKVM_VERSION}" ]; then
   echo "SCROLL_ZKVM_VERSION not set"
   exit 1
