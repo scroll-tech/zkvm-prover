@@ -49,6 +49,7 @@ regex = "1.11.1"
 [dev-dependencies]
 halo2curves-axiom = "0.7.0"
 glob = "0.3"
+thousands = "0.2"
 
 [features]
 default = []

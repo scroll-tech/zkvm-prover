@@ -56,6 +56,9 @@ test-execute-chunk-multi:
 test-cycle:
 	@cargo test --release -p scroll-zkvm-integration --test chunk_circuit test_cycle -- --exact --nocapture
 
+test-chunk-cell:
+	@cargo test --release -p scroll-zkvm-integration --test chunk_circuit test_cell -- --exact --nocapture
+
 test-execute-batch: $(TESTDATA_PATH)/proofs/chunk-$(CHUNK_PROOF).json
 	@cargo test --release -p scroll-zkvm-integration --test batch_circuit test_e2e_execute -- --exact --nocapture
 

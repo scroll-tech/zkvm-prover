@@ -122,6 +122,10 @@ pub trait ProverTester {
         Ok(())
     }
 
+    fn setup_metrics() {
+        LazyLock::force(&METRIC_SNAPSHOTTER);
+    }
+
     /// Load the app config.
     fn load_with_exe_fd(
         app_exe_fd: &str,
