@@ -101,12 +101,12 @@ fn test_cell() -> eyre::Result<()> {
 
     println!("Total cells: {}", total_cells.separate_with_commas());
     println!("Total cycles: {}", total_cycles.separate_with_commas());
+    let cycles_per_gas = total_cycles as f64 / total_gas_used as f64;
     let cells_per_gas = total_cells as f64 / total_gas_used as f64;
     let cells_per_cycle = total_cells as f64 / total_cycles as f64;
-    let cycle_per_gas = total_cycles as f64 / total_gas_used as f64;
-    println!("Total cycle per gas: {}", cycle_per_gas.separate_with_commas());
-    println!("Total cells per gas: {}", cells_per_gas.separate_with_commas());
-    println!("Total cells per cycle: {}", cells_per_cycle.separate_with_commas());
+    println!("Cycles per gas: {}", format!("{cycles_per_gas:.2}").separate_with_commas());
+    println!("Cells per gas: {}", format!("{cells_per_gas:.2}").separate_with_commas());
+    println!("Cells per cycle: {}", format!("{cells_per_cycle:.2}").separate_with_commas());
     assert_eq!(exec_result.total_cycle, total_cycles);
 
     Ok(())
