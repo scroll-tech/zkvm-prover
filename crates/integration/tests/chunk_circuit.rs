@@ -1,6 +1,5 @@
 use eyre::Ok;
 use metrics_util::{MetricKind, debugging::DebugValue};
-use thousands::Separable;
 use scroll_zkvm_integration::{
     METRIC_SNAPSHOTTER, ProverTester, prove_verify_multi, prove_verify_single,
     testers::chunk::{ChunkProverTester, MultiChunkProverTester, read_block_witness_from_testdata},
@@ -12,6 +11,7 @@ use scroll_zkvm_prover::{
     task::{ProvingTask, chunk::ChunkProvingTask},
     utils::{self, vm::ExecutionResult},
 };
+use thousands::Separable;
 
 fn exec_chunk(task: &ChunkProvingTask) -> eyre::Result<(ExecutionResult, u64)> {
     let (_path_app_config, app_config, path_exe) =
@@ -96,7 +96,7 @@ fn test_cell() -> eyre::Result<()> {
                 } else {
                     unreachable!()
                 }
-            }
+            },
         );
 
     println!("Total cells: {}", total_cells.separate_with_commas());
@@ -104,9 +104,18 @@ fn test_cell() -> eyre::Result<()> {
     let cycles_per_gas = total_cycles as f64 / total_gas_used as f64;
     let cells_per_gas = total_cells as f64 / total_gas_used as f64;
     let cells_per_cycle = total_cells as f64 / total_cycles as f64;
-    println!("Cycles per gas: {}", format!("{cycles_per_gas:.2}").separate_with_commas());
-    println!("Cells per gas: {}", format!("{cells_per_gas:.2}").separate_with_commas());
-    println!("Cells per cycle: {}", format!("{cells_per_cycle:.2}").separate_with_commas());
+    println!(
+        "Cycles per gas: {}",
+        format!("{cycles_per_gas:.2}").separate_with_commas()
+    );
+    println!(
+        "Cells per gas: {}",
+        format!("{cells_per_gas:.2}").separate_with_commas()
+    );
+    println!(
+        "Cells per cycle: {}",
+        format!("{cells_per_cycle:.2}").separate_with_commas()
+    );
     assert_eq!(exec_result.total_cycle, total_cycles);
 
     Ok(())
