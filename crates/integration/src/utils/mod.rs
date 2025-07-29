@@ -5,11 +5,11 @@ use sbv_primitives::{
 };
 use scroll_zkvm_types::{
     batch::{
-        BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchWitness, 
-        PointEvalWitness, ReferenceHeader, BatchInfo,
+        BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchInfo, BatchWitness, PointEvalWitness,
+        ReferenceHeader,
     },
-    chunk::{ChunkInfo, ChunkWitness},
     bundle::{BundleInfo, BundleWitness},
+    chunk::{ChunkInfo, ChunkWitness},
     public_inputs::{ForkName, MultiVersionPublicInputs},
     types_agg::{AggregationInput, ProgramCommitment},
     utils::{keccak256, point_eval},
@@ -113,7 +113,6 @@ pub fn metadata_from_chunk_witnesses(witness: &ChunkWitness) -> eyre::Result<Chu
         .map_err(|e| eyre::eyre!("get chunk metadata fail {e}"))
 }
 
-
 pub fn metadata_from_batch_witnesses(witness: &BatchWitness) -> eyre::Result<BatchInfo> {
     use scroll_zkvm_types::batch::ArchivedBatchWitness;
     let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(witness)?;
@@ -125,9 +124,7 @@ pub fn metadata_from_bundle_witnesses(witness: &BundleWitness) -> eyre::Result<B
     use scroll_zkvm_types::bundle::ArchivedBundleWitness;
     let bytes = witness.rkyv_serialize(None)?;
     let archieved_wit = rkyv::access::<ArchivedBundleWitness, rkyv::rancor::BoxedError>(&bytes)?;
-    archieved_wit
-        .try_into()
-        .map_err(|e| eyre::eyre!("get bundle metadata fail {e}"))
+    Ok(archieved_wit.into())
 }
 
 pub fn build_batch_witnesses(

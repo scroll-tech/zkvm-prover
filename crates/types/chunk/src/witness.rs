@@ -148,18 +148,14 @@ impl ChunkWitness {
             .iter()
             .map(|b| b.transaction.len())
             .sum::<usize>();
-        let total_gas_used = self
-            .blocks
-            .iter()
-            .map(|b| b.header.gas_used)
-            .sum::<u64>();
+        let total_gas_used = self.blocks.iter().map(|b| b.header.gas_used).sum::<u64>();
 
         ChunkDetails {
             num_blocks,
             num_txs,
             total_gas_used,
         }
-    }    
+    }
 }
 
 impl TryFrom<&ArchivedChunkWitness> for ChunkInfo {

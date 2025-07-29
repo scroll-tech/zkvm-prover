@@ -18,7 +18,7 @@ pub fn load_local_task(task_name: &str) -> eyre::Result<UnivProvingTask> {
             .join(testdata_fork_directory())
             .join("tasks")
             .join(task_name),
-    )?)    
+    )?)
 }
 
 use scroll_zkvm_prover::Prover;

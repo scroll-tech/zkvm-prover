@@ -1,10 +1,11 @@
 use scroll_zkvm_integration::{
-    ProverTester, TestTaskBuilder, testing_hardfork,
+    ProverTester, TestTaskBuilder,
     testers::{
-        load_local_task,
         batch::{BatchProverTester, BatchTaskGenerator},
-        chunk::{preset_chunk_multiple, create_canonical_tasks},
+        chunk::{create_canonical_tasks, preset_chunk_multiple},
+        load_local_task,
     },
+    testing_hardfork,
 };
 use scroll_zkvm_prover::task::ProvingTask;
 
@@ -20,7 +21,6 @@ fn test_execute() -> eyre::Result<()> {
     let _ = prover.execute_and_check(&stdin, false)?;
     Ok(())
 }
-
 
 #[ignore = "need local stuff"]
 #[test]
@@ -41,20 +41,19 @@ fn test_e2e_execute() -> eyre::Result<()> {
 
     let prover = BatchProverTester::load_prover(false)?;
 
-    let task = BatchTaskGenerator::from_chunk_tasks(
-        &preset_chunk_multiple(),
-        None,
-    );
+    let task = BatchTaskGenerator::from_chunk_tasks(&preset_chunk_multiple(), None);
 
     let wit = task.gen_proving_witnesses()?;
     let agg_proofs = task.gen_agg_proofs()?;
 
-    let stdin = BatchProverTester::build_guest_input(&wit, agg_proofs.iter().map(|p|p.as_root_proof().unwrap()))?;
+    let stdin = BatchProverTester::build_guest_input(
+        &wit,
+        agg_proofs.iter().map(|p| p.as_root_proof().unwrap()),
+    )?;
     let _ = prover.execute_and_check_with_full_result(&stdin, false)?;
 
     Ok(())
 }
-
 
 #[test]
 fn e2e() -> eyre::Result<()> {
@@ -62,9 +61,8 @@ fn e2e() -> eyre::Result<()> {
 
     let prover = BatchProverTester::load_prover(false)?;
 
-    let _ = BatchTaskGenerator::from_chunk_tasks(
-        &preset_chunk_multiple(), None,
-    ).gen_witnesses_proof(&prover)?;
+    let _ = BatchTaskGenerator::from_chunk_tasks(&preset_chunk_multiple(), None)
+        .gen_witnesses_proof(&prover)?;
 
     Ok(())
 }
@@ -75,23 +73,22 @@ fn verify_batch_hash_invariant() -> eyre::Result<()> {
     BatchProverTester::setup()?;
 
     let outcome_1 = preset_chunk_multiple();
-    let outcome_2 = create_canonical_tasks(match testing_hardfork() {
-        ForkName::EuclidV1 => vec![
-            12508460u64..=12508461u64, 
-            12508462u64..=12508462u64,
-            12508463u64..=12508463u64,
-        ],
-        ForkName::EuclidV2 => vec![
-            1u64..=2u64,
-            3u64..=3u64,
-            4u64..=4u64,  
-        ],
-        ForkName::Feynman => vec![
-            16525000u64..=16525001u64,
-            16525002u64..=16525002u64,
-            16525003u64..=16525003u64,
-        ],
-    }.into_iter())?;
+    let outcome_2 = create_canonical_tasks(
+        match testing_hardfork() {
+            ForkName::EuclidV1 => vec![
+                12508460u64..=12508461u64,
+                12508462u64..=12508462u64,
+                12508463u64..=12508463u64,
+            ],
+            ForkName::EuclidV2 => vec![1u64..=2u64, 3u64..=3u64, 4u64..=4u64],
+            ForkName::Feynman => vec![
+                16525000u64..=16525001u64,
+                16525002u64..=16525002u64,
+                16525003u64..=16525003u64,
+            ],
+        }
+        .into_iter(),
+    )?;
 
     let task_1 = BatchTaskGenerator::from_chunk_tasks(&outcome_1, None);
     let task_2 = BatchTaskGenerator::from_chunk_tasks(&outcome_2, None);

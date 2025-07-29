@@ -93,9 +93,11 @@ pub struct BundleTaskGenerator {
 
 impl TestTaskBuilder<BundleProverTester> for BundleTaskGenerator {
     fn gen_proving_witnesses(&self) -> eyre::Result<BundleWitness> {
-        self.result.get_or_init(|| self.calculate_bundle_witness()).as_ref()
-            .map(Clone::clone)
-            .map_err(|e|eyre::eyre!("{e}"))
+        self.result
+            .get_or_init(|| self.calculate_bundle_witness())
+            .as_ref()
+            .map_err(|e| eyre::eyre!("{e}"))
+            .cloned()
     }
 
     fn gen_agg_proofs(&self) -> eyre::Result<Vec<ProofEnum>> {
@@ -115,17 +117,15 @@ impl TestTaskBuilder<BundleProverTester> for BundleTaskGenerator {
     fn gen_witnesses_proof(&self, prover: &Prover) -> eyre::Result<ProofEnum> {
         let wit = self.gen_proving_witnesses()?;
         let agg_proofs = self.gen_agg_proofs()?;
-        let (proof, _, _) = prove_verify_single_evm::<BundleProverTester>(prover, &wit, &agg_proofs)?;
+        let (proof, _, _) =
+            prove_verify_single_evm::<BundleProverTester>(prover, &wit, &agg_proofs)?;
         Ok(proof)
-    }    
+    }
 }
 
 impl BundleTaskGenerator {
-
     /// accept a series of BatchTaskGenerator, must be validated in advanced (continuous)
-    pub fn from_batch_tasks(
-        batches: &[BatchTaskGenerator],
-    ) -> Self {
+    pub fn from_batch_tasks(batches: &[BatchTaskGenerator]) -> Self {
         Self {
             result: OnceLock::new(),
             batch_generators: batches.to_vec(),
@@ -146,23 +146,16 @@ impl BundleTaskGenerator {
             .get_app_vk();
         let commitment = ProgramCommitment::deserialize(&vk);
         let mut batch_proofs = Vec::new();
-        let mut batch_infos : Vec<BatchInfo> = Vec::new();
+        let mut batch_infos: Vec<BatchInfo> = Vec::new();
 
         for generator in &self.batch_generators {
             let wit = generator.gen_proving_witnesses()?;
             let info = metadata_from_batch_witnesses(&wit)?;
             if let Some(last_info) = batch_infos.last() {
                 // validate some data
-                assert_eq!(
-                    info.parent_state_root, last_info.state_root,
-                    "state root"
-                );
+                assert_eq!(info.parent_state_root, last_info.state_root, "state root");
                 assert_eq!(info.chain_id, last_info.chain_id, "chain id");
-                assert_eq!(
-                    info.parent_batch_hash,
-                    last_info.batch_hash,
-                    "batch hash",
-                );
+                assert_eq!(info.parent_batch_hash, last_info.batch_hash, "batch hash",);
             }
 
             let pi_hash = info.pi_hash_by_fork(fork_name);

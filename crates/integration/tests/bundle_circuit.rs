@@ -1,19 +1,21 @@
-
 use sbv_primitives::B256;
 use scroll_zkvm_integration::{
-    ProverTester, TestTaskBuilder, testing_hardfork,
+    ProverTester,
+    TestTaskBuilder,
     testers::{
-        load_local_task,
-        bundle::{BundleProverTester, BundleTaskGenerator},
         batch::preset_batch_multiple,
+        bundle::{BundleProverTester, BundleTaskGenerator},
+        load_local_task,
     },
+    testing_hardfork,
     utils::metadata_from_bundle_witnesses,
-    //utils::{LastHeader, build_batch_task, testing_hardfork},
+    // utils::{LastHeader, build_batch_task, testing_hardfork},
 };
 use scroll_zkvm_prover::{
-    //AsRootProof, BatchProof, ChunkProof, IntoEvmProof,
-    //setup::{read_app_config, read_app_exe},
-    Prover, ProverConfig,
+    // AsRootProof, BatchProof, ChunkProof, IntoEvmProof,
+    // setup::{read_app_config, read_app_exe},
+    Prover,
+    ProverConfig,
 };
 use scroll_zkvm_types::public_inputs::ForkName;
 use std::str::FromStr;
@@ -67,7 +69,8 @@ fn print_vks() -> eyre::Result<()> {
         };
 
         use base64::{Engine, prelude::BASE64_STANDARD};
-        let app_vk = BASE64_STANDARD.encode(Prover::setup(config, false, None).unwrap().get_app_vk());
+        let app_vk =
+            BASE64_STANDARD.encode(Prover::setup(config, false, None).unwrap().get_app_vk());
         println!("{circuit}: {app_vk}");
         app_vk
     });
@@ -162,11 +165,10 @@ fn e2e() -> eyre::Result<()> {
         alloy_primitives::hex::encode(expected_pi_hash),
         pi_str,
         "unexpected pi hash for e2e bundle info, block witness changed?"
-    );    
+    );
 
     let prover = BundleProverTester::load_prover(true)?;
     let proof = task.gen_witnesses_proof(&prover)?;
-
 
     let evm_proof = proof.into_evm_proof().unwrap();
 
@@ -184,12 +186,10 @@ fn e2e() -> eyre::Result<()> {
         .enumerate()
     {
         assert_eq!(
-            expected,
-            observed,
+            expected, observed,
             "pi inconsistent at index {i}: expected={expected}, observed={observed:?}"
         );
     }
 
     Ok(())
-
 }

@@ -7,7 +7,7 @@ use openvm_sdk::{
 use scroll_zkvm_prover::{
     Prover,
     setup::read_app_config,
-    utils::{read_json, write_json, vm::ExecutionResult},
+    utils::{read_json, vm::ExecutionResult, write_json},
 };
 use scroll_zkvm_types::{
     proof::{EvmProof, ProofEnum, RootProof},
@@ -205,7 +205,7 @@ pub trait TestTaskBuilder<T: ProverTester> {
     fn gen_witnesses_proof(&self, prover: &Prover) -> eyre::Result<ProofEnum> {
         let wit = self.gen_proving_witnesses()?;
         let agg_proofs = self.gen_agg_proofs()?;
-        prove_verify::<T>(prover, &wit, &agg_proofs)        
+        prove_verify::<T>(prover, &wit, &agg_proofs)
     }
 }
 
@@ -299,7 +299,7 @@ pub fn tester_execute<T: ProverTester>(
 }
 
 /// End-to-end test for proving witnesses of the same prover.
-#[instrument(name = "prove_verify_multi", skip_all, fields(task_id))]
+#[instrument(name = "prove_verify", skip_all, fields(task_id))]
 pub fn prove_verify<T: ProverTester>(
     prover: &Prover,
     witness: &T::Witness,

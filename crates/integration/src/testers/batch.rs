@@ -1,4 +1,3 @@
-
 use scroll_zkvm_types::{
     batch::{BatchHeader, BatchInfo, BatchWitness, ReferenceHeader},
     chunk::ChunkInfo,
@@ -74,7 +73,6 @@ pub struct BatchTaskGenerator {
     last_witness: Option<BatchWitness>,
 }
 
-
 impl TestTaskBuilder<BatchProverTester> for BatchTaskGenerator {
     fn gen_proving_witnesses(&self) -> eyre::Result<BatchWitness> {
         Ok(if let Some(r) = self.result.get() {
@@ -96,17 +94,18 @@ impl TestTaskBuilder<BatchProverTester> for BatchTaskGenerator {
             .iter()
             .map(|generator| generator.gen_witnesses_proof(chunk_prover))
             .collect::<Result<Vec<ProofEnum>, _>>()?;
-        Ok(chunk_proofs)        
+        Ok(chunk_proofs)
     }
-
 }
 
 impl BatchTaskGenerator {
     fn calculate_batch_witness(&self) -> eyre::Result<BatchWitness> {
         let mut chunks = Vec::new();
         let mut chunk_infos = Vec::new();
-        let mut last_info: Option<&ChunkInfo> = self.last_witness.as_ref()
-            .and_then(|wit|wit.chunk_infos.last());
+        let mut last_info: Option<&ChunkInfo> = self
+            .last_witness
+            .as_ref()
+            .and_then(|wit| wit.chunk_infos.last());
 
         for chunk_generator in &self.chunk_generators {
             let chunk_wit = chunk_generator.gen_proving_witnesses()?;
@@ -124,9 +123,11 @@ impl BatchTaskGenerator {
                     info.initial_block_number,
                     "block number",
                 );
-                assert_eq!(last_info.post_msg_queue_hash, info.prev_msg_queue_hash, "msg queue hash");
+                assert_eq!(
+                    last_info.post_msg_queue_hash, info.prev_msg_queue_hash,
+                    "msg queue hash"
+                );
             }
-
 
             chunks.push(chunk_wit);
             chunk_infos.push(info);
@@ -141,7 +142,10 @@ impl BatchTaskGenerator {
                 .unwrap()
                 .0
                 .get_app_vk(),
-            self.last_witness.as_ref().map(|wit| (&wit.reference_header).into()).unwrap_or_default(),
+            self.last_witness
+                .as_ref()
+                .map(|wit| (&wit.reference_header).into())
+                .unwrap_or_default(),
         ))
     }
 
@@ -156,17 +160,17 @@ impl BatchTaskGenerator {
             last_witness,
         }
     }
-
 }
 
-
 /// create canonical tasks from a series of block range
-pub fn create_canonical_tasks<'a>(chunk_tasks: impl Iterator<Item=&'a [ChunkTaskGenerator]>) -> eyre::Result<Vec<BatchTaskGenerator>> {
-    let mut ret : Vec<BatchTaskGenerator> = Vec::new();
+pub fn create_canonical_tasks<'a>(
+    chunk_tasks: impl Iterator<Item = &'a [ChunkTaskGenerator]>,
+) -> eyre::Result<Vec<BatchTaskGenerator>> {
+    let mut ret: Vec<BatchTaskGenerator> = Vec::new();
     for chunks in chunk_tasks {
         let canonical_generator = BatchTaskGenerator::from_chunk_tasks(
-            chunks, 
-            ret.last().map(|g|g.gen_proving_witnesses()).transpose()?,
+            chunks,
+            ret.last().map(|g| g.gen_proving_witnesses()).transpose()?,
         );
         ret.push(canonical_generator);
     }
@@ -175,25 +179,19 @@ pub fn create_canonical_tasks<'a>(chunk_tasks: impl Iterator<Item=&'a [ChunkTask
 
 /// preset examples for single task
 pub fn preset_batch() -> BatchTaskGenerator {
-    BatchTaskGenerator::from_chunk_tasks(
-        &preset_chunk_multiple(),
-        None,
-    )
+    BatchTaskGenerator::from_chunk_tasks(&preset_chunk_multiple(), None)
 }
 
 /// preset examples for multiple task
 pub fn preset_batch_multiple() -> Vec<BatchTaskGenerator> {
+    static PRESET_RESULT: std::sync::OnceLock<Vec<BatchTaskGenerator>> = std::sync::OnceLock::new();
 
-    static PRESET_RESULT : std::sync::OnceLock<Vec<BatchTaskGenerator>> = std::sync::OnceLock::new();
-
-    PRESET_RESULT.get_or_init(||{
-        let chunks = preset_chunk_multiple();
-        assert!(chunks.len() > 2);
-        create_canonical_tasks(
-            [
-                &chunks[0..=1],
-                &chunks[2..],
-            ].into_iter()
-        ).expect("must success for preset collections")
-    }).clone()
+    PRESET_RESULT
+        .get_or_init(|| {
+            let chunks = preset_chunk_multiple();
+            assert!(chunks.len() > 2);
+            create_canonical_tasks([&chunks[0..1], &chunks[1..]].into_iter())
+                .expect("must success for preset collections")
+        })
+        .clone()
 }
