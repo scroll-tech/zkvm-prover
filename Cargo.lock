@@ -6854,8 +6854,9 @@ dependencies = [
  "ff 0.13.1",
  "glob",
  "halo2curves-axiom 0.7.0",
+ "metrics",
  "metrics-tracing-context",
- "once_cell",
+ "metrics-util",
  "openvm-build",
  "openvm-circuit",
  "openvm-native-circuit",
@@ -6863,6 +6864,7 @@ dependencies = [
  "openvm-native-recursion",
  "openvm-native-transpiler",
  "openvm-sdk",
+ "openvm-stark-sdk",
  "openvm-transpiler",
  "rayon",
  "regex",
@@ -6876,6 +6878,7 @@ dependencies = [
  "serde_json",
  "sha2 0.10.9",
  "snark-verifier-sdk",
+ "thousands",
  "tracing",
  "tracing-subscriber 0.3.19",
  "vm-zstd",
@@ -6896,7 +6899,6 @@ dependencies = [
  "metrics-tracing-context",
  "metrics-util",
  "munge",
- "once_cell",
  "openvm-circuit",
  "openvm-continuations",
  "openvm-native-circuit",
@@ -7707,6 +7709,12 @@ dependencies = [
  "quote",
  "syn 2.0.101",
 ]
+
+[[package]]
+name = "thousands"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3bf63baf9f5039dadc247375c29eb13706706cfde997d0330d05aa63a77d8820"
 
 [[package]]
 name = "thread_local"

@@ -1,10 +1,3 @@
-use std::{
-    marker::PhantomData,
-    path::{Path, PathBuf},
-    sync::Arc,
-};
-
-use once_cell::sync::Lazy;
 use openvm_circuit::{arch::SingleSegmentVmExecutor, system::program::trace::VmCommittedExe};
 use openvm_native_recursion::{
     halo2::{
@@ -22,17 +15,22 @@ use openvm_sdk::{
     prover::{AggStarkProver, AppProver, EvmHalo2Prover},
 };
 use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Engine;
-use tracing::{debug, instrument};
+use std::{
+    marker::PhantomData,
+    path::{Path, PathBuf},
+    sync::{Arc, LazyLock},
+};
+use tracing::{debug, info_span, instrument};
 
 // Re-export from openvm_sdk.
-pub use openvm_sdk::{self, SC};
-
 use crate::{
     Error,
     proof::{PersistableProof, ProofMetadata, WrappedProof},
     setup::{read_app_config, read_app_exe},
     task::ProvingTask,
 };
+pub use openvm_sdk::{self, SC};
+use openvm_stark_sdk::openvm_stark_backend::utils::metrics_span;
 
 use scroll_zkvm_types::{
     proof::{EvmProof, ProofEnum, RootProof},
@@ -50,8 +48,8 @@ pub use chunk::{ChunkProver, ChunkProverType, GenericChunkProverType};
 
 /// Proving key for STARK aggregation. Primarily used to aggregate
 /// [continuation proofs][openvm_sdk::prover::vm::ContinuationVmProof].
-static AGG_STARK_PROVING_KEY: Lazy<AggStarkProvingKey> =
-    Lazy::new(|| AggStarkProvingKey::keygen(AggStarkConfig::default()));
+static AGG_STARK_PROVING_KEY: LazyLock<AggStarkProvingKey> =
+    LazyLock::new(|| AggStarkProvingKey::keygen(AggStarkConfig::default()));
 
 /// The default directory to locate openvm's halo2 SRS parameters.
 const DEFAULT_PARAMS_DIR: &str = concat!(env!("HOME"), "/.openvm/params/");
@@ -139,6 +137,14 @@ impl<Type: ProverType> Prover<Type> {
     /// Read app exe, proving key and return committed data.
     #[instrument("Prover::init")]
     pub fn init(config: &ProverConfig) -> Result<InitRes, Error> {
+        let circuit_name = config
+            .path_app_exe
+            .parent()
+            .and_then(|p| p.parent())
+            .and_then(|p| p.file_name())
+            .and_then(|p| p.to_str())
+            .unwrap_or("unknown");
+
         let app_exe = read_app_exe(&config.path_app_exe)?;
         let mut app_config = read_app_config(&config.path_app_config)?;
         let segment_len = config.segment_len.unwrap_or(Type::SEGMENT_SIZE);
@@ -149,12 +155,18 @@ impl<Type: ProverType> Prover<Type> {
             .with_max_segment_len(segment_len);
 
         let sdk = Sdk::new();
-        let app_pk = sdk
-            .app_keygen(app_config)
-            .map_err(|e| Error::Keygen(e.to_string()))?;
-        let app_committed_exe = sdk
-            .commit_app_exe(app_pk.app_fri_params(), app_exe)
-            .map_err(|e| Error::Commit(e.to_string()))?;
+        let app_pk = info_span!("keygen", group = circuit_name).in_scope(|| {
+            metrics_span("keygen_time_ms", || {
+                sdk.app_keygen(app_config)
+                    .map_err(|e| Error::Keygen(e.to_string()))
+            })
+        })?;
+        let app_committed_exe = info_span!("commit_exe", group = circuit_name).in_scope(|| {
+            metrics_span("commit_exe_time_ms", || {
+                sdk.commit_app_exe(app_pk.app_fri_params(), app_exe)
+                    .map_err(|e| Error::Commit(e.to_string()))
+            })
+        })?;
 
         Ok((app_committed_exe, Arc::new(app_pk)))
     }

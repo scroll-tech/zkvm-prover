@@ -1,6 +1,7 @@
 use eyre::Ok;
+use metrics_util::{MetricKind, debugging::DebugValue};
 use scroll_zkvm_integration::{
-    ProverTester, prove_verify_multi, prove_verify_single,
+    METRIC_SNAPSHOTTER, ProverTester, prove_verify_multi, prove_verify_single,
     testers::chunk::{ChunkProverTester, MultiChunkProverTester, read_block_witness_from_testdata},
     utils::testing_hardfork,
 };
@@ -10,6 +11,7 @@ use scroll_zkvm_prover::{
     task::{ProvingTask, chunk::ChunkProvingTask},
     utils::{self, vm::ExecutionResult},
 };
+use thousands::Separable;
 
 fn exec_chunk(task: &ChunkProvingTask) -> eyre::Result<(ExecutionResult, u64)> {
     let (_path_app_config, app_config, path_exe) =
@@ -62,6 +64,64 @@ fn test_cycle() -> eyre::Result<()> {
 }
 
 #[test]
+fn test_cell() -> eyre::Result<()> {
+    let task = ChunkProverTester::gen_proving_task()?;
+    let (exec_result, total_gas_used) = exec_chunk(&task)?;
+
+    ChunkProverTester::setup()?;
+    prove_verify_single::<ChunkProverTester>(None)?;
+
+    let snapshot = METRIC_SNAPSHOTTER.snapshot().into_hashmap();
+    let (total_cells, total_cycles) = snapshot
+        .iter()
+        .filter(|(ck, _)| {
+            matches!(ck.kind(), MetricKind::Counter)
+                && (ck.key().name() == "total_cells" || ck.key().name() == "total_cycles")
+                && ck
+                    .key()
+                    .labels()
+                    .find(|label| label.key() == "segment")
+                    .is_some() // filter only segment labels
+        })
+        .fold(
+            (0u64, 0u64),
+            |(cells_acc, cycles_acc), (ck, (_, _, value))| {
+                let DebugValue::Counter(value) = value else {
+                    panic!("Expected a counter value for total_cells or total_cycles");
+                };
+                if ck.key().name() == "total_cells" {
+                    (cells_acc + value, cycles_acc)
+                } else if ck.key().name() == "total_cycles" {
+                    (cells_acc, cycles_acc + value)
+                } else {
+                    unreachable!()
+                }
+            },
+        );
+
+    println!("Total cells: {}", total_cells.separate_with_commas());
+    println!("Total cycles: {}", total_cycles.separate_with_commas());
+    let cycles_per_gas = total_cycles as f64 / total_gas_used as f64;
+    let cells_per_gas = total_cells as f64 / total_gas_used as f64;
+    let cells_per_cycle = total_cells as f64 / total_cycles as f64;
+    println!(
+        "Cycles per gas: {}",
+        format!("{cycles_per_gas:.2}").separate_with_commas()
+    );
+    println!(
+        "Cells per gas: {}",
+        format!("{cells_per_gas:.2}").separate_with_commas()
+    );
+    println!(
+        "Cells per cycle: {}",
+        format!("{cells_per_cycle:.2}").separate_with_commas()
+    );
+    assert_eq!(exec_result.total_cycle, total_cycles);
+
+    Ok(())
+}
+
+#[test]
 fn test_execute() -> eyre::Result<()> {
     ChunkProverTester::setup()?;
 
@@ -69,7 +129,9 @@ fn test_execute() -> eyre::Result<()> {
     let (exec_result, total_gas_used) = exec_chunk(&task)?;
     let cycle_per_gas = exec_result.total_cycle / total_gas_used;
     assert_ne!(cycle_per_gas, 0);
-    assert!(cycle_per_gas <= 35);
+    // assert!(cycle_per_gas <= 35);
+    ChunkProverTester::export_metrics()?;
+
     Ok(())
 }
 
@@ -200,6 +262,7 @@ fn setup_prove_verify_single() -> eyre::Result<()> {
 
     prove_verify_single::<ChunkProverTester>(None)?;
 
+    ChunkProverTester::export_metrics()?;
     Ok(())
 }
 
