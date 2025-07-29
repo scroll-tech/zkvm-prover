@@ -5,7 +5,8 @@ use sbv_primitives::{
 };
 use scroll_zkvm_types::{
     batch::{
-        BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchWitness, PointEvalWitness, ReferenceHeader,
+        BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchWitness, 
+        PointEvalWitness, ReferenceHeader, BatchInfo,
     },
     chunk::{ChunkInfo, ChunkWitness},
     bundle::{BundleInfo, BundleWitness},
@@ -110,6 +111,14 @@ pub fn metadata_from_chunk_witnesses(witness: &ChunkWitness) -> eyre::Result<Chu
     archieved_wit
         .try_into()
         .map_err(|e| eyre::eyre!("get chunk metadata fail {e}"))
+}
+
+
+pub fn metadata_from_batch_witnesses(witness: &BatchWitness) -> eyre::Result<BatchInfo> {
+    use scroll_zkvm_types::batch::ArchivedBatchWitness;
+    let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(witness)?;
+    let archieved_wit = rkyv::access::<ArchivedBatchWitness, rkyv::rancor::BoxedError>(&bytes)?;
+    Ok(archieved_wit.into())
 }
 
 pub fn metadata_from_bundle_witnesses(witness: &BundleWitness) -> eyre::Result<BundleInfo> {

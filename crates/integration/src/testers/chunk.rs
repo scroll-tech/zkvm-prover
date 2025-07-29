@@ -13,6 +13,7 @@ use scroll_zkvm_types::{
 use crate::{
     PartialProvingTask, ProverTester, TestTaskBuilder, testdata_fork_directory,
     testers::PATH_TESTDATA, testing_hardfork,
+    utils::metadata_from_chunk_witnesses,
 };
 
 /// Load a file <block_n>.json in the <PATH_BLOCK_WITNESS> directory.
@@ -142,10 +143,31 @@ pub fn preset_chunk() -> ChunkTaskGenerator {
     }
 }
 
+/// create canonical tasks from a series of block range
+pub fn create_canonical_tasks(ranges: impl Iterator<Item=std::ops::RangeInclusive<u64>>) -> eyre::Result<Vec<ChunkTaskGenerator>> {
+    let mut ret = Vec::new();
+    let mut prev_message_hash = None;
+    for r in ranges {
+        let canonical_generator = ChunkTaskGenerator {
+                block_range: r,
+                prev_message_hash,
+        };
+        let chunk_wit = canonical_generator.gen_proving_witnesses()?;
+        let info = metadata_from_chunk_witnesses(&chunk_wit)?;
+
+        prev_message_hash = Some(info.post_msg_queue_hash);
+        ret.push(canonical_generator);
+    }
+
+    Ok(ret)
+}
+
 /// preset examples for multiple task
 pub fn preset_chunk_multiple() -> Vec<ChunkTaskGenerator> {
 
-    match testing_hardfork() {
+    static PRESET_RESULT : std::sync::OnceLock<Vec<ChunkTaskGenerator>> = std::sync::OnceLock::new();
+
+    PRESET_RESULT.get_or_init(||create_canonical_tasks(match testing_hardfork() {
         ForkName::EuclidV1 => vec![
             12508460u64..=12508460u64, 
             12508461u64..=12508461u64,
@@ -161,9 +183,6 @@ pub fn preset_chunk_multiple() -> Vec<ChunkTaskGenerator> {
             16525001u64..=16525001u64,
             16525002u64..=16525003u64,
         ],
-    }.into_iter()
-    .map(|block_range|ChunkTaskGenerator{
-        block_range,
-        prev_message_hash: None
-    }).collect()
+    }.into_iter()).expect("must success for preset collections")).clone()
+
 }

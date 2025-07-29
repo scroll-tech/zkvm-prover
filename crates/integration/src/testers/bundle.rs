@@ -1,5 +1,5 @@
 use scroll_zkvm_types::{
-    batch::{BatchInfo, BatchWitness},
+    batch::BatchInfo,
     bundle::{BundleInfo, BundleWitness},
     proof::ProofEnum,
     public_inputs::ForkName,
@@ -15,6 +15,7 @@ use crate::{
         batch::{BatchProverTester, BatchTaskGenerator},
     },
     testing_hardfork,
+    utils::metadata_from_batch_witnesses,
 };
 
 use std::sync::{Mutex, OnceLock};
@@ -84,21 +85,17 @@ impl BundleProverTester {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct BundleTaskGenerator {
+    result: OnceLock<eyre::Result<BundleWitness>>,
     batch_generators: Vec<BatchTaskGenerator>,
-}
-
-fn metadata_from_batch_witnesses(witness: &BatchWitness) -> eyre::Result<BatchInfo> {
-    use scroll_zkvm_types::batch::ArchivedBatchWitness;
-    let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(witness)?;
-    let archieved_wit = rkyv::access::<ArchivedBatchWitness, rkyv::rancor::BoxedError>(&bytes)?;
-    Ok(archieved_wit.into())
 }
 
 impl TestTaskBuilder<BundleProverTester> for BundleTaskGenerator {
     fn gen_proving_witnesses(&self) -> eyre::Result<BundleWitness> {
-        self.calculate_bundle_witness()
+        self.result.get_or_init(|| self.calculate_bundle_witness()).as_ref()
+            .map(Clone::clone)
+            .map_err(|e|eyre::eyre!("{e}"))
     }
 
     fn gen_agg_proofs(&self) -> eyre::Result<Vec<ProofEnum>> {
@@ -130,6 +127,7 @@ impl BundleTaskGenerator {
         batches: &[BatchTaskGenerator],
     ) -> Self {
         Self {
+            result: OnceLock::new(),
             batch_generators: batches.to_vec(),
         }
     }
@@ -148,11 +146,24 @@ impl BundleTaskGenerator {
             .get_app_vk();
         let commitment = ProgramCommitment::deserialize(&vk);
         let mut batch_proofs = Vec::new();
-        let mut batch_infos = Vec::new();
+        let mut batch_infos : Vec<BatchInfo> = Vec::new();
 
         for generator in &self.batch_generators {
             let wit = generator.gen_proving_witnesses()?;
             let info = metadata_from_batch_witnesses(&wit)?;
+            if let Some(last_info) = batch_infos.last() {
+                // validate some data
+                assert_eq!(
+                    info.parent_state_root, last_info.state_root,
+                    "state root"
+                );
+                assert_eq!(info.chain_id, last_info.chain_id, "chain id");
+                assert_eq!(
+                    info.parent_batch_hash,
+                    last_info.batch_hash,
+                    "batch hash",
+                );
+            }
 
             let pi_hash = info.pi_hash_by_fork(fork_name);
             let proof = AggregationInput {

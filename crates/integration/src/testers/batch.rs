@@ -10,9 +10,9 @@ use crate::{
     PartialProvingTask, ProverTester, TestTaskBuilder,
     testers::{
         UnsafeSendWrappedProver,
-        chunk::{ChunkProverTester, ChunkTaskGenerator},
+        chunk::{ChunkProverTester, ChunkTaskGenerator, preset_chunk_multiple},
     },
-    utils::{LastHeader, build_batch_witnesses, metadata_from_chunk_witnesses},
+    utils::{build_batch_witnesses, metadata_from_chunk_witnesses},
 };
 
 use std::sync::{Mutex, OnceLock};
@@ -67,19 +67,23 @@ impl BatchProverTester {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone)]
 pub struct BatchTaskGenerator {
     result: OnceLock<BatchWitness>,
     chunk_generators: Vec<ChunkTaskGenerator>,
-    last_header: Option<LastHeader>,
+    last_witness: Option<BatchWitness>,
 }
+
 
 impl TestTaskBuilder<BatchProverTester> for BatchTaskGenerator {
     fn gen_proving_witnesses(&self) -> eyre::Result<BatchWitness> {
-        Ok(self
-            .result
-            .get_or_init(|| self.calculate_batch_witness().unwrap())
-            .clone())
+        Ok(if let Some(r) = self.result.get() {
+            r.clone()
+        } else {
+            let r = self.calculate_batch_witness()?;
+            self.result.set(r.clone()).ok();
+            r
+        })
     }
 
     fn gen_agg_proofs(&self) -> eyre::Result<Vec<ProofEnum>> {
@@ -101,34 +105,32 @@ impl BatchTaskGenerator {
     fn calculate_batch_witness(&self) -> eyre::Result<BatchWitness> {
         let mut chunks = Vec::new();
         let mut chunk_infos = Vec::new();
-        let mut last_info: Option<ChunkInfo> = None;
+        let mut last_info: Option<&ChunkInfo> = self.last_witness.as_ref()
+            .and_then(|wit|wit.chunk_infos.last());
 
         for chunk_generator in &self.chunk_generators {
-            let canonical_generator = ChunkTaskGenerator {
-                block_range: chunk_generator.block_range.clone(),
-                prev_message_hash: last_info.as_ref().map(|info| info.post_msg_queue_hash),
-            };
-
-            let chunk_wit = canonical_generator.gen_proving_witnesses()?;
-
-            if let Some(info) = &last_info {
-                // validate some data
-                assert_eq!(
-                    info.post_state_root, chunk_wit.blocks[0].pre_state_root,
-                    "state root"
-                );
-                assert_eq!(info.chain_id, chunk_wit.blocks[0].chain_id, "chain id");
-                assert_eq!(
-                    info.initial_block_number + info.block_ctxs.len() as u64,
-                    chunk_wit.blocks[0].header.number,
-                    "block number",
-                );
-            }
+            let chunk_wit = chunk_generator.gen_proving_witnesses()?;
             let info = metadata_from_chunk_witnesses(&chunk_wit)?;
 
-            last_info.replace(info.clone());
+            if let Some(last_info) = last_info {
+                // validate some data
+                assert_eq!(
+                    last_info.post_state_root, info.prev_state_root,
+                    "state root"
+                );
+                assert_eq!(last_info.chain_id, info.chain_id, "chain id");
+                assert_eq!(
+                    last_info.initial_block_number + last_info.block_ctxs.len() as u64,
+                    info.initial_block_number,
+                    "block number",
+                );
+                assert_eq!(last_info.post_msg_queue_hash, info.prev_msg_queue_hash, "msg queue hash");
+            }
+
+
             chunks.push(chunk_wit);
             chunk_infos.push(info);
+            last_info = chunk_infos.last();
         }
 
         Ok(build_batch_witnesses(
@@ -139,12 +141,11 @@ impl BatchTaskGenerator {
                 .unwrap()
                 .0
                 .get_app_vk(),
-            self.last_header.clone().unwrap_or_default(),
+            self.last_witness.as_ref().map(|wit| (&wit.reference_header).into()).unwrap_or_default(),
         ))
     }
 
-    /// accept a series of ChunkTaskGenerator, validate them are continuous
-    /// and fill a valid prev_message_hash
+    /// accept a series of ChunkTaskGenerator
     pub fn from_chunk_tasks(
         ref_chunks: &[ChunkTaskGenerator],
         last_witness: Option<BatchWitness>,
@@ -152,8 +153,47 @@ impl BatchTaskGenerator {
         Self {
             result: OnceLock::new(),
             chunk_generators: ref_chunks.to_vec(),
-            last_header: last_witness.map(|wit| (&wit.reference_header).into()),
+            last_witness,
         }
     }
 
+}
+
+
+/// create canonical tasks from a series of block range
+pub fn create_canonical_tasks<'a>(chunk_tasks: impl Iterator<Item=&'a [ChunkTaskGenerator]>) -> eyre::Result<Vec<BatchTaskGenerator>> {
+    let mut ret : Vec<BatchTaskGenerator> = Vec::new();
+    for chunks in chunk_tasks {
+        let canonical_generator = BatchTaskGenerator::from_chunk_tasks(
+            chunks, 
+            ret.last().map(|g|g.gen_proving_witnesses()).transpose()?,
+        );
+        ret.push(canonical_generator);
+    }
+    Ok(ret)
+}
+
+/// preset examples for single task
+pub fn preset_batch() -> BatchTaskGenerator {
+    BatchTaskGenerator::from_chunk_tasks(
+        &preset_chunk_multiple(),
+        None,
+    )
+}
+
+/// preset examples for multiple task
+pub fn preset_batch_multiple() -> Vec<BatchTaskGenerator> {
+
+    static PRESET_RESULT : std::sync::OnceLock<Vec<BatchTaskGenerator>> = std::sync::OnceLock::new();
+
+    PRESET_RESULT.get_or_init(||{
+        let chunks = preset_chunk_multiple();
+        assert!(chunks.len() > 2);
+        create_canonical_tasks(
+            [
+                &chunks[0..=1],
+                &chunks[2..],
+            ].into_iter()
+        ).expect("must success for preset collections")
+    }).clone()
 }

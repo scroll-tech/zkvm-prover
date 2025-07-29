@@ -3,11 +3,12 @@ use scroll_zkvm_integration::{
     testers::{
         load_local_task,
         batch::{BatchProverTester, BatchTaskGenerator},
-        chunk::preset_chunk_multiple,
+        chunk::{preset_chunk_multiple, create_canonical_tasks},
     },
 };
 use scroll_zkvm_prover::task::ProvingTask;
 
+#[ignore = "need local stuff"]
 #[test]
 fn test_execute() -> eyre::Result<()> {
     BatchProverTester::setup()?;
@@ -21,6 +22,7 @@ fn test_execute() -> eyre::Result<()> {
 }
 
 
+#[ignore = "need local stuff"]
 #[test]
 fn setup_prove_verify_single() -> eyre::Result<()> {
     BatchProverTester::setup()?;
@@ -40,7 +42,8 @@ fn test_e2e_execute() -> eyre::Result<()> {
     let prover = BatchProverTester::load_prover(false)?;
 
     let task = BatchTaskGenerator::from_chunk_tasks(
-        &preset_chunk_multiple(), None,
+        &preset_chunk_multiple(),
+        None,
     );
 
     let wit = task.gen_proving_witnesses()?;
@@ -69,11 +72,10 @@ fn e2e() -> eyre::Result<()> {
 #[test]
 fn verify_batch_hash_invariant() -> eyre::Result<()> {
     use scroll_zkvm_types::public_inputs::ForkName;
-    use scroll_zkvm_integration::testers::chunk::ChunkTaskGenerator;
     BatchProverTester::setup()?;
 
     let outcome_1 = preset_chunk_multiple();
-    let outcome_2 = match testing_hardfork() {
+    let outcome_2 = create_canonical_tasks(match testing_hardfork() {
         ForkName::EuclidV1 => vec![
             12508460u64..=12508461u64, 
             12508462u64..=12508462u64,
@@ -89,11 +91,7 @@ fn verify_batch_hash_invariant() -> eyre::Result<()> {
             16525002u64..=16525002u64,
             16525003u64..=16525003u64,
         ],
-    }.into_iter()
-    .map(|block_range|ChunkTaskGenerator{
-        block_range,
-        prev_message_hash: None
-    }).collect::<Vec<_>>();
+    }.into_iter())?;
 
     let task_1 = BatchTaskGenerator::from_chunk_tasks(&outcome_1, None);
     let task_2 = BatchTaskGenerator::from_chunk_tasks(&outcome_2, None);

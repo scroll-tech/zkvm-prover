@@ -5,8 +5,7 @@ use scroll_zkvm_integration::{
     testers::{
         load_local_task,
         bundle::{BundleProverTester, BundleTaskGenerator},
-        batch::BatchTaskGenerator,
-        chunk::preset_chunk_multiple,
+        batch::preset_batch_multiple,
     },
     utils::metadata_from_bundle_witnesses,
     //utils::{LastHeader, build_batch_task, testing_hardfork},
@@ -34,17 +33,8 @@ use std::str::FromStr;
 //     Ok(task)
 // }
 
-fn preset_bundle() -> eyre::Result<BundleTaskGenerator> {
-    let chunks = preset_chunk_multiple();
-    assert!(chunks.len() > 2);
-    let batch_1 = BatchTaskGenerator::from_chunk_tasks(&chunks[0..=1], None);
-    let ref_wit = batch_1.gen_proving_witnesses()?;
-    let batch_2 = BatchTaskGenerator::from_chunk_tasks(
-        &chunks[2..], 
-        Some(ref_wit),
-    );
-    Ok(BundleTaskGenerator::from_batch_tasks(&[batch_1, batch_2]))
-
+fn preset_bundle() -> BundleTaskGenerator {
+    BundleTaskGenerator::from_batch_tasks(&preset_batch_multiple())
 }
 
 #[test]
@@ -103,6 +93,7 @@ fn print_vks() -> eyre::Result<()> {
 //     Ok(())
 // }
 
+#[ignore = "need local stuff"]
 #[test]
 fn setup_prove_verify_local_task() -> eyre::Result<()> {
     BundleProverTester::setup()?;
@@ -155,7 +146,7 @@ fn verify_bundle_info_pi() {
 fn e2e() -> eyre::Result<()> {
     BundleProverTester::setup()?;
 
-    let task = preset_bundle()?;
+    let task = preset_bundle();
     let wit = task.gen_proving_witnesses()?;
     let metadata = metadata_from_bundle_witnesses(&wit)?;
 
