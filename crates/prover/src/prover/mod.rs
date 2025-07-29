@@ -92,8 +92,10 @@ pub struct ProverConfig {
     /// An optional directory to locate HALO2 trusted setup parameters.
     pub dir_halo2_params: Option<PathBuf>,
     /// The maximum length for a single OpenVM segment.
-    pub segment_len: usize,
+    pub segment_len: Option<usize>,
 }
+
+const COMMON_SEGMENT_SIZE: usize = (1 << 22) - 100;
 
 impl Prover {
     /// Setup the [`Prover`] given paths to the application's exe and proving key.
@@ -119,7 +121,7 @@ impl Prover {
     pub fn init(config: &ProverConfig) -> Result<InitRes, Error> {
         let app_exe = read_app_exe(&config.path_app_exe)?;
         let mut app_config = read_app_config(&config.path_app_config)?;
-        let segment_len = config.segment_len;
+        let segment_len = config.segment_len.unwrap_or(COMMON_SEGMENT_SIZE);
         app_config.app_vm_config.system.config = app_config
             .app_vm_config
             .system
