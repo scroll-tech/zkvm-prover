@@ -17,7 +17,7 @@ use scroll_zkvm_prover::{
     Prover,
     ProverConfig,
 };
-use scroll_zkvm_types::public_inputs::ForkName;
+use scroll_zkvm_types::{proof::OpenVmEvmProof, public_inputs::ForkName};
 use std::str::FromStr;
 
 // fn load_recent_batch_proofs() -> eyre::Result<ProofEnum> {
@@ -170,7 +170,7 @@ fn e2e() -> eyre::Result<()> {
     let prover = BundleProverTester::load_prover(true)?;
     let proof = task.gen_witnesses_proof(&prover)?;
 
-    let evm_proof = proof.into_evm_proof().unwrap();
+    let evm_proof: OpenVmEvmProof = proof.into_evm_proof().unwrap().into();
 
     // assert!(
     //     verifier
@@ -186,7 +186,8 @@ fn e2e() -> eyre::Result<()> {
         .enumerate()
     {
         assert_eq!(
-            expected, observed,
+            halo2curves_axiom::bn256::Fr::from(u64::from(expected)),
+            observed,
             "pi inconsistent at index {i}: expected={expected}, observed={observed:?}"
         );
     }
