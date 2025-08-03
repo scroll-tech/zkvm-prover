@@ -81,8 +81,8 @@ impl ProvingTask for ChunkProvingTask {
             self.fork_name.to_lowercase().as_str().into(),
         );
 
-        let serialized = witness.rkyv_serialize(guest_version())?;
-
+        //let serialized = witness.rkyv_serialize(guest_version())?;
+        let serialized = witness.bincode_serialize(guest_version()).unwrap();
         stdin.write_bytes(&serialized);
 
         Ok(())

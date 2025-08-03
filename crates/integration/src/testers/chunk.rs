@@ -59,7 +59,7 @@ impl ProverTester for ChunkProverTester {
                 let blocks = match testing_hardfork() {
                     ForkName::EuclidV1 => 12508460usize..=12508463usize,
                     ForkName::EuclidV2 => 1usize..=4usize,
-                    ForkName::Feynman => 16525000usize..=16525003usize,
+                    ForkName::Feynman => 16525000usize..=16525019usize,
                 };
                 blocks
                     .into_iter()
