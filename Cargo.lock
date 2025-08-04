@@ -2166,9 +2166,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "encoder"
+name = "encoder-standard"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/da-codec.git?rev=ad2db39#ad2db39b5e1ef4532f98ad0de0cc4c4f5f059308"
+source = "git+https://github.com/scroll-tech/da-codec.git?rev=2cfec8c#2cfec8c99547b68dc64e2b020fa2b83cfb9c0e99"
 dependencies = [
  "zstd 0.13.3",
 ]
@@ -9320,11 +9320,11 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 [[package]]
 name = "vm-zstd"
 version = "0.1.1"
-source = "git+https://github.com/scroll-tech/rust-zstd-decompressor.git?branch=master#0aa0c51819334a79bca90525ae87297fbaabd6d8"
+source = "git+https://github.com/scroll-tech/rust-zstd-decompressor.git?branch=master#d47c5fb58a1ae8412c721b428a624766cbefa97e"
 dependencies = [
  "anyhow",
  "bitstream-io",
- "encoder",
+ "encoder-standard",
  "itertools 0.11.0",
  "serde",
  "strum 0.25.0",
