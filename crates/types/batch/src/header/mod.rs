@@ -25,8 +25,7 @@ pub trait BatchHeader {
 
 /// Reference header indicate the version of batch header base on which batch hash
 /// should be calculated.
-#[derive(Clone, Debug, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
-#[rkyv(derive(Debug))]
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub enum ReferenceHeader {
     /// Represents DA-codec v6.
     V6(v6::BatchHeaderV6),

@@ -56,7 +56,8 @@ impl ProvingTask for BundleProvingTask {
                 .collect(),
             fork_name: ForkName::from(self.fork_name.as_str()),
         };
-        let serialized = witness.rkyv_serialize(guest_version())?;
+        let serialized = witness.bincode_serialize(guest_version()).unwrap();
+        // let serialized = witness.rkyv_serialize(guest_version())?;
         stdin.write_bytes(&serialized);
         for batch_proof in &self.batch_proofs {
             let root_input = &batch_proof.as_root_proof();

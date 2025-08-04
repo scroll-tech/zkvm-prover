@@ -3,7 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use sbv_primitives::{B256, types::BlockWitness};
+use sbv_primitives::{B256, BlockWitness};
 use scroll_zkvm_prover::{ChunkProverType, ProverType, task::chunk::ChunkProvingTask};
 use scroll_zkvm_types::public_inputs::ForkName;
 

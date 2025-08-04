@@ -1,5 +1,6 @@
 use crate::{
-    make_providers, manually_drop_on_zkvm, witness::{ArchivedStateCommitMode, StateCommitMode}, ArchivedChunkWitness, BlockHashProvider, ChunkWitness, CodeDb, NodesProvider
+    BlockHashProvider, ChunkWitness, CodeDb, NodesProvider, make_providers, manually_drop_on_zkvm,
+    witness::StateCommitMode,
 };
 use alloy_primitives::B256;
 use itertools::Itertools;
@@ -13,10 +14,8 @@ use sbv_primitives::{
     },
     ext::{BlockWitnessChunkExt, BlockWitnessRethExt as _, TxBytesHashExt},
     hardforks::SCROLL_DEV_HARDFORKS,
-    types::{
-        reth::primitives::{Block, RecoveredBlock},
-        scroll::ChunkInfoBuilder,
-    },
+    reth::primitives::{Block, RecoveredBlock},
+    scroll::ChunkInfoBuilder,
 };
 use std::sync::Arc;
 use types_base::{fork_name::ForkName, public_inputs::chunk::ChunkInfo};
@@ -47,7 +46,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     let pre_state_root = witness.blocks[0].pre_state_root;
 
     let fork_name = ForkName::from(witness.fork_name.clone());
-    let chain = Chain::from_id(witness.blocks[0].chain_id());
+    let chain = Chain::from_id(witness.blocks[0].chain_id);
 
     // SCROLL_DEV_HARDFORKS will enable all forks
     let mut hardforks = (*SCROLL_DEV_HARDFORKS).clone();
@@ -71,13 +70,12 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     let code_db = manually_drop_on_zkvm!(code_db);
     let nodes_provider = manually_drop_on_zkvm!(nodes_provider);
 
-    let prev_state_root = witness.blocks[0].pre_state_root();
+    let prev_state_root = witness.blocks[0].pre_state_root;
 
     let state_commit_mode = &witness.state_commit_mode;
     println!("state_commit_mode: {:?}", state_commit_mode);
 
-    let compression_ratios = witness
-        .compression_ratios.clone();
+    let compression_ratios = witness.compression_ratios.clone();
 
     let (post_state_root, withdraw_root) = match state_commit_mode {
         StateCommitMode::Chunk | StateCommitMode::Block => execute_inner(

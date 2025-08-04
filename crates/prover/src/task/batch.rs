@@ -13,7 +13,7 @@ use scroll_zkvm_types::{
 
 use crate::{
     AsRootProof, ChunkProof,
-    task::ProvingTask,
+    task::{ProvingTask, guest_version},
     utils::{base64, point_eval},
 };
 
@@ -183,7 +183,8 @@ impl ProvingTask for BatchProvingTask {
             point_eval_witness,
         };
 
-        let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&witness)?;
+        let serialized = witness.bincode_serialize(guest_version()).unwrap();
+        // let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&witness)?;
         stdin.write_bytes(&serialized);
         for chunk_proof in &self.chunk_proofs {
             let root_input = chunk_proof.as_root_proof();

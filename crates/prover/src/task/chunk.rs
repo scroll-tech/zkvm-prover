@@ -1,7 +1,7 @@
 use crate::task::{ProvingTask, guest_version};
 use alloy_primitives::B256;
 use openvm_sdk::StdIn;
-use sbv_primitives::types::BlockWitness;
+use sbv_primitives::BlockWitness;
 use scroll_zkvm_types::{chunk::ChunkWitness, public_inputs::ForkName};
 
 /// Message indicating a sanity check failure.
@@ -81,7 +81,7 @@ impl ProvingTask for ChunkProvingTask {
             self.fork_name.to_lowercase().as_str().into(),
         );
 
-        //let serialized = witness.rkyv_serialize(guest_version())?;
+        // let serialized = witness.rkyv_serialize(guest_version())?;
         let serialized = witness.bincode_serialize(guest_version()).unwrap();
         stdin.write_bytes(&serialized);
 

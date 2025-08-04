@@ -6,29 +6,22 @@ use types_base::{
 };
 
 /// The witness for the bundle circuit.
-#[derive(Clone, Debug, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
-#[rkyv(derive(Debug))]
+#[derive(Clone, Debug)]
 pub struct BundleWitnessEuclid {
     /// Batch proofs being aggregated in the bundle.
-    #[rkyv()]
     pub batch_proofs: Vec<AggregationInput>,
     /// Public-input values for the corresponding batch proofs.
-    #[rkyv()]
     pub batch_infos: Vec<BatchInfo>,
 }
 
 /// The witness for the bundle circuit.
-#[derive(Clone, Debug, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
-#[rkyv(derive(Debug))]
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct BundleWitness {
     /// Batch proofs being aggregated in the bundle.
-    #[rkyv()]
     pub batch_proofs: Vec<AggregationInput>,
     /// Public-input values for the corresponding batch proofs.
-    #[rkyv()]
     pub batch_infos: Vec<BatchInfo>,
     /// The code version specify the chain spec
-    #[rkyv()]
     pub fork_name: ForkName,
 }
 
@@ -41,39 +34,31 @@ impl BundleWitness {
         }
     }
     /// See ChunkWitnessEuclid::rkyv_serialize for details.
-    pub fn rkyv_serialize(
+    pub fn bincode_serialize(
         &self,
         guest_version: Option<ForkName>,
-    ) -> Result<AlignedVec, rkyv::rancor::Error> {
-        let guest_version = guest_version.unwrap_or(self.fork_name);
-        if guest_version >= ForkName::Feynman {
-            // Use the new rkyv serialization for Feynman and later forks
-            rkyv::to_bytes::<rkyv::rancor::Error>(self)
-        } else {
-            // Use the old rkyv serialization for earlier forks
-            rkyv::to_bytes::<rkyv::rancor::Error>(&self.clone().into_euclid())
-        }
+    ) -> Result<Vec<u8>, bincode::error::EncodeError> {
+        let config = bincode::config::standard();
+        bincode::serde::encode_to_vec(&self, config)
+        // let guest_version = guest_version.unwrap_or(self.fork_name);
+        // if guest_version >= ForkName::Feynman {
+        // Use the new rkyv serialization for Feynman and later forks
+        // rkyv::to_bytes::<rkyv::rancor::Error>(self)
+        // } else {
+        // Use the old rkyv serialization for earlier forks
+        // rkyv::to_bytes::<rkyv::rancor::Error>(&self.clone().into_euclid())
+        // }
     }
 }
 
-impl ProofCarryingWitness for ArchivedBundleWitness {
+impl ProofCarryingWitness for BundleWitness {
     fn get_proofs(&self) -> Vec<AggregationInput> {
-        self.batch_proofs
-            .iter()
-            .map(|archived| AggregationInput {
-                public_values: archived
-                    .public_values
-                    .iter()
-                    .map(|u32_le| u32_le.to_native())
-                    .collect(),
-                commitment: ProgramCommitment::from(&archived.commitment),
-            })
-            .collect()
+        self.batch_proofs.clone()
     }
 }
 
-impl From<&ArchivedBundleWitness> for BundleInfo {
-    fn from(witness: &ArchivedBundleWitness) -> Self {
+impl From<&BundleWitness> for BundleInfo {
+    fn from(witness: &BundleWitness) -> Self {
         assert!(
             !witness.batch_infos.is_empty(),
             "at least one batch in a bundle"

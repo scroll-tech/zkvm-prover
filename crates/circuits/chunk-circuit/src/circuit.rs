@@ -1,5 +1,5 @@
 use openvm::init;
-use scroll_zkvm_types_chunk::{execute, ArchivedChunkWitness, ChunkWitness};
+use scroll_zkvm_types_chunk::{ChunkWitness, execute};
 use scroll_zkvm_types_circuit::{
     Circuit,
     io::read_witnesses,
@@ -34,15 +34,12 @@ impl Circuit for ChunkCircuit {
         let (witness, _): (Self::Witness, _) =
             bincode::serde::decode_from_slice(witness_bytes, config).unwrap();
         Box::leak(Box::new(witness))
-        //rkyv::access::<ArchivedChunkWitness, rkyv::rancor::BoxedError>(witness_bytes)
+        // rkyv::access::<ArchivedChunkWitness, rkyv::rancor::BoxedError>(witness_bytes)
         //    .expect("ChunkCircuit: rkyv deserialisation of witness bytes failed")
     }
 
     fn validate(witness: &Self::Witness) -> Self::PublicInputs {
         let info = execute(witness).unwrap();
-        (
-            info,
-            (witness.fork_name.clone()),
-        )
+        (info, (witness.fork_name.clone()))
     }
 }

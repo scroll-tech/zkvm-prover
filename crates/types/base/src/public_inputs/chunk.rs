@@ -3,7 +3,7 @@ use crate::{
     utils::keccak256,
 };
 use alloy_primitives::{B256, U256};
-use sbv_primitives::types::{
+use sbv_primitives::{
     consensus::BlockHeader,
     reth::primitives::{Block, RecoveredBlock},
 };
@@ -14,17 +14,7 @@ pub const SIZE_BLOCK_CTX: usize = 52;
 /// Represents the version 2 of block context.
 ///
 /// The difference between v2 and v1 is that the block number field has been removed since v2.
-#[derive(
-    Debug,
-    Clone,
-    PartialEq,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    serde::Deserialize,
-    serde::Serialize,
-)]
-#[rkyv(derive(Debug))]
+#[derive(Debug, Clone, PartialEq, serde::Deserialize, serde::Serialize)]
 pub struct BlockContextV2 {
     /// The timestamp of the block.
     pub timestamp: u64,
@@ -36,18 +26,6 @@ pub struct BlockContextV2 {
     pub num_txs: u16,
     /// The number of L1 msg txs in the block.
     pub num_l1_msgs: u16,
-}
-
-impl From<&ArchivedBlockContextV2> for BlockContextV2 {
-    fn from(archived: &ArchivedBlockContextV2) -> Self {
-        Self {
-            timestamp: archived.timestamp.into(),
-            base_fee: archived.base_fee.into(),
-            gas_limit: archived.gas_limit.into(),
-            num_txs: archived.num_txs.into(),
-            num_l1_msgs: archived.num_l1_msgs.into(),
-        }
-    }
 }
 
 impl From<&[u8]> for BlockContextV2 {
@@ -104,51 +82,31 @@ impl BlockContextV2 {
 }
 
 /// Represents header-like information for the chunk.
-#[derive(
-    Debug,
-    Clone,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    serde::Deserialize,
-    serde::Serialize,
-)]
-#[rkyv(derive(Debug))]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct ChunkInfo {
     /// The EIP-155 chain ID for all txs in the chunk.
-    #[rkyv()]
     pub chain_id: u64,
     /// The state root before applying the chunk.
-    #[rkyv()]
     pub prev_state_root: B256,
     /// The state root after applying the chunk.
-    #[rkyv()]
     pub post_state_root: B256,
     /// The withdrawals root after applying the chunk.
-    #[rkyv()]
     pub withdraw_root: B256,
     /// Digest of L1 message txs force included in the chunk.
     /// It is a legacy field and can be omitted in new defination
-    #[rkyv()]
     #[serde(default)]
     pub data_hash: B256,
     /// Digest of L2 tx data flattened over all L2 txs in the chunk.
-    #[rkyv()]
     pub tx_data_digest: B256,
     /// The L1 msg queue hash at the end of the previous chunk.
-    #[rkyv()]
     pub prev_msg_queue_hash: B256,
     /// The L1 msg queue hash at the end of the current chunk.
-    #[rkyv()]
     pub post_msg_queue_hash: B256,
     /// The length of rlp encoded L2 tx bytes flattened over all L2 txs in the chunk.
-    #[rkyv()]
     pub tx_data_length: u64,
     /// The block number of the first block in the chunk.
-    #[rkyv()]
     pub initial_block_number: u64,
     /// The block contexts of the blocks in the chunk.
-    #[rkyv()]
     pub block_ctxs: Vec<BlockContextV2>,
 }
 
@@ -211,28 +169,6 @@ impl ChunkInfo {
                 .cloned()
                 .collect::<Vec<u8>>(),
         )
-    }
-}
-
-impl From<&ArchivedChunkInfo> for ChunkInfo {
-    fn from(archived: &ArchivedChunkInfo) -> Self {
-        Self {
-            chain_id: archived.chain_id.into(),
-            prev_state_root: archived.prev_state_root.into(),
-            post_state_root: archived.post_state_root.into(),
-            withdraw_root: archived.withdraw_root.into(),
-            data_hash: archived.data_hash.into(),
-            tx_data_digest: archived.tx_data_digest.into(),
-            prev_msg_queue_hash: archived.prev_msg_queue_hash.into(),
-            post_msg_queue_hash: archived.post_msg_queue_hash.into(),
-            tx_data_length: archived.tx_data_length.into(),
-            initial_block_number: archived.initial_block_number.into(),
-            block_ctxs: archived
-                .block_ctxs
-                .iter()
-                .map(BlockContextV2::from)
-                .collect(),
-        }
     }
 }
 
