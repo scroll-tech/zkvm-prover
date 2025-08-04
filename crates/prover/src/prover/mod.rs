@@ -6,10 +6,7 @@ use std::{
 
 use once_cell::sync::Lazy;
 use openvm_circuit::system::program::trace::VmCommittedExe;
-use openvm_native_recursion::{
-    halo2::utils::{CacheHalo2ParamsReader, Halo2ParamsReader},
-    hints::Hintable,
-};
+use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
 use openvm_sdk::{
     DefaultStaticVerifierPvHandler, NonRootCommittedExe, Sdk, StdIn,
     commit::AppExecutionCommit,

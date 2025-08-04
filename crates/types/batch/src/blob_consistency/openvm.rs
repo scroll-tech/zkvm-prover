@@ -1,15 +1,13 @@
 use std::sync::LazyLock;
 
 use alloy_primitives::U256;
-use halo2curves_axiom::bls12_381::{
-    G2Affine as Bls12_381_G2,
-};
+use halo2curves_axiom::bls12_381::G2Affine as Bls12_381_G2;
 use itertools::Itertools;
-        use std::ops::{AddAssign, MulAssign};
 use openvm_algebra_guest::{Field, IntMod};
 use openvm_ecc_guest::{AffinePoint, CyclicGroup, msm, weierstrass::WeierstrassPoint};
 use openvm_pairing::bls12_381::{Bls12_381, G1Affine, G2Affine, Scalar};
-use openvm_pairing_guest::{pairing::PairingCheck};
+use openvm_pairing_guest::pairing::PairingCheck;
+use std::ops::{AddAssign, MulAssign};
 
 use super::types::ToIntrinsic;
 use crate::blob_consistency::constants::KZG_G2_SETUP_BYTES;
@@ -45,7 +43,8 @@ static ROOTS_OF_UNITY: LazyLock<Vec<Scalar>> = LazyLock::new(|| {
         .collect()
 });
 
-static G2_GENERATOR: LazyLock<G2Affine> = LazyLock::new(|| Bls12_381_G2::generator().to_intrinsic());
+static G2_GENERATOR: LazyLock<G2Affine> =
+    LazyLock::new(|| Bls12_381_G2::generator().to_intrinsic());
 
 static KZG_G2_SETUP: LazyLock<G2Affine> = LazyLock::new(|| {
     Bls12_381_G2::from_uncompressed_unchecked_be(&KZG_G2_SETUP_BYTES)
@@ -165,9 +164,7 @@ fn interpolate(z: &Scalar, coefficients: &[Scalar; BLOB_WIDTH]) -> Scalar {
 mod test {
     use super::*;
 
-    use halo2curves_axiom::bls12_381::{
-        G1Affine as Bls12_381_G1,
-    };
+    use halo2curves_axiom::bls12_381::G1Affine as Bls12_381_G1;
 
     #[test]
     fn test_kzg_compute_proof_verify() {

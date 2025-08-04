@@ -5,8 +5,8 @@ use openvm_pairing::bls12_381::Scalar;
 mod constants;
 mod openvm;
 mod types;
-pub use types::{ToIntrinsic, from_intrinsic_g1};
 pub use openvm::point_evaluation;
+pub use types::{ToIntrinsic, from_intrinsic_g1};
 
 pub use openvm::{kzg_to_versioned_hash, verify_kzg_proof};
 

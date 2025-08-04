@@ -7,8 +7,7 @@ use openvm_pairing::bls12_381::{Fp, G1Affine};
 use crate::{
     BatchHeader, PayloadV7,
     blob_consistency::{
-        BlobPolynomial, N_BLOB_BYTES, from_intrinsic_g1, kzg_to_versioned_hash,
-        verify_kzg_proof,
+        BlobPolynomial, N_BLOB_BYTES, from_intrinsic_g1, kzg_to_versioned_hash, verify_kzg_proof,
     },
     payload::{Envelope, Payload},
 };
@@ -75,7 +74,8 @@ impl<P: Payload> super::BatchInfoBuilder for GenericBatchInfoBuilderV7<P> {
 
         println!("6008");
         // Verify KZG proof.
-        let proof_ok = {use openvm_algebra_guest::IntMod;
+        let proof_ok = {
+            use openvm_algebra_guest::IntMod;
             use openvm_ecc_guest::weierstrass::WeierstrassPoint;
 
             let buf = &args.kzg_commitment_hint.unwrap();
