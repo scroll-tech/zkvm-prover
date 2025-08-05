@@ -5,11 +5,11 @@ use std::{
 
 use once_cell::sync::Lazy;
 use openvm_circuit::system::program::trace::VmCommittedExe;
-use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
 use openvm_native_recursion::halo2::{
     RawEvmProof,
     utils::{CacheHalo2ParamsReader, Halo2ParamsReader},
     wrapper::Halo2WrapperProvingKey,
+};
 use openvm_sdk::{
     DefaultStaticVerifierPvHandler, NonRootCommittedExe, Sdk, StdIn,
     commit::AppExecutionCommit,
@@ -24,11 +24,7 @@ use tracing::instrument;
 // Re-export from openvm_sdk.
 pub use openvm_sdk::{self, SC};
 
-use crate::{
-    Error,
-    setup::read_app_config,
-    task::ProvingTask,
-};
+use crate::{Error, setup::read_app_config, task::ProvingTask};
 
 use scroll_zkvm_types::proof::{EvmProof, ProofEnum, StarkProof};
 
@@ -232,12 +228,12 @@ impl Prover {
         let stdin = task
             .build_guest_input()
             .map_err(|e| Error::GenProof(e.to_string()))?;
-                verify_stark_proof(
-                    proof.proof.as_stark_proof().unwrap(),
-                    Type::EXE_COMMIT,
-                    Type::VM_COMMIT,
-                )
-                .unwrap();
+        verify_stark_proof(
+            proof.proof.as_stark_proof().unwrap(),
+            Type::EXE_COMMIT,
+            Type::VM_COMMIT,
+        )
+        .unwrap();
 
         // Generate a new proof.
         let proof = if !with_snark {
@@ -349,7 +345,6 @@ impl Prover {
                 SdkVmCpuBuilder,
                 self.app_pk.clone(),
                 self.app_committed_exe.clone(),
-
                 AGG_STARK_PROVING_KEY.clone(),
                 stdin,
             )

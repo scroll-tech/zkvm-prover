@@ -336,7 +336,6 @@ pub fn prove_verify<T: ProverTester>(
         let proof = prover.gen_proof_stark(stdin)?.into();
         write_json(&path_proof, &proof)?;
         tracing::debug!(name: "cached_proof", ?task_id);
-       
 
         proof
     };
@@ -344,7 +343,6 @@ pub fn prove_verify<T: ProverTester>(
     // Verify proof.
     assert!(verifier.verify_proof(proof.as_root_proof().expect("should be root proof"), &vk)?);
 
-          
     Ok(proof)
 }
 

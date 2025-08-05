@@ -13,7 +13,7 @@ use scroll_zkvm_types::proof::OpenVmEvmProof;
 use scroll_zkvm_types::{
     proof::StarkProof,
     types_agg::{AggregationInput, ProgramCommitment},
-}
+};
 use tracing::{debug, instrument};
 
 use crate::commitments::{batch, bundle, chunk};
@@ -70,6 +70,24 @@ impl UniversalVerifier {
     }
 }
 
+/// Verify a stark proof.
+pub fn verify_stark_proof(
+    root_proof: &StarkProof,
+    exe_commit: [u32; 8],
+    vm_commit: [u32; 8],
+) -> Result<(), String> {
+    let agg_stark_pk = &AGG_STARK_PROVING_KEY;
+    let sdk = Sdk::new();
+    sdk.verify_e2e_stark_proof(
+        agg_stark_pk,
+        root_proof,
+        &CommitBytes::from_u32_digest(&exe_commit).to_bn254(),
+        &CommitBytes::from_u32_digest(&vm_commit).to_bn254(),
+    )
+    .unwrap();
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use crate::test::WrappedProof;
@@ -118,29 +136,11 @@ mod tests {
                     println!(
                         "verified proof, expcted vk: {}",
                         BASE64_STANDARD.encode(expected_vk.serialize())
-            Type::VM_COMMIT,
                     );
                 }
             }
             Ok(true)
         }
-
-/// Verify a stark proof.
-pub fn verify_stark_proof(
-    root_proof: &StarkProof,
-    exe_commit: [u32; 8],
-    vm_commit: [u32; 8],
-) -> Result<(), String> {
-    let agg_stark_pk = &AGG_STARK_PROVING_KEY;
-    let sdk = Sdk::new();
-    sdk.verify_e2e_stark_proof(
-        agg_stark_pk,
-        root_proof,
-        &CommitBytes::from_u32_digest(&exe_commit).to_bn254(),
-        &CommitBytes::from_u32_digest(&vm_commit).to_bn254(),
-    )
-    .unwrap();
-    Ok(())
     }
 
     #[ignore = "need released assets"]
