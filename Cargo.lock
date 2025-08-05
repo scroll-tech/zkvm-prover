@@ -7024,6 +7024,7 @@ dependencies = [
 name = "scroll-zkvm-verifier"
 version = "0.5.0"
 dependencies = [
+ "base64",
  "bincode",
  "eyre",
  "itertools 0.14.0",

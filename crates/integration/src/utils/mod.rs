@@ -390,4 +390,3 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
 
     Ok(())
 }
-

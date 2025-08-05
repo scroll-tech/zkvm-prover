@@ -50,7 +50,6 @@ impl ProverTester for BundleProverTester {
     const PATH_PROJECT_ROOT: &str = "crates/circuits/bundle-circuit";
 
     const DIR_ASSETS: &str = "bundle";
-    
 }
 
 #[derive(Debug)]
