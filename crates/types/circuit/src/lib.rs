@@ -117,7 +117,7 @@ fn verify_proof(commitment: &ProgramCommitment, public_inputs: &[u32]) {
         native_addr += FIELDS_PER_U32;
     }
     for &x in public_inputs {
-        openvm::io::store_u32_to_native(native_addr, x as u32);
+        openvm::io::store_u32_to_native(native_addr, x);
         native_addr += FIELDS_PER_U32;
     }
     #[cfg(all(target_os = "zkvm", target_arch = "riscv32"))]

@@ -26,7 +26,7 @@ fn main() {
     // Derive the digests of the public-input values of the proofs being aggregated.
     let agg_pi_hashes = C::aggregated_pi_hashes(&agg_proofs);
 
-    // Validate that the pi hashes derived from the root proofs are in fact the digests of the
+    // Validate that the pi hashes derived from the stark proofs are in fact the digests of the
     // public-input values of the previous circuit layer.
     C::validate_aggregated_pi(&agg_pis, &agg_pi_hashes);
 
