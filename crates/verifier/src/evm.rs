@@ -1,5 +1,4 @@
-use openvm_native_recursion::halo2::RawEvmProof;
-
+use openvm_sdk::types::EvmProof;
 // Re-export from snark_verifier_sdk.
 pub use snark_verifier_sdk::{
     evm::gen_evm_verifier_shplonk as gen_evm_verifier,
@@ -36,12 +35,10 @@ pub fn deserialize_vk<C: Circuit<Fr, Params = ()>>(raw_vk: &[u8]) -> VerifyingKe
 /// This approach essentially simulates 2 txs:
 /// - Deploy [`EvmVerifier`].
 /// - Verify [`EvmProof`] encoded as calldata.
-pub fn verify_evm_proof(evm_verifier: &[u8], evm_proof: &RawEvmProof) -> Result<u64, String> {
-    let calldata =
-        snark_verifier_sdk::evm::encode_calldata(&[evm_proof.instances.clone()], &evm_proof.proof);
+pub fn verify_evm_proof(evm_verifier: &[u8], evm_proof: &EvmProof) -> Result<u64, String> {
     snark_verifier_sdk::snark_verifier::loader::evm::deploy_and_call(
         evm_verifier.to_vec(),
-        calldata,
+        evm_proof.clone().fallback_calldata(),
     )
 }
 

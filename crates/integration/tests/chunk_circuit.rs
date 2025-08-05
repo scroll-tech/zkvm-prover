@@ -23,10 +23,9 @@ fn exec_chunk(prover: &Prover, wit: &ChunkWitness) -> eyre::Result<(ExecutionRes
     let cycle_count = exec_result.total_cycle as u64;
     let cycle_per_gas = cycle_count / stats.total_gas_used;
     println!(
-        "blk {blk}->{}, cycle {cycle_count}, gas {}, cycle-per-gas {cycle_per_gas}, tick-per-gas {}",
+        "blk {blk}->{}, cycle {cycle_count}, gas {}, cycle-per-gas {cycle_per_gas}",
         wit.blocks.last().unwrap().header.number,
         stats.total_gas_used,
-        exec_result.total_tick as u64 / stats.total_gas_used,
     );
     Ok((exec_result, stats.total_gas_used))
 }
@@ -140,30 +139,27 @@ fn test_execute_multi() -> eyre::Result<()> {
         .build()
         .unwrap();
     // Execute tasks in parallel
-    let (total_gas, total_cycle, total_tick) = pool.install(|| {
+    let (total_gas, total_cycle) = pool.install(|| {
         // comment by fan@scroll.io: why we need to load prover multiple times (which is time costing)
         let prover = ChunkProverTester::load_prover(false).unwrap();
-        let init = (0u64, 0u64, 0u64);
-        let adder = |(gas1, cycle1, tick1): (u64, u64, u64),
-                     (gas2, cycle2, tick2): (u64, u64, u64)| {
-            (gas1 + gas2, cycle1 + cycle2, tick1 + tick2)
-        };
+        let init = (0u64, 0u64);
+        let adder =
+            |(gas1, cycle1): (u64, u64), (gas2, cycle2): (u64, u64)| (gas1 + gas2, cycle1 + cycle2);
         preset_chunk_multiple()
             .into_iter()
-            .map(|task| -> (u64, u64, u64) {
+            .map(|task| -> (u64, u64) {
                 let (exec_result, gas) =
                     exec_chunk(&prover, &task.gen_proving_witnesses().unwrap()).unwrap();
-                (gas, exec_result.total_cycle, exec_result.total_tick)
+                (gas, exec_result.total_cycle)
             })
             .fold(init, adder)
     });
 
     println!(
-        "Total gas: {}, Total cycles: {}, Average cycle/gas: {}, Average tick/gas: {}",
+        "Total gas: {}, Total cycles: {}, Average cycle/gas: {}",
         total_gas,
         total_cycle,
         total_cycle as f64 / total_gas as f64,
-        total_tick as f64 / total_gas as f64,
     );
 
     Ok(())

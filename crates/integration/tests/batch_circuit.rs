@@ -18,7 +18,7 @@ fn test_execute() -> eyre::Result<()> {
 
     let prover = BatchProverTester::load_prover(false)?;
 
-    let _ = prover.execute_and_check(&stdin, false)?;
+    let _ = prover.execute_and_check(&stdin)?;
     Ok(())
 }
 
@@ -48,9 +48,9 @@ fn test_e2e_execute() -> eyre::Result<()> {
 
     let stdin = BatchProverTester::build_guest_input(
         &wit,
-        agg_proofs.iter().map(|p| p.as_root_proof().unwrap()),
+        agg_proofs.iter().map(|p| p.as_stark_proof().unwrap()),
     )?;
-    let _ = prover.execute_and_check_with_full_result(&stdin, false)?;
+    let _ = prover.execute_and_check_with_full_result(&stdin)?;
 
     Ok(())
 }

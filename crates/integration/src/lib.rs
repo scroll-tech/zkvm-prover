@@ -10,9 +10,10 @@ use scroll_zkvm_prover::{
     utils::{read_json, vm::ExecutionResult, write_json},
 };
 use scroll_zkvm_types::{
-    proof::{EvmProof, ProofEnum, RootProof},
+    proof::{EvmProof, ProofEnum, StarkProof},
     public_inputs::ForkName,
 };
+use scroll_zkvm_verifier::verifier::UniversalVerifier;
 use std::{
     path::{Path, PathBuf},
     process,
@@ -172,7 +173,7 @@ pub trait ProverTester {
 
     fn build_guest_input<'a>(
         witness: &Self::Witness,
-        aggregated_proofs: impl Iterator<Item = &'a RootProof>,
+        aggregated_proofs: impl Iterator<Item = &'a StarkProof>,
     ) -> Result<StdIn, rkyv::rancor::Error> {
         use openvm_native_recursion::hints::Hintable;
 
@@ -180,11 +181,7 @@ pub trait ProverTester {
         witness.write_guest_input(&mut stdin)?;
 
         for proof in aggregated_proofs {
-            let streams = if witness.fork_name() >= ForkName::Feynman {
-                proof.proofs[0].write()
-            } else {
-                proof.write()
-            };
+            let streams = proof.proof.write();
             for s in &streams {
                 stdin.write_field(s);
             }
@@ -291,10 +288,10 @@ pub fn tester_execute<T: ProverTester>(
         witness,
         proofs
             .iter()
-            .map(|p| p.as_root_proof().expect("must be root proof")),
+            .map(|p| p.as_stark_proof().expect("must be stark proof")),
     )?;
 
-    let ret = prover.execute_and_check_with_full_result(&stdin, false)?;
+    let ret = prover.execute_and_check_with_full_result(&stdin)?;
     Ok(ret)
 }
 
@@ -312,7 +309,7 @@ pub fn prove_verify<T: ProverTester>(
         .join(T::DIR_ASSETS)
         .join(DIR_PROOFS);
     std::fs::create_dir_all(&cache_dir)?;
-    let vk = prover.get_app_vk();
+    let vk = prover.get_app_commitment().serialize();
     let verifier = prover.dump_universal_verifier(None::<String>)?;
 
     // Try reading proof from cache if available, and early return in that case.
@@ -329,9 +326,9 @@ pub fn prove_verify<T: ProverTester>(
             witness,
             proofs
                 .iter()
-                .map(|p| p.as_root_proof().expect("must be root proof")),
+                .map(|p| p.as_stark_proof().expect("must be stark proof")),
         )?;
-        // Construct root proof for the circuit.
+        // Construct stark proof for the circuit.
         let proof = prover.gen_proof_stark(stdin)?.into();
         write_json(&path_proof, &proof)?;
         tracing::debug!(name: "cached_proof", ?task_id);
@@ -340,7 +337,10 @@ pub fn prove_verify<T: ProverTester>(
     };
 
     // Verify proof.
-    assert!(verifier.verify_proof(proof.as_root_proof().expect("should be root proof"), &vk)?);
+    UniversalVerifier::verify_stark_proof(
+        proof.as_stark_proof().expect("should be stark proof"),
+        &vk,
+    )?;
 
     Ok(proof)
 }
@@ -364,16 +364,11 @@ where
     std::fs::create_dir_all(&cache_dir)?;
 
     // Dump verifier-only assets to disk.
-    let (path_vm_config, path_root_committed_exe) = prover.dump_verifier(&path_assets)?;
     let path_verifier_code = WORKSPACE_ROOT
         .join(T::PATH_PROJECT_ROOT)
         .join("openvm")
         .join("verifier.bin");
-    let verifier = scroll_zkvm_verifier::verifier::UniversalVerifier::setup(
-        &path_vm_config,
-        &path_root_committed_exe,
-        &path_verifier_code,
-    )?;
+    let verifier = scroll_zkvm_verifier::verifier::UniversalVerifier::setup(&path_verifier_code)?;
 
     // Try reading proof from cache if available, and early return in that case.
     let task_id = witness.identifier();
@@ -389,18 +384,18 @@ where
             witness,
             proofs
                 .iter()
-                .map(|p| p.as_root_proof().expect("must be root proof")),
+                .map(|p| p.as_stark_proof().expect("must be stark proof")),
         )?;
-        // Construct root proof for the circuit.
+        // Construct stark proof for the circuit.
         let proof: EvmProof = prover.gen_proof_snark(stdin)?.into();
         write_json(&path_proof, &proof)?;
         tracing::debug!(name: "cached_evm_proof", ?task_id);
         proof.into()
     };
 
-    let vk = prover.get_app_vk();
+    let vk = prover.get_app_commitment().serialize();
     // Verify proof.
-    verifier.verify_proof_evm(
+    verifier.verify_evm_proof(
         &proof
             .clone()
             .into_evm_proof()

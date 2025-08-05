@@ -20,9 +20,8 @@ use std::{
 use dotenv::dotenv;
 use eyre::Result;
 use openvm_native_compiler::ir::DIGEST_SIZE;
-use openvm_sdk::{config::SdkVmConfig, Sdk, F};
-use openvm_stark_sdk::{openvm_stark_backend::p3_field::PrimeField32, p3_baby_bear::BabyBear};
-use snark_verifier_sdk::snark_verifier::loader::halo2::halo2_ecc::halo2_base::halo2_proofs::halo2curves::bn256::Fr;
+use openvm_sdk::{F, Sdk, commit::CommitBytes, config::SdkVmConfig, fs::read_from_file_bitcode};
+use openvm_stark_sdk::{openvm_stark_backend::p3_field::PrimeField32, p3_bn254_fr::Bn254Fr};
 
 mod builder;
 
@@ -40,22 +39,8 @@ fn write_commitment(output_path: &str, commitment: [u32; DIGEST_SIZE]) -> Result
 
 /// Compresses an 8-element u32 commitment into a single Fr element.
 /// Used for generating digests compatible with on-chain verifiers.
-fn compress_commitment(commitment: &[u32; DIGEST_SIZE]) -> Fr {
-    // Ensure DIGEST_SIZE is 8 for this specific compression logic
-    assert_eq!(
-        DIGEST_SIZE, 8,
-        "compress_commitment assumes DIGEST_SIZE is 8"
-    );
-    let order = Fr::from(BabyBear::ORDER_U32 as u64);
-    let mut base = Fr::one();
-    let mut compressed_value = Fr::zero();
-
-    for val in commitment {
-        compressed_value += Fr::from(*val as u64) * base;
-        base *= order;
-    }
-
-    compressed_value
+fn compress_commitment(commitment: &[u32; DIGEST_SIZE]) -> Bn254Fr {
+    CommitBytes::from_u32_digest(commitment).to_bn254()
 }
 
 /// Stage 1: Generates and writes leaf commitments for each specified project.
@@ -94,6 +79,7 @@ fn run_stage1_leaf_commitments(
         if project_name == "bundle" {
             println!("{LOG_PREFIX} Generating digest_2 for bundle project...");
             let digest_2_bytes = compress_commitment(&leaf_vm_verifier_commit_u32)
+                .value
                 .to_bytes()
                 .into_iter()
                 .rev() // Ensure correct byte order if needed (verify endianness requirement)
@@ -123,8 +109,7 @@ fn run_stage2_root_verifier(project_names: &[&str], workspace_dir: &Path) -> Res
             .join("root_verifier.asm");
 
         println!("generating AggStarkProvingKey");
-        let (agg_stark_pk, _) =
-            AggStarkProvingKey::dummy_proof_and_keygen(AggStarkConfig::default());
+        let agg_stark_pk = AggStarkProvingKey::keygen(AggStarkConfig::default());
 
         println!("generating root_verifier.asm");
         let asm = openvm_sdk::Sdk::new().generate_root_verifier_asm(&agg_stark_pk);
@@ -207,6 +192,7 @@ fn run_stage3_exe_commits(
         exe_commitments.insert(project_name.to_string(), exe_commit_u32);
 
         let commit_filename = format!("{project_name}_exe_commit.rs");
+
         let output_path = Path::new(project_dir).join(&commit_filename);
         write_commitment(output_path.to_str().expect("Invalid path"), exe_commit_u32)?;
 
@@ -214,6 +200,7 @@ fn run_stage3_exe_commits(
         if project_name == "bundle" {
             println!("{LOG_PREFIX} Generating digest_1 for bundle project...",);
             let digest_1_bytes = compress_commitment(&exe_commit_u32)
+                .value
                 .to_bytes()
                 .into_iter()
                 .rev() // Ensure correct byte order

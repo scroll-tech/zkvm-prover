@@ -54,8 +54,12 @@ fn print_vks() -> eyre::Result<()> {
         };
 
         use base64::{Engine, prelude::BASE64_STANDARD};
-        let app_vk =
-            BASE64_STANDARD.encode(Prover::setup(config, false, None).unwrap().get_app_vk());
+        let app_vk = BASE64_STANDARD.encode(
+            Prover::setup(config, false, None)
+                .unwrap()
+                .get_app_commitment()
+                .serialize(),
+        );
         println!("{circuit}: {app_vk}");
         app_vk
     });
@@ -147,16 +151,15 @@ fn e2e() -> eyre::Result<()> {
 
     let evm_proof: OpenVmEvmProof = proof.into_evm_proof().unwrap().into();
 
-    let observed_instances = &evm_proof.instances;
+    let observed_instances = &evm_proof.user_public_values;
 
     for (i, (&expected, &observed)) in expected_pi_hash
         .iter()
-        .zip(observed_instances.iter().skip(14).take(32))
+        .zip(observed_instances.iter())
         .enumerate()
     {
         assert_eq!(
-            halo2curves_axiom::bn256::Fr::from(u64::from(expected)),
-            observed,
+            expected, observed,
             "pi inconsistent at index {i}: expected={expected}, observed={observed:?}"
         );
     }

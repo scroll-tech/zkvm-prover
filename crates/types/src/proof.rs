@@ -1,6 +1,10 @@
 use crate::utils::{as_base64, vec_as_base64};
-use openvm_continuations::verifier::root::types::RootVmVerifierInput;
-use openvm_sdk::SC;
+use openvm_continuations::verifier::internal::types::VmStarkProof;
+use openvm_sdk::{
+    SC,
+    commit::{AppExecutionCommit, CommitBytes},
+    types::ProofData,
+};
 use openvm_stark_sdk::{
     openvm_stark_backend::{p3_field::PrimeField32, proof::Proof},
     p3_baby_bear::BabyBear,
@@ -8,7 +12,7 @@ use openvm_stark_sdk::{
 use serde::{Deserialize, Serialize};
 
 /// Alias for convenience.
-pub type RootProof = RootVmVerifierInput<SC>;
+//pub type StarkProof = VmStarkProof<SC>;
 
 /// Helper type for convenience that implements [`From`] and [`Into`] traits between
 /// [`OpenVmEvmProof`]. The difference is that the instances in [`EvmProof`] are the byte-encoding
@@ -18,74 +22,56 @@ pub struct EvmProof {
     /// The proof bytes.
     #[serde(with = "vec_as_base64")]
     pub proof: Vec<u8>,
+    /// The accmulator bytes.
+    #[serde(with = "vec_as_base64")]
+    pub accumulator: Vec<u8>,
     /// Byte-encoding of the flattened scalar fields representing the public inputs of the SNARK
     /// proof.
     #[serde(with = "vec_as_base64")]
-    pub instances: Vec<u8>,
+    pub user_public_values: Vec<u8>,
+    pub digest1: [u32; 8],
+    pub digest2: [u32; 8],
 }
 
 /// Helper to modify serde implementations on the remote [`RootProof`] type.
-#[derive(Serialize, Deserialize)]
-#[serde(remote = "RootProof")]
-struct RootProofDef {
+#[derive(Clone, Serialize, Deserialize)]
+pub struct StarkProof {
     /// The proofs.
     #[serde(with = "as_base64")]
-    proofs: Vec<Proof<SC>>,
+    pub proof: Proof<SC>,
     /// The public values for the proof.
     #[serde(with = "as_base64")]
-    public_values: Vec<BabyBear>,
+    pub user_public_values: Vec<BabyBear>,
+    pub exe_commitment: [u32; 8],
+    pub vm_commitment: [u32; 8],
 }
 
-pub use openvm_native_recursion::halo2::RawEvmProof as OpenVmEvmProof;
-use snark_verifier_sdk::snark_verifier::{
-    halo2_base::halo2_proofs::halo2curves::bn256::Fr, util::arithmetic::PrimeField,
-};
+pub use openvm_sdk::types::EvmProof as OpenVmEvmProof;
 
 impl From<OpenVmEvmProof> for EvmProof {
     fn from(value: OpenVmEvmProof) -> Self {
-        let instances = value
-            .instances
-            .iter()
-            .flat_map(|fr| {
-                let mut be_bytes = fr.to_bytes();
-                be_bytes.reverse();
-                be_bytes
-            })
-            .collect::<Vec<u8>>();
-
         Self {
-            proof: value.proof,
-            instances,
+            proof: value.proof_data.proof,
+            accumulator: value.proof_data.accumulator,
+            user_public_values: value.user_public_values,
+            digest1: value.app_commit.app_exe_commit.to_u32_digest(),
+            digest2: value.app_commit.app_vm_commit.to_u32_digest(),
         }
     }
 }
 
 impl From<EvmProof> for OpenVmEvmProof {
     fn from(value: EvmProof) -> Self {
-        assert_eq!(
-            value.instances.len() % 32,
-            0,
-            "expect len(instances) % 32 == 0"
-        );
-
-        let instances = value
-            .instances
-            .chunks_exact(32)
-            .map(|be_bytes| {
-                Fr::from_repr({
-                    let mut le_bytes: [u8; 32] = be_bytes
-                        .try_into()
-                        .expect("instances.len() % 32 == 0 has already been asserted");
-                    le_bytes.reverse();
-                    le_bytes
-                })
-                .expect("Fr::from_repr failed")
-            })
-            .collect::<Vec<Fr>>();
-
         Self {
-            proof: value.proof,
-            instances,
+            user_public_values: value.user_public_values,
+            proof_data: ProofData {
+                accumulator: value.accumulator,
+                proof: value.proof,
+            },
+            app_commit: AppExecutionCommit {
+                app_exe_commit: CommitBytes::from_u32_digest(&value.digest1),
+                app_vm_commit: CommitBytes::from_u32_digest(&value.digest2),
+            },
         }
     }
 }
@@ -95,15 +81,14 @@ impl From<EvmProof> for OpenVmEvmProof {
 #[serde(untagged)]
 pub enum ProofEnum {
     /// Represents a STARK proof used for intermediary layers, i.e. chunk and batch.
-    #[serde(with = "RootProofDef")]
-    Root(RootProof),
+    Stark(StarkProof),
     /// Represents a SNARK proof used for the final layer to be verified on-chain, i.e. bundle.
     Evm(EvmProof),
 }
 
-impl From<RootProof> for ProofEnum {
-    fn from(value: RootProof) -> Self {
-        Self::Root(value)
+impl From<StarkProof> for ProofEnum {
+    fn from(value: StarkProof) -> Self {
+        Self::Stark(value)
     }
 }
 
@@ -115,9 +100,9 @@ impl From<EvmProof> for ProofEnum {
 
 impl ProofEnum {
     /// Get the root proof as reference.
-    pub fn as_root_proof(&self) -> Option<&RootProof> {
+    pub fn as_stark_proof(&self) -> Option<&StarkProof> {
         match self {
-            Self::Root(proof) => Some(proof),
+            Self::Stark(proof) => Some(proof),
             _ => None,
         }
     }
@@ -133,9 +118,9 @@ impl ProofEnum {
     }
 
     /// Consumes the proof enum and returns the contained root proof.
-    pub fn into_root_proof(self) -> Option<RootProof> {
+    pub fn into_stark_proof(self) -> Option<StarkProof> {
         match self {
-            Self::Root(proof) => Some(proof),
+            Self::Stark(proof) => Some(proof),
             _ => None,
         }
     }
@@ -148,33 +133,26 @@ impl ProofEnum {
         }
     }
 
-    /// Derive public inputs from the proof.
+    /// Extracts public input values from the proof.
+    ///
+    /// # Returns
+    /// - For Stark proofs: A vector of u32 values converted from BabyBear field elements
+    /// - For EVM proofs: A vector of u32 values, each containing a single byte from the original vector
+    ///
+    /// Note: This method handles the different encoding formats between proof types.
+    /// Each returned u32 typically only uses the lower 8 bits (one byte) of its capacity.
     pub fn public_values(&self) -> Vec<u32> {
         match self {
-            Self::Root(root_proof) => root_proof
-                .public_values
+            Self::Stark(stark_proof) => stark_proof
+                .user_public_values
                 .iter()
                 .map(|x| x.as_canonical_u32())
                 .collect::<Vec<u32>>(),
-            Self::Evm(evm_proof) => {
-                // The first 12 scalars are accumulators.
-                // The next 2 scalars are digests.
-                // The next 32 scalars are the public input hash.
-                let pi_hash_bytes = evm_proof
-                    .instances
-                    .iter()
-                    .skip(14 * 32)
-                    .take(32 * 32)
-                    .cloned()
-                    .collect::<Vec<u8>>();
-
-                // The 32 scalars of public input hash actually only have the LSB that is the
-                // meaningful byte.
-                pi_hash_bytes
-                    .chunks_exact(32)
-                    .map(|bytes32_chunk| bytes32_chunk[31] as u32)
-                    .collect::<Vec<u32>>()
-            }
+            Self::Evm(evm_proof) => evm_proof
+                .user_public_values
+                .iter()
+                .map(|byte| *byte as u32)
+                .collect::<Vec<u32>>(),
         }
     }
 }
