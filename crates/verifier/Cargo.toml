@@ -11,7 +11,7 @@ scroll-zkvm-types.workspace = true
 openvm-circuit.workspace = true
 openvm-native-circuit.workspace = true
 openvm-native-recursion = { workspace = true, features = ["static-verifier"] }
-openvm-sdk = { workspace = true, features = ["evm-verify"] }
+openvm-sdk = { workspace = true, features = [] }
 openvm-continuations.workspace = true
 openvm-stark-sdk.workspace = true
 

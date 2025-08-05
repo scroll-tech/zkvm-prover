@@ -3,7 +3,7 @@ use std::{
     sync::Arc,
 };
 
-use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
+use openvm_native_recursion::halo2::utils::{CacheHalo2ParamsReader, Halo2ParamsReader};
 use openvm_sdk::fs::read_exe_from_file;
 use openvm_sdk::{
     DefaultStaticVerifierPvHandler, NonRootCommittedExe, Sdk, StdIn,
@@ -228,23 +228,34 @@ impl Prover {
         };
 
         tracing::info!("setting up evm prover done");
+        let halo2_params = halo2_params_reader
+            .read_params(agg_pk.halo2_pk.wrapper.pinning.metadata.config_params.k);
+        let path_verifier_sol = config
+            .path_app_exe
+            .parent()
+            .map(|dir| dir.join("verifier.sol"));
         let path_verifier_bin = config
             .path_app_exe
             .parent()
             .map(|dir| dir.join("verifier.bin"));
-        let verifier_contract = Sdk::new()
-            .generate_halo2_verifier_solidity(&halo2_params_reader, &agg_pk)
-            .unwrap();
+        let verifier_contract = scroll_zkvm_verifier::evm::gen_evm_verifier::<
+            scroll_zkvm_verifier::evm::halo2_aggregation::AggregationCircuit,
+        >(
+            &halo2_params,
+            agg_pk.halo2_pk.wrapper.pinning.pk.get_vk(),
+            agg_pk.halo2_pk.wrapper.pinning.metadata.num_pvs.clone(),
+            path_verifier_sol.as_deref(),
+        );
         tracing::info!("verifier_contract generated");
         if let Some(path) = path_verifier_bin {
-            crate::utils::write(&path, &verifier_contract.artifact.bytecode)?;
+            crate::utils::write(&path, &verifier_contract)?;
             tracing::info!("verifier_contract written to {path:?}");
         }
 
         Ok(EvmProverVerifier {
             reader: halo2_params_reader,
             agg_pk,
-            verifier_contract: verifier_contract.artifact.bytecode,
+            verifier_contract,
         })
     }
 
