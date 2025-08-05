@@ -7,7 +7,7 @@ use scroll_zkvm_types::{proof::StarkProof, types_agg::ProgramCommitment};
 
 /// Proving key for STARK aggregation. Primarily used to aggregate
 /// [continuation proofs][openvm_sdk::prover::vm::ContinuationVmProof].
-static AGG_STARK_PROVING_KEY: Lazy<AggStarkProvingKey> =
+pub static AGG_STARK_PROVING_KEY: Lazy<AggStarkProvingKey> =
     Lazy::new(|| AggStarkProvingKey::keygen(AggStarkConfig::default()));
 
 pub struct UniversalVerifier {

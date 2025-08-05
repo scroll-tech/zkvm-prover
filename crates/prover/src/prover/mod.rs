@@ -3,31 +3,24 @@ use std::{
     sync::Arc,
 };
 
-use once_cell::sync::Lazy;
-use openvm_circuit::system::program::trace::VmCommittedExe;
 use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
 use openvm_sdk::fs::read_exe_from_file;
 use openvm_sdk::{
     DefaultStaticVerifierPvHandler, NonRootCommittedExe, Sdk, StdIn,
     commit::AppExecutionCommit,
-    config::{AggConfig, AggStarkConfig, SdkVmConfig},
-    keygen::{AggProvingKey, AggStarkProvingKey, AppProvingKey},
+    config::{AggConfig, SdkVmConfig},
+    keygen::{AggProvingKey, AppProvingKey},
 };
 use scroll_zkvm_types::{proof::OpenVmEvmProof, types_agg::ProgramCommitment};
-use scroll_zkvm_verifier::verifier::UniversalVerifier;
+use scroll_zkvm_verifier::verifier::{AGG_STARK_PROVING_KEY, UniversalVerifier};
 use tracing::instrument;
 
 // Re-export from openvm_sdk.
-pub use openvm_sdk::{self, SC};
+pub use openvm_sdk::{self};
 
 use crate::{Error, setup::read_app_config, task::ProvingTask};
 
 use scroll_zkvm_types::proof::{EvmProof, ProofEnum, StarkProof};
-
-/// Proving key for STARK aggregation. Primarily used to aggregate
-/// [continuation proofs][openvm_sdk::prover::vm::ContinuationVmProof].
-static AGG_STARK_PROVING_KEY: Lazy<AggStarkProvingKey> =
-    Lazy::new(|| AggStarkProvingKey::keygen(AggStarkConfig::default()));
 
 /// The default directory to locate openvm's halo2 SRS parameters.
 const DEFAULT_PARAMS_DIR: &str = concat!(env!("HOME"), "/.openvm/params/");
@@ -35,12 +28,6 @@ const DEFAULT_PARAMS_DIR: &str = concat!(env!("HOME"), "/.openvm/params/");
 /// The environment variable that needs to be set in order to configure the directory from where
 /// Prover can read HALO2 trusted setup parameters.
 const ENV_HALO2_PARAMS_DIR: &str = "ENV_HALO2_PARAMS_DIR";
-
-/// File descriptor for the root verifier's VM config.
-const FD_ROOT_VERIFIER_VM_CONFIG: &str = "root-verifier-vm-config";
-
-/// File descriptor for the root verifier's committed exe.
-const FD_ROOT_VERIFIER_COMMITTED_EXE: &str = "root-verifier-committed-exe";
 
 /// Types used in the outermost proof construction and verification, i.e. the EVM-compatible layer.
 /// This is required only for [BundleProver].
@@ -59,6 +46,8 @@ pub struct Prover {
     pub app_committed_exe: Arc<NonRootCommittedExe>,
     /// App specific proving key.
     pub app_pk: Arc<AppProvingKey<SdkVmConfig>>,
+    ///
+    pub commits: AppExecutionCommit,
     /// Optional data for the outermost layer, i.e. EVM-compatible.
     pub evm_prover: Option<EvmProverVerifier>,
     /// Optional directory to cache generated proofs. If such a cached proof is located, then its
@@ -66,9 +55,6 @@ pub struct Prover {
     pub cache_dir: Option<PathBuf>,
     pub config: ProverConfig,
 }
-
-/// Alias for convenience.
-type InitRes = (Arc<VmCommittedExe<SC>>, Arc<AppProvingKey<SdkVmConfig>>);
 
 /// Configure the [`Prover`].
 #[derive(Debug, Clone, Default)]
@@ -88,34 +74,15 @@ pub struct ProverConfig {
     pub segment_len: Option<usize>,
 }
 
-const COMMON_SEGMENT_SIZE: usize = (1 << 22) - 100;
+const DEFAULT_SEGMENT_SIZE: usize = (1 << 22) - 100;
 
 impl Prover {
     /// Setup the [`Prover`] given paths to the application's exe and proving key.
     #[instrument("Prover::setup")]
     pub fn setup(config: ProverConfig, with_evm: bool, name: Option<&str>) -> Result<Self, Error> {
-        let (app_committed_exe, app_pk) = Self::init(&config)?;
-
-        let evm_prover = with_evm
-            .then(|| Self::setup_evm_prover(&config))
-            .transpose()?;
-
-        Ok(Self {
-            app_committed_exe,
-            app_pk,
-            evm_prover,
-            cache_dir: config.dir_cache.clone(),
-            config,
-            prover_name: name.unwrap_or("universal").to_string(),
-        })
-    }
-
-    /// Read app exe, proving key and return committed data.
-    #[instrument("Prover::init")]
-    pub fn init(config: &ProverConfig) -> Result<InitRes, Error> {
         let app_exe = read_exe_from_file(&config.path_app_exe).unwrap();
         let mut app_config = read_app_config(&config.path_app_config)?;
-        let segment_len = config.segment_len.unwrap_or(COMMON_SEGMENT_SIZE);
+        let segment_len = config.segment_len.unwrap_or(DEFAULT_SEGMENT_SIZE);
         app_config.app_vm_config.system.config = app_config
             .app_vm_config
             .system
@@ -129,54 +96,34 @@ impl Prover {
         let app_committed_exe = sdk
             .commit_app_exe(app_pk.app_fri_params(), app_exe)
             .map_err(|e| Error::Commit(e.to_string()))?;
+        let commits = AppExecutionCommit::compute(
+            &app_pk.app_vm_pk.vm_config,
+            &app_committed_exe,
+            &app_pk.leaf_committed_exe,
+        );
 
-        Ok((app_committed_exe, Arc::new(app_pk)))
-    }
+        let evm_prover = with_evm
+            .then(|| Self::setup_evm_prover(&config))
+            .transpose()?;
 
-    /// Directly dump the universal verifier, and also persist the staffs if path is provided
-    pub fn dump_universal_verifier<P: AsRef<Path>>(
-        &self,
-        dir: Option<P>,
-    ) -> Result<scroll_zkvm_verifier::verifier::UniversalVerifier, Error> {
-        use scroll_zkvm_verifier::verifier::UniversalVerifier as Verifier;
-
-        let root_verifier_pk = &AGG_STARK_PROVING_KEY.root_verifier_pk;
-        let vm_config = root_verifier_pk.vm_pk.vm_config.clone();
-        let root_committed_exe: &VmCommittedExe<_> = &root_verifier_pk.root_committed_exe;
-
-        if let Some(dir) = dir {
-            let path_vm_config = dir.as_ref().join(FD_ROOT_VERIFIER_VM_CONFIG);
-            let path_root_committed_exe = dir.as_ref().join(FD_ROOT_VERIFIER_COMMITTED_EXE);
-
-            crate::utils::write_bin(&path_vm_config, &vm_config)?;
-            crate::utils::write_bin(&path_root_committed_exe, &root_committed_exe)?;
-            // note the verifier.bin has been written in setup evm prover
-        }
-
-        Ok(if let Some(evm_prover) = &self.evm_prover {
-            Verifier {
-                evm_verifier: evm_prover.verifier_contract.clone(),
-            }
-        } else {
-            Verifier {
-                evm_verifier: Vec::new(),
-            }
+        Ok(Self {
+            app_committed_exe,
+            app_pk: Arc::new(app_pk),
+            evm_prover,
+            commits,
+            cache_dir: config.dir_cache.clone(),
+            config,
+            prover_name: name.unwrap_or("universal").to_string(),
         })
     }
 
     /// Pick up loaded app commit as "vk" in proof, to distinguish from which circuit the proof comes
     pub fn get_app_commitment(&self) -> ProgramCommitment {
-        let commits = AppExecutionCommit::compute(
-            &self.app_pk.app_vm_pk.vm_config,
-            &self.app_committed_exe,
-            &self.app_pk.leaf_committed_exe,
-        );
-
-        let exe = commits.app_exe_commit.to_u32_digest();
-        let leaf = commits.app_vm_commit.to_u32_digest();
-
+        let exe = self.commits.app_exe_commit.to_u32_digest();
+        let leaf = self.commits.app_vm_commit.to_u32_digest();
         ProgramCommitment { exe, leaf }
     }
+
     /// Pick up loaded app commit as "vk" in proof, to distinguish from which circuit the proof comes
     pub fn get_app_vk(&self) -> Vec<u8> {
         self.get_app_commitment().serialize()
@@ -319,7 +266,6 @@ impl Prover {
                 stdin,
             )
             .unwrap();
-        // TODO: cache it
         let comm = self.get_app_commitment();
         let proof = StarkProof {
             proof: proof.proof,
