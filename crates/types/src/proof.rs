@@ -12,7 +12,7 @@ use openvm_stark_sdk::{
 use serde::{Deserialize, Serialize};
 
 /// Alias for convenience.
-pub type StarkProof = VmStarkProof<SC>;
+//pub type StarkProof = VmStarkProof<SC>;
 
 /// Helper type for convenience that implements [`From`] and [`Into`] traits between
 /// [`OpenVmEvmProof`]. The difference is that the instances in [`EvmProof`] are the byte-encoding
@@ -34,15 +34,16 @@ pub struct EvmProof {
 }
 
 /// Helper to modify serde implementations on the remote [`RootProof`] type.
-#[derive(Serialize, Deserialize)]
-#[serde(remote = "StarkProof")]
-struct StarkProofDef {
+#[derive(Clone, Serialize, Deserialize)]
+pub struct StarkProof {
     /// The proofs.
     #[serde(with = "as_base64")]
-    proof: Proof<SC>,
+    pub proof: Proof<SC>,
     /// The public values for the proof.
     #[serde(with = "as_base64")]
-    user_public_values: Vec<BabyBear>,
+    pub user_public_values: Vec<BabyBear>,
+    pub exe_commitment: [u32; 8],
+    pub vm_commitment: [u32; 8],
 }
 
 pub use openvm_sdk::types::EvmProof as OpenVmEvmProof;
@@ -80,7 +81,6 @@ impl From<EvmProof> for OpenVmEvmProof {
 #[serde(untagged)]
 pub enum ProofEnum {
     /// Represents a STARK proof used for intermediary layers, i.e. chunk and batch.
-    #[serde(with = "StarkProofDef")]
     Stark(StarkProof),
     /// Represents a SNARK proof used for the final layer to be verified on-chain, i.e. bundle.
     Evm(EvmProof),

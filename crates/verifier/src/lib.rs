@@ -7,6 +7,8 @@ mod test {
     use scroll_zkvm_types::{proof::ProofEnum, utils::vec_as_base64};
     use std::path::Path;
 
+    // FIXME(zhuo): we should use this type as the "main" proof type.
+    // or, we make a new struct `StarkProof` including app commitments + current StarkProof
     #[derive(Clone, serde::Deserialize)]
     pub struct WrappedProof {
         pub proof: ProofEnum,

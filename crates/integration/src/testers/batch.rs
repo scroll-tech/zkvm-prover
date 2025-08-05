@@ -93,7 +93,7 @@ impl BatchTaskGenerator {
         let ret_wit = build_batch_witnesses(
             &chunks,
             &ChunkProverTester::load_prover(false)?
-                .get_app_vk()
+                .get_app_commitment()
                 .serialize(),
             self.last_witness
                 .as_ref()

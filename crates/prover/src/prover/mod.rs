@@ -19,7 +19,7 @@ use openvm_sdk::{
 };
 use openvm_sdk::{config::SdkVmCpuBuilder, fs::read_exe_from_file};
 use scroll_zkvm_types::{proof::OpenVmEvmProof, types_agg::ProgramCommitment};
-use scroll_zkvm_verifier::verifier::verify_stark_proof;
+use scroll_zkvm_verifier::verifier::UniversalVerifier;
 use tracing::instrument;
 
 // Re-export from openvm_sdk.
@@ -160,12 +160,10 @@ impl Prover {
 
         Ok(if let Some(evm_prover) = &self.evm_prover {
             Verifier {
-                root_committed_exe: root_committed_exe.clone(),
                 evm_verifier: evm_prover.verifier_contract.clone(),
             }
         } else {
             Verifier {
-                root_committed_exe: root_committed_exe.clone(),
                 evm_verifier: Vec::new(),
             }
         })
@@ -189,7 +187,7 @@ impl Prover {
     }
 
     /// Pick up loaded app commit as "vk" in proof, to distinguish from which circuit the proof comes
-    pub fn get_app_vk(&self) -> ProgramCommitment {
+    pub fn get_app_commitment(&self) -> ProgramCommitment {
         let commits = AppExecutionCommit::compute(
             &self.app_pk.app_vm_pk.vm_config,
             &self.app_committed_exe,
@@ -200,6 +198,10 @@ impl Prover {
         let leaf = commits.app_vm_commit.to_u32_digest();
 
         ProgramCommitment { exe, leaf }
+    }
+    /// Pick up loaded app commit as "vk" in proof, to distinguish from which circuit the proof comes
+    pub fn get_app_vk(&self) -> Vec<u8> {
+        self.get_app_commitment().serialize()
     }
 
     /// Pick up the actual vk (serialized) for evm proof, would be empty if prover
@@ -343,9 +345,16 @@ impl Prover {
                 stdin,
             )
             .unwrap();
+        // TODO: cache it
+        let comm = self.get_app_commitment();
+        let proof = StarkProof {
+            proof: proof.proof,
+            user_public_values: proof.user_public_values,
+            exe_commitment: comm.exe,
+            vm_commitment: comm.leaf,
+        };
         println!("verifing root proof");
-        let commitments = self.get_app_vk();
-        verify_stark_proof(&proof, commitments.exe, commitments.leaf).unwrap();
+        UniversalVerifier::verify_stark_proof(&proof, &comm.serialize()).unwrap();
         println!("verifing root proof done");
         Ok(proof)
     }

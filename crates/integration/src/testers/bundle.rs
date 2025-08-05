@@ -104,7 +104,7 @@ impl BundleTaskGenerator {
 
         let fork_name = testing_hardfork();
         let vk = BatchProverTester::load_prover(false)?
-            .get_app_vk()
+            .get_app_commitment()
             .serialize();
         let commitment = ProgramCommitment::deserialize(&vk);
         let mut batch_proofs = Vec::new();

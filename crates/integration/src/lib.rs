@@ -13,7 +13,7 @@ use scroll_zkvm_types::{
     proof::{EvmProof, ProofEnum, StarkProof},
     public_inputs::ForkName,
 };
-use scroll_zkvm_verifier::verifier::verify_stark_proof;
+use scroll_zkvm_verifier::verifier::UniversalVerifier;
 use std::{
     path::{Path, PathBuf},
     process,
@@ -181,11 +181,7 @@ pub trait ProverTester {
         witness.write_guest_input(&mut stdin)?;
 
         for proof in aggregated_proofs {
-            let streams = if witness.fork_name() >= ForkName::Feynman {
-                proof.proof.write()
-            } else {
-                proof.write()
-            };
+            let streams = proof.proof.write();
             for s in &streams {
                 stdin.write_field(s);
             }
@@ -313,7 +309,7 @@ pub fn prove_verify<T: ProverTester>(
         .join(T::DIR_ASSETS)
         .join(DIR_PROOFS);
     std::fs::create_dir_all(&cache_dir)?;
-    let vk = prover.get_app_vk().serialize();
+    let vk = prover.get_app_commitment().serialize();
     let verifier = prover.dump_universal_verifier(None::<String>)?;
 
     // Try reading proof from cache if available, and early return in that case.
@@ -341,7 +337,10 @@ pub fn prove_verify<T: ProverTester>(
     };
 
     // Verify proof.
-    verifier.verify_proof(proof.as_stark_proof().expect("should be root proof"), &vk)?;
+    UniversalVerifier::verify_stark_proof(
+        proof.as_stark_proof().expect("should be root proof"),
+        &vk,
+    )?;
 
     Ok(proof)
 }
@@ -365,15 +364,11 @@ where
     std::fs::create_dir_all(&cache_dir)?;
 
     // Dump verifier-only assets to disk.
-    let path_root_committed_exe = prover.dump_verifier(&path_assets)?;
     let path_verifier_code = WORKSPACE_ROOT
         .join(T::PATH_PROJECT_ROOT)
         .join("openvm")
         .join("verifier.bin");
-    let verifier = scroll_zkvm_verifier::verifier::UniversalVerifier::setup(
-        &path_root_committed_exe,
-        &path_verifier_code,
-    )?;
+    let verifier = scroll_zkvm_verifier::verifier::UniversalVerifier::setup(&path_verifier_code)?;
 
     // Try reading proof from cache if available, and early return in that case.
     let task_id = witness.identifier();
@@ -398,9 +393,9 @@ where
         proof.into()
     };
 
-    let vk = prover.get_app_vk().serialize();
+    let vk = prover.get_app_commitment().serialize();
     // Verify proof.
-    verifier.verify_proof_evm(
+    verifier.verify_evm_proof(
         &proof
             .clone()
             .into_evm_proof()
