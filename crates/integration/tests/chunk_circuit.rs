@@ -142,6 +142,7 @@ fn test_execute_multi() -> eyre::Result<()> {
     let (total_gas, total_cycle) = pool.install(|| {
         // comment by fan@scroll.io: why we need to load prover multiple times (which is time costing)
         let prover = ChunkProverTester::load_prover(false).unwrap();
+        let init = (0u64, 0u64);
         let adder =
             |(gas1, cycle1): (u64, u64), (gas2, cycle2): (u64, u64)| (gas1 + gas2, cycle1 + cycle2);
         preset_chunk_multiple()
@@ -149,6 +150,7 @@ fn test_execute_multi() -> eyre::Result<()> {
             .map(|task| -> (u64, u64) {
                 let (exec_result, gas) =
                     exec_chunk(&prover, &task.gen_proving_witnesses().unwrap()).unwrap();
+                (gas, exec_result.total_cycle)
             })
             .fold(init, adder)
     });

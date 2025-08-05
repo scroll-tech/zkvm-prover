@@ -18,6 +18,7 @@ use openvm_sdk::{
     types::EvmProof as OpenVmEvmProf,
 };
 use openvm_sdk::{config::SdkVmCpuBuilder, fs::read_exe_from_file};
+use scroll_zkvm_types::{proof::OpenVmEvmProof, types_agg::ProgramCommitment};
 use scroll_zkvm_verifier::verifier::verify_stark_proof;
 use tracing::instrument;
 
@@ -188,7 +189,7 @@ impl Prover {
     }
 
     /// Pick up loaded app commit as "vk" in proof, to distinguish from which circuit the proof comes
-    pub fn get_app_vk(&self) -> Vec<u8> {
+    pub fn get_app_vk(&self) -> ProgramCommitment {
         let commits = AppExecutionCommit::compute(
             &self.app_pk.app_vm_pk.vm_config,
             &self.app_committed_exe,
@@ -198,7 +199,7 @@ impl Prover {
         let exe = commits.app_exe_commit.to_u32_digest();
         let leaf = commits.app_vm_commit.to_u32_digest();
 
-        scroll_zkvm_types::types_agg::ProgramCommitment { exe, leaf }.serialize()
+        ProgramCommitment { exe, leaf }
     }
 
     /// Pick up the actual vk (serialized) for evm proof, would be empty if prover
@@ -228,12 +229,6 @@ impl Prover {
         let stdin = task
             .build_guest_input()
             .map_err(|e| Error::GenProof(e.to_string()))?;
-        verify_stark_proof(
-            proof.proof.as_stark_proof().unwrap(),
-            Type::EXE_COMMIT,
-            Type::VM_COMMIT,
-        )
-        .unwrap();
 
         // Generate a new proof.
         let proof = if !with_snark {
@@ -253,7 +248,6 @@ impl Prover {
     pub fn execute_and_check_with_full_result(
         &self,
         stdin: &StdIn,
-        mock_prove: bool,
     ) -> Result<crate::utils::vm::ExecutionResult, Error> {
         let config = self.app_pk.app_vm_pk.vm_config.clone();
         let exe = self.app_committed_exe.exe.clone();
@@ -262,8 +256,8 @@ impl Prover {
     }
 
     /// Execute the guest program to get the cycle count.
-    pub fn execute_and_check(&self, stdin: &StdIn, mock_prove: bool) -> Result<u64, Error> {
-        self.execute_and_check_with_full_result(stdin, mock_prove)
+    pub fn execute_and_check(&self, stdin: &StdIn) -> Result<u64, Error> {
+        self.execute_and_check_with_full_result(stdin)
             .map(|res| res.total_cycle)
     }
 
@@ -350,7 +344,8 @@ impl Prover {
             )
             .unwrap();
         println!("verifing root proof");
-        verify_stark_proof(&proof, Type::EXE_COMMIT, Type::VM_COMMIT).unwrap();
+        let commitments = self.get_app_vk();
+        verify_stark_proof(&proof, commitments.exe, commitments.leaf).unwrap();
         println!("verifing root proof done");
         Ok(proof)
     }

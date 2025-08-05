@@ -54,8 +54,12 @@ fn print_vks() -> eyre::Result<()> {
         };
 
         use base64::{Engine, prelude::BASE64_STANDARD};
-        let app_vk =
-            BASE64_STANDARD.encode(Prover::setup(config, false, None).unwrap().get_app_vk());
+        let app_vk = BASE64_STANDARD.encode(
+            Prover::setup(config, false, None)
+                .unwrap()
+                .get_app_vk()
+                .serialize(),
+        );
         println!("{circuit}: {app_vk}");
         app_vk
     });

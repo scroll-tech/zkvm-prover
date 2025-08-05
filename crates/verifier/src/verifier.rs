@@ -16,8 +16,6 @@ use scroll_zkvm_types::{
 };
 use tracing::{debug, instrument};
 
-use crate::commitments::{batch, bundle, chunk};
-
 /// Proving key for STARK aggregation. Primarily used to aggregate
 /// [continuation proofs][openvm_sdk::prover::vm::ContinuationVmProof].
 static AGG_STARK_PROVING_KEY: Lazy<AggStarkProvingKey> =
@@ -101,14 +99,14 @@ mod tests {
 
     impl UniversalVerifier {
         /// test method to be compatible with euclid wrapped proofs
-        pub fn verify_wrapped_proof(&self, proof: &WrappedProof) -> eyre::Result<bool> {
+        pub fn verify_wrapped_proof(&self, proof: &WrappedProof) -> eyre::Result<()> {
             match &proof.proof {
                 ProofEnum::Evm(p) => {
                     crate::evm::verify_evm_proof(&self.evm_verifier, &p.clone().into())
                         .map_err(|e| eyre::eyre!("evm execute fail {e}"))?;
-                    Ok(true)
+                    Ok(())
                 }
-                ProofEnum::Root(p) => self.verify_proof(p, &proof.vk),
+                ProofEnum::Stark(p) => self.verify_proof(p, &proof.vk),
             }
         }
 
@@ -195,10 +193,7 @@ mod tests {
         let commitment = ProgramCommitment::deserialize(&chunk_proof.vk);
         let root_proof = chunk_proof.proof.as_stark_proof().unwrap();
         verify_stark_proof(root_proof, commitment.exe, commitment.leaf).unwrap();
-        assert!(
-            verifier.verify_proof(root_proof, &chunk_proof.vk)?,
-            "proof verification failed",
-        );
+        verifier.verify_proof(root_proof, &chunk_proof.vk)?;
 
         Ok(())
     }

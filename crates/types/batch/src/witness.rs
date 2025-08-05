@@ -2,7 +2,7 @@ use types_base::{
     aggregation::{AggregationInput, ProgramCommitment, ProofCarryingWitness},
     public_inputs::{ForkName, batch::BatchInfo, chunk::ChunkInfo},
 };
-
+//use snark_verifier_sdk::snark_verifier::halo2_base::halo2_proofs::halo2curves::bls12_381;
 use crate::{
     builder::{
         BatchInfoBuilder, BatchInfoBuilderV6, BatchInfoBuilderV7, BatchInfoBuilderV8,

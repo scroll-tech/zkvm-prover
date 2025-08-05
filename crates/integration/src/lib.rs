@@ -10,7 +10,7 @@ use scroll_zkvm_prover::{
     utils::{read_json, vm::ExecutionResult, write_json},
 };
 use scroll_zkvm_types::{
-    proof::{EvmProof, ProofEnum, RootProof},
+    proof::{EvmProof, ProofEnum, StarkProof},
     public_inputs::ForkName,
 };
 use scroll_zkvm_verifier::verifier::verify_stark_proof;
@@ -173,7 +173,7 @@ pub trait ProverTester {
 
     fn build_guest_input<'a>(
         witness: &Self::Witness,
-        aggregated_proofs: impl Iterator<Item = &'a RootProof>,
+        aggregated_proofs: impl Iterator<Item = &'a StarkProof>,
     ) -> Result<StdIn, rkyv::rancor::Error> {
         use openvm_native_recursion::hints::Hintable;
 
@@ -182,7 +182,7 @@ pub trait ProverTester {
 
         for proof in aggregated_proofs {
             let streams = if witness.fork_name() >= ForkName::Feynman {
-                proof.proofs[0].write()
+                proof.proof.write()
             } else {
                 proof.write()
             };
@@ -292,10 +292,10 @@ pub fn tester_execute<T: ProverTester>(
         witness,
         proofs
             .iter()
-            .map(|p| p.as_root_proof().expect("must be root proof")),
+            .map(|p| p.as_stark_proof().expect("must be root proof")),
     )?;
 
-    let ret = prover.execute_and_check_with_full_result(&stdin, false)?;
+    let ret = prover.execute_and_check_with_full_result(&stdin)?;
     Ok(ret)
 }
 
@@ -313,7 +313,7 @@ pub fn prove_verify<T: ProverTester>(
         .join(T::DIR_ASSETS)
         .join(DIR_PROOFS);
     std::fs::create_dir_all(&cache_dir)?;
-    let vk = prover.get_app_vk();
+    let vk = prover.get_app_vk().serialize();
     let verifier = prover.dump_universal_verifier(None::<String>)?;
 
     // Try reading proof from cache if available, and early return in that case.
@@ -330,7 +330,7 @@ pub fn prove_verify<T: ProverTester>(
             witness,
             proofs
                 .iter()
-                .map(|p| p.as_root_proof().expect("must be root proof")),
+                .map(|p| p.as_stark_proof().expect("must be root proof")),
         )?;
         // Construct root proof for the circuit.
         let proof = prover.gen_proof_stark(stdin)?.into();
@@ -341,7 +341,7 @@ pub fn prove_verify<T: ProverTester>(
     };
 
     // Verify proof.
-    assert!(verifier.verify_proof(proof.as_root_proof().expect("should be root proof"), &vk)?);
+    verifier.verify_proof(proof.as_stark_proof().expect("should be root proof"), &vk)?;
 
     Ok(proof)
 }
@@ -389,7 +389,7 @@ where
             witness,
             proofs
                 .iter()
-                .map(|p| p.as_root_proof().expect("must be root proof")),
+                .map(|p| p.as_stark_proof().expect("must be root proof")),
         )?;
         // Construct root proof for the circuit.
         let proof: EvmProof = prover.gen_proof_snark(stdin)?.into();
@@ -398,7 +398,7 @@ where
         proof.into()
     };
 
-    let vk = prover.get_app_vk();
+    let vk = prover.get_app_vk().serialize();
     // Verify proof.
     verifier.verify_proof_evm(
         &proof
