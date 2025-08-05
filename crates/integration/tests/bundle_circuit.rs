@@ -20,21 +20,6 @@ use scroll_zkvm_prover::{
 use scroll_zkvm_types::{proof::OpenVmEvmProof, public_inputs::ForkName};
 use std::str::FromStr;
 
-// fn load_recent_batch_proofs() -> eyre::Result<ProofEnum> {
-//     let proof_path = glob::glob("../../.output/batch-tests-*/batch/proofs/batch-*.json")?
-//         .next()
-//         .unwrap()?;
-//     println!("proof_path: {:?}", proof_path);
-//     let batch_proofs = read_json_deep::<_, ProofEnum>(&proof_path)?;
-
-//     let task = BundleProvingTask {
-//         batch_proofs: vec![batch_proof],
-//         bundle_info: None,
-//         fork_name: testing_hardfork().to_string(),
-//     };
-//     Ok(task)
-// }
-
 fn preset_bundle() -> BundleTaskGenerator {
     BundleTaskGenerator::from_batch_tasks(&preset_batch_multiple())
 }
@@ -85,16 +70,6 @@ fn print_vks() -> eyre::Result<()> {
     serde_json::to_writer(f, &dump)?;
     Ok(())
 }
-
-// #[test]
-// fn setup_prove_verify() -> eyre::Result<()> {
-//     BundleProverTester::setup()?;
-
-//     let task = load_recent_batch_proofs()?;
-//     prove_verify_single_evm::<BundleProverTester>(Some(task))?;
-
-//     Ok(())
-// }
 
 #[ignore = "need local stuff"]
 #[test]
@@ -171,12 +146,6 @@ fn e2e() -> eyre::Result<()> {
     let proof = task.gen_witnesses_proof(&prover)?;
 
     let evm_proof: OpenVmEvmProof = proof.into_evm_proof().unwrap().into();
-
-    // assert!(
-    //     verifier
-    //         .to_bundle_verifier_v2()
-    //         .verify_proof_evm(&evm_proof)
-    // );
 
     let observed_instances = &evm_proof.instances;
 
