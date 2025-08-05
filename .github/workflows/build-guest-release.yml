@@ -1,0 +1,87 @@
+name: Build ZKVM-Prover Guest
+
+on:
+  push:
+    tags:
+      - v**
+
+jobs:
+  build-guest:
+    runs-on: ubuntu-latest
+    env:
+      SCROLL_ZKVM_VERSION: ${{ github.ref_name }}
+      DIR_OUTPUT: releases/${SCROLL_ZKVM_VERSION}
+      AWS_REGION: us-west-2
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install xxd
+        run: sudo apt-get update && sudo apt-get install -y xxd
+
+      - name: Install Rust nightly toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2025-02-14
+          target: x86_64-unknown-linux-gnu
+          components: rust-src
+          override: true
+
+      - name: Cache cargo registry and build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build guest binary
+        run: cargo run --release -p scroll-zkvm-build-guest
+        
+      - name: Prepare release
+        run: |
+          for i in chunk batch bundle verifier; do mkdir -p ${DIR_OUTPUT}/$i; done
+
+          # copy chunk-program related assets
+          cp ./crates/circuits/chunk-circuit/openvm/app.vmexe $DIR_OUTPUT/chunk/app.vmexe
+          cp ./crates/circuits/chunk-circuit/openvm.toml $DIR_OUTPUT/chunk/openvm.toml
+
+          # copy batch-program related assets
+          cp ./crates/circuits/batch-circuit/openvm/app.vmexe $DIR_OUTPUT/batch/app.vmexe
+          cp ./crates/circuits/batch-circuit/openvm.toml $DIR_OUTPUT/batch/openvm.toml
+
+          # copy bundle-program related assets
+          cp ./crates/circuits/bundle-circuit/openvm/app.vmexe $DIR_OUTPUT/bundle/app.vmexe
+          cp ./crates/circuits/bundle-circuit/openvm.toml $DIR_OUTPUT/bundle/openvm.toml
+          cp ./crates/circuits/bundle-circuit/openvm/verifier.bin $DIR_OUTPUT/bundle/verifier.bin
+          cp ./crates/circuits/bundle-circuit/openvm/verifier.sol $DIR_OUTPUT/bundle/verifier.sol
+          xxd -l 32 -p ./crates/circuits/bundle-circuit/digest_1 | tr -d '\n' | awk '{gsub("%", ""); print}' > $DIR_OUTPUT/bundle/digest_1.hex
+          xxd -l 32 -p ./crates/circuits/bundle-circuit/digest_2 | tr -d '\n' | awk '{gsub("%", ""); print}' > $DIR_OUTPUT/bundle/digest_2.hex
+          
+          # copy verifier-only assets
+          # cp $DIR_INPUT/bundle/root-verifier-vm-config $DIR_OUTPUT/verifier/root-verifier-vm-config
+          # cp $DIR_INPUT/bundle/root-verifier-committed-exe $DIR_OUTPUT/verifier/root-verifier-committed-exe
+          cp ./crates/circuits/bundle-circuit/openvm/verifier.bin $DIR_OUTPUT/verifier/verifier.bin
+
+          # checksum for assets
+          find $DIR_OUTPUT  -type f ! -name sha256sums.txt  -exec sha256sum {} \; > $DIR_OUTPUT/sha256sums.txt
+
+      - id: install-aws-cli
+        uses: unfor19/install-aws-cli-action@v1
+        with:
+          version: 2
+          verbose: false
+          arch: amd64
+
+      - name: Set up AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Upload releases to S3
+        run: |
+          aws s3 cp $DIR_OUTPUT s3://circuit-release/scroll-zkvm/$DIR_OUTPUT --recursive
