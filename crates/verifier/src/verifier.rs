@@ -1,20 +1,9 @@
 use once_cell::sync::Lazy;
 use std::path::Path;
 
-use openvm_circuit::system::program::trace::VmCommittedExe;
-use openvm_sdk::{
-    F, RootSC, SC, Sdk,
-    commit::{AppExecutionCommit, CommitBytes},
-    config::AggStarkConfig,
-    keygen::AggStarkProvingKey,
-    types::EvmProof,
-};
+use openvm_sdk::{Sdk, commit::CommitBytes, config::AggStarkConfig, keygen::AggStarkProvingKey};
 use scroll_zkvm_types::proof::OpenVmEvmProof;
-use scroll_zkvm_types::{
-    proof::StarkProof,
-    types_agg::{AggregationInput, ProgramCommitment},
-};
-use tracing::{debug, instrument};
+use scroll_zkvm_types::{proof::StarkProof, types_agg::ProgramCommitment};
 
 /// Proving key for STARK aggregation. Primarily used to aggregate
 /// [continuation proofs][openvm_sdk::prover::vm::ContinuationVmProof].
@@ -81,8 +70,7 @@ impl UniversalVerifier {
 #[cfg(test)]
 mod tests {
     use crate::test::WrappedProof;
-    use scroll_zkvm_prover::utils::read_json;
-    use scroll_zkvm_types::{proof::ProofEnum, types_agg::ProgramCommitment};
+    use scroll_zkvm_types::proof::ProofEnum;
     use std::path::Path;
 
     use super::*;
@@ -97,38 +85,6 @@ mod tests {
                 ProofEnum::Stark(p) => Self::verify_stark_proof(p, &proof.vk),
             }
         }
-    }
-
-    #[ignore = "need released assets"]
-    #[test]
-    fn verify_universal_proof() -> eyre::Result<()> {
-        let chunk_proof: ProofEnum = read_json(
-            Path::new(PATH_TESTDATA)
-                .join("proofs")
-                .join("chunk-proof-feynman.json"),
-        )?;
-        let batch_proof: ProofEnum = read_json(
-            Path::new(PATH_TESTDATA)
-                .join("proofs")
-                .join("batch-proof-feynman.json"),
-        )?;
-        let evm_proof: ProofEnum = read_json(
-            Path::new(PATH_TESTDATA)
-                .join("proofs")
-                .join("bundle-proof-feynman.json"),
-        )?;
-
-        // Note: the committed exe has to match the version of openvm
-        // which is used to generate the proof
-        let verifier = UniversalVerifier::setup(Path::new(PATH_TESTDATA).join("verifier.bin"))?;
-
-        let evm_proof = evm_proof.as_evm_proof().unwrap();
-        // TODO: we need vk to verify a proof.
-        //verifier.verify_evm_proof(&evm_proof, evm_proof)?;
-        //verifier.verify_proof_enum(&chunk_proof)?;
-        //verifier.verify_proof_enum(&batch_proof)?;
-
-        Ok(())
     }
 
     #[ignore = "need euclid released assets"]

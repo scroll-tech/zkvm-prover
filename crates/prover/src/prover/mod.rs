@@ -5,18 +5,13 @@ use std::{
 
 use once_cell::sync::Lazy;
 use openvm_circuit::system::program::trace::VmCommittedExe;
-use openvm_native_recursion::halo2::{
-    RawEvmProof,
-    utils::{CacheHalo2ParamsReader, Halo2ParamsReader},
-    wrapper::Halo2WrapperProvingKey,
-};
+use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
 use openvm_sdk::fs::read_exe_from_file;
 use openvm_sdk::{
     DefaultStaticVerifierPvHandler, NonRootCommittedExe, Sdk, StdIn,
     commit::AppExecutionCommit,
     config::{AggConfig, AggStarkConfig, SdkVmConfig},
     keygen::{AggProvingKey, AggStarkProvingKey, AppProvingKey},
-    types::EvmProof as OpenVmEvmProf,
 };
 use scroll_zkvm_types::{proof::OpenVmEvmProof, types_agg::ProgramCommitment};
 use scroll_zkvm_verifier::verifier::UniversalVerifier;
@@ -110,7 +105,7 @@ impl Prover {
             app_pk,
             evm_prover,
             cache_dir: config.dir_cache.clone(),
-            config: config,
+            config,
             prover_name: name.unwrap_or("universal").to_string(),
         })
     }

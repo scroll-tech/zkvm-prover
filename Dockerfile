@@ -1,6 +1,6 @@
 FROM rust:1.86
 
-ORKDIR /app
+WORKDIR /app
 
 COPY . .
 

@@ -20,7 +20,7 @@ use std::{
 use dotenv::dotenv;
 use eyre::Result;
 use openvm_native_compiler::ir::DIGEST_SIZE;
-use openvm_sdk::{F, Sdk, commit::CommitBytes, config::SdkVmConfig, fs::read_from_file_bitcode};
+use openvm_sdk::{F, Sdk, commit::CommitBytes, config::SdkVmConfig};
 use openvm_stark_sdk::{openvm_stark_backend::p3_field::PrimeField32, p3_bn254_fr::Bn254Fr};
 
 mod builder;

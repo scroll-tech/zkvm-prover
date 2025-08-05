@@ -5,10 +5,6 @@ use openvm_circuit::{
     system::{memory::tree::public_values::extract_public_values, program::trace::VmCommittedExe},
 };
 use openvm_sdk::{F, SC, StdIn, config::SdkVmConfig};
-use openvm_stark_sdk::{
-    config::{FriParameters, baby_bear_poseidon2::BabyBearPoseidon2Engine},
-    engine::StarkFriEngine,
-};
 
 use crate::Error;
 

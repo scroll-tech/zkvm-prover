@@ -310,7 +310,6 @@ pub fn prove_verify<T: ProverTester>(
         .join(DIR_PROOFS);
     std::fs::create_dir_all(&cache_dir)?;
     let vk = prover.get_app_commitment().serialize();
-    let verifier = prover.dump_universal_verifier(None::<String>)?;
 
     // Try reading proof from cache if available, and early return in that case.
     let task_id = witness.identifier();

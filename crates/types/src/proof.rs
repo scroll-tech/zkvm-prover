@@ -1,5 +1,4 @@
 use crate::utils::{as_base64, vec_as_base64};
-use openvm_continuations::verifier::internal::types::VmStarkProof;
 use openvm_sdk::{
     SC,
     commit::{AppExecutionCommit, CommitBytes},
@@ -10,9 +9,6 @@ use openvm_stark_sdk::{
     p3_baby_bear::BabyBear,
 };
 use serde::{Deserialize, Serialize};
-
-/// Alias for convenience.
-//pub type StarkProof = VmStarkProof<SC>;
 
 /// Helper type for convenience that implements [`From`] and [`Into`] traits between
 /// [`OpenVmEvmProof`]. The difference is that the instances in [`EvmProof`] are the byte-encoding
