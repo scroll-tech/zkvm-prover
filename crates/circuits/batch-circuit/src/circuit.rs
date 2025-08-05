@@ -1,4 +1,5 @@
 use alloy_primitives::B256;
+
 use scroll_zkvm_types_batch::ArchivedBatchWitness;
 use scroll_zkvm_types_circuit::{
     AggCircuit, AggregationInput, Circuit, ProgramCommitment,
