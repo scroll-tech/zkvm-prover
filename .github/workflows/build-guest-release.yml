@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install xxd
-        run: sudo apt-get update && sudo apt-get install -y xxd
+        run: sudo apt-get update && sudo apt-get install -y vim-common
 
       - name: Install Rust nightly toolchain
         uses: actions-rs/toolchain@v1
