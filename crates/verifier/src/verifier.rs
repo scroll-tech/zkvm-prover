@@ -1,5 +1,5 @@
 use once_cell::sync::Lazy;
-use std::{marker::PhantomData, path::Path};
+use std::path::Path;
 
 use openvm_circuit::system::program::trace::VmCommittedExe;
 use openvm_sdk::{
@@ -13,8 +13,7 @@ use scroll_zkvm_types::proof::OpenVmEvmProof;
 use scroll_zkvm_types::{
     proof::StarkProof,
     types_agg::{AggregationInput, ProgramCommitment},
-};
-
+}
 use tracing::{debug, instrument};
 
 use crate::commitments::{batch, bundle, chunk};
@@ -23,36 +22,6 @@ use crate::commitments::{batch, bundle, chunk};
 /// [continuation proofs][openvm_sdk::prover::vm::ContinuationVmProof].
 static AGG_STARK_PROVING_KEY: Lazy<AggStarkProvingKey> =
     Lazy::new(|| AggStarkProvingKey::keygen(AggStarkConfig::default()).unwrap());
-
-pub trait VerifierType {
-    const EXE_COMMIT: [u32; 8];
-    const VM_COMMIT: [u32; 8];
-    fn get_app_vk() -> Vec<u8> {
-        ProgramCommitment {
-            exe: Self::EXE_COMMIT,
-            leaf: Self::VM_COMMIT,
-        }
-        .serialize()
-    }
-}
-
-pub struct ChunkVerifierType;
-pub struct BatchVerifierType;
-pub struct BundleVerifierType;
-
-impl VerifierType for ChunkVerifierType {
-    const EXE_COMMIT: [u32; 8] = chunk::EXE_COMMIT;
-    const VM_COMMIT: [u32; 8] = chunk::VM_COMMIT;
-}
-
-impl VerifierType for BatchVerifierType {
-    const EXE_COMMIT: [u32; 8] = batch::EXE_COMMIT;
-    const VM_COMMIT: [u32; 8] = batch::VM_COMMIT;
-}
-impl VerifierType for BundleVerifierType {
-    const EXE_COMMIT: [u32; 8] = bundle::EXE_COMMIT;
-    const VM_COMMIT: [u32; 8] = bundle::VM_COMMIT;
-}
 
 pub struct UniversalVerifier {
     pub root_committed_exe: VmCommittedExe<RootSC>,
@@ -101,78 +70,60 @@ impl UniversalVerifier {
     }
 }
 
-pub struct Verifier<Type> {
-    pub root_committed_exe: VmCommittedExe<RootSC>,
-    pub evm_verifier: Vec<u8>,
+#[cfg(test)]
+mod tests {
+    use crate::test::WrappedProof;
+    use scroll_zkvm_prover::utils::read_json;
+    use scroll_zkvm_types::{proof::ProofEnum, types_agg::ProgramCommitment};
+    use std::path::Path;
 
-    _type: PhantomData<Type>,
-}
+    use super::*;
 
-pub type AnyVerifier = Verifier<ChunkVerifierType>;
-pub type ChunkVerifier = Verifier<ChunkVerifierType>;
-pub type BatchVerifier = Verifier<BatchVerifierType>;
-pub type BundleVerifier = Verifier<BundleVerifierType>;
+    const PATH_TESTDATA: &str = "./testdata";
 
-impl<Type> Verifier<Type> {
-    pub fn setup<P: AsRef<Path>>(
-        path_root_committed_exe: P,
-        path_verifier_code: P,
-    ) -> eyre::Result<Self> {
-        let root_committed_exe = std::fs::read(path_root_committed_exe.as_ref())
-            .map_err(|e| e.into())
-            .and_then(|bytes| bincode_v1::deserialize(&bytes))?;
-
-        let evm_verifier = std::fs::read(path_verifier_code.as_ref())?;
-
-        Ok(Self {
-            root_committed_exe,
-            evm_verifier,
-            _type: PhantomData,
-        })
-    }
-
-    pub fn switch_to<AnotherType>(self) -> Verifier<AnotherType> {
-        Verifier::<AnotherType> {
-            root_committed_exe: self.root_committed_exe,
-            evm_verifier: self.evm_verifier,
-            _type: PhantomData,
+    impl UniversalVerifier {
+        /// test method to be compatible with euclid wrapped proofs
+        pub fn verify_wrapped_proof(&self, proof: &WrappedProof) -> eyre::Result<bool> {
+            match &proof.proof {
+                ProofEnum::Evm(p) => {
+                    crate::evm::verify_evm_proof(&self.evm_verifier, &p.clone().into())
+                        .map_err(|e| eyre::eyre!("evm execute fail {e}"))?;
+                    Ok(true)
+                }
+                ProofEnum::Root(p) => self.verify_proof(p, &proof.vk),
+            }
         }
-    }
 
-    pub fn to_chunk_verifier(self) -> ChunkVerifier {
-        self.switch_to()
-    }
-    pub fn to_batch_verifier(self) -> BatchVerifier {
-        self.switch_to()
-    }
-    pub fn to_bundle_verifier(self) -> BundleVerifier {
-        self.switch_to()
-    }
-}
+        /// test method to be compatible with euclid wrapped proofs
+        pub fn verify_proof_enum(&self, proof: &ProofEnum) -> eyre::Result<bool> {
+            match &proof {
+                ProofEnum::Evm(p) => {
+                    let evm_proof: RawEvmProof = p.clone().into();
+                    crate::evm::verify_evm_proof(&self.evm_verifier, &evm_proof)
+                        .map_err(|e| eyre::eyre!("evm execute fail {e}"))?;
 
-impl<Type: VerifierType> Verifier<Type> {
-    pub fn get_app_vk(&self) -> Vec<u8> {
-        Type::get_app_vk()
-    }
-
-    pub fn verify_proof(&self, root_proof: &StarkProof) -> bool {
-        verify_stark_proof(root_proof, Type::EXE_COMMIT, Type::VM_COMMIT).is_ok()
-    }
-
-    pub fn verify_evm_proof(&self, evm_proof: &OpenVmEvmProof) -> bool {
-        assert_eq!(
-            evm_proof.app_commit.app_exe_commit.to_u32_digest(),
-            Type::EXE_COMMIT,
-            "mismatch EXE commitment"
-        );
-        assert_eq!(
-            evm_proof.app_commit.app_vm_commit.to_u32_digest(),
+                    println!(
+                        "verified evm proof, digest_1: {:#?}; digest_2: {:#?}",
+                        evm_proof.instances[12], evm_proof.instances[13]
+                    );
+                }
+                ProofEnum::Root(p) => {
+                    let inst = self.verify_proof_inner(p)?;
+                    let inst: Vec<u32> = inst.into_iter().map(|v| v.unwrap()).collect();
+                    let expected_vk = ProgramCommitment {
+                        exe: inst.as_slice()[..8].try_into()?,
+                        leaf: inst.as_slice()[8..16].try_into()?,
+                    };
+                    use base64::{Engine, prelude::BASE64_STANDARD};
+                    println!(
+                        "verified proof, expcted vk: {}",
+                        BASE64_STANDARD.encode(expected_vk.serialize())
             Type::VM_COMMIT,
-            "mismatch LEAF commitment"
-        );
-        crate::evm::verify_evm_proof(&self.evm_verifier, evm_proof).is_ok()
-    }
-}
+                    );
+                }
+            }
+            Ok(true)
+        }
 
 /// Verify a stark proof.
 pub fn verify_stark_proof(
@@ -190,38 +141,25 @@ pub fn verify_stark_proof(
     )
     .unwrap();
     Ok(())
-}
+    }
 
-#[cfg(test)]
-mod tests {
-    use std::path::Path;
-
-    use scroll_zkvm_prover::{
-        AsStarkProof, BatchProof, BundleProof, ChunkProof, IntoEvmProof, PersistableProof,
-    };
-    use scroll_zkvm_types::types_agg::ProgramCommitment;
-
-    use super::*;
-
-    const PATH_TESTDATA: &str = "./testdata";
-
-    #[ignore = "need release assets"]
+    #[ignore = "need released assets"]
     #[test]
     fn verify_universal_proof() -> eyre::Result<()> {
-        let chunk_proof = ChunkProof::from_json(
+        let chunk_proof: ProofEnum = read_json(
             Path::new(PATH_TESTDATA)
                 .join("proofs")
-                .join("chunk-proof-phase2.json"),
+                .join("chunk-proof-feynman.json"),
         )?;
-        let batch_proof = BatchProof::from_json(
+        let batch_proof: ProofEnum = read_json(
             Path::new(PATH_TESTDATA)
                 .join("proofs")
-                .join("batch-proof-phase2.json"),
+                .join("batch-proof-feynman.json"),
         )?;
-        let evm_proof = BundleProof::from_json(
+        let evm_proof: ProofEnum = read_json(
             Path::new(PATH_TESTDATA)
                 .join("proofs")
-                .join("bundle-proof-phase2.json"),
+                .join("bundle-proof-feynman.json"),
         )?;
 
         // Note: the committed exe has to match the version of openvm
@@ -231,26 +169,17 @@ mod tests {
             Path::new(PATH_TESTDATA).join("verifier.bin"),
         )?;
 
-        verifier.verify_proof(
-            chunk_proof.as_stark_proof(),
-            &ChunkVerifierType::get_app_vk(),
-        )?;
-        verifier.verify_proof(
-            batch_proof.as_stark_proof(),
-            &BatchVerifierType::get_app_vk(),
-        )?;
-        verifier.verify_proof_evm(
-            &evm_proof.into_evm_proof(),
-            &BundleVerifierType::get_app_vk(),
-        )?;
+        verifier.verify_proof_enum(&evm_proof)?;
+        verifier.verify_proof_enum(&chunk_proof)?;
+        verifier.verify_proof_enum(&batch_proof)?;
 
         Ok(())
     }
 
-    #[ignore = "need release assets"]
+    #[ignore = "need euclid released assets"]
     #[test]
     fn verify_chunk_proof() -> eyre::Result<()> {
-        let chunk_proof = ChunkProof::from_json(
+        let chunk_proof = WrappedProof::from_json(
             Path::new(PATH_TESTDATA)
                 .join("proofs")
                 .join("chunk-proof-phase2.json"),
@@ -258,58 +187,61 @@ mod tests {
 
         // Note: the committed exe has to match the version of openvm
         // which is used to generate the proof
-        let verifier = ChunkVerifier::setup(
+        let verifier = UniversalVerifier::setup(
             Path::new(PATH_TESTDATA).join("root-verifier-committed-exe"),
             Path::new(PATH_TESTDATA).join("verifier.bin"),
         )?;
 
         let commitment = ProgramCommitment::deserialize(&chunk_proof.vk);
-        let root_proof = chunk_proof.as_stark_proof();
+        let root_proof = chunk_proof.proof.as_stark_proof().unwrap();
         verify_stark_proof(root_proof, commitment.exe, commitment.leaf).unwrap();
         assert!(
-            verifier.verify_proof(root_proof),
+            verifier.verify_proof(root_proof, &chunk_proof.vk)?,
             "proof verification failed",
         );
 
         Ok(())
     }
 
-    #[ignore = "need release assets"]
+    #[ignore = "need euclid released assets"]
     #[test]
     fn verify_batch_proof() -> eyre::Result<()> {
-        let batch_proof = BatchProof::from_json(
+        let batch_proof = WrappedProof::from_json(
             Path::new(PATH_TESTDATA)
                 .join("proofs")
                 .join("batch-proof-phase2.json"),
         )?;
 
-        let _verifier = BatchVerifier::setup(
+        let verifier = UniversalVerifier::setup(
             Path::new(PATH_TESTDATA).join("root-verifier-committed-exe"),
             Path::new(PATH_TESTDATA).join("verifier.bin"),
         )?;
 
         let commitment = ProgramCommitment::deserialize(&batch_proof.vk);
-        let root_proof = batch_proof.as_stark_proof();
+        let root_proof = batch_proof.proof.as_stark_proof().unwrap();
         verify_stark_proof(root_proof, commitment.exe, commitment.leaf).unwrap();
 
         Ok(())
     }
 
-    #[ignore = "need released assets"]
+    #[ignore = "need euclid released assets"]
     #[test]
     fn verify_bundle_proof() -> eyre::Result<()> {
-        let evm_proof = BundleProof::from_json(
+        let evm_proof = WrappedProof::from_json(
             Path::new(PATH_TESTDATA)
                 .join("proofs")
                 .join("bundle-proof-phase2.json"),
         )?;
 
-        let verifier = BundleVerifier::setup(
+        let verifier = UniversalVerifier::setup(
             Path::new(PATH_TESTDATA).join("root-verifier-committed-exe"),
             Path::new(PATH_TESTDATA).join("verifier.bin"),
         )?;
 
-        assert!(verifier.verify_evm_proof(&evm_proof.into_evm_proof()));
+        assert!(verifier.verify_proof_evm(
+            &evm_proof.proof.into_evm_proof().unwrap().into(),
+            &evm_proof.vk
+        )?);
 
         Ok(())
     }

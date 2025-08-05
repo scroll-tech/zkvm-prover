@@ -42,24 +42,26 @@ pub fn verify_evm_proof(evm_verifier: &[u8], evm_proof: &EvmProof) -> Result<u64
     )
 }
 
+#[ignore = "need release assets"]
 #[test]
 fn test_verify_evm_proof() -> eyre::Result<()> {
     use std::path::Path;
 
-    use scroll_zkvm_prover::{BundleProof, IntoEvmProof, PersistableProof};
+    use crate::test::WrappedProof;
 
     const PATH_TESTDATA: &str = "./testdata";
 
-    let evm_proof = BundleProof::from_json(
+    let evm_proof = WrappedProof::from_json(
         Path::new(PATH_TESTDATA)
             .join("proofs")
             .join("bundle-proof-phase2.json"),
-    )?;
+    )?
+    .proof;
 
     let evm_verifier: Vec<u8> =
         scroll_zkvm_prover::utils::read(Path::new(PATH_TESTDATA).join("verifier.bin"))?;
 
-    let gas_cost = verify_evm_proof(&evm_verifier, &evm_proof.into_evm_proof())
+    let gas_cost = verify_evm_proof(&evm_verifier, &evm_proof.into_evm_proof().unwrap().into())
         .map_err(|e| eyre::eyre!("evm-proof verification failed: {e}"))?;
 
     println!("evm-verify gas cost = {gas_cost}");

@@ -1,5 +1,4 @@
 use std::{
-    marker::PhantomData,
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -7,6 +6,10 @@ use std::{
 use once_cell::sync::Lazy;
 use openvm_circuit::system::program::trace::VmCommittedExe;
 use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
+use openvm_native_recursion::halo2::{
+    RawEvmProof,
+    utils::{CacheHalo2ParamsReader, Halo2ParamsReader},
+    wrapper::Halo2WrapperProvingKey,
 use openvm_sdk::{
     DefaultStaticVerifierPvHandler, NonRootCommittedExe, Sdk, StdIn,
     commit::AppExecutionCommit,
@@ -16,28 +19,18 @@ use openvm_sdk::{
 };
 use openvm_sdk::{config::SdkVmCpuBuilder, fs::read_exe_from_file};
 use scroll_zkvm_verifier::verifier::verify_stark_proof;
-use tracing::{debug, instrument};
+use tracing::instrument;
 
 // Re-export from openvm_sdk.
 pub use openvm_sdk::{self, SC};
 
 use crate::{
     Error,
-    proof::{PersistableProof, ProofMetadata, WrappedProof},
     setup::read_app_config,
     task::ProvingTask,
 };
 
 use scroll_zkvm_types::proof::{EvmProof, ProofEnum, StarkProof};
-
-mod batch;
-pub use batch::{BatchProver, BatchProverType};
-
-mod bundle;
-pub use bundle::{BundleProverEuclidV2, BundleProverTypeEuclidV2, GenericBundleProverType};
-
-mod chunk;
-pub use chunk::{ChunkProver, ChunkProverType, GenericChunkProverType};
 
 /// Proving key for STARK aggregation. Primarily used to aggregate
 /// [continuation proofs][openvm_sdk::prover::vm::ContinuationVmProof].
@@ -57,11 +50,6 @@ const FD_ROOT_VERIFIER_VM_CONFIG: &str = "root-verifier-vm-config";
 /// File descriptor for the root verifier's committed exe.
 const FD_ROOT_VERIFIER_COMMITTED_EXE: &str = "root-verifier-committed-exe";
 
-pub trait Commitments {
-    const EXE_COMMIT: [u32; 8];
-    const VM_COMMIT: [u32; 8];
-}
-
 /// Types used in the outermost proof construction and verification, i.e. the EVM-compatible layer.
 /// This is required only for [BundleProver].
 pub struct EvmProverVerifier {
@@ -72,7 +60,9 @@ pub struct EvmProverVerifier {
 }
 
 /// Generic prover.
-pub struct Prover<Type> {
+pub struct Prover {
+    /// Prover name
+    pub prover_name: String,
     /// Commitment to app exe.
     pub app_committed_exe: Arc<NonRootCommittedExe>,
     /// App specific proving key.
@@ -83,8 +73,6 @@ pub struct Prover<Type> {
     /// returned instead of re-generating a proof.
     pub cache_dir: Option<PathBuf>,
     pub config: ProverConfig,
-
-    _type: PhantomData<Type>,
 }
 
 /// Alias for convenience.
@@ -108,13 +96,15 @@ pub struct ProverConfig {
     pub segment_len: Option<usize>,
 }
 
-impl<Type: ProverType> Prover<Type> {
+const COMMON_SEGMENT_SIZE: usize = (1 << 22) - 100;
+
+impl Prover {
     /// Setup the [`Prover`] given paths to the application's exe and proving key.
     #[instrument("Prover::setup")]
-    pub fn setup(config: ProverConfig) -> Result<Self, Error> {
+    pub fn setup(config: ProverConfig, with_evm: bool, name: Option<&str>) -> Result<Self, Error> {
         let (app_committed_exe, app_pk) = Self::init(&config)?;
 
-        let evm_prover = Type::EVM
+        let evm_prover = with_evm
             .then(|| Self::setup_evm_prover(&config))
             .transpose()?;
 
@@ -124,7 +114,7 @@ impl<Type: ProverType> Prover<Type> {
             evm_prover,
             cache_dir: config.dir_cache.clone(),
             config: config,
-            _type: PhantomData,
+            prover_name: name.unwrap_or("universal").to_string(),
         })
     }
 
@@ -133,7 +123,7 @@ impl<Type: ProverType> Prover<Type> {
     pub fn init(config: &ProverConfig) -> Result<InitRes, Error> {
         let app_exe = read_exe_from_file(&config.path_app_exe).unwrap();
         let mut app_config = read_app_config(&config.path_app_config)?;
-        let segment_len = config.segment_len.unwrap_or(Type::SEGMENT_SIZE);
+        let segment_len = config.segment_len.unwrap_or(COMMON_SEGMENT_SIZE);
         app_config.app_vm_config.system.config = app_config
             .app_vm_config
             .system
@@ -186,7 +176,7 @@ impl<Type: ProverType> Prover<Type> {
 
     /// Dump assets required to setup verifier-only mode.
     pub fn dump_verifier<P: AsRef<Path>>(&self, dir: P) -> Result<PathBuf, Error> {
-        if !Type::EVM {
+        if self.evm_prover.is_none() {
             return Err(Error::Custom(
                 "dump_verifier only at bundle-prover".to_string(),
             ));
@@ -230,166 +220,55 @@ impl<Type: ProverType> Prover<Type> {
 
     /// Simple wrapper of gen_proof_stark/snark, Early-return if a proof is found in disc,
     /// otherwise generate and return the proof after writing to disc.
-    #[instrument("Prover::gen_proof_universal", skip_all, fields(task_id, prover_name = Type::NAME))]
+    #[instrument("Prover::gen_proof_universal", skip_all, fields(task_id))]
     pub fn gen_proof_universal(
         &self,
         task: &impl ProvingTask,
         with_snark: bool,
     ) -> Result<ProofEnum, Error> {
-        // Generate a new proof.
-        Ok(if !with_snark {
-            self.gen_proof_stark(task)?.into()
-        } else {
-            EvmProof::from(self.gen_proof_snark(task)?).into()
-        })
-    }
-
-    /// Early-return if a proof is found in disc, otherwise generate and return the proof after
-    /// writing to disc.
-    /// TODO: would be deprecated later
-    #[instrument("Prover::gen_proof", skip_all, fields(task_id, prover_name = Type::NAME))]
-    pub fn gen_proof(
-        &self,
-        task: &Type::ProvingTask,
-    ) -> Result<WrappedProof<Type::ProofMetadata>, Error> {
         let task_id = task.identifier();
+        tracing::debug!(name: "generate_root_verifier_input", task_id);
 
-        // Try reading proof from cache if available, and early return in that case.
-        if let Some(dir) = &self.cache_dir {
-            let path_proof = dir.join(Self::fd_proof(task));
-            debug!(name: "try_read_proof", ?task_id, ?path_proof);
-
-            if let Ok(proof) =
-                <WrappedProof<Type::ProofMetadata> as PersistableProof>::from_json(&path_proof)
-            {
+        let stdin = task
+            .build_guest_input()
+            .map_err(|e| Error::GenProof(e.to_string()))?;
                 verify_stark_proof(
                     proof.proof.as_stark_proof().unwrap(),
                     Type::EXE_COMMIT,
                     Type::VM_COMMIT,
                 )
                 .unwrap();
-                debug!(name: "early_return_proof", ?task_id);
-                return Ok(proof);
-            }
-        }
 
         // Generate a new proof.
-        assert!(!Type::EVM, "Prover::gen_proof not for EVM-prover");
-        let metadata = Self::metadata_with_prechecks(task)?;
+        let proof = if !with_snark {
+            self.gen_proof_stark(stdin)?.into()
+        } else {
+            EvmProof::from(self.gen_proof_snark(stdin)?).into()
+        };
 
-        // sanity check for using expected program commit
-        let _ = Self::get_verify_program_commitment(&self.app_committed_exe, &self.app_pk, false);
-
-        let proof = self.gen_proof_universal(task, false)?;
-        let wrapped_proof = metadata.new_proof(proof, Some(self.get_app_vk().as_slice()));
-
-        wrapped_proof.sanity_check(task.fork_name());
-
-        // Write proof to disc if caching was enabled.
-        if let Some(dir) = &self.cache_dir {
-            let path_proof = dir.join(Self::fd_proof(task));
-            debug!(name: "try_write_root_proof", ?task_id, ?path_proof);
-
-            wrapped_proof.dump(&path_proof)?;
-        }
-
-        Ok(wrapped_proof)
-    }
-
-    /// Early-return if a proof is found in disc, otherwise generate and return the proof after
-    /// writing to disc.
-    /// TODO: would be deprecated later
-    #[instrument("Prover::gen_proof_evm", skip_all, fields(task_id))]
-    pub fn gen_proof_evm(
-        &self,
-        task: &Type::ProvingTask,
-    ) -> Result<WrappedProof<Type::ProofMetadata>, Error> {
-        let task_id = task.identifier();
-
-        // Try reading proof from cache if available, and early return in that case.
-        if let Some(dir) = &self.cache_dir {
-            let path_proof = dir.join(Self::fd_proof(task));
-            debug!(name: "try_read_proof", ?task_id, ?path_proof);
-
-            if let Ok(proof) =
-                <WrappedProof<Type::ProofMetadata> as PersistableProof>::from_json(&path_proof)
-            {
-                debug!(name: "early_return_proof", ?task_id);
-                return Ok(proof);
-            }
-        }
-
-        // Generate a new proof.
-        assert!(Type::EVM, "Prover::gen_proof_evm only for EVM-prover");
-        let metadata = Self::metadata_with_prechecks(task)?;
-
-        // sanity check for using expected program commit
-        let _ = Self::get_verify_program_commitment(&self.app_committed_exe, &self.app_pk, false);
-
-        let proof = self.gen_proof_snark(task)?;
-
-        // sanity check for evm proof match the program commit
-        assert_eq!(
-            proof.app_commit.app_exe_commit.to_u32_digest(),
-            Type::EXE_COMMIT,
-            "commitment is not match in generate evm proof",
+        tracing::info!(
+            "app proof generated for {}, task id {task_id}, isevm {with_snark}",
+            self.prover_name
         );
-        assert_eq!(
-            proof.app_commit.app_vm_commit.to_u32_digest(),
-            Type::VM_COMMIT,
-            "commitment is not match in generate evm proof",
-        );
-
-        let wrapped_proof =
-            metadata.new_proof(EvmProof::from(proof), Some(self.get_evm_vk().as_slice()));
-
-        wrapped_proof.sanity_check(task.fork_name());
-
-        // Write proof to disc if caching was enabled.
-        if let Some(dir) = &self.cache_dir {
-            let path_proof = dir.join(Self::fd_proof(task));
-            debug!(name: "try_write_proof", ?task_id, ?path_proof);
-
-            wrapped_proof.dump(&path_proof)?;
-        }
-
-        Ok(wrapped_proof)
-    }
-
-    /// Validate some pre-checks on the proving task and construct proof metadata.
-    #[instrument("Prover::metadata_with_prechecks", skip_all, fields(?task_id = task.identifier()))]
-    pub fn metadata_with_prechecks(task: &Type::ProvingTask) -> Result<Type::ProofMetadata, Error> {
-        Type::metadata_with_prechecks(task)
-    }
-
-    /// Verify an [evm proof][evm_proof].
-    ///
-    /// [evm_proof][openvm_native_recursion::halo2::EvmProof]
-    #[instrument("Prover::verify_proof_evm", skip_all)]
-    pub fn verify_proof_evm(&self, proof: &WrappedProof<Type::ProofMetadata>) -> Result<(), Error> {
-        let evm_proof = proof.proof.as_evm_proof().ok_or(Error::VerifyProof(
-            "verify_proof_evm expects EvmProof".to_string(),
-        ))?;
-        let contract = &self
-            .evm_prover
-            .as_ref()
-            .expect("uninited")
-            .verifier_contract;
-        let gas_cost =
-            scroll_zkvm_verifier::evm::verify_evm_proof(contract, &evm_proof.clone().into())
-                .map_err(|e| Error::VerifyProof(format!("EVM-proof verification failed: {e}")))?;
-
-        tracing::info!(name: "verify_evm_proof", ?gas_cost);
-
-        Ok(())
+        Ok(proof)
     }
 
     /// Execute the guest program to get the cycle count.
-    pub fn execute_and_check(&self, stdin: &StdIn) -> Result<u64, Error> {
+    pub fn execute_and_check_with_full_result(
+        &self,
+        stdin: &StdIn,
+        mock_prove: bool,
+    ) -> Result<crate::utils::vm::ExecutionResult, Error> {
         let config = self.app_pk.app_vm_pk.vm_config.clone();
         let exe = self.app_committed_exe.exe.clone();
         let exec_result = crate::utils::vm::execute_guest(config, exe, stdin)?;
-        Ok(exec_result.total_cycle as u64)
+        Ok(exec_result)
+    }
+
+    /// Execute the guest program to get the cycle count.
+    pub fn execute_and_check(&self, stdin: &StdIn, mock_prove: bool) -> Result<u64, Error> {
+        self.execute_and_check_with_full_result(stdin, mock_prove)
+            .map(|res| res.total_cycle)
     }
 
     /// Setup the EVM prover-verifier.
@@ -453,21 +332,10 @@ impl<Type: ProverType> Prover<Type> {
         })
     }
 
-    /// File descriptor for the proof saved to disc.
-    #[instrument("Prover::fd_proof", skip_all, fields(task_id = task.identifier(), path_proof))]
-    fn fd_proof(task: &impl ProvingTask) -> String {
-        let path_proof = format!("{}-{}.json", Type::NAME, task.identifier());
-        path_proof
-    }
-
     /// Generate a [root proof][root_proof].
     ///
     /// [root_proof][openvm_sdk::verifier::root::types::RootVmVerifierInput]
-    fn gen_proof_stark(&self, task: &impl ProvingTask) -> Result<StarkProof, Error> {
-        let stdin = task
-            .build_guest_input()
-            .map_err(|e| Error::GenProof(e.to_string()))?;
-
+    pub fn gen_proof_stark(&self, stdin: StdIn) -> Result<StarkProof, Error> {
         // Here we always do an execution of the guest program to get the cycle count.
         // and do precheck before proving like ensure PI != 0
 
@@ -475,15 +343,13 @@ impl<Type: ProverType> Prover<Type> {
         let cycle = self.execute_and_check(&stdin)?;
         tracing::info!("cycle total {}", cycle);
         //unimplemented!("stop");
-        let task_id = task.identifier();
-
-        tracing::debug!(name: "generate_root_verifier_input", ?task_id);
         let sdk = Sdk::new();
         let proof = sdk
             .generate_e2e_stark_proof(
                 SdkVmCpuBuilder,
                 self.app_pk.clone(),
                 self.app_committed_exe.clone(),
+
                 AGG_STARK_PROVING_KEY.clone(),
                 stdin,
             )
@@ -497,11 +363,7 @@ impl<Type: ProverType> Prover<Type> {
     /// Generate an [evm proof][evm_proof].
     ///
     /// [evm_proof][openvm_native_recursion::halo2::EvmProof]
-    fn gen_proof_snark(&self, task: &impl ProvingTask) -> Result<OpenVmEvmProf, Error> {
-        let stdin = task
-            .build_guest_input()
-            .map_err(|e| Error::GenProof(e.to_string()))?;
-        tracing::info!("===> cycle total");
+    pub fn gen_proof_snark(&self, stdin: StdIn) -> Result<OpenVmEvmProof, Error> {
         let cycle = self.execute_and_check(&stdin)?;
         tracing::info!("cycle total {}", cycle);
         let sdk = Sdk::new();
@@ -518,65 +380,4 @@ impl<Type: ProverType> Prover<Type> {
 
         Ok(evm_proof)
     }
-
-    fn get_verify_program_commitment(
-        app_committed_exe: &NonRootCommittedExe,
-        app_pk: &AppProvingKey<SdkVmConfig>,
-        debug_out: bool,
-    ) -> (AppExecutionCommit, [[u32; 8]; 2]) {
-        let commits = AppExecutionCommit::compute(
-            &app_pk.app_vm_pk.vm_config,
-            app_committed_exe,
-            &app_pk.leaf_committed_exe,
-        );
-
-        let exe_commit = commits.app_exe_commit.to_u32_digest();
-        let vm_commit = commits.app_vm_commit.to_u32_digest();
-
-        // print the 2 exe commitments
-        if debug_out {
-            debug!(name: "exe-commitment", prover_name = Type::NAME, raw = ?exe_commit, as_bn254 = ?commits.app_exe_commit.to_bn254());
-            debug!(name: "vm-commitment", prover_name = Type::NAME, raw = ?vm_commit, as_bn254 = ?commits.app_vm_commit.to_bn254());
-        }
-
-        assert_eq!(
-            vm_commit,
-            Type::VM_COMMIT,
-            "read unmatched app commitment from app"
-        );
-        assert_eq!(
-            exe_commit,
-            Type::EXE_COMMIT,
-            "read unmatched exe commitment from app"
-        );
-        (commits, [exe_commit, vm_commit])
-    }
-}
-
-pub trait ProverType {
-    /// The name given to the prover, this is also used as a prefix while storing generated proofs
-    /// to disc.
-    const NAME: &'static str;
-
-    /// Whether this prover generates SNARKs that are EVM-verifiable. In our context, only the
-    /// [`BundleProver`] has the EVM set to `true`.
-    const EVM: bool;
-
-    /// The size of a segment, i.e. the max height of its chips.
-    const SEGMENT_SIZE: usize;
-
-    /// The app program's exe commitment.
-    const EXE_COMMIT: [u32; 8];
-
-    /// The app program's vm commitment.
-    const VM_COMMIT: [u32; 8];
-
-    /// The task provided as argument during proof generation process.
-    type ProvingTask: ProvingTask;
-
-    /// The metadata accompanying the wrapper proof generated by this prover.
-    type ProofMetadata: ProofMetadata;
-
-    /// Provided the proving task, computes the proof metadata.
-    fn metadata_with_prechecks(task: &Self::ProvingTask) -> Result<Self::ProofMetadata, Error>;
 }
