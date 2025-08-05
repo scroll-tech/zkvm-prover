@@ -20,8 +20,3 @@ pub fn load_local_task(task_name: &str) -> eyre::Result<UnivProvingTask> {
             .join(task_name),
     )?)
 }
-
-use scroll_zkvm_prover::Prover;
-struct UnsafeSendWrappedProver(Prover);
-
-unsafe impl Send for UnsafeSendWrappedProver {}

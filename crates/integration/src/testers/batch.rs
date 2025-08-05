@@ -7,14 +7,11 @@ use scroll_zkvm_types::{
 
 use crate::{
     PartialProvingTask, ProverTester, TestTaskBuilder,
-    testers::{
-        UnsafeSendWrappedProver,
-        chunk::{ChunkProverTester, ChunkTaskGenerator, preset_chunk_multiple},
-    },
-    utils::{build_batch_witnesses, metadata_from_chunk_witnesses},
+    testers::chunk::{ChunkProverTester, ChunkTaskGenerator, preset_chunk_multiple},
+    utils::build_batch_witnesses,
 };
 
-use std::sync::{Mutex, OnceLock};
+use std::sync::OnceLock;
 
 impl PartialProvingTask for BatchWitness {
     fn identifier(&self) -> String {
@@ -51,21 +48,6 @@ impl ProverTester for BatchProverTester {
     const DIR_ASSETS: &str = "batch";
 }
 
-impl BatchProverTester {
-    fn instrinsic_chunk_prover() -> eyre::Result<&'static Mutex<UnsafeSendWrappedProver>> {
-        static CHUNK_PROVER: OnceLock<eyre::Result<Mutex<UnsafeSendWrappedProver>>> =
-            OnceLock::new();
-        CHUNK_PROVER
-            .get_or_init(|| {
-                ChunkProverTester::load_prover(false)
-                    .map(UnsafeSendWrappedProver)
-                    .map(Mutex::new)
-            })
-            .as_ref()
-            .map_err(|e| eyre::eyre!("{e}"))
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct BatchTaskGenerator {
     result: OnceLock<BatchWitness>,
@@ -85,14 +67,11 @@ impl TestTaskBuilder<BatchProverTester> for BatchTaskGenerator {
     }
 
     fn gen_agg_proofs(&self) -> eyre::Result<Vec<ProofEnum>> {
-        let chunk_prover = &BatchProverTester::instrinsic_chunk_prover()?
-            .lock()
-            .unwrap()
-            .0;
+        let chunk_prover = ChunkProverTester::load_prover(false)?;
         let chunk_proofs = self
             .chunk_generators
             .iter()
-            .map(|generator| generator.gen_witnesses_proof(chunk_prover))
+            .map(|generator| generator.gen_witnesses_proof(&chunk_prover))
             .collect::<Result<Vec<ProofEnum>, _>>()?;
         Ok(chunk_proofs)
     }
@@ -100,19 +79,29 @@ impl TestTaskBuilder<BatchProverTester> for BatchTaskGenerator {
 
 impl BatchTaskGenerator {
     fn calculate_batch_witness(&self) -> eyre::Result<BatchWitness> {
-        let mut chunks = Vec::new();
-        let mut chunk_infos = Vec::new();
         let mut last_info: Option<&ChunkInfo> = self
             .last_witness
             .as_ref()
             .and_then(|wit| wit.chunk_infos.last());
 
-        for chunk_generator in &self.chunk_generators {
-            let chunk_wit = chunk_generator.gen_proving_witnesses()?;
-            let info = metadata_from_chunk_witnesses(&chunk_wit)?;
+        let chunks = self
+            .chunk_generators
+            .iter()
+            .map(|g| g.gen_proving_witnesses())
+            .collect::<eyre::Result<Vec<_>>>()?;
 
+        let ret_wit = build_batch_witnesses(
+            &chunks,
+            &ChunkProverTester::load_prover(false)?.get_app_vk(),
+            self.last_witness
+                .as_ref()
+                .map(|wit| (&wit.reference_header).into())
+                .unwrap_or_default(),
+        )?;
+
+        // sanity check
+        for info in &ret_wit.chunk_infos {
             if let Some(last_info) = last_info {
-                // validate some data
                 assert_eq!(
                     last_info.post_state_root, info.prev_state_root,
                     "state root"
@@ -129,24 +118,10 @@ impl BatchTaskGenerator {
                 );
             }
 
-            chunks.push(chunk_wit);
-            chunk_infos.push(info);
-            last_info = chunk_infos.last();
+            last_info.replace(info);
         }
 
-        Ok(build_batch_witnesses(
-            &chunks,
-            &chunk_infos,
-            &BatchProverTester::instrinsic_chunk_prover()?
-                .lock()
-                .unwrap()
-                .0
-                .get_app_vk(),
-            self.last_witness
-                .as_ref()
-                .map(|wit| (&wit.reference_header).into())
-                .unwrap_or_default(),
-        ))
+        Ok(ret_wit)
     }
 
     /// accept a series of ChunkTaskGenerator

@@ -10,15 +10,12 @@ use scroll_zkvm_prover::Prover;
 
 use crate::{
     PartialProvingTask, ProverTester, TestTaskBuilder, prove_verify_single_evm,
-    testers::{
-        UnsafeSendWrappedProver,
-        batch::{BatchProverTester, BatchTaskGenerator},
-    },
+    testers::batch::{BatchProverTester, BatchTaskGenerator},
     testing_hardfork,
     utils::metadata_from_batch_witnesses,
 };
 
-use std::sync::{Mutex, OnceLock};
+use std::sync::OnceLock;
 
 impl PartialProvingTask for BundleWitness {
     fn identifier(&self) -> String {
@@ -70,21 +67,6 @@ impl ProverTester for BundleProverTester {
     // }
 }
 
-impl BundleProverTester {
-    fn instrinsic_batch_prover() -> eyre::Result<&'static Mutex<UnsafeSendWrappedProver>> {
-        static BATCH_PROVER: OnceLock<eyre::Result<Mutex<UnsafeSendWrappedProver>>> =
-            OnceLock::new();
-        BATCH_PROVER
-            .get_or_init(|| {
-                BatchProverTester::load_prover(false)
-                    .map(UnsafeSendWrappedProver)
-                    .map(Mutex::new)
-            })
-            .as_ref()
-            .map_err(|e| eyre::eyre!("{e}"))
-    }
-}
-
 #[derive(Debug)]
 pub struct BundleTaskGenerator {
     result: OnceLock<eyre::Result<BundleWitness>>,
@@ -101,14 +83,11 @@ impl TestTaskBuilder<BundleProverTester> for BundleTaskGenerator {
     }
 
     fn gen_agg_proofs(&self) -> eyre::Result<Vec<ProofEnum>> {
-        let batch_prover = &BundleProverTester::instrinsic_batch_prover()?
-            .lock()
-            .unwrap()
-            .0;
+        let batch_prover = BatchProverTester::load_prover(false)?;
         let batch_proofs = self
             .batch_generators
             .iter()
-            .map(|generator| generator.gen_witnesses_proof(batch_prover))
+            .map(|generator| generator.gen_witnesses_proof(&batch_prover))
             .collect::<Result<Vec<ProofEnum>, _>>()?;
 
         Ok(batch_proofs)
@@ -139,11 +118,7 @@ impl BundleTaskGenerator {
         };
 
         let fork_name = testing_hardfork();
-        let vk = BundleProverTester::instrinsic_batch_prover()?
-            .lock()
-            .unwrap()
-            .0
-            .get_app_vk();
+        let vk = BatchProverTester::load_prover(false)?.get_app_vk();
         let commitment = ProgramCommitment::deserialize(&vk);
         let mut batch_proofs = Vec::new();
         let mut batch_infos: Vec<BatchInfo> = Vec::new();

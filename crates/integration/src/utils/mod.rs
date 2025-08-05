@@ -129,12 +129,13 @@ pub fn metadata_from_bundle_witnesses(witness: &BundleWitness) -> eyre::Result<B
 
 pub fn build_batch_witnesses(
     chunks: &[ChunkWitness],
-    chunk_infos: &[ChunkInfo],
     prover_vk: &[u8], // notice we supppose all proof is (would be) generated from the same prover
     last_header: LastHeader,
-) -> BatchWitness {
-    // Sanity check.
-    assert_eq!(chunks.len(), chunk_infos.len());
+) -> eyre::Result<BatchWitness> {
+    let chunk_infos = chunks
+        .iter()
+        .map(metadata_from_chunk_witnesses)
+        .collect::<eyre::Result<Vec<_>>>()?;
 
     // collect tx bytes from chunk tasks
     let (meta_chunk_sizes, chunk_digests, chunk_tx_bytes) = chunks.iter().fold(
@@ -148,10 +149,10 @@ pub fn build_batch_witnesses(
         },
     );
 
-    // // sanity check
-    // for (digest, proof) in chunk_digests.iter().zip(chunk_proofs.iter()) {
-    //     assert_eq!(digest, &proof.metadata.chunk_info.tx_data_digest);
-    // }
+    // sanity check, verify the correction of execute
+    for (digest, chunk_info) in chunk_digests.iter().zip(chunk_infos.as_slice()) {
+        assert_eq!(digest, &chunk_info.tx_data_digest);
+    }
 
     const LEGACY_MAX_CHUNKS: usize = 45;
 
@@ -190,7 +191,7 @@ pub fn build_batch_witnesses(
         payload.extend(initial_block_number.to_be_bytes());
         payload.extend(num_blocks.to_be_bytes());
         assert_eq!(payload.len(), 74);
-        for chunk_info in chunk_infos {
+        for chunk_info in &chunk_infos {
             for ctx in &chunk_info.block_ctxs {
                 payload.extend(ctx.to_bytes());
             }
@@ -328,9 +329,9 @@ pub fn build_batch_witnesses(
         })
         .collect::<Vec<_>>();
 
-    BatchWitness {
+    Ok(BatchWitness {
         chunk_proofs,
-        chunk_infos: chunk_infos.to_vec(),
+        chunk_infos,
         reference_header,
         blob_bytes,
         point_eval_witness: PointEvalWitness {
@@ -338,7 +339,7 @@ pub fn build_batch_witnesses(
             kzg_proof: *kzg_proof.to_bytes().as_ref(),
         },
         fork_name,
-    }
+    })
 }
 
 #[test]
@@ -348,43 +349,42 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
 
     let witness = match testing_hardfork() {
         ForkName::EuclidV2 => ChunkTaskGenerator {
-            block_range: 1..=3,
+            block_range: 1..=4,
             prev_message_hash: None,
         },
         ForkName::EuclidV1 => ChunkTaskGenerator {
-            block_range: 12508460..=12508461,
+            block_range: 12508460..=12508463,
             prev_message_hash: None,
         },
         ForkName::Feynman => ChunkTaskGenerator {
-            block_range: 16525000..=16525001,
+            block_range: 16525000..=16525003,
             prev_message_hash: None,
         },
     }
     .gen_proving_witnesses()?;
 
-    let info = metadata_from_chunk_witnesses(&witness)?;
     let witnesses = [witness];
-    let infos = [info];
 
     let task_wit = build_batch_witnesses(
         &witnesses,
-        &infos,
         &ProgramCommitment::default().serialize(),
         Default::default(),
-    );
+    )?;
+
+    let infos = task_wit.chunk_infos.as_slice();
 
     match &task_wit.reference_header {
         ReferenceHeader::V6(h) => {
             let enveloped = batch::EnvelopeV6::from_slice(&task_wit.blob_bytes);
-            <batch::PayloadV6 as Payload>::from_envelope(&enveloped).validate(h, &infos);
+            <batch::PayloadV6 as Payload>::from_envelope(&enveloped).validate(h, infos);
         }
         ReferenceHeader::V7(h) => {
             let enveloped = batch::EnvelopeV7::from_slice(&task_wit.blob_bytes);
-            <batch::PayloadV7 as Payload>::from_envelope(&enveloped).validate(h, &infos);
+            <batch::PayloadV7 as Payload>::from_envelope(&enveloped).validate(h, infos);
         }
         ReferenceHeader::V8(h) => {
             let enveloped = batch::EnvelopeV8::from_slice(&task_wit.blob_bytes);
-            <batch::PayloadV8 as Payload>::from_envelope(&enveloped).validate(h, &infos);
+            <batch::PayloadV8 as Payload>::from_envelope(&enveloped).validate(h, infos);
         }
     }
 
