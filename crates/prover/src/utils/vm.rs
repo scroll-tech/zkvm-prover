@@ -29,9 +29,10 @@ pub fn execute_guest(
 ) -> Result<ExecutionResult, Error> {
     use openvm_stark_sdk::openvm_stark_backend::p3_field::Field;
 
-    let vm = VmExecutor::new(vm_config.clone()).unwrap();
+    let executor = VmExecutor::new(vm_config.clone()).unwrap();
+    let instance = executor.instance(&exe).unwrap();
 
-    let state = vm.execute_e1(exe, stdin.clone(), None).unwrap();
+    let state = instance.execute(stdin.clone(), None).unwrap();
     let final_memory = state.memory;
     let total_cycle = state.instret;
 
