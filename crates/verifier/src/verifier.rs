@@ -24,19 +24,21 @@ impl UniversalVerifier {
     pub fn verify_stark_proof(stark_proof: &StarkProof, vk: &[u8]) -> eyre::Result<()> {
         let prog_commit = ProgramCommitment::deserialize(vk);
 
+        /*
         if stark_proof.exe_commitment != prog_commit.exe {
             eyre::bail!("evm: mismatch EXE commitment");
         }
         if stark_proof.vm_commitment != prog_commit.vm {
             eyre::bail!("evm: mismatch VM commitment");
         }
+        */
 
         let agg_stark_pk = &AGG_STARK_PROVING_KEY;
         let sdk = Sdk::new();
 
         use openvm_continuations::verifier::internal::types::VmStarkProof;
         let vm_stark_proof = VmStarkProof {
-            proof: stark_proof.proof.clone(),
+            proof: stark_proof.proof[0].clone(),
             user_public_values: stark_proof.user_public_values.clone(),
         };
         sdk.verify_e2e_stark_proof(

@@ -258,10 +258,10 @@ impl Prover {
             .map_err(|e| Error::GenProof(e.to_string()))?;
         let comm = self.get_app_commitment();
         let proof = StarkProof {
-            proof: proof.proof,
+            proof: vec![proof.proof],
             user_public_values: proof.user_public_values,
-            exe_commitment: comm.exe,
-            vm_commitment: comm.vm,
+            //exe_commitment: comm.exe,
+            //vm_commitment: comm.vm,
         };
         tracing::info!("verifing stark proof");
         UniversalVerifier::verify_stark_proof(&proof, &comm.serialize())
