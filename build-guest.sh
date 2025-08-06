@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -ex
 
+mkdir -p releases
+rm -rf releases/dev
+
 [ -f "crates/build-guest/.env" ] && . crates/build-guest/.env
 
 # if BUILD_STAGES if empty, set it to stage1,stage2,stage3
@@ -36,11 +39,13 @@ if [ -n "$(echo ${BUILD_STAGES} | grep stage3)" ]; then
     bundle-circuit/bundle_exe_commit.rs; do
     docker cp ${container_id}:/app/crates/circuits/${f} crates/circuits/${f}
   done
-
-  # copy release files from container to local
-  docker cp ${container_id}:/app/releases/dev releases/dev
-
 fi
+
+
+# copy release files from container to local
+mkdir -p releases
+rm -rf releases/dev
+docker cp ${container_id}:/app/releases/dev releases/dev
 
 # remove docker container
 docker rm ${container_id}
