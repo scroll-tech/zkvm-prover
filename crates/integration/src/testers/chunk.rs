@@ -34,8 +34,9 @@ where
         println!("File not found: {:?}", path_witness.as_ref());
         return Err(eyre::eyre!("File not found: {:?}", path_witness.as_ref()));
     }
-    let witness = File::open(path_witness)?;
-    Ok(serde_json::from_reader::<_, BlockWitness>(witness)?)
+    let content = std::fs::read(path_witness)?;
+    let result = BlockWitness::from_json_slice(&content)?;
+    Ok(result)
 }
 
 pub struct ChunkProverTester;

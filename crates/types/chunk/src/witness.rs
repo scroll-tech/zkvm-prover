@@ -76,7 +76,16 @@ impl ChunkWitness {
             .collect();
         let compression_ratios = blocks
             .iter()
-            .map(|block| block.compression_ratios())
+            .map(|block| {
+                #[cfg(feature = "scroll-compress-ratio")]
+                {
+                    block.compression_ratios()
+                }
+                #[cfg(not(feature = "scroll-compress-ratio"))]
+                {
+                    unimplemented!();
+                }
+            })
             .collect();
 
         Self {

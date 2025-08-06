@@ -1446,6 +1446,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "convert_case"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "baaaa0ecca5b51987b9423ccdc971514dd8b0bb7b4060b983d3664dad3f1f89f"
+dependencies = [
+ "unicode-segmentation",
+]
+
+[[package]]
 name = "core-foundation-sys"
 version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6291,7 +6300,7 @@ checksum = "28d3b2b1366ec20994f1fd18c3c594f05c5dd4bc44d8bb0c1c632c8d6829481f"
 [[package]]
 name = "sbv-core"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fbump-reth#1d2988c41279c32d9c48eb0b328ca9342823784d"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fbump-reth#89d95494723463d3621b0afe13475f0dd5131ef3"
 dependencies = [
  "sbv-helpers",
  "sbv-kv",
@@ -6304,7 +6313,7 @@ dependencies = [
 [[package]]
 name = "sbv-helpers"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fbump-reth#1d2988c41279c32d9c48eb0b328ca9342823784d"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fbump-reth#89d95494723463d3621b0afe13475f0dd5131ef3"
 dependencies = [
  "tracing",
 ]
@@ -6312,7 +6321,7 @@ dependencies = [
 [[package]]
 name = "sbv-kv"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fbump-reth#1d2988c41279c32d9c48eb0b328ca9342823784d"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fbump-reth#89d95494723463d3621b0afe13475f0dd5131ef3"
 dependencies = [
  "auto_impl",
  "hashbrown 0.15.4",
@@ -6322,7 +6331,7 @@ dependencies = [
 [[package]]
 name = "sbv-precompile"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fbump-reth#1d2988c41279c32d9c48eb0b328ca9342823784d"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fbump-reth#89d95494723463d3621b0afe13475f0dd5131ef3"
 dependencies = [
  "openvm-ecc-guest",
  "openvm-pairing",
@@ -6333,7 +6342,7 @@ dependencies = [
 [[package]]
 name = "sbv-primitives"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fbump-reth#1d2988c41279c32d9c48eb0b328ca9342823784d"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fbump-reth#89d95494723463d3621b0afe13475f0dd5131ef3"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.0.23",
@@ -6341,6 +6350,7 @@ dependencies = [
  "alloy-primitives",
  "alloy-serde 1.0.23",
  "auto_impl",
+ "convert_case 0.8.0",
  "itertools 0.14.0",
  "reth-chainspec",
  "reth-ethereum-forks",
@@ -6360,13 +6370,14 @@ dependencies = [
  "scroll-alloy-consensus",
  "scroll-alloy-evm",
  "serde",
+ "serde_json",
  "tiny-keccak",
 ]
 
 [[package]]
 name = "sbv-trie"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fbump-reth#1d2988c41279c32d9c48eb0b328ca9342823784d"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fbump-reth#89d95494723463d3621b0afe13475f0dd5131ef3"
 dependencies = [
  "alloy-rlp",
  "alloy-trie",
