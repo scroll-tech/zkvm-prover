@@ -5,10 +5,6 @@ use openvm_circuit::{
     system::{memory::tree::public_values::extract_public_values, program::trace::VmCommittedExe},
 };
 use openvm_sdk::{F, SC, StdIn, config::SdkVmConfig};
-use openvm_stark_sdk::{
-    config::{FriParameters, baby_bear_poseidon2::BabyBearPoseidon2Engine},
-    engine::StarkFriEngine,
-};
 
 use crate::Error;
 
@@ -29,7 +25,6 @@ pub fn execute_guest(
     vm_config: SdkVmConfig,
     exe: VmExe<F>,
     stdin: &StdIn,
-    aux_args: &DebugInput,
 ) -> Result<ExecutionResult, Error> {
     use openvm_circuit::arch::VmConfig;
     use openvm_stark_sdk::openvm_stark_backend::p3_field::Field;
@@ -52,27 +47,6 @@ pub fn execute_guest(
                     total_tick
                 );
                 final_memory = segment.final_memory.clone();
-                if aux_args.mock_prove {
-                    let proof_input = segment.generate_proof_input(
-                        aux_args
-                            .commited_exe
-                            .as_ref()
-                            .map(|x| x.committed_program.clone()),
-                    )?;
-                    // TODO: should we use app_pk.app_vm_pk.fri_params?
-                    // export OPENVM_FAST_TEST=1 can make the test very fast
-                    let engine = BabyBearPoseidon2Engine::new(FriParameters::new_for_testing(1));
-                    let airs = vm_config.create_chip_complex().unwrap().airs();
-
-                    let (used_airs, per_air) = proof_input
-                        .per_air
-                        .into_iter()
-                        .map(|(air_id, x)| (airs[air_id].clone(), x))
-                        .unzip();
-                    if let Err(e) = engine.run_test(used_airs, per_air) {
-                        println!("mock prove failed at {}th segment: {:?}", idx, e);
-                    }
-                }
                 Ok(())
             },
             |e| {

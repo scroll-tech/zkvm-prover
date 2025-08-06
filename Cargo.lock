@@ -6784,6 +6784,7 @@ dependencies = [
  "dotenv",
  "eyre",
  "halo2curves-axiom 0.5.3",
+ "hex",
  "hex-literal",
  "openvm-build",
  "openvm-circuit",
@@ -6925,11 +6926,13 @@ version = "0.5.0"
 dependencies = [
  "base64",
  "bincode",
+ "c-kzg",
  "openvm-continuations",
  "openvm-native-recursion",
  "openvm-sdk",
  "openvm-stark-sdk",
  "rkyv",
+ "sbv-primitives",
  "scroll-zkvm-types-base",
  "scroll-zkvm-types-batch",
  "scroll-zkvm-types-bundle",
@@ -7022,9 +7025,11 @@ dependencies = [
 name = "scroll-zkvm-verifier"
 version = "0.5.0"
 dependencies = [
+ "base64",
  "bincode",
  "eyre",
  "itertools 0.14.0",
+ "once_cell",
  "openvm-circuit",
  "openvm-continuations",
  "openvm-native-circuit",
@@ -7035,7 +7040,9 @@ dependencies = [
  "scroll-zkvm-prover",
  "scroll-zkvm-types",
  "serde",
+ "serde_json",
  "snark-verifier-sdk",
+ "tracing",
 ]
 
 [[package]]
