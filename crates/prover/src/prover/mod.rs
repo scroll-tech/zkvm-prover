@@ -5,13 +5,10 @@ use std::{
 
 use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
 use openvm_sdk::{
-    DefaultStaticVerifierPvHandler,
-    NonRootCommittedExe,
-    Sdk,
-    StdIn, //types::EvmProof as OpenVmEvmProf,
+    DefaultStaticVerifierPvHandler, NonRootCommittedExe, Sdk, StdIn,
     commit::AppExecutionCommit,
     config::{AggConfig, SdkVmConfig, SdkVmCpuBuilder},
-    keygen::{AggProvingKey, AggStarkProvingKey, AppProvingKey},
+    keygen::{AggProvingKey, AppProvingKey},
 };
 use scroll_zkvm_types::{proof::OpenVmEvmProof, types_agg::ProgramCommitment};
 use scroll_zkvm_verifier::verifier::{AGG_STARK_PROVING_KEY, UniversalVerifier};

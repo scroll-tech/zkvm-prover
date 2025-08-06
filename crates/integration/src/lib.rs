@@ -291,7 +291,7 @@ pub fn prove_verify<T: ProverTester>(
         .join(T::DIR_ASSETS)
         .join(DIR_PROOFS);
     std::fs::create_dir_all(&cache_dir)?;
-    let vk = prover.get_app_commitment().serialize();
+    let vk = prover.get_app_vk();
 
     // Try reading proof from cache if available, and early return in that case.
     let task_id = witness.identifier();
@@ -375,7 +375,7 @@ where
         proof.into()
     };
 
-    let vk = prover.get_app_commitment().serialize();
+    let vk = prover.get_app_vk();
     // Verify proof.
     verifier.verify_evm_proof(
         &proof
