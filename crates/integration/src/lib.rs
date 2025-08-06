@@ -1,12 +1,8 @@
 use cargo_metadata::MetadataCommand;
 use once_cell::sync::OnceCell;
-use openvm_sdk::{
-    StdIn,
-    config::{AppConfig, SdkVmConfig},
-};
+use openvm_sdk::StdIn;
 use scroll_zkvm_prover::{
     Prover,
-    setup::read_app_config,
     utils::{read_json, vm::ExecutionResult, write_json},
 };
 use scroll_zkvm_types::{
@@ -122,26 +118,18 @@ pub trait ProverTester {
     }
 
     /// Load the app config.
-    fn load_with_exe_fd(
-        app_exe_fd: &str,
-    ) -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
-        let project_root = WORKSPACE_ROOT.join(Self::PATH_PROJECT_ROOT);
-        let path_app_config = project_root.join(FD_APP_CONFIG);
-        let app_config = read_app_config(&path_app_config)?;
-        let path_assets = project_root.join("openvm");
-        let path_app_exe = path_assets.join(app_exe_fd);
-        Ok((path_app_config, app_config, path_app_exe))
-    }
-
-    /// Load the app config.
-    fn load() -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
-        Self::load_with_exe_fd(&Self::fd_app_exe())
+    fn load() -> eyre::Result<(PathBuf, PathBuf)> {
+        let assets_version = "dev";
+        let release_dir = WORKSPACE_ROOT.join("releases").join(assets_version);
+        let path_app_config = release_dir.join(Self::NAME).join(FD_APP_CONFIG);
+        let path_app_exe = release_dir.join(Self::NAME).join(FD_APP_EXE);
+        Ok((path_app_config, path_app_exe))
     }
 
     /// Load the prover
     #[instrument("Prover::load_prover")]
     fn load_prover(with_evm: bool) -> eyre::Result<Prover> {
-        let (path_app_config, _, path_app_exe) = Self::load()?;
+        let (path_app_config, path_app_exe) = Self::load()?;
 
         let path_assets = DIR_TESTRUN
             .get()
@@ -152,16 +140,10 @@ pub trait ProverTester {
         let config = scroll_zkvm_prover::ProverConfig {
             path_app_exe,
             path_app_config,
-            dir_cache: Some(path_assets),
             ..Default::default()
         };
         let prover = scroll_zkvm_prover::Prover::setup(config, with_evm, Some(Self::NAME))?;
         Ok(prover)
-    }
-
-    /// Get the path to the app exe.
-    fn fd_app_exe() -> String {
-        FD_APP_EXE.to_string()
     }
 
     /// File descriptor for the proof saved to disc.
@@ -181,7 +163,7 @@ pub trait ProverTester {
         witness.write_guest_input(&mut stdin)?;
 
         for proof in aggregated_proofs {
-            let streams = proof.proof.write();
+            let streams = proof.proofs[0].write();
             for s in &streams {
                 stdin.write_field(s);
             }
@@ -288,7 +270,7 @@ pub fn tester_execute<T: ProverTester>(
         witness,
         proofs
             .iter()
-            .map(|p| p.as_stark_proof().expect("must be root proof")),
+            .map(|p| p.as_stark_proof().expect("must be stark proof")),
     )?;
 
     let ret = prover.execute_and_check_with_full_result(&stdin)?;
@@ -310,7 +292,6 @@ pub fn prove_verify<T: ProverTester>(
         .join(DIR_PROOFS);
     std::fs::create_dir_all(&cache_dir)?;
     let vk = prover.get_app_commitment().serialize();
-    let verifier = prover.dump_universal_verifier(None::<String>)?;
 
     // Try reading proof from cache if available, and early return in that case.
     let task_id = witness.identifier();
@@ -326,9 +307,9 @@ pub fn prove_verify<T: ProverTester>(
             witness,
             proofs
                 .iter()
-                .map(|p| p.as_stark_proof().expect("must be root proof")),
+                .map(|p| p.as_stark_proof().expect("must be stark proof")),
         )?;
-        // Construct root proof for the circuit.
+        // Construct stark proof for the circuit.
         let proof = prover.gen_proof_stark(stdin)?.into();
         write_json(&path_proof, &proof)?;
         tracing::debug!(name: "cached_proof", ?task_id);
@@ -338,7 +319,7 @@ pub fn prove_verify<T: ProverTester>(
 
     // Verify proof.
     UniversalVerifier::verify_stark_proof(
-        proof.as_stark_proof().expect("should be root proof"),
+        proof.as_stark_proof().expect("should be stark proof"),
         &vk,
     )?;
 
@@ -365,8 +346,9 @@ where
 
     // Dump verifier-only assets to disk.
     let path_verifier_code = WORKSPACE_ROOT
-        .join(T::PATH_PROJECT_ROOT)
-        .join("openvm")
+        .join("releases")
+        .join("dev")
+        .join("verifier")
         .join("verifier.bin");
     let verifier = scroll_zkvm_verifier::verifier::UniversalVerifier::setup(&path_verifier_code)?;
 
@@ -384,9 +366,9 @@ where
             witness,
             proofs
                 .iter()
-                .map(|p| p.as_stark_proof().expect("must be root proof")),
+                .map(|p| p.as_stark_proof().expect("must be stark proof")),
         )?;
-        // Construct root proof for the circuit.
+        // Construct stark proof for the circuit.
         let proof: EvmProof = prover.gen_proof_snark(stdin)?.into();
         write_json(&path_proof, &proof)?;
         tracing::debug!(name: "cached_evm_proof", ?task_id);

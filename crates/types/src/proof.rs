@@ -1,5 +1,6 @@
 use crate::utils::{as_base64, vec_as_base64};
 use openvm_continuations::verifier::internal::types::VmStarkProof;
+use openvm_native_recursion::halo2::RawEvmProof;
 use openvm_sdk::{
     SC,
     commit::{AppExecutionCommit, CommitBytes},
@@ -10,9 +11,6 @@ use openvm_stark_sdk::{
     p3_baby_bear::BabyBear,
 };
 use serde::{Deserialize, Serialize};
-
-/// Alias for convenience.
-//pub type StarkProof = VmStarkProof<SC>;
 
 /// Helper type for convenience that implements [`From`] and [`Into`] traits between
 /// [`OpenVmEvmProof`]. The difference is that the instances in [`EvmProof`] are the byte-encoding
@@ -29,29 +27,43 @@ pub struct EvmProof {
     /// proof.
     #[serde(with = "vec_as_base64")]
     pub user_public_values: Vec<u8>,
-    pub digest1: [u32; 8],
-    pub digest2: [u32; 8],
+    /*
+    //pub accumulator: Vec<u8>,
+    /// The public inputs of the SNARK proof.
+    /// Previously the `instance`s are U256 values, with accumulator and digests.
+    /// For real user PI values, they will be like 0x0000..00000ab, only 1 byte non zero.
+    /// Usually of length (12+2+32)x32
+    /// Now: the `instance` is splitted. The `user_public_values` is "dense".
+    /// Each byte is valid PI. Usually of length 32.
+    //#[serde(with = "vec_as_base64")]
+    //pub user_public_values: Vec<u8>,
+    //pub digest1: [u32; 8],
+    //pub digest2: [u32; 8],
+     */
 }
 
 /// Helper to modify serde implementations on the remote [`RootProof`] type.
 #[derive(Clone, Serialize, Deserialize)]
 pub struct StarkProof {
-    /// The proofs.
+    /// The proofs. The length is always 1
+    /// Vec is used for old data compatibility.
     #[serde(with = "as_base64")]
-    pub proof: Proof<SC>,
+    pub proofs: Vec<Proof<SC>>,
     /// The public values for the proof.
     #[serde(with = "as_base64")]
-    pub user_public_values: Vec<BabyBear>,
-    pub exe_commitment: [u32; 8],
-    pub vm_commitment: [u32; 8],
+    pub public_values: Vec<BabyBear>,
+    //pub exe_commitment: [u32; 8],
+    //pub vm_commitment: [u32; 8],
 }
 
 pub use openvm_sdk::types::EvmProof as OpenVmEvmProof;
 
 impl From<OpenVmEvmProof> for EvmProof {
     fn from(value: OpenVmEvmProof) -> Self {
+        let raw_proof: RawEvmProof = value.try_into().expect("fail to convert");
+        let instances = raw_proof
         Self {
-            proof: value.proof_data.proof,
+            proof: raw_proof.proof,
             accumulator: value.proof_data.accumulator,
             user_public_values: value.user_public_values,
             digest1: value.app_commit.app_exe_commit.to_u32_digest(),
@@ -62,17 +74,15 @@ impl From<OpenVmEvmProof> for EvmProof {
 
 impl From<EvmProof> for OpenVmEvmProof {
     fn from(value: EvmProof) -> Self {
-        Self {
+        let raw_proof = RawEvmProof {
             user_public_values: value.user_public_values,
             proof_data: ProofData {
                 accumulator: value.accumulator,
-                proof: value.proof,
             },
-            app_commit: AppExecutionCommit {
-                app_exe_commit: CommitBytes::from_u32_digest(&value.digest1),
-                app_vm_commit: CommitBytes::from_u32_digest(&value.digest2),
+            proof: value.proof,
+        };
+        raw_proof.try_into().expect("fail to convert")
             },
-        }
     }
 }
 
@@ -99,7 +109,7 @@ impl From<EvmProof> for ProofEnum {
 }
 
 impl ProofEnum {
-    /// Get the root proof as reference.
+    /// Get the stark proof as reference.
     pub fn as_stark_proof(&self) -> Option<&StarkProof> {
         match self {
             Self::Stark(proof) => Some(proof),

@@ -112,7 +112,7 @@ fn verify_proof(commitment: &ProgramCommitment, public_inputs: &[u32]) {
         openvm::io::store_u32_to_native(native_addr, x);
         native_addr += FIELDS_PER_U32;
     }
-    for &x in &commitment.leaf {
+    for &x in &commitment.vm {
         openvm::io::store_u32_to_native(native_addr, x);
         native_addr += FIELDS_PER_U32;
     }

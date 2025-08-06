@@ -33,6 +33,6 @@ fn main() {
     // Validate the witness for the current circuit layer.
     let public_inputs = C::validate(witness);
 
-    // Reveal the public-input values of the current circuit layer.
+    // Reveal the public input values of the current circuit layer.
     C::reveal_pi(&public_inputs);
 }
