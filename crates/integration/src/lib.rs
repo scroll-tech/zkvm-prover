@@ -122,26 +122,18 @@ pub trait ProverTester {
     }
 
     /// Load the app config.
-    fn load_with_exe_fd(
-        app_exe_fd: &str,
-    ) -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
-        let project_root = WORKSPACE_ROOT.join(Self::PATH_PROJECT_ROOT);
-        let path_app_config = project_root.join(FD_APP_CONFIG);
-        let app_config = read_app_config(&path_app_config)?;
-        let path_assets = project_root.join("openvm");
-        let path_app_exe = path_assets.join(app_exe_fd);
-        Ok((path_app_config, app_config, path_app_exe))
-    }
-
-    /// Load the app config.
-    fn load() -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
-        Self::load_with_exe_fd(&Self::fd_app_exe())
+    fn load() -> eyre::Result<(PathBuf, PathBuf)> {
+        let assets_version = "dev";
+        let release_dir = WORKSPACE_ROOT.join("releases").join(assets_version);
+        let path_app_config = release_dir.join(Self::NAME).join(FD_APP_CONFIG);
+        let path_app_exe = release_dir.join(Self::NAME).join(FD_APP_EXE);
+        Ok((path_app_config, path_app_exe))
     }
 
     /// Load the prover
     #[instrument("Prover::load_prover")]
     fn load_prover(with_evm: bool) -> eyre::Result<Prover> {
-        let (path_app_config, _, path_app_exe) = Self::load()?;
+        let (path_app_config, path_app_exe) = Self::load()?;
 
         let path_assets = DIR_TESTRUN
             .get()
@@ -156,11 +148,6 @@ pub trait ProverTester {
         };
         let prover = scroll_zkvm_prover::Prover::setup(config, with_evm, Some(Self::NAME))?;
         Ok(prover)
-    }
-
-    /// Get the path to the app exe.
-    fn fd_app_exe() -> String {
-        FD_APP_EXE.to_string()
     }
 
     /// File descriptor for the proof saved to disc.
