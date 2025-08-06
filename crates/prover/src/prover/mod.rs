@@ -258,8 +258,8 @@ impl Prover {
             .map_err(|e| Error::GenProof(e.to_string()))?;
         let comm = self.get_app_commitment();
         let proof = StarkProof {
-            proof: vec![proof.proof],
-            user_public_values: proof.user_public_values,
+            proofs: vec![proof.proof],
+            public_values: proof.user_public_values,
             //exe_commitment: comm.exe,
             //vm_commitment: comm.vm,
         };

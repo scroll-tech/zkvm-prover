@@ -163,7 +163,7 @@ pub trait ProverTester {
         witness.write_guest_input(&mut stdin)?;
 
         for proof in aggregated_proofs {
-            let streams = proof.proof.write();
+            let streams = proof.proofs.write();
             for s in &streams {
                 stdin.write_field(s);
             }

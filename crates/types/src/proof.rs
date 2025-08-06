@@ -39,10 +39,10 @@ pub struct StarkProof {
     /// The proofs. The length is always 1
     /// Vec is used for old data compatibility.
     #[serde(with = "as_base64")]
-    pub proof: Vec<Proof<SC>>,
+    pub proofs: Vec<Proof<SC>>,
     /// The public values for the proof.
     #[serde(with = "as_base64")]
-    pub user_public_values: Vec<BabyBear>,
+    pub public_values: Vec<BabyBear>,
     //pub exe_commitment: [u32; 8],
     //pub vm_commitment: [u32; 8],
 }
@@ -169,7 +169,7 @@ impl ProofEnum {
     pub fn public_values(&self) -> Vec<u32> {
         match self {
             Self::Stark(stark_proof) => stark_proof
-                .user_public_values
+                .public_values
                 .iter()
                 .map(|x| x.as_canonical_u32())
                 .collect::<Vec<u32>>(),

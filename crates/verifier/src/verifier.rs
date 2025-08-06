@@ -38,8 +38,8 @@ impl UniversalVerifier {
 
         use openvm_continuations::verifier::internal::types::VmStarkProof;
         let vm_stark_proof = VmStarkProof {
-            proof: stark_proof.proof[0].clone(),
-            user_public_values: stark_proof.user_public_values.clone(),
+            proof: stark_proof.proofs[0].clone(),
+            user_public_values: stark_proof.public_values.clone(),
         };
         sdk.verify_e2e_stark_proof(
             agg_stark_pk,
