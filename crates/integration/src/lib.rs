@@ -378,14 +378,13 @@ where
     let vk = prover.get_app_commitment().serialize();
     // Verify proof.
     verifier.verify_evm_proof(
-            &proof
-                .clone()
-                .into_evm_proof()
-                .expect("must be evm proof")
-                .into(),
-            &vk,
-        )?
-    );
+        &proof
+            .clone()
+            .into_evm_proof()
+            .expect("must be evm proof")
+            .into(),
+        &vk,
+    )?;
 
     Ok((proof, verifier, path_assets))
 }

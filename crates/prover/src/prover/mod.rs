@@ -3,8 +3,7 @@ use std::{
     sync::Arc,
 };
 
-use openvm_native_recursion::halo2::utils::{CacheHalo2ParamsReader, Halo2ParamsReader};
-use openvm_sdk::fs::read_exe_from_file;
+use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
 use openvm_sdk::{
     DefaultStaticVerifierPvHandler, NonRootCommittedExe, Sdk, StdIn,
     commit::AppExecutionCommit,
@@ -106,11 +105,16 @@ impl Prover {
             commits,
             config,
             prover_name: name.unwrap_or("universal").to_string(),
+        })
+    }
+
     /// Pick up loaded app commit, to distinguish from which circuit the proof comes
     pub fn get_app_commitment(&self) -> ProgramCommitment {
         let exe = self.commits.app_exe_commit.to_u32_digest();
         let leaf = self.commits.app_vm_commit.to_u32_digest();
         ProgramCommitment { exe, vm: leaf }
+    }
+
     /// Pick up loaded app commit as "vk" in proof, to distinguish from which circuit the proof comes
     pub fn get_app_vk(&self) -> Vec<u8> {
         self.get_app_commitment().serialize()
