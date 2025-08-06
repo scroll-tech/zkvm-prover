@@ -1,9 +1,8 @@
 use once_cell::sync::Lazy;
-use std::path::Path;
-
 use openvm_sdk::{Sdk, commit::CommitBytes, config::AggStarkConfig, keygen::AggStarkProvingKey};
 use scroll_zkvm_types::proof::OpenVmEvmProof;
 use scroll_zkvm_types::{proof::StarkProof, types_agg::ProgramCommitment};
+use std::path::Path;
 
 /// Proving key for STARK aggregation. Primarily used to aggregate
 /// [continuation proofs][openvm_sdk::prover::vm::ContinuationVmProof].
