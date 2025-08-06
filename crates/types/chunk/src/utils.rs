@@ -8,19 +8,17 @@ pub type NodesProvider = NoHashMap<B256, TrieNode>;
 
 pub type BlockHashProvider = sbv_kv::null::NullProvider;
 
-pub fn make_providers<W: BlockWitness>(
-    witnesses: &[W],
-) -> (CodeDb, NodesProvider, BlockHashProvider) {
+pub fn make_providers(witnesses: &[BlockWitness]) -> (CodeDb, NodesProvider, BlockHashProvider) {
     let code_db = {
         // build code db
-        let num_codes = witnesses.iter().map(|w| w.codes_iter().len()).sum();
+        let num_codes = witnesses.iter().map(|w| w.codes.len()).sum();
         let mut code_db =
             NoHashMap::<B256, Bytes>::with_capacity_and_hasher(num_codes, Default::default());
         witnesses.import_codes(&mut code_db);
         code_db
     };
     let nodes_provider = {
-        let num_states = witnesses.iter().map(|w| w.states_iter().len()).sum();
+        let num_states = witnesses.iter().map(|w| w.states.len()).sum();
         let mut nodes_provider =
             NoHashMap::<B256, TrieNode>::with_capacity_and_hasher(num_states, Default::default());
         witnesses.import_nodes(&mut nodes_provider).unwrap();

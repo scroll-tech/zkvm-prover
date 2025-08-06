@@ -41,7 +41,7 @@ pub mod as_base64 {
 pub mod point_eval {
     use super::sha256_rv32;
     use c_kzg;
-    use sbv_primitives::{B256 as H256, U256, types::eips::eip4844::BLS_MODULUS};
+    use sbv_primitives::{B256 as H256, U256, eips::eip4844::BLS_MODULUS};
 
     /// Given the blob-envelope, translate it to a fixed size EIP-4844 blob.
     ///

@@ -1,2 +1,2 @@
 mod witness;
-pub use witness::{ArchivedBundleWitness, BundleWitness};
+pub use witness::BundleWitness;
