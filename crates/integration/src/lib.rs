@@ -152,7 +152,6 @@ pub trait ProverTester {
         let config = scroll_zkvm_prover::ProverConfig {
             path_app_exe,
             path_app_config,
-            dir_cache: Some(path_assets),
             ..Default::default()
         };
         let prover = scroll_zkvm_prover::Prover::setup(config, with_evm, Some(Self::NAME))?;

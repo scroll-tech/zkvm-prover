@@ -13,19 +13,31 @@
 use std::{
     collections::{HashMap, HashSet},
     env,
-    path::Path,
+    fs::read_to_string,
+    path::{Path, PathBuf},
     time::Instant,
 };
 
 use dotenv::dotenv;
 use eyre::Result;
+use openvm_build::GuestOptions;
 use openvm_native_compiler::ir::DIGEST_SIZE;
-use openvm_sdk::{F, Sdk, commit::CommitBytes, config::SdkVmConfig};
+use openvm_native_recursion::halo2::utils::{CacheHalo2ParamsReader, Halo2ParamsReader};
+use openvm_sdk::{
+    DefaultStaticVerifierPvHandler, F, Sdk,
+    commit::CommitBytes,
+    config::{AggConfig, AppConfig, SdkVmConfig},
+    fs::write_exe_to_file,
+};
 use openvm_stark_sdk::{openvm_stark_backend::p3_field::PrimeField32, p3_bn254_fr::Bn254Fr};
 
-mod builder;
-
 const LOG_PREFIX: &str = "[build-guest]";
+
+/// The default directory to locate openvm's halo2 SRS parameters.
+const DEFAULT_PARAMS_DIR: &str = concat!(env!("HOME"), "/.openvm/params/");
+
+/// File descriptor for app openvm config.
+const FD_APP_CONFIG: &str = "openvm.toml";
 
 /// Writes a commitment array to a Rust source file.
 fn write_commitment(output_path: &str, commitment: [u32; DIGEST_SIZE]) -> Result<()> {
@@ -34,6 +46,22 @@ fn write_commitment(output_path: &str, commitment: [u32; DIGEST_SIZE]) -> Result
     );
     std::fs::write(output_path, content)?;
     println!("{LOG_PREFIX} Wrote commitment to {output_path}");
+    Ok(())
+}
+
+/// Writes a commitment array as hex
+fn write_commitment_as_evm_hex(
+    output_path: &PathBuf,
+    commitment: [u32; DIGEST_SIZE],
+) -> Result<()> {
+    let digest_bytes = compress_commitment(&commitment)
+        .value
+        .to_bytes()
+        .into_iter()
+        .rev() // To big endian
+        .collect::<Vec<u8>>();
+    std::fs::write(&output_path, hex::encode(digest_bytes))?;
+    println!("{LOG_PREFIX} Wrote commitment to {}", output_path.display());
     Ok(())
 }
 
@@ -47,6 +75,7 @@ fn compress_commitment(commitment: &[u32; DIGEST_SIZE]) -> Bn254Fr {
 fn run_stage1_leaf_commitments(
     project_names: &[&str],
     workspace_dir: &Path,
+    release_output_dir: &PathBuf,
 ) -> Result<HashMap<String, [u32; DIGEST_SIZE]>> {
     println!("{LOG_PREFIX} === Stage 1: Generating Leaf Commitments ===");
     let mut leaf_commitments = HashMap::new();
@@ -56,7 +85,9 @@ fn run_stage1_leaf_commitments(
             .join("crates")
             .join("circuits")
             .join(format!("{project_name}-circuit"));
-        let app_config = builder::load_app_config(project_dir.to_str().expect("Invalid path"))?;
+        let path_app_config = Path::new(&project_dir).join(FD_APP_CONFIG);
+        let app_config: AppConfig<SdkVmConfig> =
+            toml::from_str(&read_to_string(&path_app_config).unwrap()).unwrap();
 
         // Generate public key (which includes leaf commitment)
         let app_pk = Sdk::new().app_keygen(app_config.clone())?;
@@ -78,15 +109,8 @@ fn run_stage1_leaf_commitments(
         // Special handling for bundle project: generate digest_2
         if project_name == "bundle" {
             println!("{LOG_PREFIX} Generating digest_2 for bundle project...");
-            let digest_2_bytes = compress_commitment(&leaf_vm_verifier_commit_u32)
-                .value
-                .to_bytes()
-                .into_iter()
-                .rev() // Ensure correct byte order if needed (verify endianness requirement)
-                .collect::<Vec<u8>>();
-            let digest_2_path = project_dir.join("digest_2");
-            std::fs::write(&digest_2_path, &digest_2_bytes)?;
-            println!("{LOG_PREFIX} Wrote digest_2 to {}", digest_2_path.display());
+            let output_path = release_output_dir.join(project_name).join("digest_2.hex");
+            write_commitment_as_evm_hex(&output_path, leaf_vm_verifier_commit_u32)?;
         }
     }
     println!("{LOG_PREFIX} === Stage 1 Finished ===");
@@ -132,6 +156,7 @@ fn run_stage2_root_verifier(project_names: &[&str], workspace_dir: &Path) -> Res
 fn run_stage3_exe_commits(
     project_names: &[&str],
     workspace_dir: &Path,
+    release_output_dir: &PathBuf,
 ) -> Result<HashMap<String, [u32; DIGEST_SIZE]>> {
     println!("{LOG_PREFIX} === Stage 3: Generating Executable Commitments ===");
     let mut exe_commitments = HashMap::new();
@@ -147,7 +172,24 @@ fn run_stage3_exe_commits(
         println!("{LOG_PREFIX} Starting build...");
 
         let project_dir = project_path.to_str().expect("Invalid path");
-        let app_config = builder::load_app_config(project_dir)?;
+        // First read the app config specified in the project's root directory.
+        let path_app_config = Path::new(project_dir).join(FD_APP_CONFIG);
+        let app_config: AppConfig<SdkVmConfig> =
+            toml::from_str(&read_to_string(&path_app_config).unwrap()).unwrap();
+        println!(
+            "{project_dir} app config: {}",
+            toml::to_string_pretty(&app_config).unwrap()
+        );
+
+        // copy path_app_config as ${release_output_dir}/${project_name}/${FD_APP_CONFIG}
+        let assets_config_path = release_output_dir.join(project_name).join(FD_APP_CONFIG);
+        std::fs::copy(&path_app_config, &assets_config_path)?;
+        println!(
+            "{LOG_PREFIX} Copied config to {}",
+            assets_config_path.display()
+        );
+
+        // 1. Build ELF
 
         // Store current directory and change to project directory
         let original_dir = env::current_dir()?;
@@ -156,9 +198,16 @@ fn run_stage3_exe_commits(
             "{LOG_PREFIX} Changed working directory to: {}",
             project_path.display()
         );
-
-        // 1. Build ELF
-        let elf = builder::build(project_dir, Vec::<String>::new(), &app_config.app_vm_config)
+        let guest_opts = GuestOptions::default();
+        let guest_opts = guest_opts.with_profile("maxperf".to_string());
+        let elf = Sdk::new()
+            .build(
+                guest_opts,
+                &app_config.app_vm_config,
+                project_dir,
+                &Default::default(),
+                None,
+            )
             .inspect_err(|_err| {
                 println!("{LOG_PREFIX} Building failed in {}", project_dir);
             })?;
@@ -172,10 +221,17 @@ fn run_stage3_exe_commits(
         );
 
         // 2. Transpile ELF to VM Executable
-        let vmexe_filename = String::from("app.vmexe");
-        let app_exe =
-            builder::transpile(project_dir, elf, Some(&vmexe_filename), app_config.clone())?;
-        println!("{LOG_PREFIX} Transpiled to VM Executable: {vmexe_filename}");
+        let transpiler = app_config.app_vm_config.transpiler();
+        let app_exe = Sdk::new().transpile(elf, transpiler)?;
+
+        // Create the assets dir if not already present.
+        let path_assets = Path::new(release_output_dir).join(project_name);
+        std::fs::create_dir_all(&path_assets)?;
+        // Write exe to disc.
+        let path_app_exe: PathBuf = path_assets.join("app.vmexe");
+        write_exe_to_file(app_exe.clone(), &path_app_exe)?;
+
+        println!("{LOG_PREFIX} exe written to {path_app_exe:?}");
 
         // 3. Commit VM Executable
         let app_committed_exe =
@@ -199,20 +255,8 @@ fn run_stage3_exe_commits(
         // Special handling for bundle project: generate digest_1
         if project_name == "bundle" {
             println!("{LOG_PREFIX} Generating digest_1 for bundle project...",);
-            let digest_1_bytes = compress_commitment(&exe_commit_u32)
-                .value
-                .to_bytes()
-                .into_iter()
-                .rev() // Ensure correct byte order
-                .collect::<Vec<u8>>();
-            let digest_1_filename = String::from("digest_1");
-            let digest_1_path = Path::new(project_dir).join(&digest_1_filename);
-            std::fs::write(&digest_1_path, &digest_1_bytes)?;
-            println!(
-                "{LOG_PREFIX} Wrote {} to {}",
-                digest_1_filename,
-                digest_1_path.display()
-            );
+            let output_path = release_output_dir.join(project_name).join("digest_1.hex");
+            write_commitment_as_evm_hex(&output_path, exe_commit_u32)?;
         }
 
         println!(
@@ -245,7 +289,7 @@ fn run_stage4_dump_vk_json(
             {
                 let app_vk = scroll_zkvm_types::types_agg::ProgramCommitment {
                     exe: *exe,
-                    leaf: *leaf,
+                    vm: *leaf,
                 }
                 .serialize();
 
@@ -275,6 +319,34 @@ fn run_stage4_dump_vk_json(
     Ok(())
 }
 
+fn run_stage5_dump_evm_verifier(verifier_output_dir: &PathBuf) -> Result<()> {
+    println!("{LOG_PREFIX} === Stage 5: Dumping EVM VERIFIER ===");
+    let dir_halo2_params = Path::new(DEFAULT_PARAMS_DIR).to_path_buf();
+    let halo2_params_reader = CacheHalo2ParamsReader::new(&dir_halo2_params);
+    let agg_pk = Sdk::new().agg_keygen(
+        AggConfig::default(),
+        &halo2_params_reader,
+        &DefaultStaticVerifierPvHandler,
+    )?;
+    let halo2_params =
+        halo2_params_reader.read_params(agg_pk.halo2_pk.wrapper.pinning.metadata.config_params.k);
+    let path_verifier_sol = verifier_output_dir.join("verifier.sol");
+    let path_verifier_bin = verifier_output_dir.join("verifier.bin");
+    let verifier_contract = snark_verifier_sdk::evm::gen_evm_verifier_shplonk::<
+        snark_verifier_sdk::halo2::aggregation::AggregationCircuit,
+    >(
+        &halo2_params,
+        agg_pk.halo2_pk.wrapper.pinning.pk.get_vk(),
+        agg_pk.halo2_pk.wrapper.pinning.metadata.num_pvs.clone(),
+        Some(&path_verifier_sol),
+    );
+    std::fs::write(&path_verifier_bin, &verifier_contract)?;
+    println!("{LOG_PREFIX} verifier_contract written to {path_verifier_bin:?}");
+
+    println!("{LOG_PREFIX} === Stage 5 Finished ===");
+    Ok(())
+}
+
 pub fn main() -> Result<()> {
     // Set current directory to the crate's root
     let manifest_dir = env::var("CARGO_MANIFEST_DIR")?;
@@ -288,6 +360,13 @@ pub fn main() -> Result<()> {
     let metadata = cargo_metadata::MetadataCommand::new().exec()?;
     let workspace_dir = metadata.workspace_root.into_std_path_buf();
     println!("{LOG_PREFIX} Workspace root: {}", workspace_dir.display());
+
+    let release_output_dir: std::path::PathBuf = workspace_dir.join("releases").join("dev");
+    std::fs::create_dir_all(&release_output_dir)?;
+    println!(
+        "{LOG_PREFIX} Release output directory: {}",
+        release_output_dir.display()
+    );
 
     // Determine which projects to build
     let projects_to_build_str = env::var("BUILD_PROJECT");
@@ -323,6 +402,7 @@ pub fn main() -> Result<()> {
         Some(run_stage1_leaf_commitments(
             &projects_to_build,
             &workspace_dir,
+            &release_output_dir,
         )?)
     } else {
         println!("{LOG_PREFIX} Skipping Stage 1: Leaf Commitments");
@@ -336,13 +416,23 @@ pub fn main() -> Result<()> {
     };
 
     let exe_commitments = if stages_to_run.contains("stage3") {
-        Some(run_stage3_exe_commits(&projects_to_build, &workspace_dir)?)
+        Some(run_stage3_exe_commits(
+            &projects_to_build,
+            &workspace_dir,
+            &release_output_dir,
+        )?)
     } else {
         println!("{LOG_PREFIX} Skipping Stage 3: Exe Commits");
         None
     };
 
     run_stage4_dump_vk_json(leaf_commitments, exe_commitments)?;
+
+    if stages_to_run.contains("stage5") {
+        run_stage5_dump_evm_verifier(&release_output_dir.join("verifier"))?;
+    } else {
+        println!("{LOG_PREFIX} Skipping Stage 5: Evm Verifier");
+    };
 
     println!("{LOG_PREFIX} Build process completed successfully.");
     Ok(())

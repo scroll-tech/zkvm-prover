@@ -18,7 +18,11 @@ use tracing::instrument;
 // Re-export from openvm_sdk.
 pub use openvm_sdk::{self};
 
-use crate::{Error, setup::read_app_config, task::ProvingTask};
+use crate::{
+    Error,
+    setup::{read_app_config, read_app_exe},
+    task::ProvingTask,
+};
 
 use scroll_zkvm_types::proof::{EvmProof, ProofEnum, StarkProof};
 
@@ -29,13 +33,13 @@ const DEFAULT_PARAMS_DIR: &str = concat!(env!("HOME"), "/.openvm/params/");
 /// Prover can read HALO2 trusted setup parameters.
 const ENV_HALO2_PARAMS_DIR: &str = "ENV_HALO2_PARAMS_DIR";
 
-/// Types used in the outermost proof construction and verification, i.e. the EVM-compatible layer.
+/// Types used in the outermost proof construction, i.e. the EVM-compatible layer.
 /// This is required only for [BundleProver].
-pub struct EvmProverVerifier {
+pub struct EvmProver {
+    /// The reader for the cached Halo2 parameters.
     pub reader: CacheHalo2ParamsReader,
+    /// The aggregated proving key for the EVM verifier.
     pub agg_pk: AggProvingKey,
-    /// The contract bytecode for the EVM verifier contract.
-    pub verifier_contract: Vec<u8>,
 }
 
 /// Generic prover.
@@ -46,13 +50,11 @@ pub struct Prover {
     pub app_committed_exe: Arc<NonRootCommittedExe>,
     /// App specific proving key.
     pub app_pk: Arc<AppProvingKey<SdkVmConfig>>,
-    ///
+    /// The commitments for the app execution.
     pub commits: AppExecutionCommit,
     /// Optional data for the outermost layer, i.e. EVM-compatible.
-    pub evm_prover: Option<EvmProverVerifier>,
-    /// Optional directory to cache generated proofs. If such a cached proof is located, then its
-    /// returned instead of re-generating a proof.
-    pub cache_dir: Option<PathBuf>,
+    pub evm_prover: Option<EvmProver>,
+    /// Configuration for the prover.
     pub config: ProverConfig,
 }
 
@@ -63,11 +65,6 @@ pub struct ProverConfig {
     pub path_app_exe: PathBuf,
     /// Path to find application's OpenVM config.
     pub path_app_config: PathBuf,
-    /// An optional directory to cache generated proofs.
-    ///
-    /// If a proof is already available in the cache directory, the proof generation method will
-    /// early return with the available proof on disk.
-    pub dir_cache: Option<PathBuf>,
     /// An optional directory to locate HALO2 trusted setup parameters.
     pub dir_halo2_params: Option<PathBuf>,
     /// The maximum length for a single OpenVM segment.
@@ -80,7 +77,7 @@ impl Prover {
     /// Setup the [`Prover`] given paths to the application's exe and proving key.
     #[instrument("Prover::setup")]
     pub fn setup(config: ProverConfig, with_evm: bool, name: Option<&str>) -> Result<Self, Error> {
-        let app_exe = read_exe_from_file(&config.path_app_exe).unwrap();
+        let app_exe = read_app_exe(&config.path_app_exe)?;
         let mut app_config = read_app_config(&config.path_app_config)?;
         let segment_len = config.segment_len.unwrap_or(DEFAULT_SEGMENT_SIZE);
         app_config.app_vm_config.system.config = app_config
@@ -102,26 +99,23 @@ impl Prover {
             &app_pk.leaf_committed_exe,
         );
 
-        let evm_prover = with_evm
-            .then(|| Self::setup_evm_prover(&config))
-            .transpose()?;
+        let evm_prover = with_evm.then(|| Self::setup_evm_prover()).transpose()?;
 
         Ok(Self {
             app_committed_exe,
             app_pk: Arc::new(app_pk),
             evm_prover,
             commits,
-            cache_dir: config.dir_cache.clone(),
             config,
             prover_name: name.unwrap_or("universal").to_string(),
         })
     }
 
-    /// Pick up loaded app commit as "vk" in proof, to distinguish from which circuit the proof comes
+    /// Pick up loaded app commit, to distinguish from which circuit the proof comes
     pub fn get_app_commitment(&self) -> ProgramCommitment {
         let exe = self.commits.app_exe_commit.to_u32_digest();
         let leaf = self.commits.app_vm_commit.to_u32_digest();
-        ProgramCommitment { exe, leaf }
+        ProgramCommitment { exe, vm: leaf }
     }
 
     /// Pick up loaded app commit as "vk" in proof, to distinguish from which circuit the proof comes
@@ -179,6 +173,11 @@ impl Prover {
         let config = self.app_pk.app_vm_pk.vm_config.clone();
         let exe = self.app_committed_exe.exe.clone();
         let exec_result = crate::utils::vm::execute_guest(config, exe, stdin)?;
+        tracing::info!(
+            "total cycle of {}: {}",
+            self.prover_name,
+            exec_result.total_cycle
+        );
         Ok(exec_result)
     }
 
@@ -189,33 +188,39 @@ impl Prover {
     }
 
     /// Setup the EVM prover-verifier.
-    fn setup_evm_prover(config: &ProverConfig) -> Result<EvmProverVerifier, Error> {
-        tracing::info!("setting up evm prover");
+    fn setup_evm_prover() -> Result<EvmProver, Error> {
+        tracing::info!("Setting up EVM prover...");
+
         // The HALO2 directory is set in the following order:
-        // 1. If the optional dir_halo2_params is set: use it.
-        // 2. If the optional dir_halo2_params is not set: try to read from env variable.
-        // 3. If the env var is not set: use the default directory.
-        let dir_halo2_params = config
-            .dir_halo2_params
-            .clone()
-            .ok_or(std::env::var(ENV_HALO2_PARAMS_DIR))
+        // 1. If the `ENV_HALO2_PARAMS_DIR` env variable is set: read it.
+        // 2. If the env var is not set: use the default directory.
+        let dir_halo2_params: PathBuf = std::env::var(ENV_HALO2_PARAMS_DIR)
+            .map(PathBuf::from)
             .unwrap_or(Path::new(DEFAULT_PARAMS_DIR).to_path_buf());
+        tracing::info!(
+            "Using Halo2 params directory: {}",
+            dir_halo2_params.display()
+        );
 
         let halo2_params_reader = CacheHalo2ParamsReader::new(&dir_halo2_params);
-        tracing::info!("setting up evm prover");
-        let pk_file = std::env::var("HOME").unwrap() + "/.openvm/agg_halo2.pk";
-        tracing::info!("checking {pk_file}");
-        let is_pk_file_existed = std::path::Path::new(&pk_file).exists();
-        tracing::info!("is_pk_file_existed {is_pk_file_existed}");
-        let agg_pk = if is_pk_file_existed {
+
+        let pk_file = std::env::var("HOME").unwrap_or_default() + "/.openvm/agg_halo2.pk";
+        let agg_pk = if Path::new(&pk_file).exists() {
+            tracing::info!("Found existing aggregation proving key at {pk_file}, loading...");
             // 1.5min
-            AggProvingKey {
+            let agg_pk = AggProvingKey {
                 agg_stark_pk: AGG_STARK_PROVING_KEY.clone(),
-                halo2_pk: openvm_sdk::fs::read_agg_halo2_pk_from_file(pk_file).unwrap(),
-            }
+                halo2_pk: openvm_sdk::fs::read_agg_halo2_pk_from_file(&pk_file)
+                    .expect("loading pk err, delete it?"),
+            };
+            tracing::info!("Successfully loaded aggregation proving key.");
+            agg_pk
         } else {
+            tracing::info!(
+                "No existing aggregation proving key found at {pk_file}. Generating a new one... (this may take a while)"
+            );
             // 5min
-            Sdk::new()
+            let agg_pk = Sdk::new()
                 .agg_keygen(
                     AggConfig::default(),
                     &halo2_params_reader,
@@ -224,38 +229,16 @@ impl Prover {
                 .map_err(|e| Error::Setup {
                     path: dir_halo2_params,
                     src: e.to_string(),
-                })?
+                })?;
+            tracing::info!("Successfully generated new aggregation proving key.");
+            agg_pk
         };
 
-        tracing::info!("setting up evm prover done");
-        let halo2_params = halo2_params_reader
-            .read_params(agg_pk.halo2_pk.wrapper.pinning.metadata.config_params.k);
-        let path_verifier_sol = config
-            .path_app_exe
-            .parent()
-            .map(|dir| dir.join("verifier.sol"));
-        let path_verifier_bin = config
-            .path_app_exe
-            .parent()
-            .map(|dir| dir.join("verifier.bin"));
-        let verifier_contract = scroll_zkvm_verifier::evm::gen_evm_verifier::<
-            scroll_zkvm_verifier::evm::halo2_aggregation::AggregationCircuit,
-        >(
-            &halo2_params,
-            agg_pk.halo2_pk.wrapper.pinning.pk.get_vk(),
-            agg_pk.halo2_pk.wrapper.pinning.metadata.num_pvs.clone(),
-            path_verifier_sol.as_deref(),
-        );
-        tracing::info!("verifier_contract generated");
-        if let Some(path) = path_verifier_bin {
-            crate::utils::write(&path, &verifier_contract)?;
-            tracing::info!("verifier_contract written to {path:?}");
-        }
+        tracing::info!("EVM prover setup complete.");
 
-        Ok(EvmProverVerifier {
+        Ok(EvmProver {
             reader: halo2_params_reader,
             agg_pk,
-            verifier_contract,
         })
     }
 
@@ -266,8 +249,8 @@ impl Prover {
         // Here we always do an execution of the guest program to get the cycle count.
         // and do precheck before proving like ensure PI != 0
 
-        let cycle = self.execute_and_check(&stdin)?;
-        tracing::info!("cycle total {}", cycle);
+        self.execute_and_check(&stdin)?;
+
         let sdk = Sdk::new();
         let proof = sdk
             .generate_e2e_stark_proof(
@@ -276,16 +259,17 @@ impl Prover {
                 AGG_STARK_PROVING_KEY.clone(),
                 stdin,
             )
-            .unwrap();
+            .map_err(|e| Error::GenProof(e.to_string()))?;
         let comm = self.get_app_commitment();
         let proof = StarkProof {
             proof: proof.proof,
             user_public_values: proof.user_public_values,
             exe_commitment: comm.exe,
-            vm_commitment: comm.leaf,
+            vm_commitment: comm.vm,
         };
         tracing::info!("verifing stark proof");
-        UniversalVerifier::verify_stark_proof(&proof, &comm.serialize()).unwrap();
+        UniversalVerifier::verify_stark_proof(&proof, &comm.serialize())
+            .map_err(|e| Error::VerifyProof(e.to_string()))?;
         tracing::info!("verifing stark proof done");
         Ok(proof)
     }
@@ -294,18 +278,19 @@ impl Prover {
     ///
     /// [evm_proof][openvm_native_recursion::halo2::EvmProof]
     pub fn gen_proof_snark(&self, stdin: StdIn) -> Result<OpenVmEvmProof, Error> {
-        let cycle = self.execute_and_check(&stdin)?;
-        tracing::info!("cycle total {}", cycle);
+        self.execute_and_check(&stdin)?;
+
         let sdk = Sdk::new();
+        let evm_prover = self.evm_prover.as_ref().expect("evm prover not inited");
         let evm_proof = sdk
             .generate_evm_proof(
-                &self.evm_prover.as_ref().unwrap().reader,
+                &evm_prover.reader,
                 self.app_pk.clone(),
                 self.app_committed_exe.clone(),
-                self.evm_prover.as_ref().unwrap().agg_pk.clone(),
+                evm_prover.agg_pk.clone(),
                 stdin,
             )
-            .unwrap();
+            .map_err(|e| Error::GenProof(format!("{}", e)))?;
 
         Ok(evm_proof)
     }

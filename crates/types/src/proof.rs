@@ -21,8 +21,12 @@ pub struct EvmProof {
     /// The accmulator bytes.
     #[serde(with = "vec_as_base64")]
     pub accumulator: Vec<u8>,
-    /// Byte-encoding of the flattened scalar fields representing the public inputs of the SNARK
-    /// proof.
+    /// The public inputs of the SNARK proof.
+    /// Previously the `instance`s are U256 values, with accumulator and digests.
+    /// For real user PI values, they will be like 0x0000..00000ab, only 1 byte non zero.
+    /// Usually of length (12+2+32)x32
+    /// Now: the `instance` is splitted. The `user_public_values` is "dense".
+    /// Each byte is valid PI. Usually of length 32.
     #[serde(with = "vec_as_base64")]
     pub user_public_values: Vec<u8>,
     pub digest1: [u32; 8],
@@ -134,6 +138,7 @@ impl ProofEnum {
     /// # Returns
     /// - For Stark proofs: A vector of u32 values converted from BabyBear field elements
     /// - For EVM proofs: A vector of u32 values, each containing a single byte from the original vector
+    /// The returned vector typically contains 32 elements, where each u32 represents a single byte value.
     ///
     /// Note: This method handles the different encoding formats between proof types.
     /// Each returned u32 typically only uses the lower 8 bits (one byte) of its capacity.

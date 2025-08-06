@@ -27,8 +27,8 @@ impl UniversalVerifier {
         if stark_proof.exe_commitment != prog_commit.exe {
             eyre::bail!("evm: mismatch EXE commitment");
         }
-        if stark_proof.vm_commitment != prog_commit.leaf {
-            eyre::bail!("evm: mismatch LEAF commitment");
+        if stark_proof.vm_commitment != prog_commit.vm {
+            eyre::bail!("evm: mismatch VM commitment");
         }
 
         let agg_stark_pk = &AGG_STARK_PROVING_KEY;
@@ -43,9 +43,8 @@ impl UniversalVerifier {
             agg_stark_pk,
             &vm_stark_proof,
             &CommitBytes::from_u32_digest(&prog_commit.exe).to_bn254(),
-            &CommitBytes::from_u32_digest(&prog_commit.leaf).to_bn254(),
-        )
-        .unwrap();
+            &CommitBytes::from_u32_digest(&prog_commit.vm).to_bn254(),
+        )?;
 
         Ok(())
     }
@@ -56,8 +55,8 @@ impl UniversalVerifier {
         if evm_proof.app_commit.app_exe_commit.to_u32_digest() != prog_commit.exe {
             eyre::bail!("evm: mismatch EXE commitment");
         }
-        if evm_proof.app_commit.app_vm_commit.to_u32_digest() != prog_commit.leaf {
-            eyre::bail!("evm: mismatch LEAF commitment");
+        if evm_proof.app_commit.app_vm_commit.to_u32_digest() != prog_commit.vm {
+            eyre::bail!("evm: mismatch VM commitment");
         }
 
         crate::evm::verify_evm_proof(&self.evm_verifier, evm_proof)
@@ -96,8 +95,8 @@ mod tests {
                 .join("chunk-proof-phase2.json"),
         )?;
 
-        let root_proof = chunk_proof.proof.as_stark_proof().unwrap();
-        UniversalVerifier::verify_stark_proof(root_proof, &chunk_proof.vk)?;
+        let stark_proof = chunk_proof.proof.as_stark_proof().unwrap();
+        UniversalVerifier::verify_stark_proof(stark_proof, &chunk_proof.vk)?;
 
         Ok(())
     }
@@ -111,8 +110,8 @@ mod tests {
                 .join("batch-proof-phase2.json"),
         )?;
 
-        let root_proof = batch_proof.proof.as_stark_proof().unwrap();
-        UniversalVerifier::verify_stark_proof(root_proof, &batch_proof.vk).unwrap();
+        let stark_proof = batch_proof.proof.as_stark_proof().unwrap();
+        UniversalVerifier::verify_stark_proof(stark_proof, &batch_proof.vk).unwrap();
 
         Ok(())
     }
