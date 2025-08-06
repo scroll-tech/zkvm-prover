@@ -1,27 +1,8 @@
-use std::path::Path;
-
 use once_cell::sync::Lazy;
-use openvm_continuations::verifier::root::types::RootVmVerifierInput;
-use openvm_native_recursion::halo2::RawEvmProof;
-use openvm_sdk::{
-    SC, Sdk, commit::CommitBytes, config::AggStarkConfig, keygen::AggStarkProvingKey,
-};
-use scroll_zkvm_types::types_agg::ProgramCommitment;
-use snark_verifier_sdk::snark_verifier::halo2_base::halo2_proofs::halo2curves::bn256::Fr;
-
-fn compress_commitment(commitment: &[u32; 8]) -> Fr {
-    use openvm_stark_sdk::{openvm_stark_backend::p3_field::PrimeField32, p3_baby_bear::BabyBear};
-    let order = Fr::from(BabyBear::ORDER_U32 as u64);
-    let mut base = Fr::one();
-    let mut ret = Fr::zero();
-
-    for v in commitment {
-        ret += Fr::from(*v as u64) * base;
-        base *= order;
-    }
-
-    ret
-}
+use openvm_sdk::{Sdk, commit::CommitBytes, config::AggStarkConfig, keygen::AggStarkProvingKey};
+use scroll_zkvm_types::proof::OpenVmEvmProof;
+use scroll_zkvm_types::{proof::StarkProof, types_agg::ProgramCommitment};
+use std::path::Path;
 
 /// Proving key for STARK aggregation. Primarily used to aggregate
 /// [continuation proofs][openvm_sdk::prover::vm::ContinuationVmProof].
@@ -39,16 +20,25 @@ impl UniversalVerifier {
         Ok(Self { evm_verifier })
     }
 
-    pub fn verify_stark_proof(root_proof: &RootVmVerifierInput<SC>, vk: &[u8]) -> eyre::Result<()> {
+    pub fn verify_stark_proof(stark_proof: &StarkProof, vk: &[u8]) -> eyre::Result<()> {
         let prog_commit = ProgramCommitment::deserialize(vk);
+
+        /*
+        if stark_proof.exe_commitment != prog_commit.exe {
+            eyre::bail!("evm: mismatch EXE commitment");
+        }
+        if stark_proof.vm_commitment != prog_commit.vm {
+            eyre::bail!("evm: mismatch VM commitment");
+        }
+        */
 
         let agg_stark_pk = &AGG_STARK_PROVING_KEY;
         let sdk = Sdk::new();
 
         use openvm_continuations::verifier::internal::types::VmStarkProof;
         let vm_stark_proof = VmStarkProof {
-            proof: root_proof.proofs[0].clone(),
-            user_public_values: root_proof.public_values.clone(),
+            proof: stark_proof.proofs[0].clone(),
+            user_public_values: stark_proof.public_values.clone(),
         };
         sdk.verify_e2e_stark_proof(
             agg_stark_pk,
@@ -60,14 +50,14 @@ impl UniversalVerifier {
         Ok(())
     }
 
-    pub fn verify_evm_proof(&self, evm_proof: &RawEvmProof, vk: &[u8]) -> eyre::Result<()> {
+    pub fn verify_evm_proof(&self, evm_proof: &OpenVmEvmProof, vk: &[u8]) -> eyre::Result<()> {
         let prog_commit = ProgramCommitment::deserialize(vk);
 
-        if evm_proof.instances[12] != compress_commitment(&prog_commit.exe) {
+        if evm_proof.app_commit.app_exe_commit.to_u32_digest() != prog_commit.exe {
             eyre::bail!("evm: mismatch EXE commitment");
         }
-        if evm_proof.instances[13] != compress_commitment(&prog_commit.vm) {
-            eyre::bail!("evm: mismatch EXE commitment");
+        if evm_proof.app_commit.app_vm_commit.to_u32_digest() != prog_commit.vm {
+            eyre::bail!("evm: mismatch VM commitment");
         }
 
         crate::evm::verify_evm_proof(&self.evm_verifier, evm_proof)
@@ -91,11 +81,7 @@ mod tests {
         /// test method to be compatible with euclid wrapped proofs
         pub fn verify_wrapped_proof(&self, proof: &WrappedProof) -> eyre::Result<()> {
             match &proof.proof {
-                ProofEnum::Evm(p) => {
-                    crate::evm::verify_evm_proof(&self.evm_verifier, &p.clone().into())
-                        .map_err(|e| eyre::eyre!("evm execute fail {e}"))?;
-                    Ok(())
-                }
+                ProofEnum::Evm(p) => self.verify_evm_proof(&p.clone().into(), &proof.vk),
                 ProofEnum::Stark(p) => Self::verify_stark_proof(p, &proof.vk),
             }
         }
@@ -110,9 +96,8 @@ mod tests {
                 .join("chunk-proof-phase2.json"),
         )?;
 
-        let root_proof = chunk_proof.proof.as_stark_proof().unwrap();
-
-        UniversalVerifier::verify_stark_proof(root_proof, &chunk_proof.vk)?;
+        let stark_proof = chunk_proof.proof.as_stark_proof().unwrap();
+        UniversalVerifier::verify_stark_proof(stark_proof, &chunk_proof.vk)?;
 
         Ok(())
     }
@@ -127,7 +112,6 @@ mod tests {
         )?;
 
         let stark_proof = batch_proof.proof.as_stark_proof().unwrap();
-
         UniversalVerifier::verify_stark_proof(stark_proof, &batch_proof.vk)?;
 
         Ok(())
