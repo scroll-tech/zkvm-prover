@@ -6784,6 +6784,7 @@ dependencies = [
  "dotenv",
  "eyre",
  "halo2curves-axiom 0.5.3",
+ "hex",
  "hex-literal",
  "openvm-build",
  "openvm-circuit",
@@ -7028,6 +7029,7 @@ dependencies = [
  "bincode",
  "eyre",
  "itertools 0.14.0",
+ "once_cell",
  "openvm-circuit",
  "openvm-continuations",
  "openvm-native-circuit",
@@ -7040,6 +7042,7 @@ dependencies = [
  "serde",
  "serde_json",
  "snark-verifier-sdk",
+ "tracing",
 ]
 
 [[package]]
