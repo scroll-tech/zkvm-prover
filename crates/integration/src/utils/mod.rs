@@ -104,26 +104,17 @@ impl From<&BatchHeaderV7> for LastHeader {
 }
 
 pub fn metadata_from_chunk_witnesses(witness: &ChunkWitness) -> eyre::Result<ChunkInfo> {
-    use scroll_zkvm_types::chunk::ArchivedChunkWitness;
-    let bytes = witness.rkyv_serialize(None)?;
-    let archieved_wit = rkyv::access::<ArchivedChunkWitness, rkyv::rancor::BoxedError>(&bytes)?;
-    archieved_wit
+    witness
         .try_into()
         .map_err(|e| eyre::eyre!("get chunk metadata fail {e}"))
 }
 
 pub fn metadata_from_batch_witnesses(witness: &BatchWitness) -> eyre::Result<BatchInfo> {
-    use scroll_zkvm_types::batch::ArchivedBatchWitness;
-    let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(witness)?;
-    let archieved_wit = rkyv::access::<ArchivedBatchWitness, rkyv::rancor::BoxedError>(&bytes)?;
-    Ok(archieved_wit.into())
+    Ok(witness.into())
 }
 
 pub fn metadata_from_bundle_witnesses(witness: &BundleWitness) -> eyre::Result<BundleInfo> {
-    use scroll_zkvm_types::bundle::ArchivedBundleWitness;
-    let bytes = witness.rkyv_serialize(None)?;
-    let archieved_wit = rkyv::access::<ArchivedBundleWitness, rkyv::rancor::BoxedError>(&bytes)?;
-    Ok(archieved_wit.into())
+    Ok(witness.into())
 }
 
 pub fn build_batch_witnesses(
