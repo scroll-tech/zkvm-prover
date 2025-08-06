@@ -63,8 +63,6 @@ pub struct ProverConfig {
     pub path_app_exe: PathBuf,
     /// Path to find application's OpenVM config.
     pub path_app_config: PathBuf,
-    /// An optional directory to locate HALO2 trusted setup parameters.
-    pub dir_halo2_params: Option<PathBuf>,
     /// The maximum length for a single OpenVM segment.
     pub segment_len: Option<usize>,
 }
