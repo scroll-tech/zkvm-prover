@@ -52,11 +52,11 @@ impl AggCircuit for BatchCircuit {
 
     fn verify_commitments(commitment: &ProgramCommitment) {
         assert_eq!(
-            commitment.leaf,
+            commitment.vm,
             child_commitments::LEAF_COMMIT,
             "mismatch chunk-proof leaf commitment: expected={:?}, got={:?}",
             child_commitments::LEAF_COMMIT,
-            commitment.leaf,
+            commitment.vm,
         );
         assert_eq!(
             commitment.exe,

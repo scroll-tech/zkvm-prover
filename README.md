@@ -6,7 +6,11 @@
 
 This repository contains the following member crates:
 
-- [scroll-zkvm-circuit-types](./crates/circuits/types): Primitive and Common types used by the circuits
+- [scroll-zkvm-types](./crates/circuits/types): Primitive and Common types used in project and being exported. It is an aggregation of a series of crates:
+  + [scroll-zkvm-types-base](./crates/circuits/types/base): Common types which is used project-wide and expected to be recognized beyond project
+  + [scroll-zkvm-types-base](./crates/circuits/types/chunk): Like the base crate, but in the project, these types are only related to chunk circuit
+  + [scroll-zkvm-types-base](./crates/circuits/types/batch): Like the base crate, but in the project, these types are only related to batch circuit
+  + [scroll-zkvm-types-base](./crates/circuits/types/bundle): Like the base crate, but in the project, these types are only related to bundle circuit
 - [scroll-zkvm-chunk-circuit](./crates/circuits/chunk-circuit): Circuit for verification of a Scroll [chunk](TODO:doc)
 - [scroll-zkvm-batch-circuit](./crates/circuits/batch-circuit): Circuit for verification of a Scroll [batch](TODO:doc)
 - [scroll-zkvm-bundle-circuit](./crates/circuits/bundle-circuit): Circuit for verification of a Scroll [bundle](TODO:doc)
@@ -39,19 +43,19 @@ Upon building the guest programs, the child commitments in [batch-circuit](./cra
 ### End-to-end tests for chunk-prover
 
 ```shell
-$ RUST_MIN_STACK=16777216 make test-single-chunk
+$ make test-single-chunk
 ```
 
 ### End-to-end tests for batch-prover
 
 ```shell
-$ RUST_MIN_STACK=16777216 make test-e2e-batch
+$ make test-e2e-batch
 ```
 
 ### End-to-end tests for bundle-prover
 
 ```shell
-$ RUST_MIN_STACK=16777216 make test-e2e-bundle
+$ make test-e2e-bundle
 ```
 
 *Note*: Configure `RUST_LOG=debug` for debug logs or `RUST_LOG=none,scroll_zkvm_prover=debug` for logs specifically from the `scroll-zkvm-prover` crate.
@@ -67,14 +71,22 @@ Add the following dependency in your `Cargo.toml`:
 scroll-zkvm-prover = { git = "https://github.com/scroll-tech/zkvm-prover", branch = "master" }
 ```
 
-### Chunk Prover
+### To prove a universal task with STARK proofs
 
-Prover capable of generating STARK proofs for a Scroll [chunk](TODO:doc):
+Prover capable of generating STARK proofs for a Scroll [universal task](TODO:doc):
 
 ```rust
 use std::path::Path;
 
-use scroll_zkvm_prover::{ChunkProver, task::ChunkProvingTask};
+use scroll_zkvm_prover::{
+    Prover,
+    task::ProvingTask,
+};
+use scroll_zkvm_types::{
+    public_inputs::ForkName,
+    chunk::ChunkWitness,
+    task::ProvingTask as UniversalProvingTask,
+};
 
 // Paths to the application exe and application config.
 let path_exe = Path::new("./path/to/app.vmexe");
@@ -83,8 +95,89 @@ let path_app_config = Path::new("./path/to/openvm.toml");
 // Optional directory to cache generated proofs on disk.
 let cache_dir = Path::new("./path/to/cache/proofs");
 
+let config = scroll_zkvm_prover::ProverConfig {
+    path_app_exe,
+    path_app_config,
+    dir_cache: Some(cache_dir),
+    ..Default::default()
+};
 // Setup prover.
-let prover = ChunkProver::setup(&path_exe, &path_app_config, Some(&cache_dir))?;
+let prover = Prover::setup(config, false, None)?;
+
+let vk = prover.get_app_vk();
+let task : UniversalProvingTask = /* a universal task, commonly generated and assigned by coordinator */
+
+// Generate a proof.
+let proof = prover.gen_proof_universal(&task, false)?;
+
+// Verify proof.
+let verifier = prover.dump_universal_verifier(None::<String>);
+assert!(verifier.verify_proof(proof.as_root_proof().expect("should be root proof"), &vk)?);
+```
+
+### To prove a universal task with SNARK proofs
+
+Prover capable of generating SNARK proofs aggregating the root proof for a Scroll [universal task](TODO:doc):
+
+```rust
+use std::path::Path;
+
+use scroll_zkvm_prover::{
+    Prover,
+    task::ProvingTask,
+};
+use scroll_zkvm_types::{
+    public_inputs::ForkName,
+    chunk::ChunkWitness,
+    task::ProvingTask as UniversalProvingTask,
+};
+
+// Paths to the application exe and application config.
+let path_exe = Path::new("./path/to/app.vmexe");
+let path_app_config = Path::new("./path/to/openvm.toml");
+
+// Optional directory to cache generated proofs on disk.
+let cache_dir = Path::new("./path/to/cache/proofs");
+
+let config = scroll_zkvm_prover::ProverConfig {
+    path_app_exe,
+    path_app_config,
+    dir_cache: Some(cache_dir),
+    ..Default::default()
+};
+// Setup prover capable to generate SNARK proof.
+let prover = Prover::setup(config, true, None)?;
+
+let vk = prover.get_app_vk();
+let task : UniversalProvingTask = /* a universal task, commonly generated and assigned by coordinator */
+
+// Generate a SNARK proof.
+let proof = prover.gen_proof_universal(&task, true)?;
+
+// Verify proof.
+let verifier = prover.dump_universal_verifier(None::<String>);
+assert!(verifier.verify_proof_evm(&proof.clone().into_evm_proof().expect("should be evm proof").into(), &vk)?);
+```
+
+### Form a universal task for a chunk from block witnesses
+
+A universal task for proving a chunk can be easily generated from block witnesses:
+
+```rust
+use std::path::Path;
+
+use scroll_zkvm_prover::{
+    Prover,
+    task::ProvingTask,
+};
+use scroll_zkvm_types::{
+    public_inputs::ForkName,
+    chunk::ChunkWitness,
+    task::ProvingTask as UniversalProvingTask,
+};
+
+let prover = /* init a prover and load the chunk circuit */
+let vk = prover.get_app_vk();
 
 // Proving task of a chunk with 3 blocks.
 let block_witnesses = vec![
@@ -92,77 +185,20 @@ let block_witnesses = vec![
     sbv::primitives::types::BlockWitness { /* */ },
     sbv::primitives::types::BlockWitness { /* */ },
 ];
-let task = ChunkProvingTask { block_witnesses };
+let wit = ChunkWitness::new(
+    &block_witnesses,
+    template_wit.prev_msg_queue_hash,
+    template_wit.fork_name,
+);
 
-// Generate a proof.
-let proof = prover.gen_proof(&task)?;
-
-// Verify proof.
-prover.verify_proof(&proof)?;
-```
-
-### Batch Prover
-
-Prover capable of generating STARK proofs for a Scroll [batch](TODO:doc):
-
-```rust
-use std::path::Path;
-
-use scroll_zkvm_prover::{BatchProver, task::BatchProvingTask};
-
-// Paths to the application exe and application config.
-let path_exe = Path::new("./path/to/app.vmexe");
-let path_app_config = Path::new("./path/to/openvm.toml");
-
-// Optional directory to cache generated proofs on disk.
-let cache_dir = Path::new("./path/to/cache/proofs");
-
-// Setup prover.
-let prover = BatchProver::setup(&path_exe, &path_app_config, Some(&cache_dir))?;
-
-// Task that proves batching of a number of chunks.
-let task = BatchProvingTask {
-    chunk_proofs, // chunk proofs being aggregated in this batch
-    batch_header, // the header for the batch
-    blob_bytes,   // the EIP-4844 blob that makes this batch data available on L1
+let task = UniversalProvingTask{
+    serialized_witness: vec![wit.rkyv_serialize(None)],
+    aggregated_proofs: Vec::new(),
+    fork_name: "feynman".to_string(),
+    vk: vk.clone(),
+    identifier: Default::default(),
 };
 
-// Generate a proof.
-let proof = prover.gen_proof(&task)?;
-
-// Verify proof.
-prover.verify_proof(&proof)?;
 ```
 
-### Bundle Prover
 
-Prover capable of generating EVM-verifiable halo2-based SNARK proofs for a Scroll [bundle](TODO:doc):
-
-```rust
-use std::path::Path;
-
-use scroll_zkvm_prover::{BundleProver, task::BundleProvingTask};
-
-// Paths to the application exe and application config.
-let path_exe = Path::new("./path/to/app.vmexe");
-let path_app_config = Path::new("./path/to/openvm.toml");
-
-// Optional directory to cache generated proofs on disk.
-let cache_dir = Path::new("./path/to/cache/proofs");
-
-// Setup prover.
-//
-// The Bundle Prover's setup also looks into $HOME/.openvm for halo2-based setup parameters.
-let prover = BundleProver::setup(&path_exe, &path_app_config, Some(&cache_dir))?;
-
-// Task that proves batching of a number of chunks.
-let task = BundleProvingTask {
-    batch_proofs, // batch proofs being aggregated in this bundle
-};
-
-// Generate a proof.
-let evm_proof = prover.gen_proof_evm(&task)?;
-
-// Verify proof.
-prover.verify_proof_evm(&evm_proof)?;
-```

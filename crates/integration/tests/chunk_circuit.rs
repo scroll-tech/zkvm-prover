@@ -1,94 +1,92 @@
 use eyre::Ok;
 use scroll_zkvm_integration::{
-    ProverTester, prove_verify_multi, prove_verify_single,
-    testers::chunk::{ChunkProverTester, MultiChunkProverTester, read_block_witness_from_testdata},
-    utils::testing_hardfork,
+    ProverTester, TestTaskBuilder, prove_verify, tester_execute,
+    testers::chunk::{
+        ChunkProverTester, ChunkTaskGenerator, get_witness_from_env_or_builder, preset_chunk,
+        preset_chunk_multiple,
+    },
+    utils::metadata_from_chunk_witnesses,
 };
-use scroll_zkvm_prover::{
-    ChunkProverType, ProverType,
-    setup::read_app_exe,
-    task::{ProvingTask, chunk::ChunkProvingTask},
-    utils::{self, vm::ExecutionResult},
-};
+use scroll_zkvm_prover::{Prover, utils::vm::ExecutionResult};
+use scroll_zkvm_types::chunk::ChunkWitness;
 
-fn exec_chunk(task: &ChunkProvingTask) -> eyre::Result<(ExecutionResult, u64)> {
-    let (_path_app_config, app_config, path_exe) =
-        ChunkProverTester::load_with_exe_fd("app.vmexe")?;
-    let config = app_config.app_vm_config;
-    let app_exe = read_app_exe(path_exe)?;
-
-    let blk = task.block_witnesses[0].header.number;
+fn exec_chunk(prover: &Prover, wit: &ChunkWitness) -> eyre::Result<(ExecutionResult, u64)> {
+    let blk = wit.blocks[0].header.number;
     println!(
         "task block num: {}, block[0] idx: {}",
-        task.block_witnesses.len(),
+        wit.blocks.len(),
         blk
     );
-    let stats = task.stats();
+    let stats = wit.stats();
     println!("chunk stats {:#?}", stats);
-    ChunkProverType::metadata_with_prechecks(task)?;
-    println!("precheck finished");
-    let stdin = task.build_guest_input()?;
-    let exec_result = utils::vm::execute_guest(config, app_exe, &stdin, &Default::default())?;
+    let exec_result = tester_execute::<ChunkProverTester>(prover, wit, &[])?;
     let cycle_count = exec_result.total_cycle as u64;
     let cycle_per_gas = cycle_count / stats.total_gas_used;
     println!(
-        "blk {blk}->{}, cycle {cycle_count}, gas {}, cycle-per-gas {cycle_per_gas}, tick-per-gas {}",
-        task.block_witnesses.last().unwrap().header.number,
+        "blk {blk}->{}, cycle {cycle_count}, gas {}, cycle-per-gas {cycle_per_gas}",
+        wit.blocks.last().unwrap().header.number,
         stats.total_gas_used,
-        exec_result.total_tick as u64 / stats.total_gas_used,
     );
     Ok((exec_result, stats.total_gas_used))
 }
 
+#[ignore = "can only run under eculidv2 hardfork"]
 #[test]
 fn test_cycle() -> eyre::Result<()> {
     ChunkProverTester::setup()?;
 
     // use rayon::prelude::*;
+    let prover = ChunkProverTester::load_prover(false)?;
 
-    let blocks = 1..=8;
-    blocks.into_iter().try_for_each(|blk| -> eyre::Result<()> {
-        let task = ChunkProvingTask {
-            block_witnesses: vec![read_block_witness_from_testdata(blk)?],
-            prev_msg_queue_hash: Default::default(),
-            fork_name: testing_hardfork().to_string(),
+    let blocks = 1u64..=8u64;
+    for blk in blocks {
+        let task = ChunkTaskGenerator {
+            block_range: blk..=blk,
+            prev_message_hash: None,
         };
-        let (exec_result, gas) = exec_chunk(&task)?;
+
+        let (exec_result, gas) = exec_chunk(&prover, &task.gen_proving_witnesses()?)?;
         let cycle_per_gas = exec_result.total_cycle / gas;
         assert!(cycle_per_gas < 30);
-        Ok(())
-    })?;
+    }
+
     Ok(())
 }
 
 #[test]
 fn test_execute() -> eyre::Result<()> {
     ChunkProverTester::setup()?;
+    let prover = ChunkProverTester::load_prover(false)?;
 
-    let task = ChunkProverTester::gen_proving_task()?;
-    let (exec_result, total_gas_used) = exec_chunk(&task)?;
+    let wit = get_witness_from_env_or_builder(&preset_chunk())?;
+    let (exec_result, total_gas_used) = exec_chunk(&prover, &wit)?;
     let cycle_per_gas = exec_result.total_cycle / total_gas_used;
     assert_ne!(cycle_per_gas, 0);
     assert!(cycle_per_gas <= 35);
     Ok(())
 }
 
+#[ignore = "can only run under eculidv2 hardfork"]
 #[test]
 fn test_autofill_trie_nodes() -> eyre::Result<()> {
     use std::result::Result::Ok;
     ChunkProverTester::setup()?;
 
-    let mut task: ChunkProvingTask = ChunkProverTester::gen_proving_task()?;
-    task.block_witnesses.truncate(1);
+    let mut template_wit = get_witness_from_env_or_builder(&preset_chunk())?;
+    template_wit.blocks.truncate(1);
+    let wit = ChunkWitness::new(
+        &template_wit.blocks,
+        template_wit.prev_msg_queue_hash,
+        template_wit.fork_name,
+    );
     for index in [10, 13] {
         println!(
             "removing state at index {}: {:?}",
-            index, task.block_witnesses[0].states[index]
+            index, wit.blocks[0].states[index]
         );
-        let mut task = task.clone();
-        task.block_witnesses[0].states.remove(index);
-
-        let result = ChunkProverType::metadata_with_prechecks(&task);
+        let mut test_wit = wit.clone();
+        test_wit.blocks[0].states.remove(index);
+        let result = metadata_from_chunk_witnesses(&test_wit);
 
         match result {
             Err(err_str) => {
@@ -132,7 +130,7 @@ fn test_autofill_trie_nodes() -> eyre::Result<()> {
 fn test_execute_multi() -> eyre::Result<()> {
     // use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
-    MultiChunkProverTester::setup()?;
+    ChunkProverTester::setup()?;
 
     // Initialize Rayon thread pool with 8 threads
     let parallel = 8;
@@ -141,28 +139,27 @@ fn test_execute_multi() -> eyre::Result<()> {
         .build()
         .unwrap();
     // Execute tasks in parallel
-    let (total_gas, total_cycle, total_tick) = pool.install(|| {
-        let tasks = MultiChunkProverTester::gen_multi_proving_tasks().unwrap();
-        let init = (0u64, 0u64, 0u64);
-        let adder = |(gas1, cycle1, tick1): (u64, u64, u64),
-                     (gas2, cycle2, tick2): (u64, u64, u64)| {
-            (gas1 + gas2, cycle1 + cycle2, tick1 + tick2)
-        };
-        tasks
+    let (total_gas, total_cycle) = pool.install(|| {
+        // comment by fan@scroll.io: why we need to load prover multiple times (which is time costing)
+        let prover = ChunkProverTester::load_prover(false).unwrap();
+        let init = (0u64, 0u64);
+        let adder =
+            |(gas1, cycle1): (u64, u64), (gas2, cycle2): (u64, u64)| (gas1 + gas2, cycle1 + cycle2);
+        preset_chunk_multiple()
             .into_iter()
-            .map(|task| -> (u64, u64, u64) {
-                let (exec_result, gas) = exec_chunk(&task).unwrap();
-                (gas, exec_result.total_cycle, exec_result.total_tick)
+            .map(|task| -> (u64, u64) {
+                let (exec_result, gas) =
+                    exec_chunk(&prover, &task.gen_proving_witnesses().unwrap()).unwrap();
+                (gas, exec_result.total_cycle)
             })
             .fold(init, adder)
     });
 
     println!(
-        "Total gas: {}, Total cycles: {}, Average cycle/gas: {}, Average tick/gas: {}",
+        "Total gas: {}, Total cycles: {}, Average cycle/gas: {}",
         total_gas,
         total_cycle,
         total_cycle as f64 / total_gas as f64,
-        total_tick as f64 / total_gas as f64,
     );
 
     Ok(())
@@ -171,20 +168,11 @@ fn test_execute_multi() -> eyre::Result<()> {
 #[test]
 fn guest_profiling() -> eyre::Result<()> {
     ChunkProverTester::setup()?;
+    let prover = ChunkProverTester::load_prover(false)?;
 
-    let (path_app_config, _, path_app_exe) = ChunkProverTester::load()?;
-
-    let config = scroll_zkvm_prover::ProverConfig {
-        path_app_exe,
-        path_app_config,
-        ..Default::default()
-    };
-    let chunk_prover =
-        scroll_zkvm_prover::Prover::<scroll_zkvm_prover::ChunkProverType>::setup(config)?;
-
-    let task = ChunkProverTester::gen_proving_task()?;
-    let stdin = task.build_guest_input()?;
-    let total_cycles = chunk_prover.execute_and_check(&stdin, false)?;
+    let wit = get_witness_from_env_or_builder(&preset_chunk())?;
+    let (exec_result, _) = exec_chunk(&prover, &wit)?;
+    let total_cycles = exec_result.total_cycle;
 
     println!(
         "scroll-zkvm-integration(chunk-circuit): total cycles = {:?}",
@@ -197,17 +185,22 @@ fn guest_profiling() -> eyre::Result<()> {
 #[test]
 fn setup_prove_verify_single() -> eyre::Result<()> {
     ChunkProverTester::setup()?;
+    let prover = ChunkProverTester::load_prover(false)?;
 
-    prove_verify_single::<ChunkProverTester>(None)?;
+    let wit = get_witness_from_env_or_builder(&preset_chunk())?;
+    let _ = prove_verify::<ChunkProverTester>(&prover, &wit, &[])?;
 
     Ok(())
 }
 
 #[test]
 fn setup_prove_verify_multi() -> eyre::Result<()> {
-    MultiChunkProverTester::setup()?;
+    ChunkProverTester::setup()?;
+    let prover = ChunkProverTester::load_prover(false)?;
 
-    prove_verify_multi::<MultiChunkProverTester>(None)?;
+    for task in preset_chunk_multiple() {
+        let _ = task.gen_witnesses_proof(&prover)?;
+    }
 
     Ok(())
 }

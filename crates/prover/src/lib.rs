@@ -1,22 +1,8 @@
-#[allow(dead_code)]
-#[rustfmt::skip]
-mod commitments;
-
 mod error;
 pub use error::Error;
 
-mod proof;
-pub use proof::{
-    AsEvmProof, AsRootProof, BatchProof, BundleProof, ChunkProof, IntoEvmProof, PersistableProof,
-    WrappedProof,
-};
-
 mod prover;
-pub use prover::{
-    BatchProver, BatchProverType, BundleProverEuclidV2, BundleProverTypeEuclidV2, ChunkProver,
-    ChunkProverType, GenericBundleProverType, GenericChunkProverType, Prover, ProverConfig,
-    ProverType,
-};
+pub use prover::{Prover, ProverConfig};
 
 pub mod setup;
 

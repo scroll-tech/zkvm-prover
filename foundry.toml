@@ -1,0 +1,31 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+verbosity = 2
+solc = "0.8.19"
+optimizer = true
+optimizer_runs = 100000
+evm_version = "paris"
+show_progress = true
+fs_permissions = [{ access = "read", path = "./test/v1.2/evm.proof"}, { access = "read", path = "./test/v1.3/evm.proof"}]
+
+[profile.default.optimizer_details]
+  constantOptimizer = false
+  yul = false
+
+[fuzz]
+  runs = 256
+
+[fmt]
+  sort_imports = true
+  bracket_spacing = true
+  int_types = "long"
+  line_length = 120
+  multiline_func_header = "attributes_first"
+  number_underscore = "thousands"
+  quote_style = "double"
+  single_line_statement_blocks = "single"
+  tab_width = 4
+  wrap_comments = false
+  

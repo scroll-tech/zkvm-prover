@@ -1,20 +1,36 @@
 use scroll_zkvm_integration::{
-    ProverTester, prove_verify_multi, prove_verify_single,
+    ProverTester, TestTaskBuilder,
     testers::{
-        batch::{BatchProverTester, BatchTaskBuildingTester},
-        chunk::MultiChunkProverTester,
+        batch::{BatchProverTester, BatchTaskGenerator},
+        chunk::{create_canonical_tasks, preset_chunk_multiple},
+        load_local_task,
     },
-    utils::build_batch_task,
+    testing_hardfork,
 };
+use scroll_zkvm_prover::task::ProvingTask;
 
+#[ignore = "need local stuff"]
 #[test]
 fn test_execute() -> eyre::Result<()> {
     BatchProverTester::setup()?;
+    let u_task = load_local_task("batch-task.json")?;
+    let stdin = u_task.build_guest_input()?;
 
-    let (_, app_config, exe_path) = BatchProverTester::load()?;
-    let task = BatchProverTester::gen_proving_task()?;
+    let prover = BatchProverTester::load_prover(false)?;
 
-    BatchProverTester::execute(app_config.clone(), &task, exe_path.clone())?;
+    let _ = prover.execute_and_check(&stdin)?;
+    Ok(())
+}
+
+#[ignore = "need local stuff"]
+#[test]
+fn setup_prove_verify_single() -> eyre::Result<()> {
+    BatchProverTester::setup()?;
+    let u_task = load_local_task("batch-task.json")?;
+
+    let prover = BatchProverTester::load_prover(false)?;
+
+    let _ = prover.gen_proof_universal(&u_task, false)?;
 
     Ok(())
 }
@@ -23,19 +39,18 @@ fn test_execute() -> eyre::Result<()> {
 fn test_e2e_execute() -> eyre::Result<()> {
     BatchProverTester::setup()?;
 
-    let (_, app_config, exe_path) = BatchTaskBuildingTester::load()?;
+    let prover = BatchProverTester::load_prover(false)?;
 
-    let task = BatchTaskBuildingTester::gen_proving_task()?;
-    BatchTaskBuildingTester::execute(app_config.clone(), &task, exe_path.clone())?;
+    let task = BatchTaskGenerator::from_chunk_tasks(&preset_chunk_multiple(), None);
 
-    Ok(())
-}
+    let wit = task.gen_proving_witnesses()?;
+    let agg_proofs = task.gen_agg_proofs()?;
 
-#[test]
-fn setup_prove_verify_single() -> eyre::Result<()> {
-    BatchTaskBuildingTester::setup()?;
-
-    prove_verify_single::<BatchTaskBuildingTester>(None)?;
+    let stdin = BatchProverTester::build_guest_input(
+        &wit,
+        agg_proofs.iter().map(|p| p.as_stark_proof().unwrap()),
+    )?;
+    let _ = prover.execute_and_check_with_full_result(&stdin)?;
 
     Ok(())
 }
@@ -44,39 +59,44 @@ fn setup_prove_verify_single() -> eyre::Result<()> {
 fn e2e() -> eyre::Result<()> {
     BatchProverTester::setup()?;
 
-    let outcome = prove_verify_multi::<MultiChunkProverTester>(None)?;
+    let prover = BatchProverTester::load_prover(false)?;
 
-    let batch_task = build_batch_task(&outcome.tasks, &outcome.proofs, Default::default());
-    prove_verify_single::<BatchProverTester>(Some(batch_task))?;
+    let _ = BatchTaskGenerator::from_chunk_tasks(&preset_chunk_multiple(), None)
+        .gen_witnesses_proof(&prover)?;
 
     Ok(())
 }
 
 #[test]
 fn verify_batch_hash_invariant() -> eyre::Result<()> {
-    use scroll_zkvm_integration::testers::chunk::gen_multi_tasks as gen_multi_chunk_tasks;
+    use scroll_zkvm_types::public_inputs::ForkName;
     BatchProverTester::setup()?;
 
-    let outcome_1 = prove_verify_multi::<MultiChunkProverTester>(Some(
-        gen_multi_chunk_tasks([vec![1], vec![2], vec![3, 4]])?.as_slice(),
-    ))?;
-    let outcome_2 = prove_verify_multi::<MultiChunkProverTester>(Some(
-        gen_multi_chunk_tasks([vec![1, 2], vec![3], vec![4]])?.as_slice(),
-    ))?;
+    let outcome_1 = preset_chunk_multiple();
+    let outcome_2 = create_canonical_tasks(
+        match testing_hardfork() {
+            ForkName::EuclidV1 => vec![
+                12508460u64..=12508461u64,
+                12508462u64..=12508462u64,
+                12508463u64..=12508463u64,
+            ],
+            ForkName::EuclidV2 => vec![1u64..=2u64, 3u64..=3u64, 4u64..=4u64],
+            ForkName::Feynman => vec![
+                16525000u64..=16525001u64,
+                16525002u64..=16525002u64,
+                16525003u64..=16525003u64,
+            ],
+        }
+        .into_iter(),
+    )?;
 
-    let batch_task_1 = build_batch_task(&outcome_1.tasks, &outcome_1.proofs, Default::default());
-    let batch_task_2 = build_batch_task(&outcome_2.tasks, &outcome_2.proofs, Default::default());
+    let task_1 = BatchTaskGenerator::from_chunk_tasks(&outcome_1, None);
+    let task_2 = BatchTaskGenerator::from_chunk_tasks(&outcome_2, None);
 
     // verify the two task has the same blob bytes
     assert_eq!(
-        batch_task_1
-            .batch_header
-            .must_v8_header()
-            .blob_versioned_hash,
-        batch_task_2
-            .batch_header
-            .must_v8_header()
-            .blob_versioned_hash
+        task_1.gen_proving_witnesses()?.blob_bytes,
+        task_2.gen_proving_witnesses()?.blob_bytes,
     );
 
     Ok(())

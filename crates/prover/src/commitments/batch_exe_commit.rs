@@ -1,1 +1,0 @@
-../../../circuits/batch-circuit/batch_exe_commit.rs

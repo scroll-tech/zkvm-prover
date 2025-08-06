@@ -1,5 +1,3 @@
-#![feature(lazy_get)]
-
 mod utils;
 
 mod witness;

@@ -2,12 +2,8 @@ use openvm_native_recursion::hints::Hintable;
 use openvm_sdk::StdIn;
 use scroll_zkvm_types::{public_inputs::ForkName, task::ProvingTask as UniversalProvingTask};
 
-pub mod batch;
-
-pub mod chunk;
-
-pub mod bundle;
-
+/// Every proving task must have an identifier. The identifier will be appended to a prefix while
+/// storing/reading proof to/from disc.
 /// Every proving task must have an identifier. The identifier will be appended to a prefix while
 /// storing/reading proof to/from disc.
 pub trait ProvingTask: serde::de::DeserializeOwned {
@@ -35,11 +31,7 @@ impl ProvingTask for UniversalProvingTask {
         }
 
         for proof in &self.aggregated_proofs {
-            let streams = if self.fork_name() >= ForkName::Feynman {
-                proof.proofs[0].write()
-            } else {
-                proof.write()
-            };
+            let streams = proof.proofs[0].write();
             for s in &streams {
                 stdin.write_field(s);
             }
