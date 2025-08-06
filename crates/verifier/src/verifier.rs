@@ -39,7 +39,7 @@ impl UniversalVerifier {
         Ok(Self { evm_verifier })
     }
 
-    pub fn verify_proof(root_proof: &RootVmVerifierInput<SC>, vk: &[u8]) -> eyre::Result<bool> {
+    pub fn verify_stark_proof(root_proof: &RootVmVerifierInput<SC>, vk: &[u8]) -> eyre::Result<()> {
         let prog_commit = ProgramCommitment::deserialize(vk);
 
         let agg_stark_pk = &AGG_STARK_PROVING_KEY;
@@ -54,26 +54,26 @@ impl UniversalVerifier {
             agg_stark_pk,
             &vm_stark_proof,
             &CommitBytes::from_u32_digest(&prog_commit.exe).to_bn254(),
-            &CommitBytes::from_u32_digest(&prog_commit.leaf).to_bn254(),
+            &CommitBytes::from_u32_digest(&prog_commit.vm).to_bn254(),
         )?;
 
-        Ok(true)
+        Ok(())
     }
 
-    pub fn verify_proof_evm(&self, evm_proof: &RawEvmProof, vk: &[u8]) -> eyre::Result<bool> {
+    pub fn verify_evm_proof(&self, evm_proof: &RawEvmProof, vk: &[u8]) -> eyre::Result<()> {
         let prog_commit = ProgramCommitment::deserialize(vk);
 
         if evm_proof.instances[12] != compress_commitment(&prog_commit.exe) {
             eyre::bail!("evm: mismatch EXE commitment");
         }
-        if evm_proof.instances[13] != compress_commitment(&prog_commit.leaf) {
+        if evm_proof.instances[13] != compress_commitment(&prog_commit.vm) {
             eyre::bail!("evm: mismatch EXE commitment");
         }
 
         crate::evm::verify_evm_proof(&self.evm_verifier, evm_proof)
             .map_err(|e| eyre::eyre!("evm execute fail {e}"))?;
 
-        Ok(true)
+        Ok(())
     }
 }
 
@@ -89,14 +89,14 @@ mod tests {
 
     impl UniversalVerifier {
         /// test method to be compatible with euclid wrapped proofs
-        pub fn verify_wrapped_proof(&self, proof: &WrappedProof) -> eyre::Result<bool> {
+        pub fn verify_wrapped_proof(&self, proof: &WrappedProof) -> eyre::Result<()> {
             match &proof.proof {
                 ProofEnum::Evm(p) => {
                     crate::evm::verify_evm_proof(&self.evm_verifier, &p.clone().into())
                         .map_err(|e| eyre::eyre!("evm execute fail {e}"))?;
-                    Ok(true)
+                    Ok(())
                 }
-                ProofEnum::Root(p) => Self::verify_proof(p, &proof.vk),
+                ProofEnum::Stark(p) => Self::verify_stark_proof(p, &proof.vk),
             }
         }
     }
@@ -110,12 +110,9 @@ mod tests {
                 .join("chunk-proof-phase2.json"),
         )?;
 
-        let root_proof = chunk_proof.proof.as_root_proof().unwrap();
+        let root_proof = chunk_proof.proof.as_stark_proof().unwrap();
 
-        assert!(
-            UniversalVerifier::verify_proof(root_proof, &chunk_proof.vk)?,
-            "proof verification failed",
-        );
+        UniversalVerifier::verify_stark_proof(root_proof, &chunk_proof.vk)?;
 
         Ok(())
     }
@@ -129,12 +126,9 @@ mod tests {
                 .join("batch-proof-phase2.json"),
         )?;
 
-        let root_proof = batch_proof.proof.as_root_proof().unwrap();
+        let stark_proof = batch_proof.proof.as_stark_proof().unwrap();
 
-        assert!(
-            UniversalVerifier::verify_proof(root_proof, &batch_proof.vk)?,
-            "proof verification failed",
-        );
+        UniversalVerifier::verify_stark_proof(stark_proof, &batch_proof.vk)?;
 
         Ok(())
     }
@@ -150,10 +144,10 @@ mod tests {
 
         let verifier = UniversalVerifier::setup(Path::new(PATH_TESTDATA).join("verifier.bin"))?;
 
-        assert!(verifier.verify_proof_evm(
+        verifier.verify_evm_proof(
             &evm_proof.proof.into_evm_proof().unwrap().into(),
-            &evm_proof.vk
-        )?);
+            &evm_proof.vk,
+        )?;
 
         Ok(())
     }

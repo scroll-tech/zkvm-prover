@@ -6,7 +6,7 @@ use scroll_zkvm_prover::{
     utils::{read_json, vm::ExecutionResult, write_json},
 };
 use scroll_zkvm_types::{
-    proof::{EvmProof, ProofEnum, RootProof},
+    proof::{EvmProof, ProofEnum, StarkProof},
     public_inputs::ForkName,
 };
 use scroll_zkvm_verifier::verifier::UniversalVerifier;
@@ -155,7 +155,7 @@ pub trait ProverTester {
 
     fn build_guest_input<'a>(
         witness: &Self::Witness,
-        aggregated_proofs: impl Iterator<Item = &'a RootProof>,
+        aggregated_proofs: impl Iterator<Item = &'a StarkProof>,
     ) -> Result<StdIn, rkyv::rancor::Error> {
         use openvm_native_recursion::hints::Hintable;
 
@@ -270,7 +270,7 @@ pub fn tester_execute<T: ProverTester>(
         witness,
         proofs
             .iter()
-            .map(|p| p.as_root_proof().expect("must be stark proof")),
+            .map(|p| p.as_stark_proof().expect("must be stark proof")),
     )?;
 
     let ret = prover.execute_and_check_with_full_result(&stdin)?;
@@ -307,7 +307,7 @@ pub fn prove_verify<T: ProverTester>(
             witness,
             proofs
                 .iter()
-                .map(|p| p.as_root_proof().expect("must be stark proof")),
+                .map(|p| p.as_stark_proof().expect("must be stark proof")),
         )?;
         // Construct stark proof for the circuit.
         let proof = prover.gen_proof_stark(stdin)?.into();
@@ -318,7 +318,10 @@ pub fn prove_verify<T: ProverTester>(
     };
 
     // Verify proof.
-    UniversalVerifier::verify_proof(proof.as_root_proof().expect("should be stark proof"), &vk)?;
+    UniversalVerifier::verify_stark_proof(
+        proof.as_stark_proof().expect("should be stark proof"),
+        &vk,
+    )?;
 
     Ok(proof)
 }
@@ -363,7 +366,7 @@ where
             witness,
             proofs
                 .iter()
-                .map(|p| p.as_root_proof().expect("must be stark proof")),
+                .map(|p| p.as_stark_proof().expect("must be stark proof")),
         )?;
         // Construct stark proof for the circuit.
         let proof: EvmProof = prover.gen_proof_snark(stdin)?.into();
@@ -374,16 +377,14 @@ where
 
     let vk = prover.get_app_vk();
     // Verify proof.
-    assert!(
-        verifier.verify_proof_evm(
-            &proof
-                .clone()
-                .into_evm_proof()
-                .expect("must be evm proof")
-                .into(),
-            &vk,
-        )?
-    );
+    verifier.verify_evm_proof(
+        &proof
+            .clone()
+            .into_evm_proof()
+            .expect("must be evm proof")
+            .into(),
+        &vk,
+    )?;
 
     Ok((proof, verifier, path_assets))
 }

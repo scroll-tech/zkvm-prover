@@ -31,8 +31,8 @@ pub struct AggregationInput {
 pub struct ProgramCommitment {
     /// The commitment to the child program exe.
     pub exe: [u32; 8],
-    /// The commitment to the child program leaf.
-    pub leaf: [u32; 8],
+    /// The commitment to the child program vm.
+    pub vm: [u32; 8],
 }
 
 impl ProgramCommitment {
@@ -48,7 +48,7 @@ impl ProgramCommitment {
 
         Self {
             exe: archived_data.exe.map(|u32_le| u32_le.to_native()),
-            leaf: archived_data.leaf.map(|u32_le| u32_le.to_native()),
+            vm: archived_data.vm.map(|u32_le| u32_le.to_native()),
         }
     }
 
@@ -63,7 +63,7 @@ impl From<&ArchivedProgramCommitment> for ProgramCommitment {
     fn from(archived: &ArchivedProgramCommitment) -> Self {
         Self {
             exe: archived.exe.map(|u32_le| u32_le.to_native()),
-            leaf: archived.leaf.map(|u32_le| u32_le.to_native()),
+            vm: archived.vm.map(|u32_le| u32_le.to_native()),
         }
     }
 }
