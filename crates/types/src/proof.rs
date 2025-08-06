@@ -99,7 +99,7 @@ impl From<EvmProof> for ProofEnum {
 }
 
 impl ProofEnum {
-    /// Get the root proof as reference.
+    /// Get the stark proof as reference.
     pub fn as_stark_proof(&self) -> Option<&StarkProof> {
         match self {
             Self::Stark(proof) => Some(proof),

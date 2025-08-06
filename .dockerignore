@@ -11,6 +11,8 @@ Dockerfile.backup
 
 docs
 
+releases
+
 *.yml
 
 *.sh
