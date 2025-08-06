@@ -186,11 +186,14 @@ fn run_stage3_exe_commits(
         );
 
         // copy path_app_config as ${release_output_dir}/${project_name}/${FD_APP_CONFIG}
-        let assets_config_path = release_output_dir.join(project_name).join(FD_APP_CONFIG);
-        std::fs::copy(&path_app_config, &assets_config_path)?;
+        let output_path = release_output_dir.join(project_name).join(FD_APP_CONFIG);
+        if let Some(parent) = output_path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        std::fs::copy(&path_app_config, &output_path)?;
         println!(
             "{LOG_PREFIX} Copied config to {}",
-            assets_config_path.display()
+            output_path.display()
         );
 
         // 1. Build ELF
