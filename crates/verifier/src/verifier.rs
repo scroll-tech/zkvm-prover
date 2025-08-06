@@ -113,7 +113,7 @@ mod tests {
         )?;
 
         let stark_proof = batch_proof.proof.as_stark_proof().unwrap();
-        UniversalVerifier::verify_stark_proof(stark_proof, &batch_proof.vk).unwrap();
+        UniversalVerifier::verify_stark_proof(stark_proof, &batch_proof.vk)?;
 
         Ok(())
     }

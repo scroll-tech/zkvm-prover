@@ -1,5 +1,5 @@
 use crate::utils::{as_base64, vec_as_base64};
-use openvm_native_recursion::halo2::{Fr, RawEvmProof};
+use openvm_native_recursion::halo2::RawEvmProof;
 use openvm_sdk::SC;
 use openvm_stark_sdk::{
     openvm_stark_backend::{p3_field::PrimeField32, proof::Proof},
@@ -15,7 +15,8 @@ pub struct EvmProof {
     /// The proof bytes.
     #[serde(with = "vec_as_base64")]
     pub proof: Vec<u8>,
-    /// The accmulator bytes.
+    /// Byte-encoding of the flattened scalar fields representing the public inputs of the SNARK
+    /// proof.
     #[serde(with = "vec_as_base64")]
     pub instances: Vec<u8>,
     /*
@@ -48,7 +49,9 @@ pub struct StarkProof {
 }
 
 pub use openvm_sdk::types::EvmProof as OpenVmEvmProof;
-use snark_verifier_sdk::snark_verifier::halo2_base::halo2_proofs::halo2curves::ff;
+use snark_verifier_sdk::snark_verifier::{
+    halo2_base::halo2_proofs::halo2curves::bn256::Fr, util::arithmetic::PrimeField,
+};
 
 impl From<OpenVmEvmProof> for EvmProof {
     fn from(value: OpenVmEvmProof) -> Self {
@@ -81,7 +84,6 @@ impl From<EvmProof> for OpenVmEvmProof {
             .instances
             .chunks_exact(32)
             .map(|be_bytes| {
-                use ff::PrimeField;
                 Fr::from_repr({
                     let mut le_bytes: [u8; 32] = be_bytes
                         .try_into()
@@ -157,15 +159,7 @@ impl ProofEnum {
         }
     }
 
-    /// Extracts public input values from the proof.
-    ///
-    /// # Returns
-    /// - For Stark proofs: A vector of u32 values converted from BabyBear field elements
-    /// - For EVM proofs: A vector of u32 values, each containing a single byte from the original vector
-    /// - The returned vector typically contains 32 elements, where each u32 represents a single byte value.
-    ///
-    /// Note: This method handles the different encoding formats between proof types.
-    /// Each returned u32 typically only uses the lower 8 bits (one byte) of its capacity.
+    /// Derive public inputs from the proof.
     pub fn public_values(&self) -> Vec<u32> {
         match self {
             Self::Stark(stark_proof) => stark_proof

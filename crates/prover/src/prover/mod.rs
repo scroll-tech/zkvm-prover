@@ -244,7 +244,6 @@ impl Prover {
     pub fn gen_proof_stark(&self, stdin: StdIn) -> Result<StarkProof, Error> {
         // Here we always do an execution of the guest program to get the cycle count.
         // and do precheck before proving like ensure PI != 0
-
         self.execute_and_check(&stdin)?;
 
         let sdk = Sdk::new();
