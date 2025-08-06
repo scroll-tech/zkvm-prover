@@ -27,7 +27,7 @@ use crate::{
     task::ProvingTask,
 };
 
-use scroll_zkvm_types::proof::{EvmProof, ProofEnum, RootProof};
+use scroll_zkvm_types::proof::{EvmProof, ProofEnum, StarkProof};
 
 /// The default directory to locate openvm's halo2 SRS parameters.
 const DEFAULT_PARAMS_DIR: &str = concat!(env!("HOME"), "/.openvm/params/");
@@ -133,9 +133,9 @@ impl Prover {
         );
 
         let exe = commits.app_exe_commit.to_u32_digest();
-        let leaf = commits.app_vm_commit.to_u32_digest();
+        let vm = commits.app_vm_commit.to_u32_digest();
 
-        scroll_zkvm_types::types_agg::ProgramCommitment { exe, leaf }.serialize()
+        scroll_zkvm_types::types_agg::ProgramCommitment { exe, vm }.serialize()
     }
 
     /// Pick up the actual vk (serialized) for evm proof, would be empty if prover
@@ -241,7 +241,7 @@ impl Prover {
     /// Generate a [root proof][root_proof].
     ///
     /// [root_proof][openvm_sdk::verifier::root::types::RootVmVerifierInput]
-    pub fn gen_proof_stark(&self, stdin: StdIn) -> Result<RootProof, Error> {
+    pub fn gen_proof_stark(&self, stdin: StdIn) -> Result<StarkProof, Error> {
         // Here we always do an execution of the guest program to get the cycle count.
         // and do precheck before proving like ensure PI != 0
         self.execute_and_check(&stdin)?;

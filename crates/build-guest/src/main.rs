@@ -295,7 +295,7 @@ fn run_stage4_dump_vk_json(
             {
                 let app_vk = scroll_zkvm_types::types_agg::ProgramCommitment {
                     exe: *exe,
-                    leaf: *leaf,
+                    vm: *leaf,
                 }
                 .serialize();
 

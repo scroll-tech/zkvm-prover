@@ -8,7 +8,7 @@ use openvm_stark_sdk::{
 use serde::{Deserialize, Serialize};
 
 /// Alias for convenience.
-pub type RootProof = RootVmVerifierInput<SC>;
+pub type StarkProof = RootVmVerifierInput<SC>;
 
 /// Helper type for convenience that implements [`From`] and [`Into`] traits between
 /// [`OpenVmEvmProof`]. The difference is that the instances in [`EvmProof`] are the byte-encoding
@@ -26,8 +26,8 @@ pub struct EvmProof {
 
 /// Helper to modify serde implementations on the remote [`RootProof`] type.
 #[derive(Serialize, Deserialize)]
-#[serde(remote = "RootProof")]
-struct RootProofDef {
+#[serde(remote = "StarkProof")]
+struct StarkProofDef {
     /// The proofs.
     #[serde(with = "as_base64")]
     proofs: Vec<Proof<SC>>,
@@ -95,15 +95,15 @@ impl From<EvmProof> for OpenVmEvmProof {
 #[serde(untagged)]
 pub enum ProofEnum {
     /// Represents a STARK proof used for intermediary layers, i.e. chunk and batch.
-    #[serde(with = "RootProofDef")]
-    Root(RootProof),
+    #[serde(with = "StarkProofDef")]
+    Stark(StarkProof),
     /// Represents a SNARK proof used for the final layer to be verified on-chain, i.e. bundle.
     Evm(EvmProof),
 }
 
-impl From<RootProof> for ProofEnum {
-    fn from(value: RootProof) -> Self {
-        Self::Root(value)
+impl From<StarkProof> for ProofEnum {
+    fn from(value: StarkProof) -> Self {
+        Self::Stark(value)
     }
 }
 
@@ -114,10 +114,10 @@ impl From<EvmProof> for ProofEnum {
 }
 
 impl ProofEnum {
-    /// Get the root proof as reference.
-    pub fn as_root_proof(&self) -> Option<&RootProof> {
+    /// Get the stark proof as reference.
+    pub fn as_stark_proof(&self) -> Option<&StarkProof> {
         match self {
-            Self::Root(proof) => Some(proof),
+            Self::Stark(proof) => Some(proof),
             _ => None,
         }
     }
@@ -133,9 +133,9 @@ impl ProofEnum {
     }
 
     /// Consumes the proof enum and returns the contained root proof.
-    pub fn into_root_proof(self) -> Option<RootProof> {
+    pub fn into_stark_proof(self) -> Option<StarkProof> {
         match self {
-            Self::Root(proof) => Some(proof),
+            Self::Stark(proof) => Some(proof),
             _ => None,
         }
     }
@@ -151,7 +151,7 @@ impl ProofEnum {
     /// Derive public inputs from the proof.
     pub fn public_values(&self) -> Vec<u32> {
         match self {
-            Self::Root(root_proof) => root_proof
+            Self::Stark(stark_proof) => stark_proof
                 .public_values
                 .iter()
                 .map(|x| x.as_canonical_u32())

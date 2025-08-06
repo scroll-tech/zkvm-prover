@@ -48,7 +48,7 @@ fn test_e2e_execute() -> eyre::Result<()> {
 
     let stdin = BatchProverTester::build_guest_input(
         &wit,
-        agg_proofs.iter().map(|p| p.as_root_proof().unwrap()),
+        agg_proofs.iter().map(|p| p.as_stark_proof().unwrap()),
     )?;
     let _ = prover.execute_and_check_with_full_result(&stdin)?;
 
