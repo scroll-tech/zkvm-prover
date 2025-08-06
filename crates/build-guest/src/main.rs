@@ -357,17 +357,23 @@ fn run_stage5_dump_evm_verifier(verifier_output_dir: &PathBuf, recompute_mode: b
     } else {
         println!("{LOG_PREFIX} Downloading pre-built verifier from openvm-solidity-sdk...");
         let verifier_url = "https://github.com/openvm-org/openvm-solidity-sdk/raw/refs/heads/main/src/v1.3/Halo2Verifier.sol";
-        let response = reqwest::blocking::get(verifier_url)?;
+        
+        let output = std::process::Command::new("wget")
+            .arg("-q")
+            .arg("-O")
+            .arg("-")
+            .arg(verifier_url)
+            .output()?;
 
-        if !response.status().is_success() {
+        if !output.status.success() {
             return Err(eyre::eyre!(
-                "Failed to download verifier from {}: {}",
-                verifier_url,
-                response.status()
+            "Failed to download verifier from {}: wget exited with code {:?}",
+            verifier_url,
+            output.status.code()
             ));
         }
 
-        let sol_code = response.text()?;
+        let sol_code = String::from_utf8(output.stdout)?;
         std::fs::write(&path_verifier_sol, &sol_code)?;
         println!(
             "{LOG_PREFIX} Downloaded verifier.sol to {}",
