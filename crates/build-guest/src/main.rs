@@ -191,10 +191,7 @@ fn run_stage3_exe_commits(
             std::fs::create_dir_all(parent)?;
         }
         std::fs::copy(&path_app_config, &output_path)?;
-        println!(
-            "{LOG_PREFIX} Copied config to {}",
-            output_path.display()
-        );
+        println!("{LOG_PREFIX} Copied config to {}", output_path.display());
 
         // 1. Build ELF
 
@@ -277,6 +274,7 @@ fn run_stage3_exe_commits(
 
 /// Stage 4: Dumps VK data to a JSON file if both exe and leaf commitments are available.
 fn run_stage4_dump_vk_json(
+    release_output_dir: &PathBuf,
     leaf_commitments: Option<HashMap<String, [u32; DIGEST_SIZE]>>,
     exe_commitments: Option<HashMap<String, [u32; DIGEST_SIZE]>>,
 ) -> Result<()> {
@@ -315,7 +313,8 @@ fn run_stage4_dump_vk_json(
             bundle_vk,
         };
 
-        let f = std::fs::File::create("openVmVk.json")?;
+        let output_path = release_output_dir.join("verifier").join("openVmVk.json");
+        let f = std::fs::File::create(output_path)?;
         serde_json::to_writer(f, &dump)?;
         println!(
             "{LOG_PREFIX} openVmVk.json: {}",
@@ -330,6 +329,9 @@ fn run_stage5_dump_evm_verifier(verifier_output_dir: &PathBuf, recompute_mode: b
     println!("{LOG_PREFIX} === Stage 5: Dumping EVM VERIFIER ===");
     let path_verifier_sol = verifier_output_dir.join("verifier.sol");
     let path_verifier_bin = verifier_output_dir.join("verifier.bin");
+    if let Some(parent) = path_verifier_bin.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
     let verifier_contract = if recompute_mode {
         let dir_halo2_params = Path::new(DEFAULT_PARAMS_DIR).to_path_buf();
         let halo2_params_reader = CacheHalo2ParamsReader::new(&dir_halo2_params);
@@ -351,27 +353,24 @@ fn run_stage5_dump_evm_verifier(verifier_output_dir: &PathBuf, recompute_mode: b
     } else {
         println!("{LOG_PREFIX} Downloading pre-built verifier from openvm-solidity-sdk...");
         let verifier_url = "https://github.com/openvm-org/openvm-solidity-sdk/raw/refs/heads/main/src/v1.3/Halo2Verifier.sol";
-        let response = std::process::Command::new("curl")
-            .arg("-s")
-            .arg("-L")
-            .arg(verifier_url)
-            .output()?;
+        let response = reqwest::blocking::get(verifier_url)?;
 
-        if !response.status.success() {
+        if !response.status().is_success() {
             return Err(eyre::eyre!(
-                "Failed to download verifier from {}",
-                verifier_url
+                "Failed to download verifier from {}: {}",
+                verifier_url,
+                response.status()
             ));
         }
 
-        let sol_code = &String::from_utf8(response.stdout).expect("invalid src");
+        let sol_code = response.text()?;
         std::fs::write(&path_verifier_sol, &sol_code)?;
         println!(
             "{LOG_PREFIX} Downloaded verifier.sol to {}",
             path_verifier_sol.display()
         );
 
-        compile_solidity(sol_code)
+        compile_solidity(&sol_code)
     };
     std::fs::write(&path_verifier_bin, &verifier_contract)?;
     println!("{LOG_PREFIX} verifier_contract written to {path_verifier_bin:?}");
@@ -459,7 +458,7 @@ pub fn main() -> Result<()> {
         None
     };
 
-    run_stage4_dump_vk_json(leaf_commitments, exe_commitments)?;
+    run_stage4_dump_vk_json(&release_output_dir, leaf_commitments, exe_commitments)?;
 
     run_stage5_dump_evm_verifier(
         &release_output_dir.join("verifier"),

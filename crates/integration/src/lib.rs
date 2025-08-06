@@ -1,8 +1,6 @@
 use cargo_metadata::MetadataCommand;
 use once_cell::sync::OnceCell;
-use openvm_sdk::{
-    StdIn,
-};
+use openvm_sdk::StdIn;
 use scroll_zkvm_prover::{
     Prover,
     utils::{read_json, vm::ExecutionResult, write_json},
