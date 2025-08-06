@@ -97,7 +97,7 @@ impl Prover {
             &app_pk.leaf_committed_exe,
         );
 
-        let evm_prover = with_evm.then(|| Self::setup_evm_prover()).transpose()?;
+        let evm_prover = with_evm.then(Self::setup_evm_prover).transpose()?;
         Ok(Self {
             app_committed_exe,
             app_pk: Arc::new(app_pk),

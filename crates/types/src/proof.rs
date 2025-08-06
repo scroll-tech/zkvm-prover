@@ -138,7 +138,7 @@ impl ProofEnum {
     /// # Returns
     /// - For Stark proofs: A vector of u32 values converted from BabyBear field elements
     /// - For EVM proofs: A vector of u32 values, each containing a single byte from the original vector
-    /// The returned vector typically contains 32 elements, where each u32 represents a single byte value.
+    /// - The returned vector typically contains 32 elements, where each u32 represents a single byte value.
     ///
     /// Note: This method handles the different encoding formats between proof types.
     /// Each returned u32 typically only uses the lower 8 bits (one byte) of its capacity.
