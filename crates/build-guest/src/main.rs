@@ -315,6 +315,9 @@ fn run_stage4_dump_vk_json(
         };
 
         let output_path = release_output_dir.join("verifier").join("openVmVk.json");
+        if let Some(parent) = output_path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
         let f = std::fs::File::create(output_path)?;
         serde_json::to_writer(f, &dump)?;
         println!(
