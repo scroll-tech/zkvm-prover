@@ -1,12 +1,8 @@
 use cargo_metadata::MetadataCommand;
 use once_cell::sync::OnceCell;
-use openvm_sdk::{
-    StdIn,
-    config::{AppConfig, SdkVmConfig},
-};
+use openvm_sdk::StdIn;
 use scroll_zkvm_prover::{
     Prover,
-    setup::read_app_config,
     utils::{read_json, vm::ExecutionResult, write_json},
 };
 use scroll_zkvm_types::{
@@ -350,8 +346,9 @@ where
 
     // Dump verifier-only assets to disk.
     let path_verifier_code = WORKSPACE_ROOT
-        .join(T::PATH_PROJECT_ROOT)
-        .join("openvm")
+        .join("releases")
+        .join("dev")
+        .join("verifier")
         .join("verifier.bin");
     let verifier = scroll_zkvm_verifier::verifier::UniversalVerifier::setup(&path_verifier_code)?;
 
@@ -381,13 +378,14 @@ where
     let vk = prover.get_app_commitment().serialize();
     // Verify proof.
     verifier.verify_evm_proof(
-        &proof
-            .clone()
-            .into_evm_proof()
-            .expect("must be evm proof")
-            .into(),
-        &vk,
-    )?;
+            &proof
+                .clone()
+                .into_evm_proof()
+                .expect("must be evm proof")
+                .into(),
+            &vk,
+        )?
+    );
 
     Ok((proof, verifier, path_assets))
 }

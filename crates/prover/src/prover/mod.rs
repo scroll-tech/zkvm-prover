@@ -25,7 +25,6 @@ use crate::{
 };
 
 use scroll_zkvm_types::proof::{EvmProof, ProofEnum, StarkProof};
-
 /// The default directory to locate openvm's halo2 SRS parameters.
 const DEFAULT_PARAMS_DIR: &str = concat!(env!("HOME"), "/.openvm/params/");
 
@@ -100,7 +99,6 @@ impl Prover {
         );
 
         let evm_prover = with_evm.then(|| Self::setup_evm_prover()).transpose()?;
-
         Ok(Self {
             app_committed_exe,
             app_pk: Arc::new(app_pk),
@@ -108,16 +106,11 @@ impl Prover {
             commits,
             config,
             prover_name: name.unwrap_or("universal").to_string(),
-        })
-    }
-
     /// Pick up loaded app commit, to distinguish from which circuit the proof comes
     pub fn get_app_commitment(&self) -> ProgramCommitment {
         let exe = self.commits.app_exe_commit.to_u32_digest();
         let leaf = self.commits.app_vm_commit.to_u32_digest();
         ProgramCommitment { exe, vm: leaf }
-    }
-
     /// Pick up loaded app commit as "vk" in proof, to distinguish from which circuit the proof comes
     pub fn get_app_vk(&self) -> Vec<u8> {
         self.get_app_commitment().serialize()
@@ -235,7 +228,6 @@ impl Prover {
         };
 
         tracing::info!("EVM prover setup complete.");
-
         Ok(EvmProver {
             reader: halo2_params_reader,
             agg_pk,

@@ -1,3 +1,4 @@
+#![allow(clippy::ptr_arg)]
 //! Build script for guest circuits (chunk, batch, bundle).
 //!
 //! This script handles several stages:
@@ -11,7 +12,7 @@
 //! - `BUILD_STAGES`: Comma-separated list of stages to run (e.g., "stage1,stage3"). Defaults to "stage1,stage2,stage3".
 
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{BTreeSet, HashMap},
     env,
     fs::read_to_string,
     path::{Path, PathBuf},
@@ -67,7 +68,7 @@ fn write_commitment_as_evm_hex(
     if let Some(parent) = output_path.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    std::fs::write(&output_path, hex::encode(digest_bytes))?;
+    std::fs::write(output_path, hex::encode(digest_bytes))?;
     println!("{LOG_PREFIX} Wrote commitment to {}", output_path.display());
     Ok(())
 }
@@ -186,12 +187,12 @@ fn run_stage3_exe_commits(
         );
 
         // copy path_app_config as ${release_output_dir}/${project_name}/${FD_APP_CONFIG}
-        let assets_config_path = release_output_dir.join(project_name).join(FD_APP_CONFIG);
-        std::fs::copy(&path_app_config, &assets_config_path)?;
-        println!(
-            "{LOG_PREFIX} Copied config to {}",
-            assets_config_path.display()
-        );
+        let output_path = release_output_dir.join(project_name).join(FD_APP_CONFIG);
+        if let Some(parent) = output_path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        std::fs::copy(&path_app_config, &output_path)?;
+        println!("{LOG_PREFIX} Copied config to {}", output_path.display());
 
         // 1. Build ELF
 
@@ -274,6 +275,7 @@ fn run_stage3_exe_commits(
 
 /// Stage 4: Dumps VK data to a JSON file if both exe and leaf commitments are available.
 fn run_stage4_dump_vk_json(
+    release_output_dir: &PathBuf,
     leaf_commitments: Option<HashMap<String, [u32; DIGEST_SIZE]>>,
     exe_commitments: Option<HashMap<String, [u32; DIGEST_SIZE]>>,
 ) -> Result<()> {
@@ -312,7 +314,11 @@ fn run_stage4_dump_vk_json(
             bundle_vk,
         };
 
-        let f = std::fs::File::create("openVmVk.json")?;
+        let output_path = release_output_dir.join("verifier").join("openVmVk.json");
+        if let Some(parent) = output_path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        let f = std::fs::File::create(output_path)?;
         serde_json::to_writer(f, &dump)?;
         println!(
             "{LOG_PREFIX} openVmVk.json: {}",
@@ -327,6 +333,9 @@ fn run_stage5_dump_evm_verifier(verifier_output_dir: &PathBuf, recompute_mode: b
     println!("{LOG_PREFIX} === Stage 5: Dumping EVM VERIFIER ===");
     let path_verifier_sol = verifier_output_dir.join("verifier.sol");
     let path_verifier_bin = verifier_output_dir.join("verifier.bin");
+    if let Some(parent) = path_verifier_bin.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
     let verifier_contract = if recompute_mode {
         let dir_halo2_params = Path::new(DEFAULT_PARAMS_DIR).to_path_buf();
         let halo2_params_reader = CacheHalo2ParamsReader::new(&dir_halo2_params);
@@ -348,27 +357,30 @@ fn run_stage5_dump_evm_verifier(verifier_output_dir: &PathBuf, recompute_mode: b
     } else {
         println!("{LOG_PREFIX} Downloading pre-built verifier from openvm-solidity-sdk...");
         let verifier_url = "https://github.com/openvm-org/openvm-solidity-sdk/raw/refs/heads/main/src/v1.3/Halo2Verifier.sol";
-        let response = std::process::Command::new("curl")
-            .arg("-s")
-            .arg("-L")
+
+        let output = std::process::Command::new("wget")
+            .arg("-q")
+            .arg("-O")
+            .arg("-")
             .arg(verifier_url)
             .output()?;
 
-        if !response.status.success() {
+        if !output.status.success() {
             return Err(eyre::eyre!(
-                "Failed to download verifier from {}",
-                verifier_url
+                "Failed to download verifier from {}: wget exited with code {:?}",
+                verifier_url,
+                output.status.code()
             ));
         }
 
-        let sol_code = &String::from_utf8(response.stdout).expect("invalid src");
+        let sol_code = String::from_utf8(output.stdout)?;
         std::fs::write(&path_verifier_sol, &sol_code)?;
         println!(
             "{LOG_PREFIX} Downloaded verifier.sol to {}",
             path_verifier_sol.display()
         );
 
-        compile_solidity(sol_code)
+        compile_solidity(&sol_code)
     };
     std::fs::write(&path_verifier_bin, &verifier_contract)?;
     println!("{LOG_PREFIX} verifier_contract written to {path_verifier_bin:?}");
@@ -414,7 +426,7 @@ pub fn main() -> Result<()> {
     // Determine which stages to run
     let stages_env =
         env::var("BUILD_STAGES").unwrap_or_else(|_| "stage1,stage2,stage3".to_string());
-    let stages_to_run: HashSet<&str> = if stages_env.trim().is_empty() {
+    let stages_to_run: BTreeSet<&str> = if stages_env.trim().is_empty() {
         // If empty string is provided, run all stages
         ["stage1", "stage2", "stage3"].iter().cloned().collect()
     } else {
@@ -456,7 +468,7 @@ pub fn main() -> Result<()> {
         None
     };
 
-    run_stage4_dump_vk_json(leaf_commitments, exe_commitments)?;
+    run_stage4_dump_vk_json(&release_output_dir, leaf_commitments, exe_commitments)?;
 
     run_stage5_dump_evm_verifier(
         &release_output_dir.join("verifier"),
