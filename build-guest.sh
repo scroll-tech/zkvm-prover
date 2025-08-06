@@ -22,7 +22,6 @@ if [ -n "$(echo ${BUILD_STAGES} | grep stage1)" ]; then
     bundle-circuit/bundle_leaf_commit.rs; do
     docker cp ${container_id}:/app/crates/circuits/${f} crates/circuits/${f}
   done
-  docker cp ${container_id}:/app/crates/circuits/bundle-circuit/digest_2 crates/circuits/bundle-circuit/digest_2
 fi
 
 if [ -n "$(echo ${BUILD_STAGES} | grep stage2)" ]; then
@@ -38,16 +37,8 @@ if [ -n "$(echo ${BUILD_STAGES} | grep stage3)" ]; then
     docker cp ${container_id}:/app/crates/circuits/${f} crates/circuits/${f}
   done
 
-  # copy digests from container to local
-  docker cp ${container_id}:/app/crates/circuits/bundle-circuit/digest_1 crates/circuits/bundle-circuit/digest_1
-
-  # copy app.vmexe from container to local
-  mkdir -p crates/circuits/chunk-circuit/openvm
-  mkdir -p crates/circuits/batch-circuit/openvm
-  mkdir -p crates/circuits/bundle-circuit/openvm
-  docker cp ${container_id}:/app/crates/circuits/chunk-circuit/openvm/app.vmexe crates/circuits/chunk-circuit/openvm/app.vmexe
-  docker cp ${container_id}:/app/crates/circuits/batch-circuit/openvm/app.vmexe crates/circuits/batch-circuit/openvm/app.vmexe
-  docker cp ${container_id}:/app/crates/circuits/bundle-circuit/openvm/app.vmexe crates/circuits/bundle-circuit/openvm/app.vmexe
+  # copy release files from container to local
+  docker cp ${container_id}:/app/releases/dev releases/dev
 
 fi
 
