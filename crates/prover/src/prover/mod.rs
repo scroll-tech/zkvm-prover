@@ -4,23 +4,27 @@ use std::{
 };
 
 use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
-use openvm_circuit::system::program::trace::VmCommittedExe;
 use openvm_sdk::{
-    DefaultStaticVerifierPvHandler, NonRootCommittedExe, Sdk, StdIn,
+    DefaultStaticVerifierPvHandler,
+    NonRootCommittedExe,
+    Sdk,
+    StdIn, //types::EvmProof as OpenVmEvmProf,
     commit::AppExecutionCommit,
-    config::{AggConfig, SdkVmConfig},
+    config::{AggConfig, SdkVmConfig, SdkVmCpuBuilder},
     keygen::{AggProvingKey, AggStarkProvingKey, AppProvingKey},
-    //types::EvmProof as OpenVmEvmProf,
 };
 use scroll_zkvm_types::{proof::OpenVmEvmProof, types_agg::ProgramCommitment};
 use scroll_zkvm_verifier::verifier::{AGG_STARK_PROVING_KEY, UniversalVerifier};
-use scroll_zkvm_verifier::verifier::UniversalVerifier;
 use tracing::instrument;
 
 // Re-export from openvm_sdk.
 pub use openvm_sdk::{self};
 
-use crate::{Error, setup::read_app_config, task::ProvingTask};
+use crate::{
+    Error,
+    setup::{read_app_config, read_app_exe},
+    task::ProvingTask,
+};
 
 use scroll_zkvm_types::proof::{EvmProof, ProofEnum, StarkProof};
 /// The default directory to locate openvm's halo2 SRS parameters.
@@ -53,7 +57,6 @@ pub struct Prover {
     pub evm_prover: Option<EvmProver>,
     /// Configuration for the prover.
     pub config: ProverConfig,
-    pub config: ProverConfig,
 }
 
 /// Configure the [`Prover`].
@@ -73,8 +76,7 @@ impl Prover {
     /// Setup the [`Prover`] given paths to the application's exe and proving key.
     #[instrument("Prover::setup")]
     pub fn setup(config: ProverConfig, with_evm: bool, name: Option<&str>) -> Result<Self, Error> {
-            config: config,
-        let app_exe = read_exe_from_file(&config.path_app_exe).unwrap();
+        let app_exe = read_app_exe(&config.path_app_exe)?;
         let mut app_config = read_app_config(&config.path_app_config)?;
         let segment_len = config.segment_len.unwrap_or(DEFAULT_SEGMENT_SIZE);
         app_config.app_vm_config.system.config = app_config
@@ -114,10 +116,6 @@ impl Prover {
         ProgramCommitment { exe, vm: leaf }
     }
 
-    /// Pick up loaded app commit as "vk" in proof, to distinguish from which circuit the proof comes
-    pub fn get_app_commitment(&self) -> ProgramCommitment {
-        self.get_app_commitment().serialize()
-    }
     /// Pick up loaded app commit as "vk" in proof, to distinguish from which circuit the proof comes
     pub fn get_app_vk(&self) -> Vec<u8> {
         self.get_app_commitment().serialize()
@@ -237,7 +235,7 @@ impl Prover {
         tracing::info!("EVM prover setup complete.");
         Ok(EvmProver {
             reader: halo2_params_reader,
-            verifier_contract: verifier_contract.artifact.bytecode,
+            agg_pk,
         })
     }
 
@@ -249,10 +247,6 @@ impl Prover {
         // and do precheck before proving like ensure PI != 0
         self.execute_and_check(&stdin)?;
 
-        let sdk = Sdk::new();
-        let proof = sdk
-            .generate_e2e_stark_proof(
-                self.app_pk.clone(),
         let sdk = Sdk::new();
         let proof = sdk
             .generate_e2e_stark_proof(
@@ -288,12 +282,13 @@ impl Prover {
         let evm_proof = sdk
             .generate_evm_proof(
                 &evm_prover.reader,
+                SdkVmCpuBuilder,
                 self.app_pk.clone(),
                 self.app_committed_exe.clone(),
                 evm_prover.agg_pk.clone(),
                 stdin,
             )
-            .unwrap();
+            .map_err(|e| Error::GenProof(format!("{}", e)))?;
 
         Ok(evm_proof)
     }

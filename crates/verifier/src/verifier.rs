@@ -47,7 +47,6 @@ impl UniversalVerifier {
             &CommitBytes::from_u32_digest(&prog_commit.exe).to_bn254(),
             &CommitBytes::from_u32_digest(&prog_commit.vm).to_bn254(),
         )?;
-        .unwrap();
 
         Ok(())
     }
@@ -87,8 +86,6 @@ mod tests {
                 ProofEnum::Stark(p) => Self::verify_stark_proof(p, &proof.vk),
             }
         }
-        //verifier.verify_proof_enum(&chunk_proof)?;
-        //verifier.verify_proof_enum(&batch_proof)?;
     }
 
     #[ignore = "need euclid released assets"]

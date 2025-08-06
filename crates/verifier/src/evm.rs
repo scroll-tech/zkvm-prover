@@ -1,4 +1,4 @@
-use openvm_sdk::types::EvmProof;
+use openvm_native_recursion::halo2::RawEvmProof;
 use openvm_sdk::types::EvmProof;
 // Re-export from snark_verifier_sdk.
 pub use snark_verifier_sdk::{
