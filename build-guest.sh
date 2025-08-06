@@ -38,7 +38,7 @@ if [ -n "$(echo ${BUILD_STAGES} | grep stage3)" ]; then
   done
 
   # copy release files from container to local
-  docker cp -r ${container_id}:/app/releases/dev releases/dev
+  docker cp ${container_id}:/app/releases/dev releases/dev
 
 fi
 
