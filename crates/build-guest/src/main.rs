@@ -1,3 +1,4 @@
+#![allow(clippy::ptr_arg)]
 //! Build script for guest circuits (chunk, batch, bundle).
 //!
 //! This script handles several stages:
@@ -67,7 +68,7 @@ fn write_commitment_as_evm_hex(
     if let Some(parent) = output_path.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    std::fs::write(&output_path, hex::encode(digest_bytes))?;
+    std::fs::write(output_path, hex::encode(digest_bytes))?;
     println!("{LOG_PREFIX} Wrote commitment to {}", output_path.display());
     Ok(())
 }
