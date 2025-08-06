@@ -3,7 +3,7 @@ name: Build ZKVM-Prover Guest
 on:
   push:
     tags:
-      - v**
+      - **
 
 jobs:
   build-guest:
