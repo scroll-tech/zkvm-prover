@@ -30,6 +30,7 @@ use openvm_sdk::{
     fs::write_exe_to_file,
 };
 use openvm_stark_sdk::{openvm_stark_backend::p3_field::PrimeField32, p3_bn254_fr::Bn254Fr};
+use snark_verifier_sdk::snark_verifier::loader::evm::compile_solidity;
 
 const LOG_PREFIX: &str = "[build-guest]";
 
@@ -319,27 +320,53 @@ fn run_stage4_dump_vk_json(
     Ok(())
 }
 
-fn run_stage5_dump_evm_verifier(verifier_output_dir: &PathBuf) -> Result<()> {
+fn run_stage5_dump_evm_verifier(verifier_output_dir: &PathBuf, recompute_mode: bool) -> Result<()> {
     println!("{LOG_PREFIX} === Stage 5: Dumping EVM VERIFIER ===");
-    let dir_halo2_params = Path::new(DEFAULT_PARAMS_DIR).to_path_buf();
-    let halo2_params_reader = CacheHalo2ParamsReader::new(&dir_halo2_params);
-    let agg_pk = Sdk::new().agg_keygen(
-        AggConfig::default(),
-        &halo2_params_reader,
-        &DefaultStaticVerifierPvHandler,
-    )?;
-    let halo2_params =
-        halo2_params_reader.read_params(agg_pk.halo2_pk.wrapper.pinning.metadata.config_params.k);
     let path_verifier_sol = verifier_output_dir.join("verifier.sol");
     let path_verifier_bin = verifier_output_dir.join("verifier.bin");
-    let verifier_contract = snark_verifier_sdk::evm::gen_evm_verifier_shplonk::<
-        snark_verifier_sdk::halo2::aggregation::AggregationCircuit,
-    >(
-        &halo2_params,
-        agg_pk.halo2_pk.wrapper.pinning.pk.get_vk(),
-        agg_pk.halo2_pk.wrapper.pinning.metadata.num_pvs.clone(),
-        Some(&path_verifier_sol),
-    );
+    let verifier_contract = if recompute_mode {
+        let dir_halo2_params = Path::new(DEFAULT_PARAMS_DIR).to_path_buf();
+        let halo2_params_reader = CacheHalo2ParamsReader::new(&dir_halo2_params);
+        let agg_pk = Sdk::new().agg_keygen(
+            AggConfig::default(),
+            &halo2_params_reader,
+            &DefaultStaticVerifierPvHandler,
+        )?;
+        let halo2_params = halo2_params_reader
+            .read_params(agg_pk.halo2_pk.wrapper.pinning.metadata.config_params.k);
+        snark_verifier_sdk::evm::gen_evm_verifier_shplonk::<
+            snark_verifier_sdk::halo2::aggregation::AggregationCircuit,
+        >(
+            &halo2_params,
+            agg_pk.halo2_pk.wrapper.pinning.pk.get_vk(),
+            agg_pk.halo2_pk.wrapper.pinning.metadata.num_pvs.clone(),
+            Some(&path_verifier_sol),
+        )
+    } else {
+        println!("{LOG_PREFIX} Downloading pre-built verifier from openvm-solidity-sdk...");
+        let verifier_url = "https://github.com/openvm-org/openvm-solidity-sdk/raw/refs/heads/main/src/v1.3/Halo2Verifier.sol";
+        let response = std::process::Command::new("curl")
+            .arg("-s")
+            .arg("-L")
+            .arg(verifier_url)
+            .output()?;
+
+        if !response.status.success() {
+            return Err(eyre::eyre!(
+                "Failed to download verifier from {}",
+                verifier_url
+            ));
+        }
+
+        let sol_code = &String::from_utf8(response.stdout).expect("invalid src");
+        std::fs::write(&path_verifier_sol, &sol_code)?;
+        println!(
+            "{LOG_PREFIX} Downloaded verifier.sol to {}",
+            path_verifier_sol.display()
+        );
+
+        compile_solidity(sol_code)
+    };
     std::fs::write(&path_verifier_bin, &verifier_contract)?;
     println!("{LOG_PREFIX} verifier_contract written to {path_verifier_bin:?}");
 
@@ -428,11 +455,10 @@ pub fn main() -> Result<()> {
 
     run_stage4_dump_vk_json(leaf_commitments, exe_commitments)?;
 
-    if stages_to_run.contains("stage5") {
-        run_stage5_dump_evm_verifier(&release_output_dir.join("verifier"))?;
-    } else {
-        println!("{LOG_PREFIX} Skipping Stage 5: Evm Verifier");
-    };
+    run_stage5_dump_evm_verifier(
+        &release_output_dir.join("verifier"),
+        stages_to_run.contains("stage5"),
+    )?;
 
     println!("{LOG_PREFIX} Build process completed successfully.");
     Ok(())

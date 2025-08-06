@@ -6784,6 +6784,7 @@ dependencies = [
  "dotenv",
  "eyre",
  "halo2curves-axiom 0.5.3",
+ "hex",
  "hex-literal",
  "openvm-build",
  "openvm-circuit",
