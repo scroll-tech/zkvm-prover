@@ -3,8 +3,7 @@ use std::{
     sync::Arc,
 };
 
-use openvm_native_recursion::halo2::utils::{CacheHalo2ParamsReader, Halo2ParamsReader};
-use openvm_sdk::fs::read_exe_from_file;
+use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
 use openvm_sdk::{
     DefaultStaticVerifierPvHandler, NonRootCommittedExe, Sdk, StdIn,
     commit::AppExecutionCommit,
@@ -99,7 +98,7 @@ impl Prover {
             &app_pk.leaf_committed_exe,
         );
 
-        let evm_prover = with_evm.then(|| Self::setup_evm_prover()).transpose()?;
+        let evm_prover = with_evm.then(Self::setup_evm_prover).transpose()?;
 
         Ok(Self {
             app_committed_exe,

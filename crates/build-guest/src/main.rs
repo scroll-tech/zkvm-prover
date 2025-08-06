@@ -11,7 +11,7 @@
 //! - `BUILD_STAGES`: Comma-separated list of stages to run (e.g., "stage1,stage3"). Defaults to "stage1,stage2,stage3".
 
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{BTreeSet, HashMap},
     env,
     fs::read_to_string,
     path::{Path, PathBuf},
@@ -416,7 +416,7 @@ pub fn main() -> Result<()> {
     // Determine which stages to run
     let stages_env =
         env::var("BUILD_STAGES").unwrap_or_else(|_| "stage1,stage2,stage3".to_string());
-    let stages_to_run: HashSet<&str> = if stages_env.trim().is_empty() {
+    let stages_to_run: BTreeSet<&str> = if stages_env.trim().is_empty() {
         // If empty string is provided, run all stages
         ["stage1", "stage2", "stage3"].iter().cloned().collect()
     } else {
