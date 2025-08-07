@@ -18,7 +18,7 @@ pub struct BundleWitnessEuclid {
 }
 
 /// The witness for the bundle circuit.
-#[derive(Clone, Debug, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(Clone, Debug, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, serde::Deserialize, serde::Serialize)]
 #[rkyv(derive(Debug))]
 pub struct BundleWitness {
     /// Batch proofs being aggregated in the bundle.
@@ -40,6 +40,15 @@ impl BundleWitness {
             batch_infos: self.batch_infos,
         }
     }
+
+    pub fn bincode_serialize(
+        &self,
+        guest_version: Option<ForkName>,
+    ) -> Result<Vec<u8>, bincode::error::EncodeError> {
+        let config = bincode::config::standard();
+        bincode::serde::encode_to_vec(&self, config)
+    }
+
     /// See ChunkWitnessEuclid::rkyv_serialize for details.
     pub fn rkyv_serialize(
         &self,
@@ -56,24 +65,14 @@ impl BundleWitness {
     }
 }
 
-impl ProofCarryingWitness for ArchivedBundleWitness {
+impl ProofCarryingWitness for BundleWitness {
     fn get_proofs(&self) -> Vec<AggregationInput> {
-        self.batch_proofs
-            .iter()
-            .map(|archived| AggregationInput {
-                public_values: archived
-                    .public_values
-                    .iter()
-                    .map(|u32_le| u32_le.to_native())
-                    .collect(),
-                commitment: ProgramCommitment::from(&archived.commitment),
-            })
-            .collect()
+        self.batch_proofs.clone()
     }
 }
 
-impl From<&ArchivedBundleWitness> for BundleInfo {
-    fn from(witness: &ArchivedBundleWitness) -> Self {
+impl From<&BundleWitness> for BundleInfo {
+    fn from(witness: &BundleWitness) -> Self {
         assert!(
             !witness.batch_infos.is_empty(),
             "at least one batch in a bundle"

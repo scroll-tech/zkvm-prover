@@ -32,6 +32,9 @@ clean-guest:
 build-guest:
 	sh build-guest.sh
 
+build-guest-local:
+	bash build-guest-actions-entrypoint.sh
+
 clean-build-guest: clean-guest build-guest
 
 clean-test-cache:

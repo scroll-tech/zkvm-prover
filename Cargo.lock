@@ -936,6 +936,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "bincode"
+version = "2.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "36eaf5d7b090263e8150820482d5d93cd964a81e4019913c972f4edcc6edb740"
+dependencies = [
+ "bincode_derive",
+ "serde",
+ "unty",
+]
+
+[[package]]
+name = "bincode_derive"
+version = "2.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bf95709a440f45e986983918d0e8a1f30a9b1df04918fc828670606804ac3c09"
+dependencies = [
+ "virtue",
+]
+
+[[package]]
 name = "bit-set"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6588,6 +6608,7 @@ name = "scroll-zkvm-batch-circuit"
 version = "0.5.0"
 dependencies = [
  "alloy-primitives",
+ "bincode 2.0.1",
  "bitcode",
  "c-kzg",
  "halo2curves-axiom 0.7.0",
@@ -6647,6 +6668,7 @@ name = "scroll-zkvm-bundle-circuit"
 version = "0.5.0"
 dependencies = [
  "alloy-primitives",
+ "bincode 2.0.1",
  "openvm",
  "openvm-algebra-guest",
  "openvm-keccak256-guest",
@@ -6660,6 +6682,7 @@ dependencies = [
 name = "scroll-zkvm-chunk-circuit"
 version = "0.5.0"
 dependencies = [
+ "bincode 2.0.1",
  "k256 0.13.4 (git+https://github.com/openvm-org/openvm.git?rev=5368d4756993fc1e51092499a816867cf4808de0)",
  "openvm",
  "openvm-algebra-complex-macros",
@@ -6722,7 +6745,7 @@ version = "0.5.0"
 dependencies = [
  "alloy-primitives",
  "base64",
- "bincode",
+ "bincode 1.3.3",
  "c-kzg",
  "eyre",
  "git-version",
@@ -6759,7 +6782,7 @@ name = "scroll-zkvm-types"
 version = "0.5.0"
 dependencies = [
  "base64",
- "bincode",
+ "bincode 1.3.3",
  "c-kzg",
  "openvm-continuations",
  "openvm-native-recursion",
@@ -6794,6 +6817,7 @@ name = "scroll-zkvm-types-batch"
 version = "0.5.0"
 dependencies = [
  "alloy-primitives",
+ "bincode 2.0.1",
  "c-kzg",
  "halo2curves-axiom 0.7.0",
  "itertools 0.14.0",
@@ -6814,6 +6838,7 @@ name = "scroll-zkvm-types-bundle"
 version = "0.5.0"
 dependencies = [
  "alloy-primitives",
+ "bincode 2.0.1",
  "itertools 0.14.0",
  "rkyv",
  "scroll-zkvm-types-base",
@@ -6826,6 +6851,7 @@ name = "scroll-zkvm-types-chunk"
 version = "0.5.0"
 dependencies = [
  "alloy-primitives",
+ "bincode 2.0.1",
  "itertools 0.14.0",
  "openvm",
  "openvm-custom-insn",
@@ -6860,7 +6886,7 @@ name = "scroll-zkvm-verifier"
 version = "0.5.0"
 dependencies = [
  "base64",
- "bincode",
+ "bincode 1.3.3",
  "eyre",
  "itertools 0.14.0",
  "once_cell",
@@ -7227,7 +7253,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a338d065044702bf751e87cf353daac63e2fc4c53a3e323cbcd98c603ee6e66c"
 dependencies = [
  "ark-std 0.3.0",
- "bincode",
+ "bincode 1.3.3",
  "ethereum-types",
  "getset",
  "halo2-base",
@@ -7250,7 +7276,7 @@ version = "5.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "03046db52868c1b60e8acffa0777ef6dc11ec1bbbb10b9eb612a871f69c8d3f6"
 dependencies = [
- "bincode",
+ "bincode 1.3.3",
  "serde",
  "sp1-primitives",
 ]
@@ -7261,7 +7287,7 @@ version = "5.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6939d6b2f63e54e5fbd208a0293027608f22511741b62fe32b6f67f6c144e0c0"
 dependencies = [
- "bincode",
+ "bincode 1.3.3",
  "blake3",
  "cfg-if",
  "hex",
@@ -7852,6 +7878,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "unty"
+version = "0.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6d49784317cd0d1ee7ec5c716dd598ec5b4483ea832a2dced265471cc0f690ae"
+
+[[package]]
 name = "url"
 version = "2.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7895,6 +7927,12 @@ name = "version_check"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
+
+[[package]]
+name = "virtue"
+version = "0.0.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "051eb1abcf10076295e815102942cc58f9d5e3b4560e46e53c21e8ff6f3af7b1"
 
 [[package]]
 name = "vm-zstd"
@@ -8061,9 +8099,9 @@ dependencies = [
 
 [[package]]
 name = "windows-link"
-version = "0.1.3"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e6ad25900d524eaabdbbb96d20b4311e1e7ae1699af4fb28c17ae66c80d798a"
+checksum = "76840935b766e1b0a05c0066835fb9ec80071d4c09a16f6bd5f7e655e3c14c38"
 
 [[package]]
 name = "windows-result"

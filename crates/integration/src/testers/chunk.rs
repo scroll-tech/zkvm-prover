@@ -50,7 +50,8 @@ impl PartialProvingTask for ChunkWitness {
     }
 
     fn write_guest_input(&self, stdin: &mut openvm_sdk::StdIn) -> Result<(), rkyv::rancor::Error> {
-        stdin.write_bytes(self.rkyv_serialize(None)?.as_slice());
+        let b = self.bincode_serialize(None).unwrap();
+        stdin.write_bytes(b.as_slice());
         Ok(())
     }
 
