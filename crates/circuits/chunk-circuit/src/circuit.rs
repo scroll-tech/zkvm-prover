@@ -1,5 +1,5 @@
 use openvm::init;
-use scroll_zkvm_types_chunk::ArchivedChunkWitness;
+use scroll_zkvm_types_chunk::{ChunkWitness, execute};
 use scroll_zkvm_types_circuit::{
     Circuit,
     io::read_witnesses,
@@ -22,7 +22,7 @@ init!();
 pub struct ChunkCircuit;
 
 impl Circuit for ChunkCircuit {
-    type Witness = ArchivedChunkWitness;
+    type Witness = ChunkWitness;
     type PublicInputs = VersionedChunkInfo;
 
     fn read_witness_bytes() -> Vec<u8> {
@@ -30,14 +30,16 @@ impl Circuit for ChunkCircuit {
     }
 
     fn deserialize_witness(witness_bytes: &[u8]) -> &Self::Witness {
-        rkyv::access::<ArchivedChunkWitness, rkyv::rancor::BoxedError>(witness_bytes)
-            .expect("ChunkCircuit: rkyv deserialisation of witness bytes failed")
+        let config = bincode::config::standard();
+        let (witness, _): (Self::Witness, _) =
+            bincode::serde::decode_from_slice(witness_bytes, config).unwrap();
+        Box::leak(Box::new(witness))
+        // rkyv::access::<ArchivedChunkWitness, rkyv::rancor::BoxedError>(witness_bytes)
+        //    .expect("ChunkCircuit: rkyv deserialisation of witness bytes failed")
     }
 
     fn validate(witness: &Self::Witness) -> Self::PublicInputs {
-        (
-            ChunkInfo::try_from(witness).expect("failed to execute chunk"),
-            (&witness.fork_name).into(),
-        )
+        let info = execute(witness).unwrap();
+        (info, (witness.fork_name.clone()))
     }
 }

@@ -28,7 +28,7 @@ impl PartialProvingTask for BundleWitness {
     }
 
     fn write_guest_input(&self, stdin: &mut openvm_sdk::StdIn) -> Result<(), rkyv::rancor::Error> {
-        let b = self.rkyv_serialize(None)?;
+        let b = self.bincode_serialize(None).unwrap();
         stdin.write_bytes(b.as_slice());
         Ok(())
     }

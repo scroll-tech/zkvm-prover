@@ -1,6 +1,6 @@
 use crate::{
-    ArchivedChunkWitness, BlockHashProvider, CodeDb, NodesProvider, make_providers,
-    manually_drop_on_zkvm, witness::ArchivedStateCommitMode,
+    BlockHashProvider, ChunkWitness, CodeDb, NodesProvider, make_providers, manually_drop_on_zkvm,
+    witness::StateCommitMode,
 };
 use alloy_primitives::B256;
 use itertools::Itertools;
@@ -15,14 +15,14 @@ use sbv_primitives::{
     ext::{BlockWitnessChunkExt, BlockWitnessRethExt as _, TxBytesHashExt},
     hardforks::SCROLL_DEV_HARDFORKS,
     types::{
-        reth::primitives::{Block, RecoveredBlock},
-        scroll::ChunkInfoBuilder,
-    },
+    reth::primitives::{Block, RecoveredBlock},
+    scroll::ChunkInfoBuilder,
+    }
 };
 use std::sync::Arc;
 use types_base::{fork_name::ForkName, public_inputs::chunk::ChunkInfo};
 
-type Witness = ArchivedChunkWitness;
+type Witness = ChunkWitness;
 
 /// `compression_ratios` can be `None` in host mode.
 /// But in guest mode, it must be provided.
@@ -47,8 +47,8 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     );
     let pre_state_root = witness.blocks[0].pre_state_root;
 
-    let fork_name = ForkName::from(&witness.fork_name);
-    let chain = Chain::from_id(witness.blocks[0].chain_id());
+    let fork_name = ForkName::from(witness.fork_name.clone());
+    let chain = Chain::from_id(witness.blocks[0].chain_id);
 
     // SCROLL_DEV_HARDFORKS will enable all forks
     let mut hardforks = (*SCROLL_DEV_HARDFORKS).clone();
@@ -72,19 +72,15 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     let code_db = manually_drop_on_zkvm!(code_db);
     let nodes_provider = manually_drop_on_zkvm!(nodes_provider);
 
-    let prev_state_root = witness.blocks[0].pre_state_root();
+    let prev_state_root = witness.blocks[0].pre_state_root;
 
     let state_commit_mode = &witness.state_commit_mode;
     println!("state_commit_mode: {:?}", state_commit_mode);
 
-    let compression_ratios = witness
-        .compression_ratios
-        .iter()
-        .map(|b| b.iter().map(|c| c.into()).collect())
-        .collect::<Vec<Vec<U256>>>();
+    let compression_ratios = witness.compression_ratios.clone();
 
     let (post_state_root, withdraw_root) = match state_commit_mode {
-        ArchivedStateCommitMode::Chunk | ArchivedStateCommitMode::Block => execute_inner(
+        StateCommitMode::Chunk | StateCommitMode::Block => execute_inner(
             fork_name,
             &code_db,
             &nodes_provider,
@@ -93,9 +89,9 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
             &blocks,
             chain_spec.clone(),
             compression_ratios,
-            matches!(state_commit_mode, ArchivedStateCommitMode::Chunk),
+            matches!(state_commit_mode, StateCommitMode::Chunk),
         )?,
-        ArchivedStateCommitMode::Auto => match execute_inner(
+        StateCommitMode::Auto => match execute_inner(
             fork_name,
             &code_db,
             &nodes_provider,
