@@ -23,20 +23,18 @@ use dotenv::dotenv;
 use eyre::Result;
 use openvm_build::GuestOptions;
 use openvm_native_compiler::ir::DIGEST_SIZE;
-use openvm_native_recursion::halo2::utils::{CacheHalo2ParamsReader, Halo2ParamsReader};
 use openvm_sdk::{
-    DefaultStaticVerifierPvHandler, F, Sdk,
+    F, Sdk,
     commit::CommitBytes,
-    config::{AggConfig, AppConfig, SdkVmConfig},
+    config::{AppConfig, SdkVmConfig},
     fs::write_exe_to_file,
 };
 use openvm_stark_sdk::{openvm_stark_backend::p3_field::PrimeField32, p3_bn254_fr::Bn254Fr};
 use snark_verifier_sdk::snark_verifier::loader::evm::compile_solidity;
 
-const LOG_PREFIX: &str = "[build-guest]";
+mod verifier;
 
-/// The default directory to locate openvm's halo2 SRS parameters.
-const DEFAULT_PARAMS_DIR: &str = concat!(env!("HOME"), "/.openvm/params/");
+pub(crate) const LOG_PREFIX: &str = "[build-guest]";
 
 /// File descriptor for app openvm config.
 const FD_APP_CONFIG: &str = "openvm.toml";
@@ -336,54 +334,18 @@ fn run_stage5_dump_evm_verifier(verifier_output_dir: &PathBuf, recompute_mode: b
     if let Some(parent) = path_verifier_bin.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    let verifier_contract = if recompute_mode {
-        let dir_halo2_params = Path::new(DEFAULT_PARAMS_DIR).to_path_buf();
-        let halo2_params_reader = CacheHalo2ParamsReader::new(&dir_halo2_params);
-        let agg_pk = Sdk::new().agg_keygen(
-            AggConfig::default(),
-            &halo2_params_reader,
-            &DefaultStaticVerifierPvHandler,
-        )?;
-        let halo2_params = halo2_params_reader
-            .read_params(agg_pk.halo2_pk.wrapper.pinning.metadata.config_params.k);
-        snark_verifier_sdk::evm::gen_evm_verifier_shplonk::<
-            snark_verifier_sdk::halo2::aggregation::AggregationCircuit,
-        >(
-            &halo2_params,
-            agg_pk.halo2_pk.wrapper.pinning.pk.get_vk(),
-            agg_pk.halo2_pk.wrapper.pinning.metadata.num_pvs.clone(),
-            Some(&path_verifier_sol),
-        )
+
+    let verifier_sol = if recompute_mode {
+        verifier::generate_evm_verifier()?
     } else {
-        println!("{LOG_PREFIX} Downloading pre-built verifier from openvm-solidity-sdk...");
-        let verifier_url = "https://github.com/openvm-org/openvm-solidity-sdk/raw/refs/heads/main/src/v1.3/Halo2Verifier.sol";
-
-        let output = std::process::Command::new("wget")
-            .arg("-q")
-            .arg("-O")
-            .arg("-")
-            .arg(verifier_url)
-            .output()?;
-
-        if !output.status.success() {
-            return Err(eyre::eyre!(
-                "Failed to download verifier from {}: wget exited with code {:?}",
-                verifier_url,
-                output.status.code()
-            ));
-        }
-
-        let sol_code = String::from_utf8(output.stdout)?;
-        std::fs::write(&path_verifier_sol, &sol_code)?;
-        println!(
-            "{LOG_PREFIX} Downloaded verifier.sol to {}",
-            path_verifier_sol.display()
-        );
-
-        compile_solidity(&sol_code)
+        verifier::download_evm_verifier()?
     };
-    std::fs::write(&path_verifier_bin, &verifier_contract)?;
-    println!("{LOG_PREFIX} verifier_contract written to {path_verifier_bin:?}");
+    std::fs::write(&path_verifier_sol, &verifier_sol)?;
+    println!("{LOG_PREFIX} verifier_sol written to {path_verifier_sol:?}");
+
+    let verifier_bin = compile_solidity(&verifier_sol);
+    std::fs::write(&path_verifier_bin, &verifier_bin)?;
+    println!("{LOG_PREFIX} verifier_bin written to {path_verifier_bin:?}");
 
     println!("{LOG_PREFIX} === Stage 5 Finished ===");
     Ok(())
@@ -470,6 +432,7 @@ pub fn main() -> Result<()> {
 
     run_stage4_dump_vk_json(&release_output_dir, leaf_commitments, exe_commitments)?;
 
+    env::set_current_dir(&workspace_dir)?;
     run_stage5_dump_evm_verifier(
         &release_output_dir.join("verifier"),
         stages_to_run.contains("stage5"),
