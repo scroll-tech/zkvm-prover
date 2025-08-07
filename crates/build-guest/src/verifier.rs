@@ -78,7 +78,7 @@ pub fn download_evm_verifier() -> Result<String> {
     println!("{LOG_PREFIX} Downloaded Halo2Verifier.sol");
 
     let sol_code = String::from_utf8(output.stdout)?;
-    
+
     Ok(sol_code)
 }
 #[cfg(test)]
