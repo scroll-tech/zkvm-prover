@@ -7,7 +7,7 @@ use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
 use openvm_sdk::{
     DefaultStaticVerifierPvHandler, NonRootCommittedExe, Sdk, StdIn,
     commit::AppExecutionCommit,
-    config::{AggConfig, SdkVmConfig},
+    config::{AggConfig, SdkVmConfig, SdkVmCpuBuilder},
     keygen::{AggProvingKey, AppProvingKey},
 };
 use scroll_zkvm_types::{proof::OpenVmEvmProof, types_agg::ProgramCommitment};
@@ -247,6 +247,7 @@ impl Prover {
         let sdk = Sdk::new();
         let proof = sdk
             .generate_e2e_stark_proof(
+                SdkVmCpuBuilder,
                 self.app_pk.clone(),
                 self.app_committed_exe.clone(),
                 AGG_STARK_PROVING_KEY.clone(),
@@ -278,6 +279,7 @@ impl Prover {
         let evm_proof = sdk
             .generate_evm_proof(
                 &evm_prover.reader,
+                SdkVmCpuBuilder,
                 self.app_pk.clone(),
                 self.app_committed_exe.clone(),
                 evm_prover.agg_pk.clone(),
