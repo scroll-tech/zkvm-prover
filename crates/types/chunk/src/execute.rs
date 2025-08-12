@@ -15,12 +15,16 @@ use sbv_primitives::{
     ext::{BlockWitnessChunkExt, BlockWitnessRethExt as _, TxBytesHashExt},
     hardforks::SCROLL_DEV_HARDFORKS,
     types::{
+        consensus::BlockHeader,
         reth::primitives::{Block, RecoveredBlock},
         scroll::ChunkInfoBuilder,
     },
 };
 use std::sync::Arc;
-use types_base::{fork_name::ForkName, public_inputs::chunk::ChunkInfo};
+use types_base::{
+    fork_name::ForkName,
+    public_inputs::chunk::{BlockContextV2, ChunkInfo},
+};
 
 type Witness = ArchivedChunkWitness;
 
@@ -165,7 +169,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
             .into_euclid_v2()
             .map(|x| x.post_msg_queue_hash)
             .unwrap_or_default(),
-        block_ctxs: blocks.iter().map(Into::into).collect(),
+        block_ctxs: blocks.iter().map(block_to_context).collect(),
     };
 
     openvm::io::println(format!("withdraw_root = {:?}", withdraw_root));
@@ -214,4 +218,22 @@ fn execute_inner(
         .withdraw_root()
         .map_err(|e| format!("failed to get withdraw root: {}", e))?;
     Ok((post_state_root, withdraw_root))
+}
+
+fn block_to_context(block: &RecoveredBlock<Block>) -> BlockContextV2 {
+    BlockContextV2 {
+        timestamp: block.timestamp,
+        gas_limit: block.gas_limit,
+        base_fee: U256::from(block.base_fee_per_gas().expect("base_fee_expected")),
+        num_txs: u16::try_from(block.body().transactions.len()).expect("num txs u16"),
+        num_l1_msgs: u16::try_from(
+            block
+                .body()
+                .transactions
+                .iter()
+                .filter(|tx| tx.is_l1_message())
+                .count(),
+        )
+        .expect("num l1 msgs u16"),
+    }
 }

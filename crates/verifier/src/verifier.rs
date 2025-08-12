@@ -6,8 +6,9 @@ use std::path::Path;
 
 /// Proving key for STARK aggregation. Primarily used to aggregate
 /// [continuation proofs][openvm_sdk::prover::vm::ContinuationVmProof].
+
 pub static AGG_STARK_PROVING_KEY: Lazy<AggStarkProvingKey> =
-    Lazy::new(|| AggStarkProvingKey::keygen(AggStarkConfig::default()));
+    Lazy::new(|| AggStarkProvingKey::keygen(AggStarkConfig::default()).unwrap());
 
 pub struct UniversalVerifier {
     pub evm_verifier: Vec<u8>,
