@@ -313,7 +313,12 @@ pub fn build_batch_witnesses(
     };
 
     let fork_name = testing_hardfork();
-    let commitment = ProgramCommitment::deserialize(prover_vk);
+    let commitment = match scroll_zkvm_types::types_agg::StarkVerificationKey::from_bytes_bincode(
+        prover_vk,
+    ) {
+        Ok(vk) => ProgramCommitment::from(vk),
+        Err(_) => ProgramCommitment::deserialize(prover_vk),
+    };
     let chunk_proofs = chunk_infos
         .iter()
         .map(|chunk_info| {
