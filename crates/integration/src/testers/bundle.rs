@@ -104,7 +104,10 @@ impl BundleTaskGenerator {
 
         let fork_name = testing_hardfork();
         let vk = BatchProverTester::load_prover(false)?.get_app_vk();
-        let commitment = ProgramCommitment::deserialize(&vk);
+        let commitment = match scroll_zkvm_types::types_agg::StarkVerificationKey::from_bytes_bincode(&vk) {
+            Ok(v) => ProgramCommitment::from(v),
+            Err(_) => ProgramCommitment::deserialize(&vk),
+        };
         let mut batch_proofs = Vec::new();
         let mut batch_infos: Vec<BatchInfo> = Vec::new();
 
