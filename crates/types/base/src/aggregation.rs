@@ -35,6 +35,76 @@ pub struct ProgramCommitment {
     pub vm: [u32; 8],
 }
 
+/// Represent the verification key needed to verify a [`RootProof`].
+/// This is separate from ProgramCommitment as they serve different purposes.
+#[derive(
+    Clone,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    serde::Deserialize,
+    serde::Serialize,
+)]
+#[rkyv(derive(Debug))]
+pub struct VerificationKey {
+    /// The verification key data for the circuit
+    pub vk_data: Vec<u8>,
+}
+
+impl VerificationKey {
+    pub fn new(vk_data: Vec<u8>) -> Self {
+        Self { vk_data }
+    }
+
+    pub fn serialize(&self) -> Vec<u8> {
+        self.vk_data.clone()
+    }
+
+    pub fn deserialize(vk_bytes: &[u8]) -> Self {
+        Self {
+            vk_data: vk_bytes.to_vec(),
+        }
+    }
+}
+
+/// A strongly-typed verification key for STARK verification.
+/// It explicitly contains the exe and vm commitments required by the verifier.
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
+pub struct StarkVerificationKey {
+    pub exe: [u32; 8],
+    pub vm: [u32; 8],
+}
+
+impl StarkVerificationKey {
+    pub fn new(exe: [u32; 8], vm: [u32; 8]) -> Self {
+        Self { exe, vm }
+    }
+
+    /// Serialize using bincode v2 for a stable wire format.
+    pub fn to_bytes_bincode(&self) -> Vec<u8> {
+        bincode::serialize(self).expect("bincode serialize StarkVerificationKey")
+    }
+
+    /// Deserialize using bincode v2.
+    pub fn from_bytes_bincode(bytes: &[u8]) -> Result<Self, bincode::error::DecodeError> {
+        bincode::deserialize(bytes)
+    }
+}
+
+impl From<ProgramCommitment> for StarkVerificationKey {
+    fn from(pc: ProgramCommitment) -> Self {
+        Self { exe: pc.exe, vm: pc.vm }
+    }
+}
+
+impl From<StarkVerificationKey> for ProgramCommitment {
+    fn from(vk: StarkVerificationKey) -> Self {
+        Self { exe: vk.exe, vm: vk.vm }
+    }
+}
+
 impl ProgramCommitment {
     pub fn deserialize(commitment_bytes: &[u8]) -> Self {
         // TODO: temporary skip deserialize if no vk is provided
