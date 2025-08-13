@@ -3,6 +3,8 @@ name: Build ZKVM-Prover Guest
 on:
   workflow_dispatch:
   push:
+    branches:
+      - fix/build-guest-workflow
     tags:
       - 'v0.[0-9]+.[0-9]+'
 
