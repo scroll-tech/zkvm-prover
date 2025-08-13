@@ -2,6 +2,7 @@ use once_cell::sync::Lazy;
 use openvm_sdk::{Sdk, commit::CommitBytes, config::AggStarkConfig, keygen::AggStarkProvingKey};
 use scroll_zkvm_types::proof::OpenVmEvmProof;
 use scroll_zkvm_types::{proof::StarkProof, types_agg::ProgramCommitment};
+use scroll_zkvm_types::types_agg::StarkVerificationKey;
 use std::path::Path;
 
 /// Proving key for STARK aggregation. Primarily used to aggregate
@@ -21,7 +22,14 @@ impl UniversalVerifier {
     }
 
     pub fn verify_stark_proof(stark_proof: &StarkProof, vk: &[u8]) -> eyre::Result<()> {
-        let prog_commit = ProgramCommitment::deserialize(vk);
+        // Prefer new bincode v2 VK, fallback to legacy rkyv(ProgramCommitment)
+        let (exe, vm) = match StarkVerificationKey::from_bytes_bincode(vk) {
+            Ok(vk) => (vk.exe, vk.vm),
+            Err(_) => {
+                let legacy = ProgramCommitment::deserialize(vk);
+                (legacy.exe, legacy.vm)
+            }
+        };
 
         /*
         if stark_proof.exe_commitment != prog_commit.exe {
@@ -43,20 +51,27 @@ impl UniversalVerifier {
         sdk.verify_e2e_stark_proof(
             agg_stark_pk,
             &vm_stark_proof,
-            &CommitBytes::from_u32_digest(&prog_commit.exe).to_bn254(),
-            &CommitBytes::from_u32_digest(&prog_commit.vm).to_bn254(),
+            &CommitBytes::from_u32_digest(&exe).to_bn254(),
+            &CommitBytes::from_u32_digest(&vm).to_bn254(),
         )?;
 
         Ok(())
     }
 
     pub fn verify_evm_proof(&self, evm_proof: &OpenVmEvmProof, vk: &[u8]) -> eyre::Result<()> {
-        let prog_commit = ProgramCommitment::deserialize(vk);
+        // Prefer new bincode v2 VK, fallback to legacy rkyv(ProgramCommitment)
+        let (exe, vm) = match StarkVerificationKey::from_bytes_bincode(vk) {
+            Ok(vk) => (vk.exe, vk.vm),
+            Err(_) => {
+                let legacy = ProgramCommitment::deserialize(vk);
+                (legacy.exe, legacy.vm)
+            }
+        };
 
-        if evm_proof.app_commit.app_exe_commit.to_u32_digest() != prog_commit.exe {
+        if evm_proof.app_commit.app_exe_commit.to_u32_digest() != exe {
             eyre::bail!("evm: mismatch EXE commitment");
         }
-        if evm_proof.app_commit.app_vm_commit.to_u32_digest() != prog_commit.vm {
+        if evm_proof.app_commit.app_vm_commit.to_u32_digest() != vm {
             eyre::bail!("evm: mismatch VM commitment");
         }
 
