@@ -291,11 +291,8 @@ fn run_stage4_dump_vk_json(
             if let (Some(exe), Some(leaf)) =
                 (exe_commitments.get(circuit), leaf_commitments.get(circuit))
             {
-                let app_vk = scroll_zkvm_types::types_agg::ProgramCommitment {
-                    exe: *exe,
-                    vm: *leaf,
-                }
-                .serialize();
+                let app_vk = scroll_zkvm_types::types_agg::StarkVerificationKey::new(*exe, *leaf)
+                    .to_bytes_bincode();
 
                 use base64::{Engine, prelude::BASE64_STANDARD};
                 let app_vk = BASE64_STANDARD.encode(app_vk);
