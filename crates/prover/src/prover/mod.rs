@@ -10,7 +10,7 @@ use openvm_sdk::{
     config::{AggConfig, SdkVmConfig},
     keygen::{AggProvingKey, AppProvingKey},
 };
-use scroll_zkvm_types::{proof::OpenVmEvmProof, types_agg::ProgramCommitment};
+use scroll_zkvm_types::proof::OpenVmEvmProof;
 use scroll_zkvm_verifier::verifier::{AGG_STARK_PROVING_KEY, UniversalVerifier};
 use tracing::instrument;
 
@@ -24,6 +24,8 @@ use crate::{
 };
 
 use scroll_zkvm_types::proof::{EvmProof, ProofEnum, StarkProof};
+use scroll_zkvm_types::{ProgramCommitment, VerificationKey};
+use scroll_zkvm_types::types_agg::StarkVerificationKey;
 /// The default directory to locate openvm's halo2 SRS parameters.
 const DEFAULT_PARAMS_DIR: &str = concat!(env!("HOME"), "/.openvm/params/");
 
@@ -114,8 +116,18 @@ impl Prover {
     }
 
     /// Pick up loaded app commit as "vk" in proof, to distinguish from which circuit the proof comes
+    /// Now returns a proper StarkVerificationKey serialized with bincode v2
     pub fn get_app_vk(&self) -> Vec<u8> {
-        self.get_app_commitment().serialize()
+        let pc = self.get_app_commitment();
+        let vk = StarkVerificationKey::from(pc);
+        vk.to_bytes_bincode()
+    }
+
+    /// Get the actual verification key for the app circuit
+    /// Returns a vk wrapper using the same bincode v2 bytes
+    pub fn get_verification_key(&self) -> VerificationKey {
+        let vk_bytes = self.get_app_vk();
+        VerificationKey::new(vk_bytes)
     }
 
     /// Pick up the actual vk (serialized) for evm proof, would be empty if prover
