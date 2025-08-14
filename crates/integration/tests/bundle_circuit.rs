@@ -76,7 +76,7 @@ fn print_vks() -> eyre::Result<()> {
 fn setup_prove_verify_local_task() -> eyre::Result<()> {
     BundleProverTester::setup()?;
     let u_task = load_local_task("bundle-task.json")?;
-    let prover = BundleProverTester::load_prover(true)?;
+    let mut prover = BundleProverTester::load_prover(true)?;
 
     let _ = prover.gen_proof_universal(&u_task, true)?;
 
@@ -142,8 +142,8 @@ fn e2e() -> eyre::Result<()> {
         "unexpected pi hash for e2e bundle info, block witness changed?"
     );
 
-    let prover = BundleProverTester::load_prover(true)?;
-    let proof = task.gen_witnesses_proof(&prover)?;
+    let mut prover = BundleProverTester::load_prover(true)?;
+    let proof = task.gen_witnesses_proof(&mut prover)?;
 
     let evm_proof: OpenVmEvmProof = proof.into_evm_proof().unwrap().into();
 

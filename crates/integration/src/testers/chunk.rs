@@ -4,6 +4,7 @@ use std::{
 };
 
 use sbv_primitives::{B256, types::BlockWitness};
+use scroll_zkvm_prover::Prover;
 use scroll_zkvm_types::{
     chunk::{ChunkInfo, ChunkWitness},
     proof::ProofEnum,
@@ -103,7 +104,7 @@ impl TestTaskBuilder<ChunkProverTester> for ChunkTaskGenerator {
         ))
     }
 
-    fn gen_agg_proofs(&self) -> eyre::Result<Vec<ProofEnum>> {
+    fn gen_agg_proofs(&self, prover: &mut Prover) -> eyre::Result<Vec<ProofEnum>> {
         Ok(Vec::new())
     }
 }

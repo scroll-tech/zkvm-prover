@@ -1,22 +1,31 @@
 use once_cell::sync::Lazy;
 use openvm_sdk::commit::AppExecutionCommit;
+use openvm_sdk::keygen::AggVerifyingKey;
 use openvm_sdk::{Sdk, commit::CommitBytes};
 use scroll_zkvm_types::proof::OpenVmEvmProof;
 use scroll_zkvm_types::{proof::StarkProof, types_agg::ProgramCommitment};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 pub struct UniversalVerifier {
-    pub evm_verifier: Vec<u8>,
+    pub evm_verifier: Option<Vec<u8>>,
+    pub agg_vk: AggVerifyingKey,
 }
 
 impl UniversalVerifier {
-    pub fn setup<P: AsRef<Path>>(path_verifier_code: P) -> eyre::Result<Self> {
-        let evm_verifier = std::fs::read(path_verifier_code.as_ref())?;
+    pub fn new() -> UniversalVerifier {
+        Self::setup(None::<PathBuf>).unwrap()
+    }
+    pub fn setup<P: AsRef<Path>>(path_verifier_code: Option<P>) -> eyre::Result<Self> {
+        let evm_verifier = path_verifier_code.map(|p| std::fs::read(p.as_ref()).unwrap());
 
-        Ok(Self { evm_verifier })
+        let sdk = Sdk::riscv32();
+        let agg_pk: &openvm_sdk::keygen::AggProvingKey = sdk.agg_pk();
+        let agg_vk = agg_pk.get_agg_vk();
+
+        Ok(Self { evm_verifier, agg_vk })
     }
 
-    pub fn verify_stark_proof(stark_proof: &StarkProof, vk: &[u8]) -> eyre::Result<()> {
+    pub fn verify_stark_proof(&self, stark_proof: &StarkProof, vk: &[u8]) -> eyre::Result<()> {
         let prog_commit = ProgramCommitment::deserialize(vk);
 
         /*
@@ -28,9 +37,6 @@ impl UniversalVerifier {
         }
         */
 
-        let sdk = Sdk::riscv32();
-        let agg_pk: &openvm_sdk::keygen::AggProvingKey = sdk.agg_pk();
-
         use openvm_continuations::verifier::internal::types::VmStarkProof;
         let vm_stark_proof = VmStarkProof {
             inner: stark_proof.proofs[0].clone(),
@@ -41,7 +47,7 @@ impl UniversalVerifier {
             app_vm_commit: CommitBytes::from_u32_digest(&prog_commit.vm),
         };    
         Sdk::verify_proof(
-            &agg_pk.get_agg_vk(),
+            &self.agg_vk,
             expected_app_commit,
             &vm_stark_proof,
         )?;
@@ -59,7 +65,7 @@ impl UniversalVerifier {
             eyre::bail!("evm: mismatch VM commitment");
         }
 
-        crate::evm::verify_evm_proof(&self.evm_verifier, evm_proof)
+        crate::evm::verify_evm_proof(&self.evm_verifier.as_ref().unwrap(), evm_proof)
             .map_err(|e| eyre::eyre!("evm execute fail {e}"))?;
 
         Ok(())
@@ -81,7 +87,7 @@ mod tests {
         pub fn verify_wrapped_proof(&self, proof: &WrappedProof) -> eyre::Result<()> {
             match &proof.proof {
                 ProofEnum::Evm(p) => self.verify_evm_proof(&p.clone().into(), &proof.vk),
-                ProofEnum::Stark(p) => Self::verify_stark_proof(p, &proof.vk),
+                ProofEnum::Stark(p) => self.verify_stark_proof(p, &proof.vk),
             }
         }
     }
@@ -96,7 +102,7 @@ mod tests {
         )?;
 
         let stark_proof = chunk_proof.proof.as_stark_proof().unwrap();
-        UniversalVerifier::verify_stark_proof(stark_proof, &chunk_proof.vk)?;
+        UniversalVerifier::new().verify_stark_proof(stark_proof, &chunk_proof.vk)?;
 
         Ok(())
     }
@@ -111,7 +117,7 @@ mod tests {
         )?;
 
         let stark_proof = batch_proof.proof.as_stark_proof().unwrap();
-        UniversalVerifier::verify_stark_proof(stark_proof, &batch_proof.vk)?;
+        UniversalVerifier::new().verify_stark_proof(stark_proof, &batch_proof.vk)?;
 
         Ok(())
     }
@@ -125,7 +131,7 @@ mod tests {
                 .join("bundle-proof-phase2.json"),
         )?;
 
-        let verifier = UniversalVerifier::setup(Path::new(PATH_TESTDATA).join("verifier.bin"))?;
+        let verifier = UniversalVerifier::setup(Some(Path::new(PATH_TESTDATA).join("verifier.bin")))?;
 
         verifier.verify_evm_proof(
             &evm_proof.proof.into_evm_proof().unwrap().into(),

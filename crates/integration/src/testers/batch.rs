@@ -1,3 +1,4 @@
+use scroll_zkvm_prover::Prover;
 use scroll_zkvm_types::{
     batch::{BatchHeader, BatchInfo, BatchWitness, ReferenceHeader},
     chunk::ChunkInfo,
@@ -66,12 +67,12 @@ impl TestTaskBuilder<BatchProverTester> for BatchTaskGenerator {
         })
     }
 
-    fn gen_agg_proofs(&self) -> eyre::Result<Vec<ProofEnum>> {
-        let chunk_prover = ChunkProverTester::load_prover(false)?;
+    fn gen_agg_proofs(&self, prover: &mut Prover) -> eyre::Result<Vec<ProofEnum>> {
+        let mut chunk_prover = ChunkProverTester::load_prover(false)?;
         let chunk_proofs = self
             .chunk_generators
             .iter()
-            .map(|generator| generator.gen_witnesses_proof(&chunk_prover))
+            .map(|generator| generator.gen_witnesses_proof(&mut chunk_prover))
             .collect::<Result<Vec<ProofEnum>, _>>()?;
         Ok(chunk_proofs)
     }
@@ -79,6 +80,7 @@ impl TestTaskBuilder<BatchProverTester> for BatchTaskGenerator {
 
 impl BatchTaskGenerator {
     fn calculate_batch_witness(&self) -> eyre::Result<BatchWitness> {
+        let chunk_prover = ChunkProverTester::load_prover(false)?;
         let mut last_info: Option<&ChunkInfo> = self
             .last_witness
             .as_ref()
@@ -92,7 +94,7 @@ impl BatchTaskGenerator {
 
         let ret_wit = build_batch_witnesses(
             &chunks,
-            &ChunkProverTester::load_prover(false)?.get_app_vk(),
+            &chunk_prover.get_app_vk(),
             self.last_witness
                 .as_ref()
                 .map(|wit| (&wit.reference_header).into())

@@ -178,12 +178,12 @@ pub trait TestTaskBuilder<T: ProverTester> {
     fn gen_proving_witnesses(&self) -> eyre::Result<T::Witness>;
 
     /// Generate aggregated proofs for proving witness
-    fn gen_agg_proofs(&self) -> eyre::Result<Vec<ProofEnum>>;
+    fn gen_agg_proofs(&self, prover: &mut Prover) -> eyre::Result<Vec<ProofEnum>>;
 
     /// Generate proofs for the proving witness it has generated
-    fn gen_witnesses_proof(&self, prover: &Prover) -> eyre::Result<ProofEnum> {
+    fn gen_witnesses_proof(&self, prover: &mut Prover) -> eyre::Result<ProofEnum> {
         let wit = self.gen_proving_witnesses()?;
-        let agg_proofs = self.gen_agg_proofs()?;
+        let agg_proofs = self.gen_agg_proofs(prover)?;
         prove_verify::<T>(prover, &wit, &agg_proofs)
     }
 }
@@ -280,7 +280,7 @@ pub fn tester_execute<T: ProverTester>(
 /// End-to-end test for proving witnesses of the same prover.
 #[instrument(name = "prove_verify", skip_all, fields(task_id))]
 pub fn prove_verify<T: ProverTester>(
-    prover: &Prover,
+    prover: &mut Prover,
     witness: &T::Witness,
     proofs: &[ProofEnum],
 ) -> eyre::Result<ProofEnum> {
@@ -318,7 +318,7 @@ pub fn prove_verify<T: ProverTester>(
     };
 
     // Verify proof.
-    UniversalVerifier::verify_stark_proof(
+    UniversalVerifier::new().verify_stark_proof(
         proof.as_stark_proof().expect("should be stark proof"),
         &vk,
     )?;
@@ -350,7 +350,7 @@ where
         .join("dev")
         .join("verifier")
         .join("verifier.bin");
-    let verifier = scroll_zkvm_verifier::verifier::UniversalVerifier::setup(&path_verifier_code)?;
+    let verifier = scroll_zkvm_verifier::verifier::UniversalVerifier::setup(Some(&path_verifier_code))?;
 
     // Try reading proof from cache if available, and early return in that case.
     let task_id = witness.identifier();

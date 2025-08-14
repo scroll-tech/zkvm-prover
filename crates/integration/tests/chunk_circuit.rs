@@ -185,10 +185,10 @@ fn guest_profiling() -> eyre::Result<()> {
 #[test]
 fn setup_prove_verify_single() -> eyre::Result<()> {
     ChunkProverTester::setup()?;
-    let prover = ChunkProverTester::load_prover(false)?;
+    let mut prover = ChunkProverTester::load_prover(false)?;
 
     let wit = get_witness_from_env_or_builder(&preset_chunk())?;
-    let _ = prove_verify::<ChunkProverTester>(&prover, &wit, &[])?;
+    let _ = prove_verify::<ChunkProverTester>(&mut prover, &wit, &[])?;
 
     Ok(())
 }
@@ -196,10 +196,10 @@ fn setup_prove_verify_single() -> eyre::Result<()> {
 #[test]
 fn setup_prove_verify_multi() -> eyre::Result<()> {
     ChunkProverTester::setup()?;
-    let prover = ChunkProverTester::load_prover(false)?;
+    let mut prover = ChunkProverTester::load_prover(false)?;
 
     for task in preset_chunk_multiple() {
-        let _ = task.gen_witnesses_proof(&prover)?;
+        let _ = task.gen_witnesses_proof(&mut prover)?;
     }
 
     Ok(())

@@ -67,20 +67,20 @@ impl TestTaskBuilder<BundleProverTester> for BundleTaskGenerator {
             .cloned()
     }
 
-    fn gen_agg_proofs(&self) -> eyre::Result<Vec<ProofEnum>> {
-        let batch_prover = BatchProverTester::load_prover(false)?;
+    fn gen_agg_proofs(&self, prover: &mut Prover) -> eyre::Result<Vec<ProofEnum>> {
+        let mut batch_prover = BatchProverTester::load_prover(false)?;
         let batch_proofs = self
             .batch_generators
             .iter()
-            .map(|generator| generator.gen_witnesses_proof(&batch_prover))
+            .map(|generator| generator.gen_witnesses_proof(&mut batch_prover))
             .collect::<Result<Vec<ProofEnum>, _>>()?;
 
         Ok(batch_proofs)
     }
 
-    fn gen_witnesses_proof(&self, prover: &Prover) -> eyre::Result<ProofEnum> {
+    fn gen_witnesses_proof(&self, prover: &mut Prover) -> eyre::Result<ProofEnum> {
         let wit = self.gen_proving_witnesses()?;
-        let agg_proofs = self.gen_agg_proofs()?;
+        let agg_proofs = self.gen_agg_proofs(prover)?;
         let (proof, _, _) =
             prove_verify_single_evm::<BundleProverTester>(prover, &wit, &agg_proofs)?;
         Ok(proof)
@@ -103,7 +103,8 @@ impl BundleTaskGenerator {
         };
 
         let fork_name = testing_hardfork();
-        let vk = BatchProverTester::load_prover(false)?.get_app_vk();
+        let mut batch_prover = BatchProverTester::load_prover(false)?;
+        let vk = batch_prover.get_app_vk();
         let commitment = ProgramCommitment::deserialize(&vk);
         let mut batch_proofs = Vec::new();
         let mut batch_infos: Vec<BatchInfo> = Vec::new();

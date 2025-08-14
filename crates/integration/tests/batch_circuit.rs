@@ -16,7 +16,7 @@ fn test_execute() -> eyre::Result<()> {
     let u_task = load_local_task("batch-task.json")?;
     let stdin = u_task.build_guest_input()?;
 
-    let prover = BatchProverTester::load_prover(false)?;
+    let mut prover = BatchProverTester::load_prover(false)?;
 
     let _ = prover.execute_and_check(&stdin)?;
     Ok(())
@@ -28,7 +28,7 @@ fn setup_prove_verify_single() -> eyre::Result<()> {
     BatchProverTester::setup()?;
     let u_task = load_local_task("batch-task.json")?;
 
-    let prover = BatchProverTester::load_prover(false)?;
+    let mut prover = BatchProverTester::load_prover(false)?;
 
     let _ = prover.gen_proof_universal(&u_task, false)?;
 
@@ -39,12 +39,12 @@ fn setup_prove_verify_single() -> eyre::Result<()> {
 fn test_e2e_execute() -> eyre::Result<()> {
     BatchProverTester::setup()?;
 
-    let prover = BatchProverTester::load_prover(false)?;
+    let mut prover = BatchProverTester::load_prover(false)?;
 
     let task = BatchTaskGenerator::from_chunk_tasks(&preset_chunk_multiple(), None);
 
     let wit = task.gen_proving_witnesses()?;
-    let agg_proofs = task.gen_agg_proofs()?;
+    let agg_proofs = task.gen_agg_proofs(&mut prover)?;
 
     let stdin = BatchProverTester::build_guest_input(
         &wit,
@@ -59,10 +59,10 @@ fn test_e2e_execute() -> eyre::Result<()> {
 fn e2e() -> eyre::Result<()> {
     BatchProverTester::setup()?;
 
-    let prover = BatchProverTester::load_prover(false)?;
+    let mut prover = BatchProverTester::load_prover(false)?;
 
     let _ = BatchTaskGenerator::from_chunk_tasks(&preset_chunk_multiple(), None)
-        .gen_witnesses_proof(&prover)?;
+        .gen_witnesses_proof(&mut prover)?;
 
     Ok(())
 }
