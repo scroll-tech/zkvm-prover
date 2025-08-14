@@ -12,31 +12,22 @@
 //! - `BUILD_STAGES`: Comma-separated list of stages to run (e.g., "stage1,stage3"). Defaults to "stage1,stage2,stage3".
 
 use std::{
-    collections::{BTreeSet, HashMap},
-    env,
-    fs::read_to_string,
-    path::{Path, PathBuf},
-    time::Instant,
+    collections::{BTreeSet, HashMap}, env, fs::read_to_string, path::{Path, PathBuf}, sync::Arc, time::Instant
 };
 
 use dotenv::dotenv;
 use eyre::Result;
 use openvm_build::GuestOptions;
+use openvm_instructions::exe::VmExe;
 use openvm_native_compiler::ir::DIGEST_SIZE;
 use openvm_native_recursion::halo2::utils::{CacheHalo2ParamsReader, Halo2ParamsReader};
 use openvm_sdk::{
-    DefaultStaticVerifierPvHandler, F, Sdk,
-    commit::CommitBytes,
-    config::{AggConfig, AppConfig, SdkVmConfig},
-    fs::write_exe_to_file,
+    commit::CommitBytes, config::{AggregationConfig, AppConfig, SdkVmConfig}, fs::write_object_to_file, keygen::AggProvingKey, DefaultStaticVerifierPvHandler, Sdk, F
 };
 use openvm_stark_sdk::{openvm_stark_backend::p3_field::PrimeField32, p3_bn254_fr::Bn254Fr};
 use snark_verifier_sdk::snark_verifier::loader::evm::compile_solidity;
 
 const LOG_PREFIX: &str = "[build-guest]";
-
-/// The default directory to locate openvm's halo2 SRS parameters.
-const DEFAULT_PARAMS_DIR: &str = concat!(env!("HOME"), "/.openvm/params/");
 
 /// File descriptor for app openvm config.
 const FD_APP_CONFIG: &str = "openvm.toml";
@@ -96,10 +87,10 @@ fn run_stage1_leaf_commitments(
         let app_config: AppConfig<SdkVmConfig> =
             toml::from_str(&read_to_string(&path_app_config).unwrap()).unwrap();
 
-        // Generate public key (which includes leaf commitment)
-        let app_pk = Sdk::new().app_keygen(app_config.clone())?;
+        // Generate vm commitment
+        let sdk = Sdk::new(app_config.clone())?;
         let leaf_vm_verifier_commit_f: [F; DIGEST_SIZE] =
-            app_pk.leaf_committed_exe.commitment.into();
+            sdk.app_pk().leaf_committed_exe.get_program_commit().into();
         let leaf_vm_verifier_commit_u32 = leaf_vm_verifier_commit_f.map(|f| f.as_canonical_u32());
         leaf_commitments.insert(project_name.to_string(), leaf_vm_verifier_commit_u32);
 
@@ -121,7 +112,6 @@ fn run_stage1_leaf_commitments(
 /// Stage 2: Generates the root verifier assembly code.
 fn run_stage2_root_verifier(project_names: &[&str], workspace_dir: &Path) -> Result<()> {
     println!("{LOG_PREFIX} === Stage 2: Generating Root Verifier ===");
-    use openvm_sdk::{config::AggStarkConfig, keygen::AggStarkProvingKey};
     // Only generate if "batch" or "bundle" is being built, as they use recursive verification.
     if project_names
         .iter()
@@ -133,11 +123,8 @@ fn run_stage2_root_verifier(project_names: &[&str], workspace_dir: &Path) -> Res
             .join("build-guest")
             .join("root_verifier.asm");
 
-        println!("generating AggStarkProvingKey");
-        let agg_stark_pk = AggStarkProvingKey::keygen(AggStarkConfig::default())?;
-
         println!("generating root_verifier.asm");
-        let asm = openvm_sdk::Sdk::new().generate_root_verifier_asm(&agg_stark_pk);
+        let asm = openvm_sdk::Sdk::riscv32().generate_root_verifier_asm();
         std::fs::write(&root_verifier_path, asm).expect("fail to write");
 
         println!(
@@ -201,10 +188,10 @@ fn run_stage3_exe_commits(
         );
         let guest_opts = GuestOptions::default();
         let guest_opts = guest_opts.with_profile("maxperf".to_string());
-        let elf = Sdk::new()
+        let sdk = Sdk::new(app_config)?;
+        let elf = sdk
             .build(
                 guest_opts,
-                &app_config.app_vm_config,
                 project_dir,
                 &Default::default(),
                 None,
@@ -222,27 +209,20 @@ fn run_stage3_exe_commits(
         );
 
         // 2. Transpile ELF to VM Executable
-        let transpiler = app_config.app_vm_config.transpiler();
-        let app_exe = Sdk::new().transpile(elf, transpiler)?;
+        let app_exe: VmExe<F> = (*sdk.convert_to_exe(elf)?).clone();
 
         // Create the assets dir if not already present.
         let path_assets = Path::new(release_output_dir).join(project_name);
         std::fs::create_dir_all(&path_assets)?;
         // Write exe to disc.
         let path_app_exe: PathBuf = path_assets.join("app.vmexe");
-        write_exe_to_file(app_exe.clone(), &path_app_exe)?;
+        write_object_to_file(&path_app_exe, app_exe.clone())?;
 
-        println!("{LOG_PREFIX} exe written to {path_app_exe:?}");
+        //println!("{LOG_PREFIX} exe written to {path_app_exe:?}");
 
-        // 3. Commit VM Executable
-        let app_committed_exe =
-            Sdk::new().commit_app_exe(app_config.app_fri_params.fri_params, app_exe)?;
-
-        // 4. Compute and Write Executable Commitment
-        let exe_commit_f: [F; DIGEST_SIZE] = app_committed_exe
-            .compute_exe_commit(&app_config.app_vm_config.as_ref().memory_config)
-            .into();
-        let exe_commit_u32: [u32; DIGEST_SIZE] = exe_commit_f.map(|f| f.as_canonical_u32());
+        // 3. Compute and Write Executable Commitment
+        let prover = sdk.prover(app_exe)?;
+        let exe_commit_u32 = prover.app_commit().app_exe_commit.to_u32_digest();
         exe_commitments.insert(project_name.to_string(), exe_commit_u32);
 
         let commit_filename = format!("{project_name}_exe_commit.rs");
@@ -330,21 +310,18 @@ fn run_stage5_dump_evm_verifier(verifier_output_dir: &PathBuf, recompute_mode: b
         std::fs::create_dir_all(parent)?;
     }
     let verifier_contract = if recompute_mode {
-        let dir_halo2_params = Path::new(DEFAULT_PARAMS_DIR).to_path_buf();
-        let halo2_params_reader = CacheHalo2ParamsReader::new(&dir_halo2_params);
-        let agg_pk = Sdk::new().agg_keygen(
-            AggConfig::default(),
-            &halo2_params_reader,
-            &DefaultStaticVerifierPvHandler,
-        )?;
+        let sdk = Sdk::riscv32();
+        let halo2_params_reader = sdk.halo2_params_reader();
+        let halo2_pk = sdk.halo2_pk(
+        );
         let halo2_params = halo2_params_reader
-            .read_params(agg_pk.halo2_pk.wrapper.pinning.metadata.config_params.k);
+            .read_params(halo2_pk.wrapper.pinning.metadata.config_params.k);
         snark_verifier_sdk::evm::gen_evm_verifier_shplonk::<
             snark_verifier_sdk::halo2::aggregation::AggregationCircuit,
         >(
             &halo2_params,
-            agg_pk.halo2_pk.wrapper.pinning.pk.get_vk(),
-            agg_pk.halo2_pk.wrapper.pinning.metadata.num_pvs.clone(),
+            halo2_pk.wrapper.pinning.pk.get_vk(),
+            halo2_pk.wrapper.pinning.metadata.num_pvs.clone(),
             Some(&path_verifier_sol),
         )
     } else {

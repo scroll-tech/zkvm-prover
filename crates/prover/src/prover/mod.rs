@@ -3,15 +3,14 @@ use std::{
     sync::Arc,
 };
 
+use openvm_circuit::arch::instructions::exe::VmExe;
 use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
 use openvm_sdk::{
-    DefaultStaticVerifierPvHandler, NonRootCommittedExe, Sdk, StdIn,
-    commit::AppExecutionCommit,
-    config::{AggConfig, SdkVmConfig, SdkVmCpuBuilder},
-    keygen::{AggProvingKey, AppProvingKey},
+    fs::read_object_from_file,
+    commit::AppExecutionCommit, config::{AppConfig, SdkVmConfig, SdkVmCpuBuilder}, keygen::{AggProvingKey, AppProvingKey}, DefaultStaticVerifierPvHandler, GenericSdk, Sdk, StdIn, F
 };
 use scroll_zkvm_types::{proof::OpenVmEvmProof, types_agg::ProgramCommitment};
-use scroll_zkvm_verifier::verifier::{AGG_STARK_PROVING_KEY, UniversalVerifier};
+use scroll_zkvm_verifier::verifier::{UniversalVerifier};
 use tracing::instrument;
 
 // Re-export from openvm_sdk.
@@ -19,7 +18,7 @@ pub use openvm_sdk::{self};
 
 use crate::{
     Error,
-    setup::{read_app_config, read_app_exe},
+    setup::{read_app_config},
     task::ProvingTask,
 };
 
@@ -31,29 +30,21 @@ const DEFAULT_PARAMS_DIR: &str = concat!(env!("HOME"), "/.openvm/params/");
 /// Prover can read HALO2 trusted setup parameters.
 const ENV_HALO2_PARAMS_DIR: &str = "ENV_HALO2_PARAMS_DIR";
 
-/// Types used in the outermost proof construction, i.e. the EVM-compatible layer.
-/// This is required only for [BundleProver].
-pub struct EvmProver {
-    /// The reader for the cached Halo2 parameters.
-    pub reader: CacheHalo2ParamsReader,
-    /// The aggregated proving key for the EVM verifier.
-    pub agg_pk: AggProvingKey,
-}
-
 /// Generic prover.
 pub struct Prover {
     /// Prover name
     pub prover_name: String,
     /// Commitment to app exe.
-    pub app_committed_exe: Arc<NonRootCommittedExe>,
+    pub app_exe: Arc<VmExe<F>>,
     /// App specific proving key.
-    pub app_pk: Arc<AppProvingKey<SdkVmConfig>>,
+   // pub app_pk: Arc<AppProvingKey<SdkVmConfig>>,
     /// The commitments for the app execution.
-    pub commits: AppExecutionCommit,
+    //pub commits: AppExecutionCommit,
     /// Optional data for the outermost layer, i.e. EVM-compatible.
-    pub evm_prover: Option<EvmProver>,
+    //pub evm_prover: Option<EvmProver>,
     /// Configuration for the prover.
     pub config: ProverConfig,
+    pub sdk: Sdk,
 }
 
 /// Configure the [`Prover`].
@@ -73,7 +64,7 @@ impl Prover {
     /// Setup the [`Prover`] given paths to the application's exe and proving key.
     #[instrument("Prover::setup")]
     pub fn setup(config: ProverConfig, with_evm: bool, name: Option<&str>) -> Result<Self, Error> {
-        let app_exe = read_app_exe(&config.path_app_exe)?;
+        let app_exe: VmExe<F> = read_object_from_file(&config.path_app_exe).unwrap();
         let mut app_config = read_app_config(&config.path_app_config)?;
         let segment_len = config.segment_len.unwrap_or(DEFAULT_SEGMENT_SIZE);
         app_config.app_vm_config.system.config = app_config
@@ -82,25 +73,24 @@ impl Prover {
             .config
             .with_max_segment_len(segment_len);
 
-        let sdk = Sdk::new();
-        let app_pk = sdk
-            .app_keygen(app_config)
-            .map_err(|e| Error::Keygen(e.to_string()))?;
-        let app_committed_exe = sdk
-            .commit_app_exe(app_pk.app_fri_params(), app_exe)
-            .map_err(|e| Error::Commit(e.to_string()))?;
-        let commits = AppExecutionCommit::compute(
-            &app_pk.app_vm_pk.vm_config,
-            &app_committed_exe,
-            &app_pk.leaf_committed_exe,
-        );
+        let sdk = Sdk::new(app_config).unwrap();
+        //let app_pk = sdk.app_pk();
+        //let app_committed_exe = sdk
+        //    .commit_app_exe(app_pk.app_fri_params(), app_exe)
+        //    .map_err(|e| Error::Commit(e.to_string()))?;
+        //let commits = AppExecutionCommit::compute(
+        //    &app_pk.app_vm_pk.vm_config,
+        //    &app_committed_exe,
+        //    &app_pk.leaf_committed_exe,
+        //);
 
-        let evm_prover = with_evm.then(Self::setup_evm_prover).transpose()?;
+        //let evm_prover = with_evm.then(Self::setup_evm_prover).transpose()?;
         Ok(Self {
-            app_committed_exe,
-            app_pk: Arc::new(app_pk),
-            evm_prover,
-            commits,
+            sdk,
+            app_exe: Arc::new(app_exe),
+            //app_pk: Arc::new(app_pk),
+            //evm_prover,
+            //commits,
             config,
             prover_name: name.unwrap_or("universal").to_string(),
         })
@@ -108,8 +98,9 @@ impl Prover {
 
     /// Pick up loaded app commit, to distinguish from which circuit the proof comes
     pub fn get_app_commitment(&self) -> ProgramCommitment {
-        let exe = self.commits.app_exe_commit.to_u32_digest();
-        let leaf = self.commits.app_vm_commit.to_u32_digest();
+        let commits = self.sdk.prover(self.app_exe.clone()).unwrap().app_commit();
+        let exe = commits.app_exe_commit.to_u32_digest();
+        let leaf = commits.app_vm_commit.to_u32_digest();
         ProgramCommitment { exe, vm: leaf }
     }
 
@@ -121,14 +112,9 @@ impl Prover {
     /// Pick up the actual vk (serialized) for evm proof, would be empty if prover
     /// do not contain evm prover
     pub fn get_evm_vk(&self) -> Vec<u8> {
-        self.evm_prover
-            .as_ref()
-            .map(|evm_prover| {
-                scroll_zkvm_verifier::evm::serialize_vk(
-                    evm_prover.agg_pk.halo2_pk.wrapper.pinning.pk.get_vk(),
-                )
-            })
-            .unwrap_or_default()
+        scroll_zkvm_verifier::evm::serialize_vk(
+            self.sdk.halo2_pk().wrapper.pinning.pk.get_vk()
+        )
     }
 
     /// Simple wrapper of gen_proof_stark/snark, Early-return if a proof is found in disc,
@@ -165,9 +151,9 @@ impl Prover {
         &self,
         stdin: &StdIn,
     ) -> Result<crate::utils::vm::ExecutionResult, Error> {
-        let config = self.app_pk.app_vm_pk.vm_config.clone();
-        let exe = self.app_committed_exe.exe.clone();
-        let exec_result = crate::utils::vm::execute_guest(config, exe, stdin)?;
+        let config = self.sdk.app_config();// app_pk.app_vm_pk.vm_config.clone();
+        let exe = self.app_exe.clone();
+        let exec_result = crate::utils::vm::execute_guest(config.app_vm_config.clone(), exe, stdin)?;
         tracing::info!(
             "total cycle of {}: {}",
             self.prover_name,
@@ -182,6 +168,7 @@ impl Prover {
             .map(|res| res.total_cycle)
     }
 
+    /* 
     /// Setup the EVM prover-verifier.
     fn setup_evm_prover() -> Result<EvmProver, Error> {
         tracing::info!("Setting up EVM prover...");
@@ -234,7 +221,9 @@ impl Prover {
             reader: halo2_params_reader,
             agg_pk,
         })
+        
     }
+    */
 
     /// Generate a [root proof][root_proof].
     ///
@@ -244,19 +233,16 @@ impl Prover {
         // and do precheck before proving like ensure PI != 0
         self.execute_and_check(&stdin)?;
 
-        let sdk = Sdk::new();
-        let proof = sdk
-            .generate_e2e_stark_proof(
-                SdkVmCpuBuilder,
-                self.app_pk.clone(),
-                self.app_committed_exe.clone(),
-                AGG_STARK_PROVING_KEY.clone(),
+        ///let sdk = Sdk::new();
+        let (proof, com) = self.sdk
+            .prove(
+                self.app_exe.clone(),
                 stdin,
             )
             .map_err(|e| Error::GenProof(e.to_string()))?;
         let comm = self.get_app_commitment();
         let proof = StarkProof {
-            proofs: vec![proof.proof],
+            proofs: vec![proof.inner],
             public_values: proof.user_public_values,
             //exe_commitment: comm.exe,
             //vm_commitment: comm.vm,
@@ -274,17 +260,9 @@ impl Prover {
     pub fn gen_proof_snark(&self, stdin: StdIn) -> Result<OpenVmEvmProof, Error> {
         self.execute_and_check(&stdin)?;
 
-        let sdk = Sdk::new();
-        let evm_prover = self.evm_prover.as_ref().expect("evm prover not inited");
-        let evm_proof = sdk
-            .generate_evm_proof(
-                &evm_prover.reader,
-                SdkVmCpuBuilder,
-                self.app_pk.clone(),
-                self.app_committed_exe.clone(),
-                evm_prover.agg_pk.clone(),
-                stdin,
-            )
+        //let sdk = Sdk::new();
+        //let evm_prover = self.evm_prover.as_ref().expect("evm prover not inited");
+        let evm_proof = self.sdk.prove_evm(self.app_exe.clone(), stdin)
             .map_err(|e| Error::GenProof(format!("{}", e)))?;
 
         Ok(evm_proof)

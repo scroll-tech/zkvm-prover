@@ -1,14 +1,9 @@
 use once_cell::sync::Lazy;
-use openvm_sdk::{Sdk, commit::CommitBytes, config::AggStarkConfig, keygen::AggStarkProvingKey};
+use openvm_sdk::commit::AppExecutionCommit;
+use openvm_sdk::{Sdk, commit::CommitBytes};
 use scroll_zkvm_types::proof::OpenVmEvmProof;
 use scroll_zkvm_types::{proof::StarkProof, types_agg::ProgramCommitment};
 use std::path::Path;
-
-/// Proving key for STARK aggregation. Primarily used to aggregate
-/// [continuation proofs][openvm_sdk::prover::vm::ContinuationVmProof].
-
-pub static AGG_STARK_PROVING_KEY: Lazy<AggStarkProvingKey> =
-    Lazy::new(|| AggStarkProvingKey::keygen(AggStarkConfig::default()).unwrap());
 
 pub struct UniversalVerifier {
     pub evm_verifier: Vec<u8>,
@@ -33,19 +28,22 @@ impl UniversalVerifier {
         }
         */
 
-        let agg_stark_pk = &AGG_STARK_PROVING_KEY;
-        let sdk = Sdk::new();
+        let sdk = Sdk::riscv32();
+        let agg_pk: &openvm_sdk::keygen::AggProvingKey = sdk.agg_pk();
 
         use openvm_continuations::verifier::internal::types::VmStarkProof;
         let vm_stark_proof = VmStarkProof {
-            proof: stark_proof.proofs[0].clone(),
+            inner: stark_proof.proofs[0].clone(),
             user_public_values: stark_proof.public_values.clone(),
         };
-        sdk.verify_e2e_stark_proof(
-            agg_stark_pk,
+        let expected_app_commit = AppExecutionCommit {
+            app_exe_commit: CommitBytes::from_u32_digest(&prog_commit.exe),
+            app_vm_commit: CommitBytes::from_u32_digest(&prog_commit.vm),
+        };    
+        Sdk::verify_proof(
+            &agg_pk.get_agg_vk(),
+            expected_app_commit,
             &vm_stark_proof,
-            &CommitBytes::from_u32_digest(&prog_commit.exe).to_bn254(),
-            &CommitBytes::from_u32_digest(&prog_commit.vm).to_bn254(),
         )?;
 
         Ok(())
