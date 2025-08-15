@@ -2,7 +2,7 @@ use alloy_primitives::B256;
 use rkyv::util::AlignedVec;
 use sbv_primitives::{U256, types::BlockWitness};
 use std::collections::HashSet;
-
+use sbv_core::verifier::StateCommitMode;
 use types_base::{fork_name::ForkName, public_inputs::chunk::ChunkInfo};
 
 /// The witness type accepted by the chunk-circuit.
@@ -23,22 +23,6 @@ pub struct ChunkWitnessEuclid {
     pub prev_msg_queue_hash: B256,
     /// The code version specify the chain spec
     pub fork_name: ForkName,
-}
-
-#[derive(
-    Clone,
-    Debug,
-    serde::Deserialize,
-    serde::Serialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-)]
-#[rkyv(derive(Debug))]
-pub enum StateCommitMode {
-    Chunk,
-    Block,
-    Auto,
 }
 
 /// The witness type accepted by the chunk-circuit.

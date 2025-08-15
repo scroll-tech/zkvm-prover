@@ -16,6 +16,7 @@ serde.workspace = true
 itertools.workspace = true
 sha3 = "0.10.8"
 sha2 = "0.10.8"
+tiny-keccak.workspace = true
 
 [features]
 default = []
