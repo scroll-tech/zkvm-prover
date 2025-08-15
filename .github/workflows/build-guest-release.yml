@@ -43,7 +43,7 @@ jobs:
         run: make build-guest 
         
       - name: Prepare release
-        run: sh releash.sh
+        run: sh release.sh
 
       - id: install-aws-cli
         uses: unfor19/install-aws-cli-action@v1
