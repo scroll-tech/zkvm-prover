@@ -21,7 +21,6 @@ openvm-circuit = { workspace = true }
 tracing.workspace = true
 tracing-subscriber.workspace = true
 
-base64.workspace = true
 bitcode.workspace = true
 halo2curves-axiom.workspace = true
 eyre.workspace = true

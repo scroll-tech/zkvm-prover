@@ -297,8 +297,10 @@ fn run_stage4_dump_vk_json(
                 }
                 .serialize();
 
-                use base64::{Engine, prelude::BASE64_STANDARD};
-                let app_vk = BASE64_STANDARD.encode(app_vk);
+                let app_vk = app_vk
+                    .into_iter()
+                    .map(|b| format!("{:02x}", b))
+                    .collect::<String>();
                 println!("{circuit}: {app_vk}");
                 app_vk
             } else {
