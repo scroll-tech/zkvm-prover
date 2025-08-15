@@ -43,7 +43,8 @@ mkdir -p "$RELEASES_DIR/bundle/$bundle_vk_safe"
 cp -r "$DEV_DIR/chunk"/* "$RELEASES_DIR/chunk/$chunk_vk_safe/"
 cp -r "$DEV_DIR/batch"/* "$RELEASES_DIR/batch/$batch_vk_safe/"
 cp -r "$DEV_DIR/bundle"/* "$RELEASES_DIR/bundle/$bundle_vk_safe/"
-mv $DEV_DIR $VERIFIER_RELEASES_DIR
+mkdir -p $VERIFIER_RELEASES_DIR
+mv $DEV_DIR/* $VERIFIER_RELEASES_DIR
 
 echo "Files organized for release successfully:"
 echo "  chunk files -> $RELEASES_DIR/chunk/$chunk_vk_safe"
