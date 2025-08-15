@@ -1,10 +1,15 @@
 use once_cell::sync::Lazy;
 use openvm_sdk::commit::AppExecutionCommit;
-use openvm_sdk::keygen::AggVerifyingKey;
+use openvm_sdk::keygen::{AggProvingKey, AggVerifyingKey};
 use openvm_sdk::{Sdk, commit::CommitBytes};
 use scroll_zkvm_types::proof::OpenVmEvmProof;
 use scroll_zkvm_types::{proof::StarkProof, types_agg::ProgramCommitment};
 use std::path::{Path, PathBuf};
+
+/// Proving key for STARK aggregation. Primarily used to aggregate
+/// [continuation proofs][openvm_sdk::prover::vm::ContinuationVmProof].
+pub static AGG_STARK_PROVING_KEY: Lazy<AggProvingKey> =
+    Lazy::new(||  Sdk::riscv32().agg_pk().clone());
 
 pub struct UniversalVerifier {
     pub evm_verifier: Option<Vec<u8>>,
@@ -16,12 +21,12 @@ impl UniversalVerifier {
         Self::setup(None::<PathBuf>).unwrap()
     }
     pub fn setup<P: AsRef<Path>>(path_verifier_code: Option<P>) -> eyre::Result<Self> {
+        tracing::info!("verifier setup");
         let evm_verifier = path_verifier_code.map(|p| std::fs::read(p.as_ref()).unwrap());
 
-        let sdk = Sdk::riscv32();
-        let agg_pk: &openvm_sdk::keygen::AggProvingKey = sdk.agg_pk();
-        let agg_vk = agg_pk.get_agg_vk();
+        let agg_vk = AGG_STARK_PROVING_KEY.get_agg_vk();
 
+        tracing::info!("verifier setup done");
         Ok(Self { evm_verifier, agg_vk })
     }
 

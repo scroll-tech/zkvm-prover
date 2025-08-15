@@ -375,19 +375,20 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
 
     let witness = match testing_hardfork() {
         ForkName::EuclidV2 => ChunkTaskGenerator {
-            block_range: 1..=4,
-            prev_message_hash: None,
+            block_range: (1..=4).collect(),
+            ..Default::default()
         },
         ForkName::EuclidV1 => ChunkTaskGenerator {
-            block_range: 12508460..=12508463,
-            prev_message_hash: None,
+            block_range: (12508460..=12508463).collect(),
+            ..Default::default()
+
         },
         ForkName::Feynman => ChunkTaskGenerator {
-            block_range: 16525000..=16525003,
-            prev_message_hash: None,
+            block_range: (16525000..=16525003).collect(),
+            ..Default::default()
         },
     }
-    .gen_proving_witnesses()?;
+    .get_or_build_witness()?;
 
     let witnesses = [witness];
 

@@ -27,7 +27,6 @@ pub fn execute_guest(
     exe: Arc<VmExe<F>>,
     stdin: &StdIn,
 ) -> Result<ExecutionResult, Error> {
-    use openvm_stark_sdk::openvm_stark_backend::p3_field::Field;
 
     let executor = VmExecutor::new(vm_config.clone()).unwrap();
     let instance = executor.instance(&exe).unwrap();

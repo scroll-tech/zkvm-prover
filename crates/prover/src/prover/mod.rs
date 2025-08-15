@@ -66,6 +66,7 @@ impl Prover {
     /// Setup the [`Prover`] given paths to the application's exe and proving key.
     #[instrument("Prover::setup")]
     pub fn setup(config: ProverConfig, with_evm: bool, name: Option<&str>) -> Result<Self, Error> {
+        tracing::info!("prover setup");
         let app_exe: VmExe<F> = read_object_from_file(&config.path_app_exe).unwrap();
         let mut app_config = read_app_config(&config.path_app_config)?;
         let segment_len = config.segment_len.unwrap_or(DEFAULT_SEGMENT_SIZE);
@@ -89,6 +90,7 @@ impl Prover {
         //);
 
         //let evm_prover = with_evm.then(Self::setup_evm_prover).transpose()?;
+        tracing::info!("prover setup done");
         Ok(Self {
             sdk,
             prover,

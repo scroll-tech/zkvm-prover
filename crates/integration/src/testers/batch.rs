@@ -7,9 +7,7 @@ use scroll_zkvm_types::{
 };
 
 use crate::{
-    PartialProvingTask, ProverTester, TestTaskBuilder,
-    testers::chunk::{ChunkProverTester, ChunkTaskGenerator, preset_chunk_multiple},
-    utils::build_batch_witnesses,
+    prove_verify, testers::chunk::{preset_chunk_multiple, ChunkProverTester, ChunkTaskGenerator}, utils::build_batch_witnesses, PartialProvingTask, ProverTester, TestTaskBuilder
 };
 
 use std::sync::OnceLock;
@@ -49,37 +47,46 @@ impl ProverTester for BatchProverTester {
     const DIR_ASSETS: &str = "batch";
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct BatchTaskGenerator {
-    result: OnceLock<BatchWitness>,
+    witness: Option<BatchWitness>,
     chunk_generators: Vec<ChunkTaskGenerator>,
     last_witness: Option<BatchWitness>,
-}
-
-impl TestTaskBuilder<BatchProverTester> for BatchTaskGenerator {
-    fn gen_proving_witnesses(&self) -> eyre::Result<BatchWitness> {
-        Ok(if let Some(r) = self.result.get() {
-            r.clone()
-        } else {
-            let r = self.calculate_batch_witness()?;
-            self.result.set(r.clone()).ok();
-            r
-        })
-    }
-
-    fn gen_agg_proofs(&self, prover: &mut Prover) -> eyre::Result<Vec<ProofEnum>> {
-        let mut chunk_prover = ChunkProverTester::load_prover(false)?;
-        let chunk_proofs = self
-            .chunk_generators
-            .iter()
-            .map(|generator| generator.gen_witnesses_proof(&mut chunk_prover))
-            .collect::<Result<Vec<ProofEnum>, _>>()?;
-        Ok(chunk_proofs)
-    }
+    //pub witness: Option<ChunkWitness>,
+    pub proof: Option<ProofEnum>,
 }
 
 impl BatchTaskGenerator {
-    fn calculate_batch_witness(&self) -> eyre::Result<BatchWitness> {
+    pub fn get_or_build_witness(&mut self) -> eyre::Result<BatchWitness> {
+        if self.witness.is_some() {
+            return Ok(self.witness.clone().unwrap())
+        }
+        let witness = self.calculate_witness()?;
+        self.witness.replace(witness.clone());
+        Ok(witness)
+    }
+    pub fn get_or_build_proof(&mut self, prover: &mut Prover, child_prover: &mut Prover)  -> eyre::Result<ProofEnum> {
+        
+        if let Some(proof) = &self.proof {
+            return Ok(proof.clone());
+        }
+        let wit = self.get_or_build_witness()?;
+        let agg_proofs = self.get_or_build_child_proofs(child_prover)?;
+        let proof = prove_verify::<BatchProverTester>(prover, &wit, &agg_proofs)?;
+        self.proof.replace(proof.clone());
+        Ok(proof)
+    }
+
+    pub fn get_or_build_child_proofs(&mut self, child_prover: &mut Prover) -> eyre::Result<Vec<ProofEnum>> {
+        let mut proofs = Vec::new();
+        for chunk_gen in &mut self.chunk_generators {
+            let proof = chunk_gen.get_or_build_proof(child_prover)?;
+            proofs.push(proof);
+        }
+        Ok(proofs)
+    }
+
+    fn calculate_witness(&mut self) -> eyre::Result<BatchWitness> {
         let chunk_prover = ChunkProverTester::load_prover(false)?;
         let mut last_info: Option<&ChunkInfo> = self
             .last_witness
@@ -88,8 +95,8 @@ impl BatchTaskGenerator {
 
         let chunks = self
             .chunk_generators
-            .iter()
-            .map(|g| g.gen_proving_witnesses())
+            .iter_mut()
+            .map(|g| g.get_or_build_witness())
             .collect::<eyre::Result<Vec<_>>>()?;
 
         let ret_wit = build_batch_witnesses(
@@ -132,9 +139,10 @@ impl BatchTaskGenerator {
         last_witness: Option<BatchWitness>,
     ) -> Self {
         Self {
-            result: OnceLock::new(),
+            witness: None,
             chunk_generators: ref_chunks.to_vec(),
             last_witness,
+            proof: None,
         }
     }
 }
@@ -147,7 +155,7 @@ pub fn create_canonical_tasks<'a>(
     for chunks in chunk_tasks {
         let canonical_generator = BatchTaskGenerator::from_chunk_tasks(
             chunks,
-            ret.last().map(|g| g.gen_proving_witnesses()).transpose()?,
+            ret.last_mut().map(|g| g.get_or_build_witness()).transpose()?,
         );
         ret.push(canonical_generator);
     }
