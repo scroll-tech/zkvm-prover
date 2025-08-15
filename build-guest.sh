@@ -2,7 +2,7 @@
 set -ex
 
 mkdir -p releases
-rm -rf releases/dev
+rm -rf releases/*
 
 [ -f "crates/build-guest/.env" ] && . crates/build-guest/.env
 
@@ -14,8 +14,24 @@ fi
 # build docker image
 docker build --platform linux/amd64 -t build-guest:local .
 
+# cleanup function
+cleanup() {
+
+  if [ -f ./build-guest.cid ]; then
+    docker rm -f $(cat ./build-guest.cid) 2>/dev/null || true
+  fi
+  rm -f ./build-guest.cid
+  
+}
+
+# set trap to cleanup on exit
+trap cleanup EXIT
+
 # run docker image
-docker run --cidfile ./build-guest.cid --platform linux/amd64 -e FEATURE=${FEATURE} build-guest:local
+docker run --cidfile ./build-guest.cid --platform linux/amd64\
+  -e BUILD_STAGES=${BUILD_STAGES}\
+  build-guest:local\
+  cargo run --release -p scroll-zkvm-build-guest
 container_id=$(cat ./build-guest.cid)
 
 if [ -n "$(echo ${BUILD_STAGES} | grep stage1)" ]; then
@@ -41,12 +57,5 @@ if [ -n "$(echo ${BUILD_STAGES} | grep stage3)" ]; then
   done
 fi
 
-
 # copy release files from container to local
-mkdir -p releases
-rm -rf releases/dev
 docker cp ${container_id}:/app/releases/dev releases/dev
-
-# remove docker container
-docker rm ${container_id}
-rm ./build-guest.cid

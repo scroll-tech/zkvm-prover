@@ -7,4 +7,3 @@ RUN wget https://github.com/ethereum/solc-bin/raw/refs/heads/gh-pages/linux-amd6
 
 COPY . .
 
-ENTRYPOINT ["/app/build-guest-actions-entrypoint.sh"]

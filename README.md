@@ -60,6 +60,16 @@ $ make test-e2e-bundle
 
 *Note*: Configure `RUST_LOG=debug` for debug logs or `RUST_LOG=none,scroll_zkvm_prover=debug` for logs specifically from the `scroll-zkvm-prover` crate.
 
+## Release of prover circuits
+
+All apps of circuits are uploaded into aws s3 storage, and can be download via following urls:
+
+`<s3 base url>/scroll-zkvm/releases/<fork name>/<chunk|batch|bundle>/<vk>`
+
++ Current the url for s3 storage is `https://circuit-release.s3.us-west-2.amazonaws.com`
++ The fork name can be read via [release-fork](./release-fork) file
++ The circuit app has to be accessed by specifying its proof type (chunk/batch/bundle) and the vk of the circuit.
+
 ## Usage of Prover API
 
 ### Dependency
