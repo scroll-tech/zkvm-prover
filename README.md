@@ -68,7 +68,7 @@ All apps of circuits are uploaded into aws s3 storage, and can be download via f
 
 + Current the url for s3 storage is `https://circuit-release.s3.us-west-2.amazonaws.com`
 + The fork name can be read via [release-fork](./release-fork) file
-+ The circuit app has to be accessed by specifying its proof type (chunk/batch/bundle) and the vk of the circuit. **Notice: as the accessing path we encoded the vk by url-safe (no padding) base64 encoding**
++ The circuit app has to be accessed by specifying its proof type (chunk/batch/bundle) and the vk of the circuit.
 
 ## Usage of Prover API
 
