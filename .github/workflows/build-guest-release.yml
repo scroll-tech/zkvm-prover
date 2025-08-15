@@ -12,8 +12,8 @@ jobs:
   build-guest:
     runs-on: ubuntu-latest
     env:
-      SCROLL_ZKVM_VERSION: ${{ github.ref_name }}
-      DIR_OUTPUT: releases/dev
+      SCROLL_ZKVM_VERSION: ${{ default(github.ref_name, 'dev') }}
+      DIR_OUTPUT: releases
       AWS_REGION: us-west-2
 
     steps:
@@ -44,9 +44,7 @@ jobs:
         run: make build-guest 
         
       - name: Prepare release
-        run: |
-          # checksum for assets
-          find $DIR_OUTPUT  -type f ! -name sha256sums.txt  -exec sha256sum {} \; > $DIR_OUTPUT/sha256sums.txt
+        run: sh releash.sh
 
       - id: install-aws-cli
         uses: unfor19/install-aws-cli-action@v1
@@ -64,4 +62,4 @@ jobs:
 
       - name: Upload releases to S3
         run: |
-          aws s3 cp $DIR_OUTPUT s3://circuit-release/scroll-zkvm/${{ github.ref_name }} --recursive
+          aws s3 cp $DIR_OUTPUT s3://circuit-release/scroll-zkvm --recursive

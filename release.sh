@@ -1,49 +1,55 @@
 #!/bin/bash
+set -ue
 
-# release version
-SCROLL_ZKVM_TESTRUN_DIR=`realpath .output/bundle-tests-20250722_234931/`
-SCROLL_ZKVM_VERSION=0.5.2
 if [ -z "${SCROLL_ZKVM_VERSION}" ]; then
   echo "SCROLL_ZKVM_VERSION not set"
   exit 1
 else
-  DIR_OUTPUT="releases/${SCROLL_ZKVM_VERSION}"
+  VERIFIER_RELEASES_DIR="releases/${SCROLL_ZKVM_VERSION}"
 fi
 
-# directory to read assets from
-if [ -z "${SCROLL_ZKVM_TESTRUN_DIR}" ]; then
-  echo "SCROLL_ZKVM_TESTRUN_DIR not set"
-  exit 1
-else
-  DIR_INPUT="${SCROLL_ZKVM_TESTRUN_DIR}"
+# Read FORKNAME from release-fork file
+FORKNAME=$(head -n 1 release-fork)
+
+DEV_DIR="releases/dev"
+VK_JSON="$DEV_DIR/verifier/openVmVk.json"
+RELEASES_DIR="releases/$FORKNAME"
+
+# Output sha256 checksums
+find $DEV_DIR  -type f ! -name sha256sums.txt  -exec sha256sum {} \; > $DEV_DIR/sha256sums.txt
+
+# Check if openVmVk.json exists
+if [ ! -f "$VK_JSON" ]; then
+    echo "Error: openVmVk.json not found in $DEV_DIR/"
+    exit 1
 fi
 
-# create all required directories for release
-mkdir -p $DIR_OUTPUT/chunk
-mkdir -p $DIR_OUTPUT/batch
-mkdir -p $DIR_OUTPUT/bundle
-mkdir -p $DIR_OUTPUT/verifier
+# Read verification keys from JSON file
+chunk_vk=$(jq -r '.chunk_vk' "$VK_JSON")
+batch_vk=$(jq -r '.batch_vk' "$VK_JSON")
+bundle_vk=$(jq -r '.bundle_vk' "$VK_JSON")
 
-# copy chunk-program related assets
-cp ./crates/circuits/chunk-circuit/openvm/app.vmexe $DIR_OUTPUT/chunk/app.vmexe
-cp ./crates/circuits/chunk-circuit/openvm.toml $DIR_OUTPUT/chunk/openvm.toml
+# Convert base64 strings to URL-safe format
+chunk_vk_safe=$(echo "$chunk_vk" | tr '+/' '-_' | tr -d '=')
+batch_vk_safe=$(echo "$batch_vk" | tr '+/' '-_' | tr -d '=')
+bundle_vk_safe=$(echo "$bundle_vk" | tr '+/' '-_' | tr -d '=')
 
-# copy batch-program related assets
-cp ./crates/circuits/batch-circuit/openvm/app.vmexe $DIR_OUTPUT/batch/app.vmexe
-cp ./crates/circuits/batch-circuit/openvm.toml $DIR_OUTPUT/batch/openvm.toml
+# Create directories and copy files
+mkdir -p "$RELEASES_DIR/chunk/$chunk_vk_safe"
+mkdir -p "$RELEASES_DIR/batch/$batch_vk_safe"
+mkdir -p "$RELEASES_DIR/bundle/$bundle_vk_safe"
 
-# copy bundle-program related assets
-cp ./crates/circuits/bundle-circuit/openvm/app.vmexe $DIR_OUTPUT/bundle/app.vmexe
-cp ./crates/circuits/bundle-circuit/openvm.toml $DIR_OUTPUT/bundle/openvm.toml
-cp ./crates/circuits/bundle-circuit/openvm/verifier.bin $DIR_OUTPUT/bundle/verifier.bin
-cp ./crates/circuits/bundle-circuit/openvm/verifier.sol $DIR_OUTPUT/bundle/verifier.sol
-xxd -l 32 -p ./crates/circuits/bundle-circuit/digest_1 | tr -d '\n' | awk '{gsub("%", ""); print}' > $DIR_OUTPUT/bundle/digest_1.hex
-xxd -l 32 -p ./crates/circuits/bundle-circuit/digest_2 | tr -d '\n' | awk '{gsub("%", ""); print}' > $DIR_OUTPUT/bundle/digest_2.hex
+# Copy files from releases/dev to the new directories
+cp -r "$DEV_DIR/chunk"/* "$RELEASES_DIR/chunk/$chunk_vk_safe/"
+cp -r "$DEV_DIR/batch"/* "$RELEASES_DIR/batch/$batch_vk_safe/"
+cp -r "$DEV_DIR/bundle"/* "$RELEASES_DIR/bundle/$bundle_vk_safe/"
+mv $DEV_DIR $VERIFIER_RELEASES_DIR
 
-# copy verifier-only assets
-#cp $DIR_INPUT/bundle/root-verifier-vm-config $DIR_OUTPUT/verifier/root-verifier-vm-config
-#cp $DIR_INPUT/bundle/root-verifier-committed-exe $DIR_OUTPUT/verifier/root-verifier-committed-exe
-cp ./crates/circuits/bundle-circuit/openvm/verifier.bin $DIR_OUTPUT/verifier/verifier.bin
+echo "Files organized for release successfully:"
+echo "  chunk files -> $RELEASES_DIR/chunk/$chunk_vk_safe"
+echo "  batch files -> $RELEASES_DIR/batch/$batch_vk_safe"
+echo "  bundle files -> $RELEASES_DIR/bundle/$bundle_vk_safe"
+echo "  verifier files -> $VERIFIER_RELEASES_DIR"
+echo "  recursivly upload releases directory"
 
-# upload to s3
-aws --profile default s3 cp $DIR_OUTPUT s3://circuit-release/scroll-zkvm/$DIR_OUTPUT --recursive
+#aws --profile default s3 cp releases s3://circuit-release/scroll-zkvm --recursive
