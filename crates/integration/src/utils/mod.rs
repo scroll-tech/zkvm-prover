@@ -11,8 +11,8 @@ use scroll_zkvm_types::{
     bundle::{BundleInfo, BundleWitness},
     chunk::{ChunkInfo, ChunkWitness},
     public_inputs::{ForkName, MultiVersionPublicInputs},
-    types_agg::{AggregationInput, ProgramCommitment},
-    utils::{keccak256, point_eval},
+    types_agg::AggregationInput,
+    utils::{keccak256, point_eval, serialize_vk},
 };
 use vm_zstd::zstd_encode;
 
@@ -313,7 +313,7 @@ pub fn build_batch_witnesses(
     };
 
     let fork_name = testing_hardfork();
-    let commitment = ProgramCommitment::deserialize(prover_vk);
+    let commitment = serialize_vk::deserialize(prover_vk);
     let chunk_proofs = chunk_infos
         .iter()
         .map(|chunk_info| {
@@ -367,7 +367,7 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
 
     let task_wit = build_batch_witnesses(
         &witnesses,
-        &ProgramCommitment::default().serialize(),
+        &[0u8; 64], // use a default, all zero vk
         Default::default(),
     )?;
 

@@ -53,12 +53,7 @@ fn print_vks() -> eyre::Result<()> {
             ..Default::default()
         };
 
-        let app_vk = Prover::setup(config, false, None)
-            .unwrap()
-            .get_app_vk()
-            .into_iter()
-            .map(|b| format!("{:02x}", b))
-            .collect::<String>();
+        let app_vk = hex::encode(Prover::setup(config, false, None).unwrap().get_app_vk());
         println!("{circuit}: {app_vk}");
         app_vk
     });

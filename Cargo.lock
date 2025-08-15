@@ -6687,6 +6687,7 @@ dependencies = [
  "ff 0.13.1",
  "glob",
  "halo2curves-axiom 0.7.0",
+ "hex",
  "metrics-tracing-context",
  "once_cell",
  "openvm-build",

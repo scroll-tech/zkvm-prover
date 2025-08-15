@@ -291,16 +291,13 @@ fn run_stage4_dump_vk_json(
             if let (Some(exe), Some(leaf)) =
                 (exe_commitments.get(circuit), leaf_commitments.get(circuit))
             {
-                let app_vk = scroll_zkvm_types::types_agg::ProgramCommitment {
+                use scroll_zkvm_types::{types_agg::ProgramCommitment, utils::serialize_vk};
+                let app_vk = serialize_vk::serialize(&ProgramCommitment {
                     exe: *exe,
                     vm: *leaf,
-                }
-                .serialize();
+                });
 
-                let app_vk = app_vk
-                    .into_iter()
-                    .map(|b| format!("{:02x}", b))
-                    .collect::<String>();
+                let app_vk = hex::encode(&app_vk);
                 println!("{circuit}: {app_vk}");
                 app_vk
             } else {
