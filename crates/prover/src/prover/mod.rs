@@ -7,21 +7,24 @@ use openvm_circuit::arch::instructions::exe::VmExe;
 use openvm_native_circuit::NativeCpuBuilder;
 use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
 use openvm_sdk::{
-    commit::AppExecutionCommit, config::{AppConfig, SdkVmConfig, SdkVmCpuBuilder}, fs::read_object_from_file, keygen::{AggProvingKey, AppProvingKey}, prover::StarkProver, DefaultStaticVerifierPvHandler, GenericSdk, Sdk, StdIn, F
+    DefaultStaticVerifierPvHandler, F, GenericSdk, Sdk, StdIn,
+    commit::AppExecutionCommit,
+    config::{AppConfig, SdkVmConfig, SdkVmCpuBuilder},
+    fs::read_object_from_file,
+    keygen::{AggProvingKey, AppProvingKey},
+    prover::StarkProver,
 };
-use openvm_stark_sdk::config::baby_bear_poseidon2::{BabyBearPermutationEngine, BabyBearPoseidon2Engine};
+use openvm_stark_sdk::config::baby_bear_poseidon2::{
+    BabyBearPermutationEngine, BabyBearPoseidon2Engine,
+};
 use scroll_zkvm_types::{proof::OpenVmEvmProof, types_agg::ProgramCommitment};
-use scroll_zkvm_verifier::verifier::{UniversalVerifier};
+use scroll_zkvm_verifier::verifier::UniversalVerifier;
 use tracing::instrument;
 
 // Re-export from openvm_sdk.
 pub use openvm_sdk::{self};
 
-use crate::{
-    Error,
-    setup::{read_app_config},
-    task::ProvingTask,
-};
+use crate::{Error, setup::read_app_config, task::ProvingTask};
 
 use scroll_zkvm_types::proof::{EvmProof, ProofEnum, StarkProof};
 /// The default directory to locate openvm's halo2 SRS parameters.
@@ -38,7 +41,7 @@ pub struct Prover {
     /// Commitment to app exe.
     pub app_exe: Arc<VmExe<F>>,
     /// App specific proving key.
-   // pub app_pk: Arc<AppProvingKey<SdkVmConfig>>,
+    // pub app_pk: Arc<AppProvingKey<SdkVmConfig>>,
     /// The commitments for the app execution.
     //pub commits: AppExecutionCommit,
     /// Optional data for the outermost layer, i.e. EVM-compatible.
@@ -119,9 +122,7 @@ impl Prover {
     /// Pick up the actual vk (serialized) for evm proof, would be empty if prover
     /// do not contain evm prover
     pub fn get_evm_vk(&self) -> Vec<u8> {
-        scroll_zkvm_verifier::evm::serialize_vk(
-            self.sdk.halo2_pk().wrapper.pinning.pk.get_vk()
-        )
+        scroll_zkvm_verifier::evm::serialize_vk(self.sdk.halo2_pk().wrapper.pinning.pk.get_vk())
     }
 
     /// Simple wrapper of gen_proof_stark/snark, Early-return if a proof is found in disc,
@@ -158,9 +159,10 @@ impl Prover {
         &self,
         stdin: &StdIn,
     ) -> Result<crate::utils::vm::ExecutionResult, Error> {
-        let config = self.sdk.app_config();// app_pk.app_vm_pk.vm_config.clone();
+        let config = self.sdk.app_config(); // app_pk.app_vm_pk.vm_config.clone();
         let exe = self.app_exe.clone();
-        let exec_result = crate::utils::vm::execute_guest(config.app_vm_config.clone(), exe, stdin)?;
+        let exec_result =
+            crate::utils::vm::execute_guest(config.app_vm_config.clone(), exe, stdin)?;
         tracing::info!(
             "total cycle of {}: {}",
             self.prover_name,
@@ -175,7 +177,7 @@ impl Prover {
             .map(|res| res.total_cycle)
     }
 
-    /* 
+    /*
     /// Setup the EVM prover-verifier.
     fn setup_evm_prover() -> Result<EvmProver, Error> {
         tracing::info!("Setting up EVM prover...");
@@ -228,7 +230,7 @@ impl Prover {
             reader: halo2_params_reader,
             agg_pk,
         })
-        
+
     }
     */
 
@@ -241,10 +243,9 @@ impl Prover {
         self.execute_and_check(&stdin)?;
 
         ///let sdk = Sdk::new();
-        let proof = self.prover
-            .prove(
-                stdin,
-            )
+        let proof = self
+            .prover
+            .prove(stdin)
             .map_err(|e| Error::GenProof(e.to_string()))?;
         //let comm = self.get_app_commitment();
         let proof = StarkProof {
@@ -268,7 +269,9 @@ impl Prover {
 
         //let sdk = Sdk::new();
         //let evm_prover = self.evm_prover.as_ref().expect("evm prover not inited");
-        let evm_proof = self.sdk.prove_evm(self.app_exe.clone(), stdin)
+        let evm_proof = self
+            .sdk
+            .prove_evm(self.app_exe.clone(), stdin)
             .map_err(|e| Error::GenProof(format!("{}", e)))?;
 
         Ok(evm_proof)

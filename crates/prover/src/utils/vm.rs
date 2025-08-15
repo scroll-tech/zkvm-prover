@@ -27,7 +27,6 @@ pub fn execute_guest(
     exe: Arc<VmExe<F>>,
     stdin: &StdIn,
 ) -> Result<ExecutionResult, Error> {
-
     let executor = VmExecutor::new(vm_config.clone()).unwrap();
     let instance = executor.instance(&exe).unwrap();
 

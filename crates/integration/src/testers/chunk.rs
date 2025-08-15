@@ -12,7 +12,8 @@ use scroll_zkvm_types::{
 };
 
 use crate::{
-    prove_verify, testdata_fork_directory, testers::PATH_TESTDATA, testing_hardfork, utils::metadata_from_chunk_witnesses, PartialProvingTask, ProverTester, TestTaskBuilder
+    PartialProvingTask, ProverTester, prove_verify, testdata_fork_directory,
+    testers::PATH_TESTDATA, testing_hardfork, utils::metadata_from_chunk_witnesses,
 };
 
 /// Load a file <block_n>.json in the <PATH_BLOCK_WITNESS> directory.
@@ -93,14 +94,14 @@ impl std::fmt::Debug for ChunkTaskGenerator {
 impl ChunkTaskGenerator {
     pub fn get_or_build_witness(&mut self) -> eyre::Result<ChunkWitness> {
         if self.witness.is_some() {
-            return Ok(self.witness.clone().unwrap())
+            return Ok(self.witness.clone().unwrap());
         }
         let witness = self.calculate_witness()?;
         self.witness.replace(witness.clone());
         Ok(witness)
     }
-    pub fn get_or_build_proof(&mut self, prover: &mut Prover)  -> eyre::Result<ProofEnum> {
-       if let Some(proof) = &self.proof {
+    pub fn get_or_build_proof(&mut self, prover: &mut Prover) -> eyre::Result<ProofEnum> {
+        if let Some(proof) = &self.proof {
             return Ok(proof.clone());
         }
         let wit = self.get_or_build_witness()?;
@@ -110,13 +111,14 @@ impl ChunkTaskGenerator {
     }
 
     pub fn calculate_witness(&mut self) -> eyre::Result<ChunkWitness> {
-
-        let paths: Vec<PathBuf> = self.block_range.iter()
+        let paths: Vec<PathBuf> = self
+            .block_range
+            .iter()
             .map(|block_n| {
-            Path::new(PATH_TESTDATA)
-                .join(testdata_fork_directory())
-                .join("witnesses")
-                .join(format!("{}.json", block_n))
+                Path::new(PATH_TESTDATA)
+                    .join(testdata_fork_directory())
+                    .join("witnesses")
+                    .join(format!("{}.json", block_n))
             })
             .collect();
 
@@ -124,7 +126,7 @@ impl ChunkTaskGenerator {
             .iter()
             .map(read_block_witness)
             .collect::<eyre::Result<Vec<BlockWitness>>>()?;
-        
+
         let witness = ChunkWitness::new(
             &block_witnesses,
             self.prev_message_hash
@@ -133,10 +135,6 @@ impl ChunkTaskGenerator {
         );
 
         Ok(witness)
-    }
-
-    fn gen_child_proofs(&self, prover: &mut Prover) -> eyre::Result<Vec<ProofEnum>> {
-        Ok(Vec::new())
     }
 }
 
@@ -172,8 +170,7 @@ pub fn preset_chunk() -> ChunkTaskGenerator {
         block_range: block_range.collect(),
         prev_message_hash: None,
         proof: Default::default(),
-        witness: Default::default()
-
+        witness: Default::default(),
     }
 }
 
@@ -188,7 +185,7 @@ pub fn create_canonical_tasks(
             block_range: r.collect(),
             prev_message_hash,
             proof: Default::default(),
-            witness: Default::default()
+            witness: Default::default(),
         };
         let chunk_wit = canonical_generator.get_or_build_witness()?;
         let info = metadata_from_chunk_witnesses(&chunk_wit)?;

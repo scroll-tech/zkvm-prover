@@ -9,10 +9,9 @@ use scroll_zkvm_types::{
 use scroll_zkvm_prover::Prover;
 
 use crate::{
-    prove_verify, prove_verify_single_evm, testers::batch::{BatchProverTester, BatchTaskGenerator}, testing_hardfork, utils::metadata_from_batch_witnesses, PartialProvingTask, ProverTester, TestTaskBuilder
+    PartialProvingTask, ProverTester, prove_verify_single_evm, testers::batch::BatchTaskGenerator,
+    testing_hardfork, utils::metadata_from_batch_witnesses,
 };
-
-use std::sync::OnceLock;
 
 impl PartialProvingTask for BundleWitness {
     fn identifier(&self) -> String {
@@ -59,28 +58,36 @@ pub struct BundleTaskGenerator {
 impl BundleTaskGenerator {
     pub fn get_or_build_witness(&mut self) -> eyre::Result<BundleWitness> {
         if self.witness.is_some() {
-            return Ok(self.witness.clone().unwrap())
+            return Ok(self.witness.clone().unwrap());
         }
         let witness = self.calculate_witness()?;
         self.witness.replace(witness.clone());
         Ok(witness)
     }
 
-    pub fn get_or_build_proof(&mut self, prover: &mut Prover, batch_prover: &mut Prover, chunk_prover: &mut Prover)  -> eyre::Result<ProofEnum> {
-        
+    pub fn get_or_build_proof(
+        &mut self,
+        prover: &mut Prover,
+        batch_prover: &mut Prover,
+        chunk_prover: &mut Prover,
+    ) -> eyre::Result<ProofEnum> {
         if let Some(proof) = &self.proof {
             return Ok(proof.clone());
         }
         let wit = self.get_or_build_witness()?;
         let agg_proofs = self.get_or_build_child_proofs(batch_prover, chunk_prover)?;
-        let proof = prove_verify::<BundleProverTester>(prover, &wit, &agg_proofs)?;
+        let proof = prove_verify_single_evm::<BundleProverTester>(prover, &wit, &agg_proofs)?;
         self.proof.replace(proof.clone());
         Ok(proof)
     }
-    fn get_or_build_child_proofs(&mut self, batch_prover: &mut Prover, chunk_prover: &mut Prover) -> eyre::Result<Vec<ProofEnum>> {
+    fn get_or_build_child_proofs(
+        &mut self,
+        batch_prover: &mut Prover,
+        chunk_prover: &mut Prover,
+    ) -> eyre::Result<Vec<ProofEnum>> {
         let mut proofs = Vec::new();
         for chunk_gen in &mut self.batch_generators {
-            let proof = chunk_gen.get_or_build_proof(batch_prover,chunk_prover)?;
+            let proof = chunk_gen.get_or_build_proof(batch_prover, chunk_prover)?;
             proofs.push(proof);
         }
         Ok(proofs)
@@ -102,9 +109,10 @@ impl BundleTaskGenerator {
         };
 
         let fork_name = testing_hardfork();
-        let mut batch_prover = BatchProverTester::load_prover(false)?;
-        let vk = batch_prover.get_app_vk();
-        let commitment = ProgramCommitment::deserialize(&vk);
+        let commitment = ProgramCommitment {
+            exe: crate::commitments::batch_exe_commit::COMMIT,
+            vm: crate::commitments::batch_leaf_commit::COMMIT,
+        };
         let mut batch_proofs = Vec::new();
         let mut batch_infos: Vec<BatchInfo> = Vec::new();
 

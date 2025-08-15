@@ -12,7 +12,12 @@
 //! - `BUILD_STAGES`: Comma-separated list of stages to run (e.g., "stage1,stage3"). Defaults to "stage1,stage2,stage3".
 
 use std::{
-    collections::{BTreeSet, HashMap}, env, fs::read_to_string, path::{Path, PathBuf}, sync::Arc, time::Instant
+    collections::{BTreeSet, HashMap},
+    env,
+    fs::read_to_string,
+    path::{Path, PathBuf},
+    sync::Arc,
+    time::Instant,
 };
 
 use dotenv::dotenv;
@@ -22,7 +27,11 @@ use openvm_instructions::exe::VmExe;
 use openvm_native_compiler::ir::DIGEST_SIZE;
 use openvm_native_recursion::halo2::utils::{CacheHalo2ParamsReader, Halo2ParamsReader};
 use openvm_sdk::{
-    commit::CommitBytes, config::{AggregationConfig, AppConfig, SdkVmConfig}, fs::write_object_to_file, keygen::AggProvingKey, DefaultStaticVerifierPvHandler, Sdk, F
+    F, Sdk,
+    commit::CommitBytes,
+    config::{AggregationConfig, AppConfig, SdkVmConfig},
+    fs::write_object_to_file,
+    keygen::AggProvingKey,
 };
 use openvm_stark_sdk::{openvm_stark_backend::p3_field::PrimeField32, p3_bn254_fr::Bn254Fr};
 use snark_verifier_sdk::snark_verifier::loader::evm::compile_solidity;
@@ -190,12 +199,7 @@ fn run_stage3_exe_commits(
         let guest_opts = guest_opts.with_profile("maxperf".to_string());
         let sdk = Sdk::new(app_config)?;
         let elf = sdk
-            .build(
-                guest_opts,
-                project_dir,
-                &Default::default(),
-                None,
-            )
+            .build(guest_opts, project_dir, &Default::default(), None)
             .inspect_err(|_err| {
                 println!("{LOG_PREFIX} Building failed in {}", project_dir);
             })?;
@@ -312,10 +316,9 @@ fn run_stage5_dump_evm_verifier(verifier_output_dir: &PathBuf, recompute_mode: b
     let verifier_contract = if recompute_mode {
         let sdk = Sdk::riscv32();
         let halo2_params_reader = sdk.halo2_params_reader();
-        let halo2_pk = sdk.halo2_pk(
-        );
-        let halo2_params = halo2_params_reader
-            .read_params(halo2_pk.wrapper.pinning.metadata.config_params.k);
+        let halo2_pk = sdk.halo2_pk();
+        let halo2_params =
+            halo2_params_reader.read_params(halo2_pk.wrapper.pinning.metadata.config_params.k);
         snark_verifier_sdk::evm::gen_evm_verifier_shplonk::<
             snark_verifier_sdk::halo2::aggregation::AggregationCircuit,
         >(

@@ -18,7 +18,7 @@ use openvm_stark_sdk::{
 };
 
 use crate::Error;
-/* 
+/*
 /// Wrapper around [`openvm_sdk::fs::read_exe_from_file`].
 pub fn read_app_exe<P: AsRef<Path>>(path: P) -> Result<VmExe<F>, Error> {
     return Ok(read_exe_from_file(path).unwrap());

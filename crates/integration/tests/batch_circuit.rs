@@ -1,9 +1,11 @@
 use scroll_zkvm_integration::{
+    ProverTester,
     testers::{
         batch::{BatchProverTester, BatchTaskGenerator},
-        chunk::{create_canonical_tasks, preset_chunk_multiple, ChunkProverTester},
+        chunk::{ChunkProverTester, create_canonical_tasks, preset_chunk_multiple},
         load_local_task,
-    }, testing_hardfork, ProverTester
+    },
+    testing_hardfork,
 };
 use scroll_zkvm_prover::task::ProvingTask;
 
@@ -14,7 +16,7 @@ fn test_execute() -> eyre::Result<()> {
     let u_task = load_local_task("batch-task.json")?;
     let stdin = u_task.build_guest_input()?;
 
-    let mut prover = BatchProverTester::load_prover(false)?;
+    let prover = BatchProverTester::load_prover(false)?;
 
     let _ = prover.execute_and_check(&stdin)?;
     Ok(())
@@ -37,7 +39,7 @@ fn setup_prove_verify_single() -> eyre::Result<()> {
 fn test_e2e_execute() -> eyre::Result<()> {
     BatchProverTester::setup()?;
 
-    let mut prover = BatchProverTester::load_prover(false)?;
+    let prover = BatchProverTester::load_prover(false)?;
     let mut chunk_prover = ChunkProverTester::load_prover(false)?;
 
     let mut task = BatchTaskGenerator::from_chunk_tasks(&preset_chunk_multiple(), None);
@@ -61,8 +63,7 @@ fn e2e() -> eyre::Result<()> {
     let mut prover = BatchProverTester::load_prover(false)?;
     let mut chunk_prover = ChunkProverTester::load_prover(false)?;
     let mut batch = BatchTaskGenerator::from_chunk_tasks(&preset_chunk_multiple(), None);
-    let _ = 
-        batch.get_or_build_proof(&mut prover, &mut chunk_prover)?;
+    let _ = batch.get_or_build_proof(&mut prover, &mut chunk_prover)?;
 
     Ok(())
 }

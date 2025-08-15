@@ -1,6 +1,6 @@
 use eyre::Ok;
 use scroll_zkvm_integration::{
-    ProverTester, TestTaskBuilder, prove_verify, tester_execute,
+    ProverTester, prove_verify, tester_execute,
     testers::chunk::{
         ChunkProverTester, ChunkTaskGenerator, get_witness_from_env_or_builder, preset_chunk,
         preset_chunk_multiple,

@@ -1,9 +1,14 @@
 use sbv_primitives::B256;
 use scroll_zkvm_integration::{
+    ProverTester, // utils::{LastHeader, build_batch_task, testing_hardfork},
     testers::{
-        batch::{preset_batch_multiple, BatchProverTester}, bundle::{BundleProverTester, BundleTaskGenerator}, chunk::ChunkProverTester, load_local_task
-    }, testing_hardfork, utils::metadata_from_bundle_witnesses, ProverTester, TestTaskBuilder
-    // utils::{LastHeader, build_batch_task, testing_hardfork},
+        batch::{BatchProverTester, preset_batch_multiple},
+        bundle::{BundleProverTester, BundleTaskGenerator},
+        chunk::ChunkProverTester,
+        load_local_task,
+    },
+    testing_hardfork,
+    utils::metadata_from_bundle_witnesses,
 };
 use scroll_zkvm_prover::{
     // AsRootProof, BatchProof, ChunkProof, IntoEvmProof,
@@ -140,7 +145,8 @@ fn e2e() -> eyre::Result<()> {
         "unexpected pi hash for e2e bundle info, block witness changed?"
     );
 
-    let proof = task.get_or_build_proof(&mut bundle_prover, &mut batch_prover, &mut chunk_prover)?;
+    let proof =
+        task.get_or_build_proof(&mut bundle_prover, &mut batch_prover, &mut chunk_prover)?;
 
     let evm_proof: OpenVmEvmProof = proof.into_evm_proof().unwrap().into();
 

@@ -22,6 +22,8 @@ pub mod testers;
 
 pub mod utils;
 
+pub mod commitments;
+
 pub trait PartialProvingTask {
     fn identifier(&self) -> String;
 
@@ -57,7 +59,6 @@ const FD_APP_CONFIG: &str = "openvm.toml";
 
 /// File descriptor for app exe.
 const FD_APP_EXE: &str = "app.vmexe";
-
 
 /// Environment variable used to set the test-run's output directory for assets.
 const ENV_OUTPUT_DIR: &str = "OUTPUT_DIR";
@@ -132,7 +133,7 @@ pub trait ProverTester {
     fn load_prover(with_evm: bool) -> eyre::Result<Prover> {
         // Since Prover doesn't implement Clone or Send, we can't cache instances directly
         // Instead, we'll use a simple approach to ensure setup happens only once per test run
-        
+
         let (path_app_config, path_app_exe) = Self::load()?;
 
         let path_assets = DIR_TESTRUN
@@ -146,10 +147,10 @@ pub trait ProverTester {
             path_app_config,
             ..Default::default()
         };
-        
+
         let prover = scroll_zkvm_prover::Prover::setup(config, with_evm, Some(Self::NAME))
             .map_err(|e| eyre::eyre!("Failed to setup prover: {}", e))?;
-        
+
         Ok(prover)
     }
 
@@ -176,61 +177,6 @@ pub trait ProverTester {
             }
         }
         Ok(stdin)
-    }
-}
-/// Task generator for specified Tester
-pub struct TestTaskBuilder<T: ProverTester> {
-    pub witness: Option<T::Witness>,
-    pub proof: Option<ProofEnum>,
-}
-
-impl<T: ProverTester> TestTaskBuilder<T> {
-    /// Create a new TestTaskBuilder
-    pub fn new() -> Self {
-        Self {
-            witness: None,
-            proof: None,
-        }
-    }
-
-    /// Generate proving witnesses for test purposes.
-    fn gen_proving_witnesses(&mut self) -> eyre::Result<T::Witness> {
-        // This needs to be implemented based on the specific tester type
-        // You'll need to add this as an associated function or pass a closure
-        todo!("Implementation depends on specific tester type")
-    }
-
-    /// Generate aggregated proofs for proving witness
-    fn gen_child_proofs(&self, prover: &mut Prover) -> eyre::Result<Vec<ProofEnum>> {
-        // This needs to be implemented based on the specific tester type
-        // You'll need to add this as an associated function or pass a closure
-        todo!("Implementation depends on specific tester type")
-    }
-
-    /// Generate proofs for the proving witness it has generated
-    pub fn gen_witnesses_proof(&mut self, prover: &mut Prover) -> eyre::Result<ProofEnum> {
-        let wit = self.gen_proving_witnesses()?;
-        let agg_proofs = self.gen_child_proofs(prover)?;
-        prove_verify::<T>(prover, &wit, &agg_proofs)
-    }
-
-    pub fn fill_witness(&mut self) -> eyre::Result<()> {
-        let witness = self.gen_proving_witnesses()?;
-        self.witness.replace(witness);
-        Ok(())
-    }
-
-    pub fn fill_proof(&mut self, prover: &mut Prover) -> eyre::Result<()> {
-        self.fill_witness()?;
-        let proof = self.gen_witnesses_proof(prover)?;
-        self.proof.replace(proof);
-        Ok(())
-    }
-}
-
-impl<T: ProverTester> Default for TestTaskBuilder<T> {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
@@ -298,13 +244,6 @@ fn setup_logger() -> eyre::Result<()> {
     Ok(())
 }
 
-/// Alias for convenience.
-type ProveVerifyEvmRes = eyre::Result<(
-    ProofEnum,
-    scroll_zkvm_verifier::verifier::UniversalVerifier,
-    PathBuf,
-)>;
-
 /// Light weight testing to simply execute the vm program for test
 #[instrument("tester_execute", skip_all)]
 pub fn tester_execute<T: ProverTester>(
@@ -364,10 +303,8 @@ pub fn prove_verify<T: ProverTester>(
     };
 
     // Verify proof.
-    UniversalVerifier::new().verify_stark_proof(
-        proof.as_stark_proof().expect("should be stark proof"),
-        &vk,
-    )?;
+    UniversalVerifier::new()
+        .verify_stark_proof(proof.as_stark_proof().expect("should be stark proof"), &vk)?;
 
     Ok(proof)
 }
@@ -378,7 +315,7 @@ pub fn prove_verify_single_evm<T>(
     prover: &Prover,
     witness: &T::Witness,
     proofs: &[ProofEnum],
-) -> ProveVerifyEvmRes
+) -> eyre::Result<ProofEnum>
 where
     T: ProverTester,
 {
@@ -396,7 +333,8 @@ where
         .join("dev")
         .join("verifier")
         .join("verifier.bin");
-    let verifier = scroll_zkvm_verifier::verifier::UniversalVerifier::setup(Some(&path_verifier_code))?;
+    let verifier =
+        scroll_zkvm_verifier::verifier::UniversalVerifier::setup(Some(&path_verifier_code))?;
 
     // Try reading proof from cache if available, and early return in that case.
     let task_id = witness.identifier();
@@ -432,7 +370,7 @@ where
         &vk,
     )?;
 
-    Ok((proof, verifier, path_assets))
+    Ok(proof)
 }
 
 #[test]

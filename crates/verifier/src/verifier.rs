@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 /// Proving key for STARK aggregation. Primarily used to aggregate
 /// [continuation proofs][openvm_sdk::prover::vm::ContinuationVmProof].
 pub static AGG_STARK_PROVING_KEY: Lazy<AggProvingKey> =
-    Lazy::new(||  Sdk::riscv32().agg_pk().clone());
+    Lazy::new(|| Sdk::riscv32().agg_pk().clone());
 
 pub struct UniversalVerifier {
     pub evm_verifier: Option<Vec<u8>>,
@@ -27,7 +27,10 @@ impl UniversalVerifier {
         let agg_vk = AGG_STARK_PROVING_KEY.get_agg_vk();
 
         tracing::info!("verifier setup done");
-        Ok(Self { evm_verifier, agg_vk })
+        Ok(Self {
+            evm_verifier,
+            agg_vk,
+        })
     }
 
     pub fn verify_stark_proof(&self, stark_proof: &StarkProof, vk: &[u8]) -> eyre::Result<()> {
@@ -50,12 +53,8 @@ impl UniversalVerifier {
         let expected_app_commit = AppExecutionCommit {
             app_exe_commit: CommitBytes::from_u32_digest(&prog_commit.exe),
             app_vm_commit: CommitBytes::from_u32_digest(&prog_commit.vm),
-        };    
-        Sdk::verify_proof(
-            &self.agg_vk,
-            expected_app_commit,
-            &vm_stark_proof,
-        )?;
+        };
+        Sdk::verify_proof(&self.agg_vk, expected_app_commit, &vm_stark_proof)?;
 
         Ok(())
     }
@@ -136,7 +135,8 @@ mod tests {
                 .join("bundle-proof-phase2.json"),
         )?;
 
-        let verifier = UniversalVerifier::setup(Some(Path::new(PATH_TESTDATA).join("verifier.bin")))?;
+        let verifier =
+            UniversalVerifier::setup(Some(Path::new(PATH_TESTDATA).join("verifier.bin")))?;
 
         verifier.verify_evm_proof(
             &evm_proof.proof.into_evm_proof().unwrap().into(),
