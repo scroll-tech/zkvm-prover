@@ -38,27 +38,24 @@ pub struct ProgramCommitment {
 impl ProgramCommitment {
     pub fn deserialize(commitment_bytes: &[u8]) -> Self {
         // TODO: temporary skip deserialize if no vk is provided
-        assert_eq!(commitment_bytes.len(), 64);
-        let mut exe: [u32; 8] = [0; 8];
-        for (i, bytes4) in commitment_bytes[..32].chunks(4).enumerate() {
-            let bytes: [u8; 4] = bytes4.try_into().unwrap();
-            exe[i] = u32::from_le_bytes(bytes);
+        if commitment_bytes.is_empty() {
+            return Default::default();
         }
 
-        let mut vm: [u32; 8] = [0; 8];
-        for (i, bytes4) in commitment_bytes[32..].chunks(4).enumerate() {
-            let bytes: [u8; 4] = bytes4.try_into().unwrap();
-            vm[i] = u32::from_le_bytes(bytes);
+        let archived_data =
+            rkyv::access::<ArchivedProgramCommitment, rkyv::rancor::BoxedError>(commitment_bytes)
+                .unwrap();
+
+        Self {
+            exe: archived_data.exe.map(|u32_le| u32_le.to_native()),
+            vm: archived_data.vm.map(|u32_le| u32_le.to_native()),
         }
-        Self { exe, vm }
     }
 
     pub fn serialize(&self) -> Vec<u8> {
-        self.exe
-            .iter()
-            .chain(self.vm.iter())
-            .flat_map(|u| u.to_le_bytes().into_iter())
-            .collect()
+        rkyv::to_bytes::<rkyv::rancor::BoxedError>(self)
+            .map(|v| v.to_vec())
+            .unwrap()
     }
 }
 
