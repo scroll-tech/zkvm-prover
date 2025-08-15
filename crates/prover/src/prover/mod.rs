@@ -18,7 +18,7 @@ use openvm_stark_sdk::config::baby_bear_poseidon2::{
     BabyBearPermutationEngine, BabyBearPoseidon2Engine,
 };
 use scroll_zkvm_types::{proof::OpenVmEvmProof, types_agg::ProgramCommitment};
-use scroll_zkvm_verifier::verifier::UniversalVerifier;
+use scroll_zkvm_verifier::verifier::{UniversalVerifier, AGG_STARK_PROVING_KEY};
 use tracing::instrument;
 
 // Re-export from openvm_sdk.
@@ -71,6 +71,7 @@ impl Prover {
     pub fn setup(config: ProverConfig, with_evm: bool, name: Option<&str>) -> Result<Self, Error> {
         tracing::info!("prover setup");
         let app_exe: VmExe<F> = read_object_from_file(&config.path_app_exe).unwrap();
+        let app_exe = Arc::new(app_exe);
         let mut app_config = read_app_config(&config.path_app_config)?;
         let segment_len = config.segment_len.unwrap_or(DEFAULT_SEGMENT_SIZE);
         app_config.app_vm_config.system.config = app_config
@@ -79,28 +80,17 @@ impl Prover {
             .config
             .with_max_segment_len(segment_len);
 
+        tracing::info!("setup1");
         let sdk = Sdk::new(app_config).unwrap();
-        // sdk: GenericSdk<BabyBearPoseidon2Engine, SdkVmCpuBuilder, NativeCpuBuilder>
-        let prover = sdk.prover(app_exe.clone()).unwrap();
-        //let app_pk = sdk.app_pk();
-        //let app_committed_exe = sdk
-        //    .commit_app_exe(app_pk.app_fri_params(), app_exe)
-        //    .map_err(|e| Error::Commit(e.to_string()))?;
-        //let commits = AppExecutionCommit::compute(
-        //    &app_pk.app_vm_pk.vm_config,
-        //    &app_committed_exe,
-        //    &app_pk.leaf_committed_exe,
-        //);
+        tracing::info!("setup15");
+        let sdk = sdk.with_agg_pk(AGG_STARK_PROVING_KEY.clone());
 
-        //let evm_prover = with_evm.then(Self::setup_evm_prover).transpose()?;
+        let prover = sdk.prover(app_exe.clone()).unwrap();
         tracing::info!("prover setup done");
         Ok(Self {
             sdk,
             prover,
-            app_exe: Arc::new(app_exe),
-            //app_pk: Arc::new(app_pk),
-            //evm_prover,
-            //commits,
+            app_exe,
             config,
             prover_name: name.unwrap_or("universal").to_string(),
         })
@@ -110,8 +100,8 @@ impl Prover {
     pub fn get_app_commitment(&self) -> ProgramCommitment {
         let commits = self.prover.app_commit();
         let exe = commits.app_exe_commit.to_u32_digest();
-        let leaf = commits.app_vm_commit.to_u32_digest();
-        ProgramCommitment { exe, vm: leaf }
+        let vm = commits.app_vm_commit.to_u32_digest();
+        ProgramCommitment { exe, vm }
     }
 
     /// Pick up loaded app commit as "vk" in proof, to distinguish from which circuit the proof comes
