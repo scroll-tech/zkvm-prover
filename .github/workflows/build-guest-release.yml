@@ -1,7 +1,6 @@
 name: Build ZKVM-Prover Guest
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - fix/build-guest-workflow
@@ -12,7 +11,7 @@ jobs:
   build-guest:
     runs-on: ubuntu-latest
     env:
-      SCROLL_ZKVM_VERSION: ${{ default(github.ref_name, 'dev') }}
+      SCROLL_ZKVM_VERSION: ${{ github.ref_name }}
       DIR_OUTPUT: releases
       AWS_REGION: us-west-2
 
