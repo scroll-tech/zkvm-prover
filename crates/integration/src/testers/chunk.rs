@@ -161,16 +161,14 @@ pub fn get_witness_from_env_or_builder(
 /// preset examples for single task
 pub fn preset_chunk() -> ChunkTaskGenerator {
     let block_range = match testing_hardfork() {
-        ForkName::EuclidV1 => (12508460u64..=12508463u64),
-        ForkName::EuclidV2 => (1u64..=4u64),
-        ForkName::Feynman => (16525000u64..=16525003u64),
+        ForkName::EuclidV1 => 12508460u64..=12508463u64,
+        ForkName::EuclidV2 => 1u64..=4u64,
+        ForkName::Feynman => 16525000u64..=16525003u64,
     };
 
     ChunkTaskGenerator {
         block_range: block_range.collect(),
-        prev_message_hash: None,
-        proof: Default::default(),
-        witness: Default::default(),
+        ..Default::default()
     }
 }
 
