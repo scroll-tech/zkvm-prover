@@ -93,11 +93,12 @@ impl std::fmt::Debug for ChunkTaskGenerator {
 
 impl ChunkTaskGenerator {
     pub fn get_or_build_witness(&mut self) -> eyre::Result<ChunkWitness> {
-        if self.witness.is_some() {
-            return Ok(self.witness.clone().unwrap());
+        if let Some(witness) = &self.witness {
+            return Ok(witness.clone());
         }
+        
         let witness = self.calculate_witness()?;
-        self.witness.replace(witness.clone());
+        self.witness = Some(witness.clone());
         Ok(witness)
     }
     pub fn get_or_build_proof(&mut self, prover: &mut Prover) -> eyre::Result<ProofEnum> {
