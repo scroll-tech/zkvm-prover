@@ -33,7 +33,7 @@ impl UniversalVerifier {
         })
     }
 
-    pub fn verify_stark_proof(&self, stark_proof: &StarkProof, vk: &[u8]) -> eyre::Result<()> {
+    pub fn verify_stark_proof(stark_proof: &StarkProof, vk: &[u8]) -> eyre::Result<()> {
         let prog_commit = serialize_vk::deserialize(vk);
 
         /*
@@ -54,7 +54,11 @@ impl UniversalVerifier {
             app_exe_commit: CommitBytes::from_u32_digest(&prog_commit.exe),
             app_vm_commit: CommitBytes::from_u32_digest(&prog_commit.vm),
         };
-        Sdk::verify_proof(&self.agg_vk, expected_app_commit, &vm_stark_proof)?;
+        Sdk::verify_proof(
+            &AGG_STARK_PROVING_KEY.get_agg_vk(),
+            expected_app_commit,
+            &vm_stark_proof,
+        )?;
 
         Ok(())
     }
@@ -91,7 +95,7 @@ mod tests {
         pub fn verify_wrapped_proof(&self, proof: &WrappedProof) -> eyre::Result<()> {
             match &proof.proof {
                 ProofEnum::Evm(p) => self.verify_evm_proof(&p.clone().into(), &proof.vk),
-                ProofEnum::Stark(p) => self.verify_stark_proof(p, &proof.vk),
+                ProofEnum::Stark(p) => Self::verify_stark_proof(p, &proof.vk),
             }
         }
     }
@@ -106,7 +110,7 @@ mod tests {
         )?;
 
         let stark_proof = chunk_proof.proof.as_stark_proof().unwrap();
-        UniversalVerifier::new().verify_stark_proof(stark_proof, &chunk_proof.vk)?;
+        UniversalVerifier::verify_stark_proof(stark_proof, &chunk_proof.vk)?;
 
         Ok(())
     }
@@ -121,7 +125,7 @@ mod tests {
         )?;
 
         let stark_proof = batch_proof.proof.as_stark_proof().unwrap();
-        UniversalVerifier::new().verify_stark_proof(stark_proof, &batch_proof.vk)?;
+        UniversalVerifier::verify_stark_proof(stark_proof, &batch_proof.vk)?;
 
         Ok(())
     }

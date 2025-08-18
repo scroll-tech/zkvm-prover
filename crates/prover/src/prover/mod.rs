@@ -18,7 +18,7 @@ use openvm_stark_sdk::config::baby_bear_poseidon2::{
     BabyBearPermutationEngine, BabyBearPoseidon2Engine,
 };
 use scroll_zkvm_types::{proof::OpenVmEvmProof, types_agg::ProgramCommitment, utils::serialize_vk};
-use scroll_zkvm_verifier::verifier::{UniversalVerifier, AGG_STARK_PROVING_KEY};
+use scroll_zkvm_verifier::verifier::{AGG_STARK_PROVING_KEY, UniversalVerifier};
 use tracing::instrument;
 
 // Re-export from openvm_sdk.

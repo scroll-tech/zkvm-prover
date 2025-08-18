@@ -37,6 +37,8 @@ use snark_verifier_sdk::snark_verifier::loader::evm::compile_solidity;
 
 mod verifier;
 
+const LOG_PREFIX: &str = "[build-guest]";
+
 /// File descriptor for app openvm config.
 const FD_APP_CONFIG: &str = "openvm.toml";
 

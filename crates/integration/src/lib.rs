@@ -148,7 +148,6 @@ pub trait ProverTester {
             ..Default::default()
         };
 
-
         let prover = scroll_zkvm_prover::Prover::setup(config, with_evm, Some(Self::NAME))?;
 
         Ok(prover)
@@ -303,8 +302,10 @@ pub fn prove_verify<T: ProverTester>(
     };
 
     // Verify proof.
-    UniversalVerifier::new()
-        .verify_stark_proof(proof.as_stark_proof().expect("should be stark proof"), &vk)?;
+    UniversalVerifier::verify_stark_proof(
+        proof.as_stark_proof().expect("should be stark proof"),
+        &vk,
+    )?;
 
     Ok(proof)
 }

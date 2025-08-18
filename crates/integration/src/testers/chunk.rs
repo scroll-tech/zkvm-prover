@@ -101,17 +101,6 @@ impl ChunkTaskGenerator {
     }
 
     pub fn calculate_witness(&mut self) -> eyre::Result<ChunkWitness> {
-    pub fn get_or_build_proof(&mut self, prover: &mut Prover) -> eyre::Result<ProofEnum> {
-        if let Some(proof) = &self.proof {
-            return Ok(proof.clone());
-        }
-        let wit = self.get_or_build_witness()?;
-        let proof = prove_verify::<ChunkProverTester>(prover, &wit, &[])?;
-        self.proof.replace(proof.clone());
-        Ok(proof)
-    }
-
-    pub fn calculate_witness(&mut self) -> eyre::Result<ChunkWitness> {
         let paths: Vec<PathBuf> = self
             .block_range
             .iter()
