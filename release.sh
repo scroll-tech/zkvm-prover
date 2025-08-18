@@ -5,8 +5,6 @@ if [ -z "${SCROLL_ZKVM_VERSION}" ]; then
   echo "SCROLL_ZKVM_VERSION not set"
   exit 1
 else
-  # normalize version to remove leading 'v' if present
-  SCROLL_ZKVM_VERSION=${SCROLL_ZKVM_VERSION#v}
   VERIFIER_RELEASES_DIR="releases/${SCROLL_ZKVM_VERSION}"
 fi
 
