@@ -10,6 +10,8 @@ version.workspace = true
 [dependencies]
 alloy-primitives = { workspace = true }
 alloy-serde.workspace = true
+alloy-sol-types.workspace = true
+ecies.workspace = true
 rkyv.workspace = true
 sbv-primitives = { workspace = true, features = ["scroll-consensus-types", "scroll-reth-types", "scroll-reth-primitives-types", "reth-primitives-types"] }
 serde.workspace = true
@@ -17,6 +19,7 @@ itertools.workspace = true
 sha3 = "0.10.8"
 sha2 = "0.10.8"
 tiny-keccak.workspace = true
+thiserror.workspace = true
 
 [features]
 default = []

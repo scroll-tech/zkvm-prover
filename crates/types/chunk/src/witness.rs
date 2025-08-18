@@ -1,8 +1,14 @@
 use alloy_primitives::B256;
 use rkyv::util::AlignedVec;
 use sbv_core::verifier::StateCommitMode;
+use sbv_primitives::types::consensus::TxL1Message;
+use sbv_primitives::types::reth::primitives::{Block, RecoveredBlock};
 use sbv_primitives::{U256, types::BlockWitness};
 use std::collections::HashSet;
+use std::iter;
+use types_base::fork_name::ArchivedForkName;
+use types_base::public_inputs::chunk::ChunkExt;
+use types_base::public_inputs::chunk::validium::{QueueTransaction, SecretKey};
 use types_base::{fork_name::ForkName, public_inputs::chunk::ChunkInfo};
 
 /// The witness type accepted by the chunk-circuit.
@@ -36,7 +42,7 @@ pub struct ChunkWitnessEuclid {
     rkyv::Serialize,
 )]
 #[rkyv(derive(Debug))]
-pub struct ChunkWitness {
+pub struct ChunkWitnessFeynman {
     /// The block witness for each block in the chunk.
     pub blocks: Vec<BlockWitness>,
     /// The on-chain rolling L1 message queue hash before enqueueing any L1 msg tx from the chunk.
@@ -49,6 +55,32 @@ pub struct ChunkWitness {
     pub state_commit_mode: StateCommitMode,
 }
 
+/// The witness type accepted by the chunk-circuit.
+#[derive(
+    Clone,
+    Debug,
+    serde::Deserialize,
+    serde::Serialize,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
+#[rkyv(derive(Debug))]
+pub struct ChunkWitness {
+    /// The block witness for each block in the chunk.
+    pub blocks: Vec<BlockWitness>,
+    /// The on-chain rolling L1 message queue hash before enqueueing any L1 msg tx from the chunk.
+    pub prev_msg_queue_hash: B256,
+    /// The code version specify the chain spec
+    pub fork_name: ForkName,
+    /// The compression ratios for each block in the chunk.
+    pub compression_ratios: Vec<Vec<U256>>,
+    /// The mode of state commitment for the chunk.
+    pub state_commit_mode: StateCommitMode,
+    /// Validium encrypted txs and secret key if this is a validium chain.
+    pub validium: Option<(Vec<Vec<QueueTransaction>>, Box<[u8]>)>,
+}
+
 #[derive(Clone, Debug)]
 pub struct ChunkDetails {
     pub num_blocks: usize,
@@ -57,7 +89,35 @@ pub struct ChunkDetails {
 }
 
 impl ChunkWitness {
-    pub fn new(blocks: &[BlockWitness], prev_msg_queue_hash: B256, fork_name: ForkName) -> Self {
+    pub fn new_scroll(
+        blocks: &[BlockWitness],
+        prev_msg_queue_hash: B256,
+        fork_name: ForkName,
+    ) -> Self {
+        Self::new(blocks, prev_msg_queue_hash, fork_name, None)
+    }
+
+    pub fn new_validium(
+        blocks: &[BlockWitness],
+        prev_msg_queue_hash: B256,
+        fork_name: ForkName,
+        validium_txs: Vec<Vec<QueueTransaction>>,
+        secret_key: SecretKey,
+    ) -> Self {
+        Self::new(
+            blocks,
+            prev_msg_queue_hash,
+            fork_name,
+            Some((validium_txs, secret_key.to_bytes())),
+        )
+    }
+
+    pub fn new(
+        blocks: &[BlockWitness],
+        prev_msg_queue_hash: B256,
+        fork_name: ForkName,
+        validium: Option<(Vec<Vec<QueueTransaction>>, Box<[u8]>)>,
+    ) -> Self {
         let num_codes = blocks.iter().map(|w| w.codes.len()).sum();
         let num_states = blocks.iter().map(|w| w.states.len()).sum();
         let mut codes = HashSet::with_capacity(num_codes);
@@ -96,8 +156,21 @@ impl ChunkWitness {
             fork_name,
             compression_ratios,
             state_commit_mode: StateCommitMode::Auto,
+            validium,
         }
     }
+
+    /// Convert the `ChunkWitness` into a `ChunkWitnessFeynman`.
+    pub fn into_feynman(self) -> ChunkWitnessFeynman {
+        ChunkWitnessFeynman {
+            blocks: self.blocks,
+            prev_msg_queue_hash: self.prev_msg_queue_hash,
+            fork_name: self.fork_name,
+            compression_ratios: self.compression_ratios,
+            state_commit_mode: self.state_commit_mode,
+        }
+    }
+
     /// Convert the `ChunkWitness` into a `ChunkWitnessEuclid`.
     pub fn into_euclid(self) -> ChunkWitnessEuclid {
         ChunkWitnessEuclid {
@@ -106,6 +179,7 @@ impl ChunkWitness {
             fork_name: self.fork_name,
         }
     }
+
     /// `guest_version` is related to the guest program.
     /// It is not always same with the evm hardfork.
     /// For example, a `Feynman` guest program can execute `EuclidV2` blocks.
@@ -147,5 +221,47 @@ impl TryFrom<&ArchivedChunkWitness> for ChunkInfo {
 
     fn try_from(value: &ArchivedChunkWitness) -> Result<Self, Self::Error> {
         crate::execute(value)
+    }
+}
+
+pub trait ChunkWitnessExt {
+    fn legacy_data_hash(&self, blocks: &[RecoveredBlock<Block>]) -> Option<B256>;
+
+    fn rolling_msg_queue_hash(&self, blocks: &[RecoveredBlock<Block>]) -> Option<B256>;
+}
+
+impl ChunkWitnessExt for ArchivedChunkWitness {
+    #[inline]
+    fn legacy_data_hash(&self, blocks: &[RecoveredBlock<Block>]) -> Option<B256> {
+        (self.fork_name < ArchivedForkName::EuclidV2).then(|| blocks.legacy_data_hash())
+    }
+
+    #[inline]
+    fn rolling_msg_queue_hash(&self, blocks: &[RecoveredBlock<Block>]) -> Option<B256> {
+        if self.fork_name < ArchivedForkName::EuclidV2 {
+            return None;
+        }
+
+        let prev_msg_queue_hash: B256 = self.prev_msg_queue_hash.into();
+
+        let rolling_msg_queue_hash = match self.validium.as_ref() {
+            None => blocks.rolling_msg_queue_hash(
+                prev_msg_queue_hash,
+                iter::repeat_n(None::<(Vec<TxL1Message>, &SecretKey)>, blocks.len()),
+            ),
+            Some(validium) => {
+                let secret_key =
+                    SecretKey::try_from_bytes(validium.1.as_ref()).expect("invalid secret key");
+                blocks.rolling_msg_queue_hash(
+                    prev_msg_queue_hash,
+                    validium
+                        .0
+                        .iter()
+                        .map(|txs| Some((txs.iter().map(|tx| tx.into()), &secret_key))),
+                )
+            }
+        };
+
+        Some(rolling_msg_queue_hash)
     }
 }

@@ -117,7 +117,7 @@ impl ChunkTaskGenerator {
             .map(read_block_witness)
             .collect::<eyre::Result<Vec<BlockWitness>>>()?;
 
-        let witness = ChunkWitness::new(
+        let witness = ChunkWitness::new_scroll(
             &block_witnesses,
             self.prev_message_hash
                 .unwrap_or_else(|| B256::repeat_byte(1u8)),
@@ -141,7 +141,7 @@ pub fn get_witness_from_env_or_builder(
         .iter()
         .map(read_block_witness)
         .collect::<eyre::Result<Vec<BlockWitness>>>()?;
-    Ok(ChunkWitness::new(
+    Ok(ChunkWitness::new_scroll(
         &block_witnesses,
         B256::repeat_byte(1u8),
         testing_hardfork(),

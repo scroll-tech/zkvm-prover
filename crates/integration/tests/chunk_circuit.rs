@@ -74,7 +74,7 @@ fn test_autofill_trie_nodes() -> eyre::Result<()> {
 
     let mut template_wit = get_witness_from_env_or_builder(&mut preset_chunk())?;
     template_wit.blocks.truncate(1);
-    let wit = ChunkWitness::new(
+    let wit = ChunkWitness::new_scroll(
         &template_wit.blocks,
         template_wit.prev_msg_queue_hash,
         template_wit.fork_name,
