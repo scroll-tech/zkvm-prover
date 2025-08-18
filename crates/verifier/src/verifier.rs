@@ -3,7 +3,7 @@ use openvm_sdk::commit::AppExecutionCommit;
 use openvm_sdk::keygen::{AggProvingKey, AggVerifyingKey};
 use openvm_sdk::{Sdk, commit::CommitBytes};
 use scroll_zkvm_types::proof::OpenVmEvmProof;
-use scroll_zkvm_types::{proof::StarkProof, types_agg::ProgramCommitment};
+use scroll_zkvm_types::{proof::StarkProof, utils::serialize_vk};
 use std::path::{Path, PathBuf};
 
 /// Proving key for STARK aggregation. Primarily used to aggregate
@@ -34,7 +34,7 @@ impl UniversalVerifier {
     }
 
     pub fn verify_stark_proof(&self, stark_proof: &StarkProof, vk: &[u8]) -> eyre::Result<()> {
-        let prog_commit = ProgramCommitment::deserialize(vk);
+        let prog_commit = serialize_vk::deserialize(vk);
 
         /*
         if stark_proof.exe_commitment != prog_commit.exe {
@@ -60,7 +60,7 @@ impl UniversalVerifier {
     }
 
     pub fn verify_evm_proof(&self, evm_proof: &OpenVmEvmProof, vk: &[u8]) -> eyre::Result<()> {
-        let prog_commit = ProgramCommitment::deserialize(vk);
+        let prog_commit = serialize_vk::deserialize(vk);
 
         if evm_proof.app_commit.app_exe_commit.to_u32_digest() != prog_commit.exe {
             eyre::bail!("evm: mismatch EXE commitment");

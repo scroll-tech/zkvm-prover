@@ -48,11 +48,10 @@ impl ProverTester for BundleProverTester {
     const DIR_ASSETS: &str = "bundle";
 }
 
-//#[derive(Debug)]
 pub struct BundleTaskGenerator {
     witness: Option<BundleWitness>,
     batch_generators: Vec<BatchTaskGenerator>,
-    pub proof: Option<ProofEnum>,
+    proof: Option<ProofEnum>,
 }
 
 impl BundleTaskGenerator {

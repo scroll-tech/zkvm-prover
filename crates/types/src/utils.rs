@@ -38,6 +38,33 @@ pub mod as_base64 {
     }
 }
 
+pub mod serialize_vk {
+    use types_base::aggregation::ProgramCommitment;
+    pub fn deserialize(commitment_bytes: &[u8]) -> ProgramCommitment {
+        let mut exe: [u32; 8] = [0; 8];
+        for (i, bytes4) in commitment_bytes[..32].chunks(4).enumerate() {
+            let bytes: [u8; 4] = bytes4.try_into().unwrap();
+            exe[i] = u32::from_le_bytes(bytes);
+        }
+
+        let mut vm: [u32; 8] = [0; 8];
+        for (i, bytes4) in commitment_bytes[32..].chunks(4).enumerate() {
+            let bytes: [u8; 4] = bytes4.try_into().unwrap();
+            vm[i] = u32::from_le_bytes(bytes);
+        }
+        ProgramCommitment { exe, vm }
+    }
+
+    pub fn serialize(commit: &ProgramCommitment) -> Vec<u8> {
+        commit
+            .exe
+            .iter()
+            .chain(commit.vm.iter())
+            .flat_map(|u| u.to_le_bytes().into_iter())
+            .collect()
+    }
+}
+
 pub mod point_eval {
     use super::sha256_rv32;
     use c_kzg;

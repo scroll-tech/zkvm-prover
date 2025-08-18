@@ -53,7 +53,6 @@ pub struct BatchTaskGenerator {
     witness: Option<BatchWitness>,
     chunk_generators: Vec<ChunkTaskGenerator>,
     last_witness: Option<BatchWitness>,
-    //pub witness: Option<ChunkWitness>,
     pub proof: Option<ProofEnum>,
 }
 

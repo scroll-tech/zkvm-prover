@@ -80,27 +80,27 @@ pub struct ChunkTaskGenerator {
     pub proof: Option<ProofEnum>,
 }
 
-impl std::fmt::Debug for ChunkTaskGenerator {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("ChunkTaskGenerator")
-            .field("block_range", &self.block_range)
-            .field("prev_message_hash", &self.prev_message_hash)
-            .field("witness_is_some", &self.witness.is_some())
-            .field("proof_is_some", &self.proof.is_some())
-            .finish()
-    }
-}
-
 impl ChunkTaskGenerator {
     pub fn get_or_build_witness(&mut self) -> eyre::Result<ChunkWitness> {
         if let Some(witness) = &self.witness {
             return Ok(witness.clone());
         }
-        
+
         let witness = self.calculate_witness()?;
         self.witness = Some(witness.clone());
         Ok(witness)
     }
+    pub fn get_or_build_proof(&mut self, prover: &mut Prover) -> eyre::Result<ProofEnum> {
+        if let Some(proof) = &self.proof {
+            return Ok(proof.clone());
+        }
+        let wit = self.get_or_build_witness()?;
+        let proof = prove_verify::<ChunkProverTester>(prover, &wit, &[])?;
+        self.proof.replace(proof.clone());
+        Ok(proof)
+    }
+
+    pub fn calculate_witness(&mut self) -> eyre::Result<ChunkWitness> {
     pub fn get_or_build_proof(&mut self, prover: &mut Prover) -> eyre::Result<ProofEnum> {
         if let Some(proof) = &self.proof {
             return Ok(proof.clone());

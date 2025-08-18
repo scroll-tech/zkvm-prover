@@ -148,8 +148,8 @@ pub trait ProverTester {
             ..Default::default()
         };
 
-        let prover = scroll_zkvm_prover::Prover::setup(config, with_evm, Some(Self::NAME))
-            .map_err(|e| eyre::eyre!("Failed to setup prover: {}", e))?;
+
+        let prover = scroll_zkvm_prover::Prover::setup(config, with_evm, Some(Self::NAME))?;
 
         Ok(prover)
     }
