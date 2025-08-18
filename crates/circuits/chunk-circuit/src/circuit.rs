@@ -1,4 +1,5 @@
 use openvm::init;
+use rkyv::rancor;
 use scroll_zkvm_types_chunk::ArchivedChunkWitness;
 use scroll_zkvm_types_circuit::{
     Circuit,
@@ -37,7 +38,7 @@ impl Circuit for ChunkCircuit {
     fn validate(witness: &Self::Witness) -> Self::PublicInputs {
         (
             ChunkInfo::try_from(witness).expect("failed to execute chunk"),
-            (&witness.fork_name).into(),
+            rkyv::deserialize::<_, rancor::BoxedError>(&witness.fork_name).unwrap(),
         )
     }
 }

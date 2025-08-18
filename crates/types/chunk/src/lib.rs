@@ -1,5 +1,3 @@
-mod utils;
-
 mod witness;
 
 pub use witness::{ArchivedChunkWitness, ChunkWitness};
