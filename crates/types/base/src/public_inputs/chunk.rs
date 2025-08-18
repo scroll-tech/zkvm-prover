@@ -395,8 +395,6 @@ impl BlockChunkExt for RecoveredBlock<Block> {
 
     #[inline]
     fn hash_msg_queue(&self, initial_queue_hash: &B256) -> B256 {
-        use tiny_keccak::Hasher;
-
         let mut rolling_hash = *initial_queue_hash;
         for tx in self
             .body()
@@ -404,7 +402,7 @@ impl BlockChunkExt for RecoveredBlock<Block> {
             .iter()
             .filter(|tx| tx.is_l1_message())
         {
-            let mut hasher = tiny_keccak::Keccak::v256();
+            let mut hasher = Keccak::v256();
             hasher.update(rolling_hash.as_slice());
             hasher.update(tx.tx_hash().as_slice());
 
