@@ -40,7 +40,10 @@ impl Circuit for BatchCircuit {
     }
 
     fn validate(witness: &Self::Witness) -> Self::PublicInputs {
-        (BatchInfo::from(witness), rkyv::deserialize::<_, rancor::BoxedError>(&witness.fork_name).unwrap())
+        (
+            BatchInfo::from(witness),
+            rkyv::deserialize::<_, rancor::BoxedError>(&witness.fork_name).unwrap(),
+        )
     }
 }
 

@@ -33,7 +33,10 @@ impl Circuit for BundleCircuit {
     }
 
     fn validate(witness: &Self::Witness) -> Self::PublicInputs {
-        (BundleInfo::from(witness), rkyv::deserialize::<_, rancor::BoxedError>(&witness.fork_name).unwrap())
+        (
+            BundleInfo::from(witness),
+            rkyv::deserialize::<_, rancor::BoxedError>(&witness.fork_name).unwrap(),
+        )
     }
 }
 
