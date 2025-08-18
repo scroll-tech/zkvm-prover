@@ -14,6 +14,7 @@ scroll-zkvm-types-batch.workspace = true
 alloy-primitives = { workspace = true, features = ["tiny-keccak"] }
 rkyv.workspace = true
 bincode_v1.workspace = true
+hex.workspace = true
 sbv-primitives = { workspace = true }
 tracing.workspace = true
 metrics.workspace = true
@@ -30,7 +31,6 @@ openvm-stark-sdk = { workspace = true, default-features = false }
 
 base64 = "0.22"
 git-version = "0.3.5"
-hex = "0.4"
 munge = "=0.4.1"
 once_cell = "1.20"
 serde = "1.0"
