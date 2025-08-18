@@ -4,6 +4,7 @@ use std::{
 };
 
 use sbv_primitives::{B256, types::BlockWitness};
+use scroll_zkvm_prover::Prover;
 use scroll_zkvm_types::{
     chunk::{ChunkInfo, ChunkWitness},
     proof::ProofEnum,
@@ -11,7 +12,7 @@ use scroll_zkvm_types::{
 };
 
 use crate::{
-    PartialProvingTask, ProverTester, TestTaskBuilder, testdata_fork_directory,
+    PartialProvingTask, ProverTester, prove_verify, testdata_fork_directory,
     testers::PATH_TESTDATA, testing_hardfork, utils::metadata_from_chunk_witnesses,
 };
 
@@ -70,19 +71,39 @@ impl ProverTester for ChunkProverTester {
 
     const DIR_ASSETS: &str = "chunk";
 }
-
 /// Generator collect a range of block witnesses from test data
-#[derive(Clone, Debug)]
+#[derive(Clone, Default)]
 pub struct ChunkTaskGenerator {
-    pub block_range: std::ops::RangeInclusive<u64>,
+    pub block_range: Vec<u64>,
     pub prev_message_hash: Option<B256>,
+    pub witness: Option<ChunkWitness>,
+    pub proof: Option<ProofEnum>,
 }
 
-impl TestTaskBuilder<ChunkProverTester> for ChunkTaskGenerator {
-    fn gen_proving_witnesses(&self) -> eyre::Result<ChunkWitness> {
+impl ChunkTaskGenerator {
+    pub fn get_or_build_witness(&mut self) -> eyre::Result<ChunkWitness> {
+        if let Some(witness) = &self.witness {
+            return Ok(witness.clone());
+        }
+
+        let witness = self.calculate_witness()?;
+        self.witness = Some(witness.clone());
+        Ok(witness)
+    }
+    pub fn get_or_build_proof(&mut self, prover: &mut Prover) -> eyre::Result<ProofEnum> {
+        if let Some(proof) = &self.proof {
+            return Ok(proof.clone());
+        }
+        let wit = self.get_or_build_witness()?;
+        let proof = prove_verify::<ChunkProverTester>(prover, &wit, &[])?;
+        self.proof.replace(proof.clone());
+        Ok(proof)
+    }
+
+    pub fn calculate_witness(&mut self) -> eyre::Result<ChunkWitness> {
         let paths: Vec<PathBuf> = self
             .block_range
-            .clone()
+            .iter()
             .map(|block_n| {
                 Path::new(PATH_TESTDATA)
                     .join(testdata_fork_directory())
@@ -95,26 +116,25 @@ impl TestTaskBuilder<ChunkProverTester> for ChunkTaskGenerator {
             .iter()
             .map(read_block_witness)
             .collect::<eyre::Result<Vec<BlockWitness>>>()?;
-        Ok(ChunkWitness::new(
+
+        let witness = ChunkWitness::new(
             &block_witnesses,
             self.prev_message_hash
                 .unwrap_or_else(|| B256::repeat_byte(1u8)),
             testing_hardfork(),
-        ))
-    }
+        );
 
-    fn gen_agg_proofs(&self) -> eyre::Result<Vec<ProofEnum>> {
-        Ok(Vec::new())
+        Ok(witness)
     }
 }
 
 /// helper func to gen a series of proving tasks, specified by the block number
 pub fn get_witness_from_env_or_builder(
-    fallback_generator: &ChunkTaskGenerator,
+    fallback_generator: &mut ChunkTaskGenerator,
 ) -> eyre::Result<ChunkWitness> {
     let paths: Vec<PathBuf> = match std::env::var("TRACE_PATH") {
         Ok(paths) => glob::glob(&paths)?.filter_map(|entry| entry.ok()).collect(),
-        Err(_) => return fallback_generator.gen_proving_witnesses(),
+        Err(_) => return fallback_generator.get_or_build_witness(),
     };
 
     let block_witnesses = paths
@@ -137,8 +157,8 @@ pub fn preset_chunk() -> ChunkTaskGenerator {
     };
 
     ChunkTaskGenerator {
-        block_range,
-        prev_message_hash: None,
+        block_range: block_range.collect(),
+        ..Default::default()
     }
 }
 
@@ -149,11 +169,13 @@ pub fn create_canonical_tasks(
     let mut ret = Vec::new();
     let mut prev_message_hash = None;
     for r in ranges {
-        let canonical_generator = ChunkTaskGenerator {
-            block_range: r,
+        let mut canonical_generator = ChunkTaskGenerator {
+            block_range: r.collect(),
             prev_message_hash,
+            proof: Default::default(),
+            witness: Default::default(),
         };
-        let chunk_wit = canonical_generator.gen_proving_witnesses()?;
+        let chunk_wit = canonical_generator.get_or_build_witness()?;
         let info = metadata_from_chunk_witnesses(&chunk_wit)?;
 
         prev_message_hash = Some(info.post_msg_queue_hash);
