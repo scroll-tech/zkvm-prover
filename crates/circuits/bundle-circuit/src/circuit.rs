@@ -1,3 +1,4 @@
+use std::convert::Infallible;
 use alloy_primitives::B256;
 use scroll_zkvm_types_bundle::ArchivedBundleWitness;
 use scroll_zkvm_types_circuit::{
@@ -13,7 +14,6 @@ use crate::child_commitments;
 
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use openvm_keccak256_guest;
-use rkyv::rancor;
 
 #[derive(Default)]
 pub struct BundleCircuit;
@@ -35,7 +35,7 @@ impl Circuit for BundleCircuit {
     fn validate(witness: &Self::Witness) -> Self::PublicInputs {
         (
             BundleInfo::from(witness),
-            rkyv::deserialize::<_, rancor::BoxedError>(&witness.fork_name).unwrap(),
+            rkyv::deserialize::<_, Infallible>(&witness.fork_name).unwrap(),
         )
     }
 }
@@ -61,7 +61,7 @@ impl AggCircuit for BundleCircuit {
     }
 
     fn aggregated_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs> {
-        let fork_name = rkyv::deserialize::<_, rancor::BoxedError>(&witness.fork_name).unwrap();
+        let fork_name = rkyv::deserialize::<_, Infallible>(&witness.fork_name).unwrap();
         witness
             .batch_infos
             .iter()

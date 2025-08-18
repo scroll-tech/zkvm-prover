@@ -1,5 +1,5 @@
+use std::convert::Infallible;
 use alloy_primitives::B256;
-use rkyv::rancor;
 use scroll_zkvm_types_batch::ArchivedBatchWitness;
 use scroll_zkvm_types_circuit::{
     AggCircuit, AggregationInput, Circuit, ProgramCommitment,
@@ -42,7 +42,7 @@ impl Circuit for BatchCircuit {
     fn validate(witness: &Self::Witness) -> Self::PublicInputs {
         (
             BatchInfo::from(witness),
-            rkyv::deserialize::<_, rancor::BoxedError>(&witness.fork_name).unwrap(),
+            rkyv::deserialize::<_, Infallible>(&witness.fork_name).unwrap(),
         )
     }
 }
@@ -68,7 +68,7 @@ impl AggCircuit for BatchCircuit {
     }
 
     fn aggregated_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs> {
-        let fork_name = rkyv::deserialize::<_, rancor::BoxedError>(&witness.fork_name).unwrap();
+        let fork_name = rkyv::deserialize::<_, Infallible>(&witness.fork_name).unwrap();
         witness
             .chunk_infos
             .iter()
