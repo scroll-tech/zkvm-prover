@@ -1,8 +1,8 @@
 use alloy_primitives::B256;
 use rkyv::util::AlignedVec;
+use sbv_core::verifier::StateCommitMode;
 use sbv_primitives::{U256, types::BlockWitness};
 use std::collections::HashSet;
-use sbv_core::verifier::StateCommitMode;
 use types_base::{fork_name::ForkName, public_inputs::chunk::ChunkInfo};
 
 /// The witness type accepted by the chunk-circuit.
