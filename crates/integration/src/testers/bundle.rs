@@ -3,6 +3,7 @@ use scroll_zkvm_types::{
     bundle::{BundleInfo, BundleWitness},
     proof::ProofEnum,
     public_inputs::ForkName,
+    utils::serialize_vk,
 };
 
 // Only related to hardcoded commitments. Can be refactored later.
@@ -98,13 +99,12 @@ impl BundleTaskGenerator {
 
     fn calculate_bundle_witness(&self) -> eyre::Result<BundleWitness> {
         use scroll_zkvm_types::{
-            public_inputs::MultiVersionPublicInputs,
-            types_agg::{AggregationInput, ProgramCommitment},
+            public_inputs::MultiVersionPublicInputs, types_agg::AggregationInput,
         };
 
         let fork_name = testing_hardfork();
         let vk = BatchProverTester::load_prover(false)?.get_app_vk();
-        let commitment = ProgramCommitment::deserialize(&vk);
+        let commitment = serialize_vk::deserialize(&vk);
         let mut batch_proofs = Vec::new();
         let mut batch_infos: Vec<BatchInfo> = Vec::new();
 
