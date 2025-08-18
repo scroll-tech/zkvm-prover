@@ -29,27 +29,22 @@ chunk_vk=$(jq -r '.chunk_vk' "$VK_JSON")
 batch_vk=$(jq -r '.batch_vk' "$VK_JSON")
 bundle_vk=$(jq -r '.bundle_vk' "$VK_JSON")
 
-# Convert base64 strings to URL-safe format
-chunk_vk_safe=$(echo "$chunk_vk" | tr '+/' '-_' | tr -d '=')
-batch_vk_safe=$(echo "$batch_vk" | tr '+/' '-_' | tr -d '=')
-bundle_vk_safe=$(echo "$bundle_vk" | tr '+/' '-_' | tr -d '=')
-
 # Create directories and copy files
-mkdir -p "$RELEASES_DIR/chunk/$chunk_vk_safe"
-mkdir -p "$RELEASES_DIR/batch/$batch_vk_safe"
-mkdir -p "$RELEASES_DIR/bundle/$bundle_vk_safe"
+mkdir -p "$RELEASES_DIR/chunk/$chunk_vk"
+mkdir -p "$RELEASES_DIR/batch/$chunk_vk"
+mkdir -p "$RELEASES_DIR/bundle/$chunk_vk"
 
 # Copy files from releases/dev to the new directories
-cp -r "$DEV_DIR/chunk"/* "$RELEASES_DIR/chunk/$chunk_vk_safe/"
-cp -r "$DEV_DIR/batch"/* "$RELEASES_DIR/batch/$batch_vk_safe/"
-cp -r "$DEV_DIR/bundle"/* "$RELEASES_DIR/bundle/$bundle_vk_safe/"
+cp -r "$DEV_DIR/chunk"/* "$RELEASES_DIR/chunk/$chunk_vk/"
+cp -r "$DEV_DIR/batch"/* "$RELEASES_DIR/batch/$chunk_vk/"
+cp -r "$DEV_DIR/bundle"/* "$RELEASES_DIR/bundle/$chunk_vk/"
 mkdir -p $VERIFIER_RELEASES_DIR
 mv $DEV_DIR/* $VERIFIER_RELEASES_DIR
 
 echo "Files organized for release successfully:"
-echo "  chunk files -> $RELEASES_DIR/chunk/$chunk_vk_safe"
-echo "  batch files -> $RELEASES_DIR/batch/$batch_vk_safe"
-echo "  bundle files -> $RELEASES_DIR/bundle/$bundle_vk_safe"
+echo "  chunk files -> $RELEASES_DIR/chunk/$chunk_vk"
+echo "  batch files -> $RELEASES_DIR/batch/$chunk_vk"
+echo "  bundle files -> $RELEASES_DIR/bundle/$chunk_vk"
 echo "  verifier files -> $VERIFIER_RELEASES_DIR"
 echo "  recursivly upload releases directory"
 
