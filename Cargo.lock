@@ -6506,11 +6506,13 @@ source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=mas
 dependencies = [
  "cfg-if",
  "itertools 0.14.0",
+ "rkyv",
  "sbv-helpers",
  "sbv-kv",
  "sbv-precompile",
  "sbv-primitives",
  "sbv-trie",
+ "serde",
  "thiserror 2.0.15",
 ]
 

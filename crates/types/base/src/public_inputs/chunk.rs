@@ -8,6 +8,7 @@ use sbv_primitives::types::{
     eips::Encodable2718,
     reth::primitives::{Block, RecoveredBlock, SignedTransaction, TransactionSigned},
 };
+use std::ops::Deref;
 use tiny_keccak::{Hasher, Keccak};
 
 /// Number of bytes used to serialise [`BlockContextV2`].
@@ -280,16 +281,16 @@ pub trait ChunkExt {
     /// Hash the transaction bytes.
     ///
     /// Only L2 transactions are considered while computing the digest.
-    fn tx_bytes_hash_in(self, rlp_buffer: &mut Vec<u8>) -> (usize, B256);
+    fn tx_bytes_hash_in(&self, rlp_buffer: &mut Vec<u8>) -> (usize, B256);
     /// Data hash before Euclid V2
     fn legacy_data_hash(&self) -> B256;
     /// Rolling message queue hash after Euclid V2
     fn rolling_msg_queue_hash(&self, rolling_hash: B256) -> B256;
 }
 
-impl<'a, T: AsRef<&'a [RecoveredBlock<Block>]>> ChunkExt for T {
+impl<T: Deref<Target = [RecoveredBlock<Block>]>> ChunkExt for T {
     #[inline]
-    fn tx_bytes_hash_in(self, rlp_buffer: &mut Vec<u8>) -> (usize, B256) {
+    fn tx_bytes_hash_in(&self, rlp_buffer: &mut Vec<u8>) -> (usize, B256) {
         let blocks = self.as_ref();
         blocks
             .iter()
@@ -361,11 +362,9 @@ trait BlockChunkExt {
     /// Hash the header of the block
     fn legacy_hash_da_header(&self, hasher: &mut impl tiny_keccak::Hasher);
     /// Hash the l1 messages of the block
-    fn legacy_hash_l1_msg(&self, hasher: &mut impl tiny_keccak::Hasher);
+    fn legacy_hash_l1_msg(&self, hasher: &mut impl Hasher);
     /// Hash the l1 messages of the block
     fn hash_msg_queue(&self, initial_queue_hash: &B256) -> B256;
-    /// Number of L1 msg txs in the block
-    fn num_l1_msgs(&self) -> usize;
 }
 
 impl BlockChunkExt for RecoveredBlock<Block> {
@@ -421,14 +420,5 @@ impl BlockChunkExt for RecoveredBlock<Block> {
         }
 
         rolling_hash
-    }
-
-    #[inline]
-    fn num_l1_msgs(&self) -> usize {
-        self.body()
-            .transactions
-            .iter()
-            .filter(|tx| tx.is_l1_message())
-            .count()
     }
 }
