@@ -1,4 +1,3 @@
-use std::convert::Infallible;
 use alloy_primitives::B256;
 use scroll_zkvm_types_batch::ArchivedBatchWitness;
 use scroll_zkvm_types_circuit::{
@@ -9,6 +8,7 @@ use scroll_zkvm_types_circuit::{
         chunk::VersionedChunkInfo,
     },
 };
+use std::convert::Infallible;
 
 use crate::child_commitments;
 
