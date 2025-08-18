@@ -8,6 +8,9 @@ else
   VERIFIER_RELEASES_DIR="releases/${SCROLL_ZKVM_VERSION}"
 fi
 
+# normalize version to remove leading 'v' if present
+SCROLL_ZKVM_VERSION=${SCROLL_ZKVM_VERSION#v}
+
 # Read FORKNAME from release-fork file
 FORKNAME=$(head -n 1 release-fork)
 
