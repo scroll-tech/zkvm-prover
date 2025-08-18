@@ -78,7 +78,25 @@ pub struct ChunkWitness {
     /// The mode of state commitment for the chunk.
     pub state_commit_mode: StateCommitMode,
     /// Validium encrypted txs and secret key if this is a validium chain.
-    pub validium: Option<(Vec<Vec<QueueTransaction>>, Box<[u8]>)>,
+    pub validium: Option<ValidiumInputs>,
+}
+
+/// The validium inputs for the chunk witness.
+#[derive(
+    Clone,
+    Debug,
+    serde::Deserialize,
+    serde::Serialize,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
+#[rkyv(derive(Debug))]
+pub struct ValidiumInputs {
+    /// The validium transactions for each block in the chunk.
+    pub validium_txs: Vec<Vec<QueueTransaction>>,
+    /// The secret key used for decrypting validium transactions.
+    pub secret_key: Box<[u8]>,
 }
 
 #[derive(Clone, Debug)]
@@ -108,7 +126,10 @@ impl ChunkWitness {
             blocks,
             prev_msg_queue_hash,
             fork_name,
-            Some((validium_txs, secret_key.to_bytes())),
+            Some(ValidiumInputs {
+                validium_txs,
+                secret_key: secret_key.to_bytes(),
+            }),
         )
     }
 
@@ -116,7 +137,7 @@ impl ChunkWitness {
         blocks: &[BlockWitness],
         prev_msg_queue_hash: B256,
         fork_name: ForkName,
-        validium: Option<(Vec<Vec<QueueTransaction>>, Box<[u8]>)>,
+        validium: Option<ValidiumInputs>,
     ) -> Self {
         let num_codes = blocks.iter().map(|w| w.codes.len()).sum();
         let num_states = blocks.iter().map(|w| w.states.len()).sum();
@@ -190,14 +211,15 @@ impl ChunkWitness {
         guest_version: Option<ForkName>,
     ) -> Result<AlignedVec, rkyv::rancor::Error> {
         let guest_version = guest_version.unwrap_or(self.fork_name);
-        if guest_version >= ForkName::Feynman {
-            // Use the new rkyv serialization for Feynman and later forks
-            // TODO: Validium compatibility
-            rkyv::to_bytes::<rkyv::rancor::Error>(self)
-        } else {
-            // Use the old rkyv serialization for earlier forks
-            rkyv::to_bytes::<rkyv::rancor::Error>(&self.clone().into_euclid())
-        }
+        // FIXME: Validium compatibility
+        rkyv::to_bytes::<rkyv::rancor::Error>(self)
+        // if guest_version >= ForkName::Feynman {
+        //     // Use the new rkyv serialization for Feynman and later forks
+        //     rkyv::to_bytes::<rkyv::rancor::Error>(self)
+        // } else {
+        //     // Use the old rkyv serialization for earlier forks
+        //     rkyv::to_bytes::<rkyv::rancor::Error>(&self.clone().into_euclid())
+        // }
     }
 
     pub fn stats(&self) -> ChunkDetails {
@@ -252,11 +274,11 @@ impl ChunkWitnessExt for ArchivedChunkWitness {
             ),
             Some(validium) => {
                 let secret_key =
-                    SecretKey::try_from_bytes(validium.1.as_ref()).expect("invalid secret key");
+                    SecretKey::try_from_bytes(validium.secret_key.as_ref()).expect("invalid secret key");
                 blocks.rolling_msg_queue_hash(
                     prev_msg_queue_hash,
                     validium
-                        .0
+                        .validium_txs
                         .iter()
                         .map(|txs| Some((txs.iter().map(|tx| tx.into()), &secret_key))),
                 )

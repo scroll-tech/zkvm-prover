@@ -1,3 +1,4 @@
 [patch.crates-io]
-k256 = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
-p256 = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
+# FIXME: when openvm fixes https://github.com/openvm-org/openvm/pull/1937
+k256 = { git = "https://github.com/lightsing/openvm.git", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }
+p256 = { git = "https://github.com/lightsing/openvm.git", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }

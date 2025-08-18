@@ -1,3 +1,6 @@
+use std::env;
+use std::path::Path;
+use alloy_primitives::B256;
 use eyre::Ok;
 use scroll_zkvm_integration::{
     ProverTester, prove_verify, tester_execute,
@@ -7,8 +10,13 @@ use scroll_zkvm_integration::{
     },
     utils::metadata_from_chunk_witnesses,
 };
+use scroll_zkvm_integration::testers::chunk::read_block_witness;
+use scroll_zkvm_integration::testers::PATH_TESTDATA;
 use scroll_zkvm_prover::{Prover, utils::vm::ExecutionResult};
+use scroll_zkvm_prover::utils::read_json;
 use scroll_zkvm_types::chunk::ChunkWitness;
+use scroll_zkvm_types::public_inputs::chunk::validium::{QueueTransaction, SecretKey};
+use scroll_zkvm_types::public_inputs::ForkName;
 
 fn exec_chunk(prover: &Prover, wit: &ChunkWitness) -> eyre::Result<(ExecutionResult, u64)> {
     let blk = wit.blocks[0].header.number;
@@ -63,6 +71,33 @@ fn test_execute() -> eyre::Result<()> {
     let cycle_per_gas = exec_result.total_cycle / total_gas_used;
     assert_ne!(cycle_per_gas, 0);
     assert!(cycle_per_gas <= 35);
+    Ok(())
+}
+
+#[test]
+fn test_validium_execute() -> eyre::Result<()> {
+    ChunkProverTester::setup()?;
+    let prover = ChunkProverTester::load_prover(false)?;
+
+    let base_dir = Path::new(PATH_TESTDATA).join("validium");
+
+    let secret_key = hex::decode(env::var("VALIDIUM_KEY")?)?;
+    let secret_key = SecretKey::try_from_bytes(&secret_key)?;
+
+    for blk in [1019, 1256, 1276] {
+        let block_witness = read_block_witness(base_dir.join(format!("{blk}.json")))?;
+        let validium_txs: Vec<QueueTransaction> = read_json(base_dir.join(format!("{blk}_validium_txs.json")))?;
+
+        let witness = ChunkWitness::new_validium(
+            &[block_witness],
+            B256::ZERO,
+            ForkName::EuclidV2,
+            vec![validium_txs],
+            secret_key.clone(),
+        );
+
+        exec_chunk(&prover, &witness)?;
+    }
     Ok(())
 }
 
