@@ -22,6 +22,8 @@ pub mod testers;
 
 pub mod utils;
 
+pub mod commitments;
+
 pub trait PartialProvingTask {
     fn identifier(&self) -> String;
 
@@ -143,6 +145,7 @@ pub trait ProverTester {
             ..Default::default()
         };
         let prover = scroll_zkvm_prover::Prover::setup(config, with_evm, Some(Self::NAME))?;
+
         Ok(prover)
     }
 
@@ -169,22 +172,6 @@ pub trait ProverTester {
             }
         }
         Ok(stdin)
-    }
-}
-
-/// Task generator for specified Tester
-pub trait TestTaskBuilder<T: ProverTester> {
-    /// Generate proving witnesses for test purposes.
-    fn gen_proving_witnesses(&self) -> eyre::Result<T::Witness>;
-
-    /// Generate aggregated proofs for proving witness
-    fn gen_agg_proofs(&self) -> eyre::Result<Vec<ProofEnum>>;
-
-    /// Generate proofs for the proving witness it has generated
-    fn gen_witnesses_proof(&self, prover: &Prover) -> eyre::Result<ProofEnum> {
-        let wit = self.gen_proving_witnesses()?;
-        let agg_proofs = self.gen_agg_proofs()?;
-        prove_verify::<T>(prover, &wit, &agg_proofs)
     }
 }
 
@@ -252,13 +239,6 @@ fn setup_logger() -> eyre::Result<()> {
     Ok(())
 }
 
-/// Alias for convenience.
-type ProveVerifyEvmRes = eyre::Result<(
-    ProofEnum,
-    scroll_zkvm_verifier::verifier::UniversalVerifier,
-    PathBuf,
-)>;
-
 /// Light weight testing to simply execute the vm program for test
 #[instrument("tester_execute", skip_all)]
 pub fn tester_execute<T: ProverTester>(
@@ -280,7 +260,7 @@ pub fn tester_execute<T: ProverTester>(
 /// End-to-end test for proving witnesses of the same prover.
 #[instrument(name = "prove_verify", skip_all, fields(task_id))]
 pub fn prove_verify<T: ProverTester>(
-    prover: &Prover,
+    prover: &mut Prover,
     witness: &T::Witness,
     proofs: &[ProofEnum],
 ) -> eyre::Result<ProofEnum> {
@@ -332,7 +312,7 @@ pub fn prove_verify_single_evm<T>(
     prover: &Prover,
     witness: &T::Witness,
     proofs: &[ProofEnum],
-) -> ProveVerifyEvmRes
+) -> eyre::Result<ProofEnum>
 where
     T: ProverTester,
 {
@@ -386,7 +366,7 @@ where
         &vk,
     )?;
 
-    Ok((proof, verifier, path_assets))
+    Ok(proof)
 }
 
 #[test]

@@ -1,8 +1,8 @@
 use scroll_zkvm_integration::{
-    ProverTester, TestTaskBuilder,
+    ProverTester,
     testers::{
         batch::{BatchProverTester, BatchTaskGenerator},
-        chunk::{create_canonical_tasks, preset_chunk_multiple},
+        chunk::{ChunkProverTester, create_canonical_tasks, preset_chunk_multiple},
         load_local_task,
     },
     testing_hardfork,
@@ -40,11 +40,12 @@ fn test_e2e_execute() -> eyre::Result<()> {
     BatchProverTester::setup()?;
 
     let prover = BatchProverTester::load_prover(false)?;
+    let mut chunk_prover = ChunkProverTester::load_prover(false)?;
 
-    let task = BatchTaskGenerator::from_chunk_tasks(&preset_chunk_multiple(), None);
+    let mut task = BatchTaskGenerator::from_chunk_tasks(&preset_chunk_multiple(), None);
 
-    let wit = task.gen_proving_witnesses()?;
-    let agg_proofs = task.gen_agg_proofs()?;
+    let wit = task.get_or_build_witness()?;
+    let agg_proofs = task.get_or_build_child_proofs(&mut chunk_prover)?;
 
     let stdin = BatchProverTester::build_guest_input(
         &wit,
@@ -59,10 +60,10 @@ fn test_e2e_execute() -> eyre::Result<()> {
 fn e2e() -> eyre::Result<()> {
     BatchProverTester::setup()?;
 
-    let prover = BatchProverTester::load_prover(false)?;
-
-    let _ = BatchTaskGenerator::from_chunk_tasks(&preset_chunk_multiple(), None)
-        .gen_witnesses_proof(&prover)?;
+    let mut prover = BatchProverTester::load_prover(false)?;
+    let mut chunk_prover = ChunkProverTester::load_prover(false)?;
+    let mut batch = BatchTaskGenerator::from_chunk_tasks(&preset_chunk_multiple(), None);
+    let _ = batch.get_or_build_proof(&mut prover, &mut chunk_prover)?;
 
     Ok(())
 }
@@ -90,13 +91,13 @@ fn verify_batch_hash_invariant() -> eyre::Result<()> {
         .into_iter(),
     )?;
 
-    let task_1 = BatchTaskGenerator::from_chunk_tasks(&outcome_1, None);
-    let task_2 = BatchTaskGenerator::from_chunk_tasks(&outcome_2, None);
+    let mut task_1 = BatchTaskGenerator::from_chunk_tasks(&outcome_1, None);
+    let mut task_2 = BatchTaskGenerator::from_chunk_tasks(&outcome_2, None);
 
     // verify the two task has the same blob bytes
     assert_eq!(
-        task_1.gen_proving_witnesses()?.blob_bytes,
-        task_2.gen_proving_witnesses()?.blob_bytes,
+        task_1.get_or_build_witness()?.blob_bytes,
+        task_2.get_or_build_witness()?.blob_bytes,
     );
 
     Ok(())
