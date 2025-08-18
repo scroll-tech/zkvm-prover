@@ -192,6 +192,7 @@ impl ChunkWitness {
         let guest_version = guest_version.unwrap_or(self.fork_name);
         if guest_version >= ForkName::Feynman {
             // Use the new rkyv serialization for Feynman and later forks
+            // TODO: Validium compatibility
             rkyv::to_bytes::<rkyv::rancor::Error>(self)
         } else {
             // Use the old rkyv serialization for earlier forks
