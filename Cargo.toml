@@ -58,18 +58,12 @@ openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", rev = "f48090c9febd021f8ee0349bc929a775fb1fa3ad" }
 p3-field = { git = "https://github.com/Plonky3/Plonky3.git", rev = "539bbc84085efb609f4f62cb03cf49588388abdb" }
 
-#sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = ["scroll"] }
-#sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = ["scroll", "serde", "rkyv"] }
-#sbv-kv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
-#sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
-#sbv-precompile = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
-
-sbv-core = { path = "../stateless-block-verifier/crates/core", features = ["scroll", "serde", "rkyv"] }
-sbv-helpers = { path = "../stateless-block-verifier/crates/helpers" }
-sbv-primitives = { path = "../stateless-block-verifier/crates/primitives", features = ["scroll", "serde", "rkyv"] }
-sbv-kv = { path = "../stateless-block-verifier/crates/kv" }
-sbv-trie = { path = "../stateless-block-verifier/crates/trie" }
-sbv-precompile = { path = "../stateless-block-verifier/crates/precompile" }
+sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = ["scroll"] }
+sbv-helpers = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
+sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = ["scroll", "serde", "rkyv"] }
+sbv-kv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
+sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
+sbv-precompile = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
 scroll-alloy-evm = { git = "https://github.com/scroll-tech/reth", rev = "74dd0bd368325b1286e4fe99c20e6ef0fdbaee51", default-features = false }
 
 
