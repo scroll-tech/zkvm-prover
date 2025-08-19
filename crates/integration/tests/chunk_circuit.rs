@@ -1,5 +1,10 @@
+use std::fs::File;
+use std::path::PathBuf;
+use alloy_primitives::B256;
 use eyre::{Context, ContextCompat, Ok};
-use rayon::iter::IntoParallelIterator;
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use sbv_primitives::BlockWitness;
+use scroll_zkvm_integration::utils::get_rayon_threads;
 use scroll_zkvm_integration::{
     ProverTester, prove_verify, tester_execute,
     testers::chunk::{
@@ -8,9 +13,13 @@ use scroll_zkvm_integration::{
     },
     utils::metadata_from_chunk_witnesses,
 };
-use scroll_zkvm_integration::utils::get_rayon_threads;
 use scroll_zkvm_prover::{Prover, utils::vm::ExecutionResult};
 use scroll_zkvm_types::chunk::ChunkWitness;
+use scroll_zkvm_types::public_inputs::ForkName;
+
+thread_local! {
+    static PROVER: Prover = ChunkProverTester::load_prover(false).unwrap();
+}
 
 fn exec_chunk(prover: &Prover, wit: &ChunkWitness) -> eyre::Result<(ExecutionResult, u64)> {
     let blk = wit.blocks[0].header.number;
@@ -128,15 +137,11 @@ fn test_autofill_trie_nodes() -> eyre::Result<()> {
     Ok(())
 }
 
-fn execute_multi(
-    prover: Prover,
-    proving_tasks: Vec<ChunkTaskGenerator>,
-) -> impl FnOnce() -> (u64, u64) + Send + Sync + 'static {
+fn execute_multi(wits: Vec<ChunkWitness>) -> impl FnOnce() -> (u64, u64) + Send + Sync + 'static {
     || {
-        proving_tasks
-            .into_par_iter()
-            .map(|mut task| -> (u64, u64) {
-                let (exec_result, gas) = exec_chunk(&prover, &task.get_or_build_witness().unwrap()).unwrap();
+        wits.into_par_iter()
+            .map(|wit| -> (u64, u64) {
+                let (exec_result, gas) = PROVER.with(|prover| exec_chunk(&prover, &wit).unwrap());
                 (gas, exec_result.total_cycle)
             })
             .reduce(
@@ -157,11 +162,12 @@ fn test_execute_multi() -> eyre::Result<()> {
         .num_threads(get_rayon_threads())
         .build()?;
 
-    // comment by fan@scroll.io: why we need to load prover multiple times (which is time costing)
-    let prover = ChunkProverTester::load_prover(false)?;
-
     // Execute tasks in parallel
-    let (total_gas, total_cycle) = pool.install(execute_multi(prover, preset_chunk_multiple()));
+    let tasks = preset_chunk_multiple()
+        .into_iter()
+        .map(|mut task| task.get_or_build_witness().unwrap())
+        .collect::<Vec<_>>();
+    let (total_gas, total_cycle) = pool.install(execute_multi(tasks));
 
     println!(
         "Total gas: {}, Total cycles: {}, Average cycle/gas: {}",
@@ -229,6 +235,13 @@ async fn test_scanner() -> eyre::Result<()> {
         .context("Unable to parse RPC_URL")?;
     println!("RPC URL = {}", rpc_url);
 
+    let out_path = env::var("OUT_PATH")
+        .map(|s| PathBuf::from(s))
+        .unwrap_or_else(|_| PathBuf::from("scanner.csv"));
+    println!("out_path = {}", out_path.display());
+    let out = File::create(&out_path)?;
+    let mut writer = csv::Writer::from_writer(out);
+
     ChunkProverTester::setup()?;
 
     let client = ClientBuilder::default()
@@ -258,15 +271,16 @@ async fn test_scanner() -> eyre::Result<()> {
         .get_block_number()
         .await
         .context("Failed to get the latest block number")?;
-    // fetch latest 100 blocks
+
+    // fetch latest 1000 blocks
     let n_chunks: u64 = env::var("N_CHUNKS")
         .ok()
         .and_then(|s| s.parse().ok())
-        .unwrap_or(10);
+        .unwrap_or(50);
     let chunk_size: u64 = env::var("CHUNK_SIZE")
         .ok()
         .and_then(|s| s.parse().ok())
-        .unwrap_or(10);
+        .unwrap_or(20);
     let start_block = latest_block
         .checked_sub(chunk_size * n_chunks)
         .context("Not enough blocks to fetch. Please decrease N_CHUNKS or CHUNK_SIZE.")?;
@@ -274,7 +288,7 @@ async fn test_scanner() -> eyre::Result<()> {
         "blocks = {start_block}..={latest_block}; {chunk_size} blocks chunk, {n_chunks} chunks"
     );
 
-    let witnesses = futures::future::try_join_all((start_block..=latest_block).map(|block| {
+    let blocks = futures::future::try_join_all((start_block..=latest_block).map(|block| {
         let provider = provider.clone();
         async move {
             provider
@@ -285,28 +299,54 @@ async fn test_scanner() -> eyre::Result<()> {
     }))
     .await?;
 
-    let proving_tasks = witnesses
-        .chunks_exact(chunk_size as usize)
-        .map(|witnesses| ChunkProvingTask {
-            block_witnesses: witnesses.to_vec(),
-            prev_msg_queue_hash: Default::default(),
-            fork_name: "euclidv2".to_string(),
-        })
-        .collect::<Vec<_>>();
-
+    // Initialize Rayon thread pool
     let pool = rayon::ThreadPoolBuilder::new()
-        .num_threads(get_rayon_threads().min(n_chunks as usize))
-        .build()
-        .unwrap();
+        .num_threads(get_rayon_threads())
+        .build()?;
 
-    let (total_gas, total_cycle, total_tick) = pool.install(execute_multi(proving_tasks));
+    #[derive(serde::Serialize)]
+    struct Stats {
+        start_block: u64,
+        end_block: u64,
+        tx_num: u64,
+        cycle: u64,
+        gas: u64,
+        cycle_per_gas: f64,
+    }
 
-    println!(
-        "Total gas: {}, Total cycles: {}, Average cycle/gas: {}, Average tick/gas: {}",
-        total_gas,
-        total_cycle,
-        total_cycle as f64 / total_gas as f64,
-        total_tick as f64 / total_gas as f64,
-    );
+    let stats = pool.install(move || {
+        blocks
+            .chunks_exact(chunk_size as usize)
+            .into_par_iter()
+            .map(|blocks| {
+                let wit = ChunkWitness::new(blocks, B256::ZERO, ForkName::Feynman);
+                let (exec_result, gas) = PROVER.with(|prover| exec_chunk(&prover, &wit).unwrap());
+                // Block range, tx num, cycle, gas, cycle-per_gas
+                let stats = Stats {
+                    start_block: blocks[0].header.number,
+                    end_block: blocks.last().unwrap().header.number,
+                    tx_num: blocks.iter().map( | b| b.num_transactions()).sum:: < u64>(),
+                    cycle: exec_result.total_cycle,
+                    gas,
+                    cycle_per_gas: exec_result.total_cycle as f64 / gas as f64,
+                };
+                println!(
+                    "Blocks {}..={} | Tx: {} | Cycle: {} | Gas: {} | Cycle/Gas: {:.2}",
+                    stats.start_block,
+                    stats.end_block,
+                    stats.tx_num,
+                    stats.cycle,
+                    stats.gas,
+                    stats.cycle_per_gas
+                );
+            })
+            .collect::<Vec<Stats>>()
+    });
+
+    for stat in stats {
+        writer.serialize(stat).context("Failed to write stats to CSV")?;
+    }
+    writer.flush().context("Failed to flush CSV")?;
+
     Ok(())
 }
