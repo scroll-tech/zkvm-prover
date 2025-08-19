@@ -1,4 +1,5 @@
-use eyre::Ok;
+use eyre::{Context, ContextCompat, Ok};
+use rayon::iter::IntoParallelIterator;
 use scroll_zkvm_integration::{
     ProverTester, prove_verify, tester_execute,
     testers::chunk::{
@@ -7,6 +8,7 @@ use scroll_zkvm_integration::{
     },
     utils::metadata_from_chunk_witnesses,
 };
+use scroll_zkvm_integration::utils::get_rayon_threads;
 use scroll_zkvm_prover::{Prover, utils::vm::ExecutionResult};
 use scroll_zkvm_types::chunk::ChunkWitness;
 
@@ -126,33 +128,40 @@ fn test_autofill_trie_nodes() -> eyre::Result<()> {
     Ok(())
 }
 
+fn execute_multi(
+    prover: Prover,
+    proving_tasks: Vec<ChunkTaskGenerator>,
+) -> impl FnOnce() -> (u64, u64) + Send + Sync + 'static {
+    || {
+        proving_tasks
+            .into_par_iter()
+            .map(|mut task| -> (u64, u64) {
+                let (exec_result, gas) = exec_chunk(&prover, &task.get_or_build_witness().unwrap()).unwrap();
+                (gas, exec_result.total_cycle)
+            })
+            .reduce(
+                || (0u64, 0u64),
+                |(gas1, cycle1): (u64, u64), (gas2, cycle2): (u64, u64)| {
+                    (gas1 + gas2, cycle1 + cycle2)
+                },
+            )
+    }
+}
+
 #[test]
 fn test_execute_multi() -> eyre::Result<()> {
-    // use rayon::iter::{IntoParallelIterator, ParallelIterator};
-
     ChunkProverTester::setup()?;
 
     // Initialize Rayon thread pool
     let pool = rayon::ThreadPoolBuilder::new()
         .num_threads(get_rayon_threads())
-        .build()
-        .unwrap();
+        .build()?;
+
+    // comment by fan@scroll.io: why we need to load prover multiple times (which is time costing)
+    let prover = ChunkProverTester::load_prover(false)?;
+
     // Execute tasks in parallel
-    let (total_gas, total_cycle) = pool.install(|| {
-        // comment by fan@scroll.io: why we need to load prover multiple times (which is time costing)
-        let prover = ChunkProverTester::load_prover(false).unwrap();
-        let init = (0u64, 0u64);
-        let adder =
-            |(gas1, cycle1): (u64, u64), (gas2, cycle2): (u64, u64)| (gas1 + gas2, cycle1 + cycle2);
-        preset_chunk_multiple()
-            .into_iter()
-            .map(|mut task| -> (u64, u64) {
-                let (exec_result, gas) =
-                    exec_chunk(&prover, &task.get_or_build_witness().unwrap()).unwrap();
-                (gas, exec_result.total_cycle)
-            })
-            .fold(init, adder)
-    });
+    let (total_gas, total_cycle) = pool.install(execute_multi(prover, preset_chunk_multiple()));
 
     println!(
         "Total gas: {}, Total cycles: {}, Average cycle/gas: {}",
@@ -220,7 +229,7 @@ async fn test_scanner() -> eyre::Result<()> {
         .context("Unable to parse RPC_URL")?;
     println!("RPC URL = {}", rpc_url);
 
-    MultiChunkProverTester::setup()?;
+    ChunkProverTester::setup()?;
 
     let client = ClientBuilder::default()
         .layer(RetryBackoffLayer::new(
