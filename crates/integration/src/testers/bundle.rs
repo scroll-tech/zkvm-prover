@@ -1,66 +1,147 @@
-use std::path::Path;
+use scroll_zkvm_types::{
+    batch::BatchInfo,
+    bundle::{BundleInfo, BundleWitness},
+    proof::ProofEnum,
+    public_inputs::ForkName,
+};
 
-use scroll_zkvm_prover::{ProverType, task::bundle::BundleProvingTask, utils::read_json_deep};
+// Only related to hardcoded commitments. Can be refactored later.
+use scroll_zkvm_prover::Prover;
 
-#[cfg(not(feature = "euclidv2"))]
-use scroll_zkvm_prover::BundleProverTypeEuclidV1 as BundleProverType;
-#[cfg(feature = "euclidv2")]
-use scroll_zkvm_prover::BundleProverTypeEuclidV2 as BundleProverType;
+use crate::{
+    PartialProvingTask, ProverTester, prove_verify_single_evm, testers::batch::BatchTaskGenerator,
+    testing_hardfork, utils::metadata_from_batch_witnesses,
+};
 
-use crate::{ProverTester, testers::PATH_TESTDATA};
+impl PartialProvingTask for BundleWitness {
+    fn identifier(&self) -> String {
+        let (first, last) = (
+            self.batch_infos.first().expect("MUST NOT EMPTY").batch_hash,
+            self.batch_infos.last().expect("MUST NOT EMPTY").batch_hash,
+        );
 
-#[cfg(not(feature = "euclidv2"))]
-use openvm_sdk::config::{AppConfig, SdkVmConfig};
-#[cfg(not(feature = "euclidv2"))]
-use std::path::PathBuf;
+        format!("{first}-{last}")
+    }
+
+    fn write_guest_input(&self, stdin: &mut openvm_sdk::StdIn) -> Result<(), rkyv::rancor::Error> {
+        let b = self.rkyv_serialize(None)?;
+        stdin.write_bytes(b.as_slice());
+        Ok(())
+    }
+
+    fn fork_name(&self) -> ForkName {
+        ForkName::from(self.fork_name.as_str())
+    }
+}
 
 pub struct BundleProverTester;
 
 impl ProverTester for BundleProverTester {
-    type Prover = BundleProverType;
+    type Metadata = BundleInfo;
+
+    type Witness = BundleWitness;
+
+    const NAME: &str = "bundle";
 
     const PATH_PROJECT_ROOT: &str = "crates/circuits/bundle-circuit";
 
     const DIR_ASSETS: &str = "bundle";
-
-    fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask> {
-        Ok(BundleProvingTask {
-            batch_proofs: vec![
-                read_json_deep(Path::new(PATH_TESTDATA).join("proofs").join(
-                    "batch-0x6a2d14504ccc86a2d1a3fb00f95e50cf2de80230fc51306d16b5f4ccc17b8e73.json",
-                ))?,
-                read_json_deep(Path::new(PATH_TESTDATA).join("proofs").join(
-                    "batch-0x5f769da6d14efecf756c2a82c164416f31b3986d6c701479107acb1bcd421b21.json",
-                ))?,
-            ],
-            bundle_info: None,
-            fork_name: "euclidv1".to_string(),
-        })
-    }
-
-    #[cfg(not(feature = "euclidv2"))]
-    fn load() -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
-        Self::load_with_exe_fd("app_euclidv1.vmexe")
-    }
 }
 
-pub struct BundleLocalTaskTester;
+pub struct BundleTaskGenerator {
+    witness: Option<BundleWitness>,
+    batch_generators: Vec<BatchTaskGenerator>,
+    proof: Option<ProofEnum>,
+}
 
-impl ProverTester for BundleLocalTaskTester {
-    type Prover = BundleProverType;
-
-    const PATH_PROJECT_ROOT: &str = "crates/circuits/bundle-circuit";
-
-    const DIR_ASSETS: &str = "bundle";
-
-    fn gen_proving_task() -> eyre::Result<<Self::Prover as ProverType>::ProvingTask> {
-        Ok(read_json_deep(
-            Path::new(PATH_TESTDATA).join("bundle-task.json"),
-        )?)
+impl BundleTaskGenerator {
+    pub fn get_or_build_witness(&mut self) -> eyre::Result<BundleWitness> {
+        if self.witness.is_some() {
+            return Ok(self.witness.clone().unwrap());
+        }
+        let witness = self.calculate_witness()?;
+        self.witness.replace(witness.clone());
+        Ok(witness)
     }
 
-    #[cfg(not(feature = "euclidv2"))]
-    fn load() -> eyre::Result<(PathBuf, AppConfig<SdkVmConfig>, PathBuf)> {
-        Self::load_with_exe_fd("app_euclidv1.vmexe")
+    pub fn get_or_build_proof(
+        &mut self,
+        prover: &mut Prover,
+        batch_prover: &mut Prover,
+        chunk_prover: &mut Prover,
+    ) -> eyre::Result<ProofEnum> {
+        if let Some(proof) = &self.proof {
+            return Ok(proof.clone());
+        }
+        let wit = self.get_or_build_witness()?;
+        let agg_proofs = self.get_or_build_child_proofs(batch_prover, chunk_prover)?;
+        let proof = prove_verify_single_evm::<BundleProverTester>(prover, &wit, &agg_proofs)?;
+        self.proof.replace(proof.clone());
+        Ok(proof)
+    }
+    fn get_or_build_child_proofs(
+        &mut self,
+        batch_prover: &mut Prover,
+        chunk_prover: &mut Prover,
+    ) -> eyre::Result<Vec<ProofEnum>> {
+        let mut proofs = Vec::new();
+        for chunk_gen in &mut self.batch_generators {
+            let proof = chunk_gen.get_or_build_proof(batch_prover, chunk_prover)?;
+            proofs.push(proof);
+        }
+        Ok(proofs)
+    }
+
+    /// accept a series of BatchTaskGenerator, must be validated in advanced (continuous)
+    pub fn from_batch_tasks(batches: &[BatchTaskGenerator]) -> Self {
+        Self {
+            witness: None,
+            batch_generators: batches.to_vec(),
+            proof: None,
+        }
+    }
+
+    fn calculate_witness(&mut self) -> eyre::Result<BundleWitness> {
+        use scroll_zkvm_types::{
+            public_inputs::MultiVersionPublicInputs,
+            types_agg::{AggregationInput, ProgramCommitment},
+        };
+
+        let fork_name = testing_hardfork();
+        let commitment = ProgramCommitment {
+            exe: crate::commitments::batch_exe_commit::COMMIT,
+            vm: crate::commitments::batch_leaf_commit::COMMIT,
+        };
+        let mut batch_proofs = Vec::new();
+        let mut batch_infos: Vec<BatchInfo> = Vec::new();
+
+        for generator in &mut self.batch_generators {
+            let wit = generator.get_or_build_witness()?;
+            let info = metadata_from_batch_witnesses(&wit)?;
+            if let Some(last_info) = batch_infos.last() {
+                // validate some data
+                assert_eq!(info.parent_state_root, last_info.state_root, "state root");
+                assert_eq!(info.chain_id, last_info.chain_id, "chain id");
+                assert_eq!(info.parent_batch_hash, last_info.batch_hash, "batch hash",);
+            }
+
+            let pi_hash = info.pi_hash_by_fork(fork_name);
+            let proof = AggregationInput {
+                public_values: pi_hash
+                    .as_slice()
+                    .iter()
+                    .map(|&b| b as u32)
+                    .collect::<Vec<_>>(),
+                commitment: commitment.clone(),
+            };
+            batch_proofs.push(proof);
+            batch_infos.push(info);
+        }
+
+        Ok(BundleWitness {
+            batch_infos,
+            batch_proofs,
+            fork_name,
+        })
     }
 }

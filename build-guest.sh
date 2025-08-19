@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -ex
 
+mkdir -p releases
+rm -rf releases/*
+
 [ -f "crates/build-guest/.env" ] && . crates/build-guest/.env
 
 # if BUILD_STAGES if empty, set it to stage1,stage2,stage3
@@ -11,8 +14,24 @@ fi
 # build docker image
 docker build --platform linux/amd64 -t build-guest:local .
 
+# cleanup function
+cleanup() {
+
+  if [ -f ./build-guest.cid ]; then
+    docker rm -f $(cat ./build-guest.cid) 2>/dev/null || true
+  fi
+  rm -f ./build-guest.cid
+  
+}
+
+# set trap to cleanup on exit
+trap cleanup EXIT
+
 # run docker image
-docker run --cidfile ./build-guest.cid --platform linux/amd64 -e FEATURE=${FEATURE} build-guest:local
+docker run --cidfile ./build-guest.cid --platform linux/amd64\
+  -e BUILD_STAGES=${BUILD_STAGES}\
+  build-guest:local\
+  cargo run --release -p scroll-zkvm-build-guest
 container_id=$(cat ./build-guest.cid)
 
 if [ -n "$(echo ${BUILD_STAGES} | grep stage1)" ]; then
@@ -22,7 +41,6 @@ if [ -n "$(echo ${BUILD_STAGES} | grep stage1)" ]; then
     bundle-circuit/bundle_leaf_commit.rs; do
     docker cp ${container_id}:/app/crates/circuits/${f} crates/circuits/${f}
   done
-  docker cp ${container_id}:/app/crates/circuits/bundle-circuit/digest_2 crates/circuits/bundle-circuit/digest_2
 fi
 
 if [ -n "$(echo ${BUILD_STAGES} | grep stage2)" ]; then
@@ -37,20 +55,7 @@ if [ -n "$(echo ${BUILD_STAGES} | grep stage3)" ]; then
     bundle-circuit/bundle_exe_commit.rs; do
     docker cp ${container_id}:/app/crates/circuits/${f} crates/circuits/${f}
   done
-
-  # copy digests from container to local
-  docker cp ${container_id}:/app/crates/circuits/bundle-circuit/digest_1 crates/circuits/bundle-circuit/digest_1
-
-  # copy app.vmexe from container to local
-  mkdir -p crates/circuits/chunk-circuit/openvm
-  mkdir -p crates/circuits/batch-circuit/openvm
-  mkdir -p crates/circuits/bundle-circuit/openvm
-  docker cp ${container_id}:/app/crates/circuits/chunk-circuit/openvm/app.vmexe crates/circuits/chunk-circuit/openvm/app.vmexe
-  docker cp ${container_id}:/app/crates/circuits/batch-circuit/openvm/app.vmexe crates/circuits/batch-circuit/openvm/app.vmexe
-  docker cp ${container_id}:/app/crates/circuits/bundle-circuit/openvm/app.vmexe crates/circuits/bundle-circuit/openvm/app.vmexe
-
 fi
 
-# remove docker container
-docker rm ${container_id}
-rm ./build-guest.cid
+# copy release files from container to local
+docker cp ${container_id}:/app/releases/dev releases/dev

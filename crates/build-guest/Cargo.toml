@@ -4,6 +4,8 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+scroll-zkvm-types.workspace = true
+
 openvm-instructions.workspace = true
 openvm-native-compiler.workspace = true
 openvm-native-recursion.workspace = true
@@ -25,6 +27,7 @@ eyre.workspace = true
 p3-field.workspace = true
 serde.workspace = true
 hex-literal.workspace = true
+hex.workspace = true
 serde_json.workspace = true
 serde_with.workspace = true
 snark-verifier-sdk.workspace = true

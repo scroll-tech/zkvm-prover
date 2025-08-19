@@ -22,52 +22,54 @@ edition = "2021"
 homepage = "https://github.com/scroll-tech/zkvm-prover"
 readme = "README.md"
 repository = "https://github.com/scroll-tech/zkvm-prover"
-version = "0.4.0"
+version = "0.5.0"
 
 [workspace.dependencies]
 # openvm guest libs
-openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549" }
-openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
-openvm-custom-insn = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
-openvm-sha2 = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549" }
-openvm-sha256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
-openvm-p256 = { git = "https://github.com/openvm-org/openvm.git", package = "p256", rev = "3c800070d363237832a66dbe5501d3c365f3c549", features = ["std"] }
-openvm-k256 = { git = "https://github.com/openvm-org/openvm.git", package = "k256", rev = "3c800070d363237832a66dbe5501d3c365f3c549", features = ["std"] }
-openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549" }
-openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
-openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
-openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
-openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
-openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
-openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
+openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
+openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0", default-features = false }
+openvm-custom-insn = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0", default-features = false }
+openvm-sha2 = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
+openvm-sha256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0", default-features = false }
+openvm-p256 = { git = "https://github.com/openvm-org/openvm.git", package = "p256", rev = "5368d4756993fc1e51092499a816867cf4808de0", features = ["std"] }
+openvm-k256 = { git = "https://github.com/openvm-org/openvm.git", package = "k256", rev = "5368d4756993fc1e51092499a816867cf4808de0", features = ["std"] }
+openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
+openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0", default-features = false }
+openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0", default-features = false }
+openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0", default-features = false }
+openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0", default-features = false }
+openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0", default-features = false }
+openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0", default-features = false }
 
-# openvm guest libs
-openvm-build = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.1-rc.1", default-features = false }
-openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.1-rc.1", default-features = false }
-openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.1-rc.1", default-features = false }
-openvm-instructions ={ git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.1-rc.1", default-features = false }
-openvm-native-circuit = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.1-rc.1", default-features = false }
-openvm-native-compiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.1-rc.1", default-features = false }
-openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.1-rc.1", default-features = false }
-openvm-native-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.1-rc.1", default-features = false }
-openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.1-rc.1", default-features = false }
-openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.1-rc.1", default-features = false, features = ["parallel", "bench-metrics", "evm-prove"] }
-openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.1-rc.1", default-features = false }
+# openvm host libs
+openvm-build = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
+openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
+openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
+openvm-instructions ={ git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
+openvm-native-circuit = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
+openvm-native-compiler = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
+openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
+openvm-native-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
+openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
+openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false, features = ["parallel", "bench-metrics", "evm-prove"] }
+openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
 
 # more openvm related libs
-openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", rev = "f48090c9febd021f8ee0349bc929a775fb1fa3ad" }
+openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.1.1" }
 p3-field = { git = "https://github.com/Plonky3/Plonky3.git", rev = "539bbc84085efb609f4f62cb03cf49588388abdb" }
 
-sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = ["scroll"] }
-sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = ["scroll", "serde", "rkyv"] }
-sbv-utils = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = ["scroll"] }
-sbv-kv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
-sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
+sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/openvm-1.3", features = ["scroll"] }
+sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/openvm-1.3", features = ["scroll", "serde", "rkyv"] }
+sbv-utils = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/openvm-1.3", features = ["scroll"] }
+sbv-kv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/openvm-1.3" }
+sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/openvm-1.3" }
+sbv-precompile = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/openvm-1.3" }
+
 
 alloy-provider = "1.0"
 alloy-rpc-client = "1.0"
 alloy-primitives = { version = "1.2", default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
-alloy-serde = { version = "1.0", default-features = false }
+alloy-serde = { version = "1.0.13", default-features = false }
 alloy-transport = "=1.0.12"
 bitcode = { version = "0.6.5", default-features = false, features = ["serde", "derive"] }
 bincode_v1 = { version = "1.3", package = "bincode"}
@@ -80,6 +82,7 @@ futures = "0.3"
 halo2curves-axiom = { version = "0.5.3" }
 itertools = "0.14"
 hex-literal = { version = "0.4.1", default-features = false }
+hex = "0.4"
 metrics = "0.23.0"
 metrics-util = "0.17"
 metrics-tracing-context = "0.16.0"
@@ -116,26 +119,21 @@ scroll-zkvm-prover = { path = "crates/prover" }
 scroll-zkvm-verifier = { path = "crates/verifier" }
 
 [patch.crates-io]
-revm = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
-revm-bytecode = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
-revm-context = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
-revm-context-interface = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
-revm-database = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
-revm-database-interface = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
-revm-handler = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
-revm-inspector = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
-revm-interpreter = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
-revm-precompile = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
-revm-primitives = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
-revm-state = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74" }
+revm = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v78" }
+revm-bytecode = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v78" }
+revm-context = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v78" }
+revm-context-interface = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v78" }
+revm-database = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v78" }
+revm-database-interface = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v78" }
+revm-handler = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v78" }
+revm-inspector = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v78" }
+revm-interpreter = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v78" }
+revm-precompile = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v78" }
+revm-primitives = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v78" }
+revm-state = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v78" }
 
 ruint = { git = "https://github.com/scroll-tech/uint.git", branch = "v1.15.0" }
 alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "v1.2.0" }
-
-#alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.18-euclid-upgrade" }
-#ruint = { git = "https://github.com/scroll-tech/uint.git", branch = "v1.12.3" }
-#tiny-keccak = { git = "https://github.com/scroll-tech/tiny-keccak", branch = "scroll-patch-v2.0.2-euclid-upgrade" }
-#ruint = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.1-rc.1" }
 
 [profile.maxperf]
 inherits = "release"

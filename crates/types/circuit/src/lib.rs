@@ -102,27 +102,26 @@ fn verify_proof(commitment: &ProgramCommitment, public_inputs: &[u32]) {
     // Sanity check for the number of public-input values.
     assert_eq!(public_inputs.len(), NUM_PUBLIC_VALUES);
 
-    // Extend the public-input values by prepending the commitments to the root verifier's exe and
-    // leaf.
-    let mut extended_public_inputs = vec![];
-    extended_public_inputs.extend(commitment.exe);
-    extended_public_inputs.extend(commitment.leaf);
-    extended_public_inputs.extend_from_slice(public_inputs);
-    // Pass through kernel and verify against root verifier's ASM.
-    exec_kernel(extended_public_inputs.as_ptr());
-}
+    const HEAP_START_ADDRESS: u32 = 1 << 24;
+    const FIELDS_PER_U32: u32 = 4;
 
-fn exec_kernel(_pi_ptr: *const u32) {
-    // reserve x29, x30, x31 for kernel
-    let mut _buf1: u32 = 0;
-    let mut _buf2: u32 = 0;
+    // Store the expected public values into the beginning of the native heap.
+    // Copied from https://github.com/openvm-org/openvm/blob/4973d38cb3f2e14ebdd59e03802e65bb657ee422/guest-libs/verify_stark/src/lib.rs#L37
+    let mut native_addr = HEAP_START_ADDRESS;
+    for &x in &commitment.exe {
+        openvm::io::store_u32_to_native(native_addr, x);
+        native_addr += FIELDS_PER_U32;
+    }
+    for &x in &commitment.vm {
+        openvm::io::store_u32_to_native(native_addr, x);
+        native_addr += FIELDS_PER_U32;
+    }
+    for &x in public_inputs {
+        openvm::io::store_u32_to_native(native_addr, x);
+        native_addr += FIELDS_PER_U32;
+    }
     #[cfg(all(target_os = "zkvm", target_arch = "riscv32"))]
     unsafe {
-        std::arch::asm!(
-            include_str!("../../../build-guest/root_verifier.asm"),
-            in("x29") _pi_ptr,
-            inout("x30") _buf1,
-            inout("x31") _buf2,
-        )
+        std::arch::asm!(include_str!("../../../build-guest/root_verifier.asm"),)
     }
 }

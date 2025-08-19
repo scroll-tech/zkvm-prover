@@ -1,14 +1,11 @@
-use crate::util::{as_base64, vec_as_base64};
-use openvm_continuations::verifier::root::types::RootVmVerifierInput;
+use crate::utils::{as_base64, vec_as_base64};
+use openvm_native_recursion::halo2::RawEvmProof;
 use openvm_sdk::SC;
 use openvm_stark_sdk::{
     openvm_stark_backend::{p3_field::PrimeField32, proof::Proof},
     p3_baby_bear::BabyBear,
 };
 use serde::{Deserialize, Serialize};
-
-/// Alias for convenience.
-pub type RootProof = RootVmVerifierInput<SC>;
 
 /// Helper type for convenience that implements [`From`] and [`Into`] traits between
 /// [`OpenVmEvmProof`]. The difference is that the instances in [`EvmProof`] are the byte-encoding
@@ -22,28 +19,44 @@ pub struct EvmProof {
     /// proof.
     #[serde(with = "vec_as_base64")]
     pub instances: Vec<u8>,
+    /*
+    //pub accumulator: Vec<u8>,
+    /// The public inputs of the SNARK proof.
+    /// Previously the `instance`s are U256 values, with accumulator and digests.
+    /// For real user PI values, they will be like 0x0000..00000ab, only 1 byte non zero.
+    /// Usually of length (12+2+32)x32
+    /// Now: the `instance` is splitted. The `user_public_values` is "dense".
+    /// Each byte is valid PI. Usually of length 32.
+    //#[serde(with = "vec_as_base64")]
+    //pub user_public_values: Vec<u8>,
+    //pub digest1: [u32; 8],
+    //pub digest2: [u32; 8],
+     */
 }
 
 /// Helper to modify serde implementations on the remote [`RootProof`] type.
-#[derive(Serialize, Deserialize)]
-#[serde(remote = "RootProof")]
-struct RootProofDef {
-    /// The proofs.
+#[derive(Clone, Serialize, Deserialize)]
+pub struct StarkProof {
+    /// The proofs. The length is always 1
+    /// Vec is used for old data compatibility.
     #[serde(with = "as_base64")]
-    proofs: Vec<Proof<SC>>,
+    pub proofs: Vec<Proof<SC>>,
     /// The public values for the proof.
     #[serde(with = "as_base64")]
-    public_values: Vec<BabyBear>,
+    pub public_values: Vec<BabyBear>,
+    //pub exe_commitment: [u32; 8],
+    //pub vm_commitment: [u32; 8],
 }
 
-pub use openvm_native_recursion::halo2::RawEvmProof as OpenVmEvmProof;
+pub use openvm_sdk::types::EvmProof as OpenVmEvmProof;
 use snark_verifier_sdk::snark_verifier::{
     halo2_base::halo2_proofs::halo2curves::bn256::Fr, util::arithmetic::PrimeField,
 };
 
 impl From<OpenVmEvmProof> for EvmProof {
     fn from(value: OpenVmEvmProof) -> Self {
-        let instances = value
+        let raw_proof: RawEvmProof = value.try_into().expect("fail to convert");
+        let instances = raw_proof
             .instances
             .iter()
             .flat_map(|fr| {
@@ -52,9 +65,8 @@ impl From<OpenVmEvmProof> for EvmProof {
                 be_bytes
             })
             .collect::<Vec<u8>>();
-
         Self {
-            proof: value.proof,
+            proof: raw_proof.proof,
             instances,
         }
     }
@@ -82,11 +94,11 @@ impl From<EvmProof> for OpenVmEvmProof {
                 .expect("Fr::from_repr failed")
             })
             .collect::<Vec<Fr>>();
-
-        Self {
-            proof: value.proof,
+        let raw_proof = RawEvmProof {
             instances,
-        }
+            proof: value.proof,
+        };
+        raw_proof.try_into().expect("fail to convert")
     }
 }
 
@@ -95,15 +107,14 @@ impl From<EvmProof> for OpenVmEvmProof {
 #[serde(untagged)]
 pub enum ProofEnum {
     /// Represents a STARK proof used for intermediary layers, i.e. chunk and batch.
-    #[serde(with = "RootProofDef")]
-    Root(RootProof),
+    Stark(StarkProof),
     /// Represents a SNARK proof used for the final layer to be verified on-chain, i.e. bundle.
     Evm(EvmProof),
 }
 
-impl From<RootProof> for ProofEnum {
-    fn from(value: RootProof) -> Self {
-        Self::Root(value)
+impl From<StarkProof> for ProofEnum {
+    fn from(value: StarkProof) -> Self {
+        Self::Stark(value)
     }
 }
 
@@ -114,10 +125,10 @@ impl From<EvmProof> for ProofEnum {
 }
 
 impl ProofEnum {
-    /// Get the root proof as reference.
-    pub fn as_root_proof(&self) -> Option<&RootProof> {
+    /// Get the stark proof as reference.
+    pub fn as_stark_proof(&self) -> Option<&StarkProof> {
         match self {
-            Self::Root(proof) => Some(proof),
+            Self::Stark(proof) => Some(proof),
             _ => None,
         }
     }
@@ -133,9 +144,9 @@ impl ProofEnum {
     }
 
     /// Consumes the proof enum and returns the contained root proof.
-    pub fn into_root_proof(self) -> Option<RootProof> {
+    pub fn into_stark_proof(self) -> Option<StarkProof> {
         match self {
-            Self::Root(proof) => Some(proof),
+            Self::Stark(proof) => Some(proof),
             _ => None,
         }
     }
@@ -151,7 +162,7 @@ impl ProofEnum {
     /// Derive public inputs from the proof.
     pub fn public_values(&self) -> Vec<u32> {
         match self {
-            Self::Root(root_proof) => root_proof
+            Self::Stark(stark_proof) => stark_proof
                 .public_values
                 .iter()
                 .map(|x| x.as_canonical_u32())

@@ -1,10 +1,9 @@
-FROM rust:1.85
-
-RUN rustup toolchain install nightly-2025-02-14-x86_64-unknown-linux-gnu
-RUN rustup component add rust-src --toolchain nightly-2025-02-14-x86_64-unknown-linux-gnu
+FROM rust:1.86
 
 WORKDIR /app
 
+RUN wget https://github.com/ethereum/solc-bin/raw/refs/heads/gh-pages/linux-amd64/solc-linux-amd64-v0.8.19+commit.7dd6d404 -O /usr/local/bin/solc && \
+    chmod +x /usr/local/bin/solc
+
 COPY . .
 
-ENTRYPOINT ["/app/build-guest-actions-entrypoint.sh"]

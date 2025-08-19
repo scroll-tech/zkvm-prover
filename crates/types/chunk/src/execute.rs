@@ -85,6 +85,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
 
     let (post_state_root, withdraw_root) = match state_commit_mode {
         ArchivedStateCommitMode::Chunk | ArchivedStateCommitMode::Block => execute_inner(
+            fork_name,
             &code_db,
             &nodes_provider,
             &block_hashes,
@@ -95,6 +96,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
             matches!(state_commit_mode, ArchivedStateCommitMode::Chunk),
         )?,
         ArchivedStateCommitMode::Auto => match execute_inner(
+            fork_name,
             &code_db,
             &nodes_provider,
             &block_hashes,
@@ -108,6 +110,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
             Err(e) if e.starts_with("failed to update db:") => {
                 openvm::io::println(format!("{e}; retrying with defer commit disabled"));
                 execute_inner(
+                    fork_name,
                     &code_db,
                     &nodes_provider,
                     &block_hashes,
@@ -131,7 +134,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
     let sbv_chunk_info = {
         #[allow(unused_mut)]
         let mut builder = ChunkInfoBuilder::new(&chain_spec, pre_state_root.into(), &blocks);
-        if fork_name == ForkName::EuclidV2 {
+        if fork_name >= ForkName::EuclidV2 {
             builder.set_prev_msg_queue_hash(witness.prev_msg_queue_hash.into());
         }
         builder.build(withdraw_root)
@@ -173,6 +176,7 @@ pub fn execute(witness: &Witness) -> Result<ChunkInfo, String> {
 
 #[allow(clippy::too_many_arguments)]
 fn execute_inner(
+    fork_name: ForkName,
     code_db: &CodeDb,
     nodes_provider: &NodesProvider,
     block_hashes: &BlockHashProvider,
@@ -192,8 +196,15 @@ fn execute_inner(
                 .execute()
                 .map_err(|e| format!("failed to execute block: {}", e))?
         );
-        db.update(nodes_provider, output.state.state.iter())
-            .map_err(|e| format!("failed to update db: {}", e))?;
+        (if fork_name >= ForkName::Feynman {
+            db.update(
+                nodes_provider,
+                std::collections::BTreeMap::from_iter(output.state.state.clone()).iter(),
+            )
+        } else {
+            db.update(nodes_provider, output.state.state.clone().iter())
+        })
+        .map_err(|e| format!("failed to update db: {}", e))?;
         if !defer_commit {
             db.commit_changes();
         }

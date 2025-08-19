@@ -31,11 +31,13 @@ cargo_metadata.workspace = true
 eyre.workspace = true
 futures.workspace = true
 rayon.workspace = true
+serde.workspace = true
 vm-zstd = { workspace = true, features = ["zstd"] }
 sysinfo = { workspace = true, features = ["system"] }
 tokio = { workspace = true, features = ["full", "macros"] }
 url.workspace = true
 
+hex.workspace = true
 chrono = "0.4"
 ff = "0.13"
 glob = "0.3"
@@ -55,6 +57,5 @@ halo2curves-axiom = "0.7.0"
 glob = "0.3"
 
 [features]
-default = ["euclidv2"]
-euclidv2 = []
+default = []
 limit-logs = []

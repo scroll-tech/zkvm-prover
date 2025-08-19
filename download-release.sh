@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # release version
-SCROLL_ZKVM_VERSION=0.4.2
+SCROLL_ZKVM_VERSION=0.5.2
 if [ -z "${SCROLL_ZKVM_VERSION}" ]; then
   echo "SCROLL_ZKVM_VERSION not set"
   exit 1

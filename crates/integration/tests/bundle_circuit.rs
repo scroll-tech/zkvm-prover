@@ -1,53 +1,81 @@
 use sbv_primitives::B256;
 use scroll_zkvm_integration::{
-    ProverTester, prove_verify_multi, prove_verify_single, prove_verify_single_evm,
+    ProverTester, // utils::{LastHeader, build_batch_task, testing_hardfork},
     testers::{
-        batch::BatchProverTester,
-        bundle::{BundleLocalTaskTester, BundleProverTester},
-        chunk::{ChunkProverRv32Tester, ChunkProverTester, MultiChunkProverTester},
+        batch::{BatchProverTester, preset_batch_multiple},
+        bundle::{BundleProverTester, BundleTaskGenerator},
+        chunk::ChunkProverTester,
+        load_local_task,
     },
-    utils::{LastHeader, build_batch_task},
+    testing_hardfork,
+    utils::metadata_from_bundle_witnesses,
 };
 use scroll_zkvm_prover::{
-    AsRootProof, BatchProof, ChunkProof, IntoEvmProof,
-    task::{bundle::BundleProvingTask, chunk::ChunkProvingTask},
-    utils::{read_json_deep, write_json},
+    // AsRootProof, BatchProof, ChunkProof, IntoEvmProof,
+    // setup::{read_app_config, read_app_exe},
+    Prover,
+    ProverConfig,
 };
+use scroll_zkvm_types::{proof::OpenVmEvmProof, public_inputs::ForkName};
 use std::str::FromStr;
 
-fn load_recent_batch_proofs() -> eyre::Result<BundleProvingTask> {
-    let proof_path = glob::glob("../../.output/batch-tests-*/batch/proofs/batch-*.json")?
-        .next()
-        .unwrap()?;
-    println!("proof_path: {:?}", proof_path);
-    let batch_proof = read_json_deep::<_, BatchProof>(&proof_path)?;
-
-    let task = BundleProvingTask {
-        batch_proofs: vec![batch_proof],
-        bundle_info: None,
-        fork_name: if cfg!(feature = "euclidv2") {
-            String::from("euclidv2")
-        } else {
-            String::from("euclidv1")
-        },
-    };
-    Ok(task)
+fn preset_bundle() -> BundleTaskGenerator {
+    BundleTaskGenerator::from_batch_tasks(&preset_batch_multiple())
 }
 
 #[test]
-fn setup_prove_verify() -> eyre::Result<()> {
-    BundleProverTester::setup()?;
+fn print_vks() -> eyre::Result<()> {
+    #[derive(Default, Debug, serde::Serialize)]
+    struct VKDump {
+        pub chunk_vk: String,
+        pub batch_vk: String,
+        pub bundle_vk: String,
+    }
+    let [chunk_vk, batch_vk, bundle_vk] = ["chunk", "batch", "bundle"].map(|circuit| {
+        let dev_mode = true;
+        let (path_app_exe, path_app_config) = if dev_mode {
+            (
+                format!("../../crates/circuits/{circuit}-circuit/openvm/app.vmexe").into(),
+                format!("../../crates/circuits/{circuit}-circuit/openvm.toml").into(),
+            )
+        } else {
+            let version = "0.5.0";
+            (
+                format!("../../{version}/{circuit}/app.vmexe").into(),
+                format!("../../{version}/{circuit}/openvm.toml").into(),
+            )
+        };
 
-    let task = load_recent_batch_proofs()?;
-    prove_verify_single_evm::<BundleProverTester>(Some(task))?;
+        let config = ProverConfig {
+            path_app_exe,
+            path_app_config,
+            ..Default::default()
+        };
 
+        let app_vk = hex::encode(Prover::setup(config, false, None).unwrap().get_app_vk());
+        println!("{circuit}: {app_vk}");
+        app_vk
+    });
+
+    let dump = VKDump {
+        chunk_vk,
+        batch_vk,
+        bundle_vk,
+    };
+
+    let f = std::fs::File::create("openVmVk.json")?;
+    serde_json::to_writer(f, &dump)?;
     Ok(())
 }
 
+#[ignore = "need local stuff"]
 #[test]
 fn setup_prove_verify_local_task() -> eyre::Result<()> {
-    BundleLocalTaskTester::setup()?;
-    prove_verify_single_evm::<BundleLocalTaskTester>(None)?;
+    BundleProverTester::setup()?;
+    let u_task = load_local_task("bundle-task.json")?;
+    let prover = BundleProverTester::load_prover(true)?;
+
+    let _ = prover.gen_proof_universal(&u_task, true)?;
 
     Ok(())
 }
@@ -89,115 +117,49 @@ fn verify_bundle_info_pi() {
     );
 }
 
-fn build_chunk_outcome() -> eyre::Result<(Vec<ChunkProvingTask>, Vec<ChunkProof>)> {
-    let rv32_hybrid = false;
-    if rv32_hybrid {
-        let mut proofs = Vec::new();
-        let tasks = MultiChunkProverTester::gen_multi_proving_tasks()?;
-        for (idx, task) in tasks.iter().enumerate() {
-            if idx % 2 == 0 {
-                let outcome = prove_verify_single::<ChunkProverTester>(Some(task.clone()))?;
-                proofs.push(outcome.proofs[0].clone());
-            } else {
-                let outcome = prove_verify_single::<ChunkProverRv32Tester>(Some(task.clone()))?;
-                proofs.push(outcome.proofs[0].clone());
-            }
-        }
-        Ok((tasks, proofs))
-    } else {
-        let outcome = prove_verify_multi::<MultiChunkProverTester>(None)?;
-        Ok((outcome.tasks, outcome.proofs))
-    }
-}
-
 #[test]
 fn e2e() -> eyre::Result<()> {
     BundleProverTester::setup()?;
 
-    let (chunk_tasks, chunk_proofs) = build_chunk_outcome()?;
-    assert_eq!(chunk_tasks.len(), chunk_proofs.len());
-    assert_eq!(chunk_tasks.len(), 3);
+    let mut chunk_prover = ChunkProverTester::load_prover(false)?;
+    let mut batch_prover = BatchProverTester::load_prover(false)?;
+    let mut bundle_prover = BundleProverTester::load_prover(true)?;
 
-    // Construct batch tasks using chunk tasks and chunk proofs.
-    let batch_task_1 =
-        build_batch_task(&chunk_tasks[0..1], &chunk_proofs[0..1], Default::default());
-    let batch_task_2 = build_batch_task(
-        &chunk_tasks[1..],
-        &chunk_proofs[1..],
-        LastHeader::from(&batch_task_1.batch_header),
-    );
-    let batch_task_example = batch_task_1.clone();
-
-    let outcome = prove_verify_multi::<BatchProverTester>(Some(&[batch_task_1, batch_task_2]))?;
-
-    let fork_name = if cfg!(feature = "euclidv2") {
-        String::from("euclidv2")
-    } else {
-        String::from("euclidv1")
-    };
-    // Construct bundle task using batch tasks and batch proofs.
-    let bundle_task = BundleProvingTask {
-        batch_proofs: outcome.proofs,
-        bundle_info: None,
-        fork_name: fork_name.clone(),
-    };
-    let (outcome, verifier, path_assets) =
-        prove_verify_single_evm::<BundleProverTester>(Some(bundle_task.clone()))?;
-
-    assert_eq!(outcome.proofs.len(), 1, "single bundle proof");
-
-    let bundle_task_with_info = BundleProvingTask {
-        batch_proofs: outcome.tasks[0].batch_proofs.clone(),
-        bundle_info: Some(outcome.proofs[0].metadata.bundle_info.clone()),
-        fork_name,
-    };
-    // collect batch and bundle task as data example
-    write_json(path_assets.join("batch-task.json"), &batch_task_example)?;
-    write_json(path_assets.join("bundle-task.json"), &bundle_task_with_info)?;
-
-    // Verifier all above proofs with the verifier-only mode.
-    let verifier = verifier.to_chunk_verifier();
-    for proof in chunk_proofs.iter() {
-        assert!(verifier.verify_proof(proof.as_root_proof()));
-    }
-    let verifier = verifier.to_batch_verifier();
-    for proof in bundle_task.batch_proofs.iter() {
-        assert!(verifier.verify_proof(proof.as_root_proof()));
-    }
-    #[cfg(not(feature = "euclidv2"))]
-    let verifier = verifier.to_bundle_verifier_v1();
-    #[cfg(feature = "euclidv2")]
-    let verifier = verifier.to_bundle_verifier_v2();
-    let evm_proof = outcome.proofs[0].clone().into_evm_proof();
-    assert!(verifier.verify_proof_evm(&evm_proof));
-
-    let expected_pi_hash = &outcome.proofs[0].metadata.bundle_pi_hash;
-    let observed_instances = &evm_proof.instances;
-
-    for (i, (&expected, &observed)) in expected_pi_hash
-        .iter()
-        .zip(observed_instances.iter().skip(14).take(32))
-        .enumerate()
-    {
-        assert_eq!(
-            halo2curves_axiom::bn256::Fr::from(u64::from(expected)),
-            observed,
-            "pi inconsistent at index {i}: expected={expected}, observed={observed:?}"
-        );
-    }
+    let mut task = preset_bundle();
+    let wit = task.get_or_build_witness()?;
+    let metadata = metadata_from_bundle_witnesses(&wit)?;
 
     // Sanity check for pi of bundle hash, update the expected hash if block witness changed
-    let pi_str = if cfg!(feature = "euclidv2") {
-        "2028510c403837c6ed77660fd92814ba61d7b746e7268cc8dfc14d163d45e6bd"
-    } else {
-        "3cc70faf6b5a4bd565694a4c64de59befb735f4aac2a4b9e6a6fc2ee950b8a72"
+    let pi_str = match testing_hardfork() {
+        ForkName::EuclidV1 => "3cc70faf6b5a4bd565694a4c64de59befb735f4aac2a4b9e6a6fc2ee950b8a72",
+        ForkName::EuclidV2 => "2028510c403837c6ed77660fd92814ba61d7b746e7268cc8dfc14d163d45e6bd",
+        ForkName::Feynman => "80523a61b2b94b2922638ec90edd084b1022798e1e5539c3a079d2b0736e4f32",
     };
+    let expected_pi_hash = metadata.pi_hash(testing_hardfork());
     // sanity check for pi of bundle hash, update the expected hash if block witness changed
     assert_eq!(
         alloy_primitives::hex::encode(expected_pi_hash),
         pi_str,
         "unexpected pi hash for e2e bundle info, block witness changed?"
     );
+
+    let proof =
+        task.get_or_build_proof(&mut bundle_prover, &mut batch_prover, &mut chunk_prover)?;
+
+    let evm_proof: OpenVmEvmProof = proof.into_evm_proof().unwrap().into();
+
+    let observed_instances = &evm_proof.user_public_values;
+
+    for (i, (&expected, &observed)) in expected_pi_hash
+        .iter()
+        .zip(observed_instances.iter())
+        .enumerate()
+    {
+        assert_eq!(
+            expected, observed,
+            "pi inconsistent at index {i}: expected={expected}, observed={observed:?}"
+        );
+    }
 
     Ok(())
 }
