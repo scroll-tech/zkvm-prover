@@ -71,6 +71,9 @@ test-single-chunk:
 test-multi-chunk:
 	@cargo test --release -p scroll-zkvm-integration --test chunk_circuit setup_prove_verify_multi -- --exact --nocapture
 
+test-scanner:
+	@cargo test --release -p scroll-zkvm-integration --test chunk_circuit test_scanner -- --exact --nocapture
+
 test-single-batch: $(TESTDATA_PATH)/tasks/batch-task.json
 	@cargo test --release -p scroll-zkvm-integration --test batch_circuit setup_prove_verify_single -- --exact --nocapture
 

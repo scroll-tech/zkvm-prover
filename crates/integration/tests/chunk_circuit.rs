@@ -1,4 +1,10 @@
-use eyre::Ok;
+use std::fs::File;
+use std::path::PathBuf;
+use alloy_primitives::B256;
+use eyre::{Context, ContextCompat, Ok};
+use rayon::iter::{IntoParallelIterator, ParallelBridge, ParallelIterator};
+use sbv_primitives::BlockWitness;
+use scroll_zkvm_integration::utils::get_rayon_threads;
 use scroll_zkvm_integration::{
     ProverTester, prove_verify, tester_execute,
     testers::chunk::{
@@ -9,6 +15,11 @@ use scroll_zkvm_integration::{
 };
 use scroll_zkvm_prover::{Prover, utils::vm::ExecutionResult};
 use scroll_zkvm_types::chunk::ChunkWitness;
+use scroll_zkvm_types::public_inputs::ForkName;
+
+thread_local! {
+    static PROVER: Prover = ChunkProverTester::load_prover(false).unwrap();
+}
 
 fn exec_chunk(prover: &Prover, wit: &ChunkWitness) -> eyre::Result<(ExecutionResult, u64)> {
     let blk = wit.blocks[0].header.number;
@@ -126,34 +137,37 @@ fn test_autofill_trie_nodes() -> eyre::Result<()> {
     Ok(())
 }
 
-#[test]
-fn test_execute_multi() -> eyre::Result<()> {
-    // use rayon::iter::{IntoParallelIterator, ParallelIterator};
-
-    ChunkProverTester::setup()?;
-
-    // Initialize Rayon thread pool with 8 threads
-    let parallel = 8;
-    let pool = rayon::ThreadPoolBuilder::new()
-        .num_threads(parallel)
-        .build()
-        .unwrap();
-    // Execute tasks in parallel
-    let (total_gas, total_cycle) = pool.install(|| {
-        // comment by fan@scroll.io: why we need to load prover multiple times (which is time costing)
-        let prover = ChunkProverTester::load_prover(false).unwrap();
-        let init = (0u64, 0u64);
-        let adder =
-            |(gas1, cycle1): (u64, u64), (gas2, cycle2): (u64, u64)| (gas1 + gas2, cycle1 + cycle2);
-        preset_chunk_multiple()
-            .into_iter()
-            .map(|mut task| -> (u64, u64) {
-                let (exec_result, gas) =
-                    exec_chunk(&prover, &task.get_or_build_witness().unwrap()).unwrap();
+fn execute_multi(wits: Vec<ChunkWitness>) -> impl FnOnce() -> (u64, u64) + Send + Sync + 'static {
+    || {
+        wits.into_par_iter()
+            .map(|wit| -> (u64, u64) {
+                let (exec_result, gas) = PROVER.with(|prover| exec_chunk(&prover, &wit).unwrap());
                 (gas, exec_result.total_cycle)
             })
-            .fold(init, adder)
-    });
+            .reduce(
+                || (0u64, 0u64),
+                |(gas1, cycle1): (u64, u64), (gas2, cycle2): (u64, u64)| {
+                    (gas1 + gas2, cycle1 + cycle2)
+                },
+            )
+    }
+}
+
+#[test]
+fn test_execute_multi() -> eyre::Result<()> {
+    ChunkProverTester::setup()?;
+
+    // Initialize Rayon thread pool
+    let pool = rayon::ThreadPoolBuilder::new()
+        .num_threads(get_rayon_threads())
+        .build()?;
+
+    // Execute tasks in parallel
+    let tasks = preset_chunk_multiple()
+        .into_iter()
+        .map(|mut task| task.get_or_build_witness().unwrap())
+        .collect::<Vec<_>>();
+    let (total_gas, total_cycle) = pool.install(execute_multi(tasks));
 
     println!(
         "Total gas: {}, Total cycles: {}, Average cycle/gas: {}",
@@ -201,6 +215,139 @@ fn setup_prove_verify_multi() -> eyre::Result<()> {
     for mut task in preset_chunk_multiple() {
         let _ = task.get_or_build_proof(&mut prover)?;
     }
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_scanner() -> eyre::Result<()> {
+    use alloy_provider::{Provider, ProviderBuilder};
+    use alloy_rpc_client::ClientBuilder;
+    use alloy_transport::layers::{RetryBackoffLayer, ThrottleLayer};
+    use sbv_primitives::types::Network;
+    use sbv_utils::rpc::ProviderExt;
+    use std::env;
+    use url::Url;
+
+    let rpc_url: Url = env::var("RPC_URL")
+        .context("RPC_URL must be set")?
+        .parse()
+        .context("Unable to parse RPC_URL")?;
+    println!("RPC URL = {}", rpc_url);
+
+    let out_path = env::var("OUT_PATH")
+        .map(|s| PathBuf::from(s))
+        .unwrap_or_else(|_| PathBuf::from("scanner.csv"));
+    println!("out_path = {}", out_path.display());
+    let out = File::create(&out_path)?;
+    let mut writer = csv::Writer::from_writer(out);
+
+    ChunkProverTester::setup()?;
+
+    let client = ClientBuilder::default()
+        .layer(RetryBackoffLayer::new(
+            env::var("MAX_RATE_LIMIT_RETRIES")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(10),
+            env::var("RETRIES_INITIAL_BACKOFF")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(100),
+            u64::MAX,
+        ))
+        .layer(ThrottleLayer::new(
+            env::var("REQUESTS_PER_SECOND")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(10),
+        ))
+        .http(rpc_url);
+    let provider = ProviderBuilder::<_, _, Network>::default()
+        .with_recommended_fillers()
+        .connect_client(client);
+
+    let latest_block = provider
+        .get_block_number()
+        .await
+        .context("Failed to get the latest block number")?;
+
+    // fetch latest 1000 blocks
+    let n_chunks: u64 = env::var("N_CHUNKS")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(50);
+    let chunk_size: u64 = env::var("CHUNK_SIZE")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(20);
+    let start_block = latest_block
+        .checked_sub(chunk_size * n_chunks)
+        .context("Not enough blocks to fetch. Please decrease N_CHUNKS or CHUNK_SIZE.")?;
+    println!(
+        "blocks = {start_block}..={latest_block}; {chunk_size} blocks chunk, {n_chunks} chunks"
+    );
+
+    let blocks = futures::future::try_join_all((start_block..=latest_block).map(|block| {
+        let provider = provider.clone();
+        async move {
+            provider
+                .dump_block_witness(block.into())
+                .await
+                .map(|w| w.unwrap())
+        }
+    }))
+    .await?;
+
+    // Initialize Rayon thread pool
+    let pool = rayon::ThreadPoolBuilder::new()
+        .num_threads(get_rayon_threads())
+        .build()?;
+
+    #[derive(serde::Serialize)]
+    struct Stats {
+        start_block: u64,
+        end_block: u64,
+        tx_num: usize,
+        cycle: u64,
+        gas: u64,
+        cycle_per_gas: f64,
+    }
+
+    let stats = pool.install(move || {
+        blocks
+            .chunks_exact(chunk_size as usize)
+            .par_bridge()
+            .map(|blocks| {
+                let wit = ChunkWitness::new(blocks, B256::ZERO, ForkName::Feynman);
+                let (exec_result, gas) = PROVER.with(|prover| exec_chunk(&prover, &wit).unwrap());
+                // Block range, tx num, cycle, gas, cycle-per_gas
+                let stats = Stats {
+                    start_block: blocks[0].header.number,
+                    end_block: blocks.last().unwrap().header.number,
+                    tx_num: blocks.iter().map( | b| b.num_transactions()).sum::<usize>(),
+                    cycle: exec_result.total_cycle,
+                    gas,
+                    cycle_per_gas: exec_result.total_cycle as f64 / gas as f64,
+                };
+                println!(
+                    "Blocks {}..={} | Tx: {} | Cycle: {} | Gas: {} | Cycle/Gas: {:.2}",
+                    stats.start_block,
+                    stats.end_block,
+                    stats.tx_num,
+                    stats.cycle,
+                    stats.gas,
+                    stats.cycle_per_gas
+                );
+                stats
+            })
+            .collect::<Vec<Stats>>()
+    });
+
+    for stat in stats {
+        writer.serialize(stat).context("Failed to write stats to CSV")?;
+    }
+    writer.flush().context("Failed to flush CSV")?;
 
     Ok(())
 }
