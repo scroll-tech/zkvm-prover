@@ -17,8 +17,8 @@ use openvm_sdk::{
 use openvm_stark_sdk::config::baby_bear_poseidon2::{
     BabyBearPermutationEngine, BabyBearPoseidon2Engine,
 };
-use scroll_zkvm_types::{proof::OpenVmEvmProof, types_agg::ProgramCommitment};
-use scroll_zkvm_verifier::verifier::{UniversalVerifier, AGG_STARK_PROVING_KEY};
+use scroll_zkvm_types::{proof::OpenVmEvmProof, types_agg::ProgramCommitment, utils::serialize_vk};
+use scroll_zkvm_verifier::verifier::{AGG_STARK_PROVING_KEY, UniversalVerifier};
 use tracing::instrument;
 
 // Re-export from openvm_sdk.
@@ -106,7 +106,7 @@ impl Prover {
 
     /// Pick up loaded app commit as "vk" in proof, to distinguish from which circuit the proof comes
     pub fn get_app_vk(&self) -> Vec<u8> {
-        self.get_app_commitment().serialize()
+        serialize_vk::serialize(&self.get_app_commitment())
     }
 
     /// Pick up the actual vk (serialized) for evm proof, would be empty if prover
@@ -237,7 +237,6 @@ impl Prover {
             .prover
             .prove(stdin)
             .map_err(|e| Error::GenProof(e.to_string()))?;
-        //let comm = self.get_app_commitment();
         let proof = StarkProof {
             proofs: vec![proof.inner],
             public_values: proof.user_public_values,
@@ -245,8 +244,8 @@ impl Prover {
             //vm_commitment: comm.vm,
         };
         tracing::info!("verifing stark proof");
-        //UniversalVerifier::verify_stark_proof(&proof, &comm.serialize())
-        //    .map_err(|e| Error::VerifyProof(e.to_string()))?;
+        UniversalVerifier::verify_stark_proof(&proof, &self.get_app_vk())
+            .map_err(|e| Error::VerifyProof(e.to_string()))?;
         tracing::info!("verifing stark proof done");
         Ok(proof)
     }
