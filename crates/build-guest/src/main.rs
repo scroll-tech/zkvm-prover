@@ -209,7 +209,7 @@ fn run_stage3_exe_commits(
                 &app_config.app_vm_config,
                 project_dir,
                 &Default::default(),
-                None,
+                Some("/tmp/init.rs"),
             )
             .inspect_err(|_err| {
                 println!("{LOG_PREFIX} Building failed in {}", project_dir);
