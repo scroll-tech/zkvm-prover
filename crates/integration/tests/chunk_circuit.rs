@@ -2,7 +2,7 @@ use std::fs::File;
 use std::path::PathBuf;
 use alloy_primitives::B256;
 use eyre::{Context, ContextCompat, Ok};
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use rayon::iter::{IntoParallelIterator, ParallelBridge, ParallelIterator};
 use sbv_primitives::BlockWitness;
 use scroll_zkvm_integration::utils::get_rayon_threads;
 use scroll_zkvm_integration::{
@@ -308,7 +308,7 @@ async fn test_scanner() -> eyre::Result<()> {
     struct Stats {
         start_block: u64,
         end_block: u64,
-        tx_num: u64,
+        tx_num: usize,
         cycle: u64,
         gas: u64,
         cycle_per_gas: f64,
@@ -317,7 +317,7 @@ async fn test_scanner() -> eyre::Result<()> {
     let stats = pool.install(move || {
         blocks
             .chunks_exact(chunk_size as usize)
-            .into_par_iter()
+            .par_bridge()
             .map(|blocks| {
                 let wit = ChunkWitness::new(blocks, B256::ZERO, ForkName::Feynman);
                 let (exec_result, gas) = PROVER.with(|prover| exec_chunk(&prover, &wit).unwrap());
@@ -325,7 +325,7 @@ async fn test_scanner() -> eyre::Result<()> {
                 let stats = Stats {
                     start_block: blocks[0].header.number,
                     end_block: blocks.last().unwrap().header.number,
-                    tx_num: blocks.iter().map( | b| b.num_transactions()).sum:: < u64>(),
+                    tx_num: blocks.iter().map( | b| b.num_transactions()).sum::<usize>(),
                     cycle: exec_result.total_cycle,
                     gas,
                     cycle_per_gas: exec_result.total_cycle as f64 / gas as f64,
@@ -339,6 +339,7 @@ async fn test_scanner() -> eyre::Result<()> {
                     stats.gas,
                     stats.cycle_per_gas
                 );
+                stats
             })
             .collect::<Vec<Stats>>()
     });
