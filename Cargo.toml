@@ -42,17 +42,17 @@ openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev =
 openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0", default-features = false }
 
 # openvm host libs
-openvm-build = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0", default-features = false }
-openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0", default-features = false }
-openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0", default-features = false }
-openvm-instructions ={ git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0", default-features = false }
-openvm-native-circuit = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0", default-features = false }
-openvm-native-compiler = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0", default-features = false }
-openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0", default-features = false }
-openvm-native-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0", default-features = false }
-openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0", default-features = false }
-openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0", default-features = false, features = ["parallel", "bench-metrics", "evm-prove"] }
-openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0", default-features = false }
+openvm-build = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
+openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
+openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
+openvm-instructions ={ git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
+openvm-native-circuit = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
+openvm-native-compiler = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
+openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
+openvm-native-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
+openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
+openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false, features = ["parallel", "bench-metrics", "evm-prove"] }
+openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
 
 # more openvm related libs
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.1.1" }
