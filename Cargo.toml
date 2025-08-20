@@ -76,8 +76,7 @@ bincode = { version = "2.0", features = ["serde"] }
 cargo_metadata = "0.20"
 c-kzg = { version = "2.0" }
 derivative = "2.2.0"
-#ecies = { git = "https://github.com/scroll-tech/ecies-rs" }
-ecies = { path = "../ecies-rs" }
+ecies = { git = "https://github.com/scroll-tech/ecies-rs" }
 eyre = "0.6"
 halo2curves-axiom = { version = "0.5.3" }
 itertools = "0.14"

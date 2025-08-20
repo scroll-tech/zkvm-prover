@@ -242,7 +242,7 @@ impl ChunkWitnessExt for ChunkWitness {
 
     #[inline]
     fn rolling_msg_queue_hash(&self, blocks: &[RecoveredBlock<Block>]) -> Option<B256> {
-        (self.fork_name < ForkName::EuclidV2).then(|| {
+        (self.fork_name >= ForkName::EuclidV2).then(|| {
             blocks.rolling_msg_queue_hash(self.prev_msg_queue_hash, self.validium.as_ref())
         })
     }

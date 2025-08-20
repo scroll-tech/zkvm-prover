@@ -7,9 +7,10 @@ version = "0.5.0"
 
 [dependencies]
 bincode = { workspace = true, features = ["serde"] }
+ecies = { workspace = true }
 scroll-zkvm-types-circuit = { workspace = true }
 scroll-zkvm-types-chunk = { workspace = true }
-sbv-precompile = { workspace = true } 
+sbv-precompile = { workspace = true }
 
 rkyv.workspace = true
 
@@ -23,6 +24,7 @@ openvm-bigint-guest = { workspace = true }
 openvm-ecc-guest = { workspace = true }
 openvm-keccak256-guest= { workspace = true }
 openvm-pairing-guest = { workspace = true, features = ["bn254"] }
+openvm-sha2 = { workspace = true }
 openvm-rv32im-guest= {  workspace = true }
 
 [features]
