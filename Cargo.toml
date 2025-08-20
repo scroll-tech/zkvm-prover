@@ -132,22 +132,22 @@ revm-state = { git = "https://github.com/scroll-tech/revm" }
 
 alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "feat/rkyv" }
 
-# FIXME: when openvm fixes https://github.com/openvm-org/openvm/pull/1937
-[patch.'https://github.com/openvm-org/openvm.git']
-openvm = { git = "https://github.com/lightsing/openvm.git", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }
-openvm-algebra-complex-macros = { git = "https://github.com/lightsing/openvm.git", rev = "f834efa186784cfdb0401c8596e1264cc9030f97"  }
-openvm-custom-insn = { git = "https://github.com/lightsing/openvm.git", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }
-openvm-sha2 = { git = "https://github.com/lightsing/openvm.git", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }
-openvm-sha256-guest = { git = "https://github.com/lightsing/openvm.git", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }
-openvm-p256 = { git = "https://github.com/lightsing/openvm.git", package = "p256", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }
-openvm-k256 = { git = "https://github.com/lightsing/openvm.git", package = "k256", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }
-openvm-pairing = { git = "https://github.com/lightsing/openvm.git", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }
-openvm-keccak256-guest = { git = "https://github.com/lightsing/openvm.git", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }
-openvm-algebra-guest = { git = "https://github.com/lightsing/openvm.git", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }
-openvm-ecc-guest = { git = "https://github.com/lightsing/openvm.git", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }
-openvm-bigint-guest = { git = "https://github.com/lightsing/openvm.git", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }
-openvm-pairing-guest = { git = "https://github.com/lightsing/openvm.git", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }
-openvm-rv32im-guest = { git = "https://github.com/lightsing/openvm.git", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }
+## FIXME: when openvm fixes https://github.com/openvm-org/openvm/pull/1937
+#[patch.'https://github.com/openvm-org/openvm.git']
+#openvm = { git = "https://github.com/lightsing/openvm.git", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }
+#openvm-algebra-complex-macros = { git = "https://github.com/lightsing/openvm.git", rev = "f834efa186784cfdb0401c8596e1264cc9030f97"  }
+#openvm-custom-insn = { git = "https://github.com/lightsing/openvm.git", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }
+#openvm-sha2 = { git = "https://github.com/lightsing/openvm.git", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }
+#openvm-sha256-guest = { git = "https://github.com/lightsing/openvm.git", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }
+#openvm-p256 = { git = "https://github.com/lightsing/openvm.git", package = "p256", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }
+#openvm-k256 = { git = "https://github.com/lightsing/openvm.git", package = "k256", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }
+#openvm-pairing = { git = "https://github.com/lightsing/openvm.git", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }
+#openvm-keccak256-guest = { git = "https://github.com/lightsing/openvm.git", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }
+#openvm-algebra-guest = { git = "https://github.com/lightsing/openvm.git", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }
+#openvm-ecc-guest = { git = "https://github.com/lightsing/openvm.git", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }
+#openvm-bigint-guest = { git = "https://github.com/lightsing/openvm.git", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }
+#openvm-pairing-guest = { git = "https://github.com/lightsing/openvm.git", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }
+#openvm-rv32im-guest = { git = "https://github.com/lightsing/openvm.git", rev = "f834efa186784cfdb0401c8596e1264cc9030f97" }
 
 [profile.maxperf]
 inherits = "release"

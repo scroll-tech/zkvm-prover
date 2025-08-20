@@ -14,8 +14,7 @@ use scroll_zkvm_integration::testers::chunk::read_block_witness;
 use scroll_zkvm_integration::testers::PATH_TESTDATA;
 use scroll_zkvm_prover::{Prover, utils::vm::ExecutionResult};
 use scroll_zkvm_prover::utils::read_json;
-use scroll_zkvm_types::chunk::ChunkWitness;
-use scroll_zkvm_types::public_inputs::chunk::validium::{QueueTransaction, SecretKey};
+use scroll_zkvm_types::chunk::{ChunkWitness, QueueTransaction, SecretKey};
 use scroll_zkvm_types::public_inputs::ForkName;
 
 fn exec_chunk(prover: &Prover, wit: &ChunkWitness) -> eyre::Result<(ExecutionResult, u64)> {
