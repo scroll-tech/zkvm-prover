@@ -23,7 +23,7 @@ use crate::{
     task::ProvingTask,
 };
 
-use scroll_zkvm_types::proof::{EvmProof, ProofEnum, StarkProof};
+use scroll_zkvm_types::proof::{EvmProof, ProofEnum, StarkProof, StarkProofStat};
 /// The default directory to locate openvm's halo2 SRS parameters.
 const DEFAULT_PARAMS_DIR: &str = concat!(env!("HOME"), "/.openvm/params/");
 
@@ -242,7 +242,7 @@ impl Prover {
     pub fn gen_proof_stark(&self, stdin: StdIn) -> Result<StarkProof, Error> {
         // Here we always do an execution of the guest program to get the cycle count.
         // and do precheck before proving like ensure PI != 0
-        self.execute_and_check(&stdin)?;
+        let total_cycles = self.execute_and_check(&stdin)?;
 
         let sdk = Sdk::new();
         let proof = sdk
@@ -258,6 +258,7 @@ impl Prover {
             public_values: proof.user_public_values,
             //exe_commitment: comm.exe,
             //vm_commitment: comm.vm,
+            stat: StarkProofStat { total_cycles },
         };
         tracing::info!("verifing stark proof");
         UniversalVerifier::verify_stark_proof(&proof, &self.get_app_vk())
