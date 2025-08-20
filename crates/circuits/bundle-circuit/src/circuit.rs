@@ -1,5 +1,5 @@
 use alloy_primitives::B256;
-use scroll_zkvm_types_bundle::ArchivedBundleWitness;
+use scroll_zkvm_types_bundle::BundleWitness;
 use scroll_zkvm_types_circuit::{
     AggCircuit, AggregationInput, Circuit, ProgramCommitment,
     io::read_witnesses,
@@ -8,7 +8,6 @@ use scroll_zkvm_types_circuit::{
         bundle::{BundleInfo, VersionedBundleInfo},
     },
 };
-use std::convert::Infallible;
 
 use crate::child_commitments;
 
@@ -19,7 +18,7 @@ use openvm_keccak256_guest;
 pub struct BundleCircuit;
 
 impl Circuit for BundleCircuit {
-    type Witness = ArchivedBundleWitness;
+    type Witness = BundleWitness;
 
     type PublicInputs = VersionedBundleInfo;
 
@@ -28,15 +27,16 @@ impl Circuit for BundleCircuit {
     }
 
     fn deserialize_witness(witness_bytes: &[u8]) -> &Self::Witness {
-        rkyv::access::<ArchivedBundleWitness, rkyv::rancor::BoxedError>(witness_bytes)
-            .expect("BundleCircuit: rkyv deserialization of witness bytes failed")
+        let config = bincode::config::standard();
+        let (witness, _): (Self::Witness, _) =
+            bincode::serde::decode_from_slice(witness_bytes, config).unwrap();
+        Box::leak(Box::new(witness))
+        // rkyv::access::<ArchivedBundleWitness, rkyv::rancor::BoxedError>(witness_bytes)
+        //    .expect("BundleCircuit: rkyv deserialization of witness bytes failed")
     }
 
     fn validate(witness: &Self::Witness) -> Self::PublicInputs {
-        (
-            BundleInfo::from(witness),
-            rkyv::deserialize::<_, Infallible>(&witness.fork_name).unwrap(),
-        )
+        (BundleInfo::from(witness), witness.fork_name.clone())
     }
 }
 
@@ -61,11 +61,11 @@ impl AggCircuit for BundleCircuit {
     }
 
     fn aggregated_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs> {
-        let fork_name = rkyv::deserialize::<_, Infallible>(&witness.fork_name).unwrap();
+        let fork_name = (witness.fork_name).clone();
         witness
             .batch_infos
             .iter()
-            .map(|archived| (archived.into(), fork_name))
+            .map(|archived| (archived.clone(), fork_name))
             .collect()
     }
 

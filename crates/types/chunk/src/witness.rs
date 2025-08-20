@@ -201,6 +201,14 @@ impl ChunkWitness {
         }
     }
 
+    pub fn bincode_serialize(
+        &self,
+        guest_version: Option<ForkName>,
+    ) -> Result<Vec<u8>, bincode::error::EncodeError> {
+        let config = bincode::config::standard();
+        bincode::serde::encode_to_vec(&self, config)
+    }
+
     /// `guest_version` is related to the guest program.
     /// It is not always same with the evm hardfork.
     /// For example, a `Feynman` guest program can execute `EuclidV2` blocks.
@@ -239,10 +247,10 @@ impl ChunkWitness {
     }
 }
 
-impl TryFrom<&ArchivedChunkWitness> for ChunkInfo {
+impl TryFrom<&ChunkWitness> for ChunkInfo {
     type Error = String;
 
-    fn try_from(value: &ArchivedChunkWitness) -> Result<Self, Self::Error> {
+    fn try_from(value: &ChunkWitness) -> Result<Self, Self::Error> {
         crate::execute(value)
     }
 }

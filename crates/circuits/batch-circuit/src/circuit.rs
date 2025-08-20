@@ -1,5 +1,5 @@
 use alloy_primitives::B256;
-use scroll_zkvm_types_batch::ArchivedBatchWitness;
+use scroll_zkvm_types_batch::BatchWitness;
 use scroll_zkvm_types_circuit::{
     AggCircuit, AggregationInput, Circuit, ProgramCommitment,
     io::read_witnesses,
@@ -8,7 +8,6 @@ use scroll_zkvm_types_circuit::{
         chunk::VersionedChunkInfo,
     },
 };
-use std::convert::Infallible;
 
 use crate::child_commitments;
 
@@ -26,7 +25,7 @@ openvm::init!();
 pub struct BatchCircuit;
 
 impl Circuit for BatchCircuit {
-    type Witness = ArchivedBatchWitness;
+    type Witness = BatchWitness;
 
     type PublicInputs = VersionedBatchInfo;
 
@@ -35,15 +34,16 @@ impl Circuit for BatchCircuit {
     }
 
     fn deserialize_witness(witness_bytes: &[u8]) -> &Self::Witness {
-        rkyv::access::<ArchivedBatchWitness, rkyv::rancor::BoxedError>(witness_bytes)
-            .expect("BatchCircuit: rkyc deserialisation of witness bytes failed")
+        let config = bincode::config::standard();
+        let (witness, _): (Self::Witness, _) =
+            bincode::serde::decode_from_slice(witness_bytes, config).unwrap();
+        Box::leak(Box::new(witness))
+        // rkyv::access::<ArchivedBatchWitness, rkyv::rancor::BoxedError>(witness_bytes)
+        //    .expect("BatchCircuit: rkyc deserialisation of witness bytes failed")
     }
 
     fn validate(witness: &Self::Witness) -> Self::PublicInputs {
-        (
-            BatchInfo::from(witness),
-            rkyv::deserialize::<_, Infallible>(&witness.fork_name).unwrap(),
-        )
+        (BatchInfo::from(witness), witness.fork_name.clone())
     }
 }
 
@@ -68,11 +68,11 @@ impl AggCircuit for BatchCircuit {
     }
 
     fn aggregated_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs> {
-        let fork_name = rkyv::deserialize::<_, Infallible>(&witness.fork_name).unwrap();
+        let fork_name = (witness.fork_name).clone();
         witness
             .chunk_infos
             .iter()
-            .map(|archived| (archived.into(), fork_name))
+            .map(|archived| (archived.clone(), fork_name))
             .collect()
     }
 

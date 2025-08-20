@@ -1,3 +1,4 @@
+mod types;
 mod witness;
 
 pub use witness::{ArchivedChunkWitness, ChunkWitness, ChunkWitnessExt};

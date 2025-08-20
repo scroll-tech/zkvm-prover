@@ -7,6 +7,9 @@ export RUST_BACKTRACE
 RUST_LOG ?= off,scroll_zkvm_integration=debug,scroll_zkvm_verifier=debug,scroll_zkvm_prover=debug,openvm_circuit=debug
 export RUST_LOG
 
+OPENVM_RUST_TOOLCHAIN ?= nightly-2025-08-08
+export OPENVM_RUST_TOOLCHAIN
+
 TESTDATA_PATH := crates/integration/testdata/phase2
 CHUNK_PROOF := 1-4
 
@@ -31,6 +34,9 @@ clean-guest:
 
 build-guest:
 	sh build-guest.sh
+
+build-guest-local:
+	cargo run --release -p scroll-zkvm-build-guest
 
 clean-build-guest: clean-guest build-guest
 
