@@ -60,8 +60,6 @@ fn export_onchain_verifier() -> eyre::Result<()> {
             format!("/home/lispczz/zkvm-prover/releases/{version}/verifier/verifier.bin");
         show_deployed_codehash(&code_path)?;
     }
-    show_deployed_codehash("/home/lispczz/zkvm-prover/2.bin")?;
-    show_deployed_codehash("/home/lispczz/zkvm-prover/x.bin")?;
 
     Ok(())
 }

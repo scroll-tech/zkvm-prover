@@ -41,18 +41,6 @@ pub struct BlockContextV2 {
     pub num_l1_msgs: u16,
 }
 
-impl From<&ArchivedBlockContextV2> for BlockContextV2 {
-    fn from(archived: &ArchivedBlockContextV2) -> Self {
-        Self {
-            timestamp: archived.timestamp.into(),
-            base_fee: archived.base_fee.into(),
-            gas_limit: archived.gas_limit.into(),
-            num_txs: archived.num_txs.into(),
-            num_l1_msgs: archived.num_l1_msgs.into(),
-        }
-    }
-}
-
 impl From<&[u8]> for BlockContextV2 {
     fn from(bytes: &[u8]) -> Self {
         assert_eq!(bytes.len(), SIZE_BLOCK_CTX);
@@ -214,28 +202,6 @@ impl ChunkInfo {
                 .cloned()
                 .collect::<Vec<u8>>(),
         )
-    }
-}
-
-impl From<&ArchivedChunkInfo> for ChunkInfo {
-    fn from(archived: &ArchivedChunkInfo) -> Self {
-        Self {
-            chain_id: archived.chain_id.into(),
-            prev_state_root: archived.prev_state_root.into(),
-            post_state_root: archived.post_state_root.into(),
-            withdraw_root: archived.withdraw_root.into(),
-            data_hash: archived.data_hash.into(),
-            tx_data_digest: archived.tx_data_digest.into(),
-            prev_msg_queue_hash: archived.prev_msg_queue_hash.into(),
-            post_msg_queue_hash: archived.post_msg_queue_hash.into(),
-            tx_data_length: archived.tx_data_length.into(),
-            initial_block_number: archived.initial_block_number.into(),
-            block_ctxs: archived
-                .block_ctxs
-                .iter()
-                .map(BlockContextV2::from)
-                .collect(),
-        }
     }
 }
 

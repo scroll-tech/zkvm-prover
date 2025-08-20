@@ -24,7 +24,7 @@ impl PartialProvingTask for BatchWitness {
     }
 
     fn write_guest_input(&self, stdin: &mut openvm_sdk::StdIn) -> Result<(), rkyv::rancor::Error> {
-        let b = rkyv::to_bytes::<rkyv::rancor::Error>(self)?;
+        let b = self.bincode_serialize(None).unwrap();
         stdin.write_bytes(b.as_slice());
         Ok(())
     }
