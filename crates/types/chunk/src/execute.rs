@@ -1,4 +1,7 @@
-use crate::{ChunkWitness, types::{ChunkExt, ChunkWitnessExt}};
+use crate::{
+    ChunkWitness,
+    types::{ChunkExt, ChunkWitnessExt},
+};
 use sbv_core::verifier::{self, VerifyResult};
 use sbv_helpers::manually_drop_on_zkvm;
 use sbv_primitives::{

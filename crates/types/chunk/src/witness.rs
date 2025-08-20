@@ -1,9 +1,9 @@
+use crate::types::validium::{QueueTransaction, SecretKey};
 use alloy_primitives::B256;
 use rkyv::util::AlignedVec;
 use sbv_core::verifier::StateCommitMode;
 use sbv_primitives::{U256, types::BlockWitness};
 use std::collections::HashSet;
-use crate::types::validium::{QueueTransaction, SecretKey};
 use types_base::{fork_name::ForkName, public_inputs::chunk::ChunkInfo};
 
 /// The witness type accepted by the chunk-circuit.
@@ -51,12 +51,7 @@ pub struct ChunkWitnessFeynman {
 }
 
 /// The witness type accepted by the chunk-circuit.
-#[derive(
-    Clone,
-    Debug,
-    serde::Deserialize,
-    serde::Serialize,
-)]
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct ChunkWitness {
     /// The block witness for each block in the chunk.
     pub blocks: Vec<BlockWitness>,
@@ -73,12 +68,7 @@ pub struct ChunkWitness {
 }
 
 /// The validium inputs for the chunk witness.
-#[derive(
-    Clone,
-    Debug,
-    serde::Deserialize,
-    serde::Serialize,
-)]
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct ValidiumInputs {
     /// The validium transactions for each block in the chunk.
     pub validium_txs: Vec<Vec<QueueTransaction>>,

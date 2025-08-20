@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 
 use alloy_primitives::{Address, Bytes};
-use alloy_sol_types::{sol, SolCall};
+use alloy_sol_types::{SolCall, sol};
 use sbv_primitives::types::consensus::TxL1Message;
 
 pub use ecies::SecretKey;
@@ -100,7 +100,7 @@ fn decrypt_data(data: &Bytes, secret_key: &SecretKey) -> Result<Bytes, ValidiumE
     Ok(data.clone())
 }
 
-fn decrypt_message(message: &Bytes, secret_key: &SecretKey) -> Result<Bytes, ValidiumError>  {
+fn decrypt_message(message: &Bytes, secret_key: &SecretKey) -> Result<Bytes, ValidiumError> {
     if message.starts_with(&finalizeDepositERC20EncryptedCall::SELECTOR) {
         let finalizeDepositERC20EncryptedCall {
             token,
@@ -121,7 +121,7 @@ fn decrypt_message(message: &Bytes, secret_key: &SecretKey) -> Result<Bytes, Val
                 amount,
                 l2Data,
             }
-                .abi_encode(),
+            .abi_encode(),
         ));
     }
 
