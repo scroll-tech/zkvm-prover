@@ -75,7 +75,7 @@ pub fn execute(witness: &ChunkWitness) -> Result<ChunkInfo, String> {
         block_ctxs: blocks.iter().map(block_to_context).collect(),
     };
 
-    println!("chunk_info = {:#?}", chunk_info);
+    println!("chunk_info = {}", chunk_info);
 
     Ok(chunk_info)
 }
