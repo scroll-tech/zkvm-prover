@@ -6936,7 +6936,6 @@ dependencies = [
  "sbv-trie",
  "scroll-zkvm-types-base",
  "serde",
- "tiny-keccak",
 ]
 
 [[package]]

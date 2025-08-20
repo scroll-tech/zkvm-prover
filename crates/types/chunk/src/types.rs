@@ -1,5 +1,7 @@
 use std::ops::Deref;
 
+use alloy_primitives::keccak256;
+use sbv_helpers::manually_drop_on_zkvm;
 use sbv_primitives::{
     B256, U256,
     types::{
@@ -8,8 +10,11 @@ use sbv_primitives::{
     },
 };
 
-// FIXME as alloy-primitive
-use tiny_keccak::{Hasher, Keccak};
+const LEGACY_DA_HEADER_LEN: usize = size_of::<u64>() // block number
+        + size_of::<u64>() // timestamp
+        + U256::BYTES // base fee per gas
+        + size_of::<u64>() // gas limit
+        + size_of::<u16>(); // l1 tx count
 
 pub trait ChunkExt {
     /// Hash the transaction bytes.
@@ -29,23 +34,35 @@ impl<T: Deref<Target = [RecoveredBlock<Block>]>> ChunkExt for T {
         blocks
             .iter()
             .flat_map(|b| b.body().transactions.iter())
-            .tx_bytes_hash_in(rlp_buffer.as_mut())
+            .tx_bytes_hash_in(rlp_buffer)
     }
 
     #[inline]
     fn legacy_data_hash(&self) -> B256 {
         let blocks = self.as_ref();
 
-        let mut data_hasher = Keccak::v256();
+        let num_l1_txs: usize = blocks
+            .iter()
+            .map(|b| {
+                b.body()
+                    .transactions
+                    .iter()
+                    .filter(|tx| tx.is_l1_message())
+                    .count()
+            })
+            .sum();
+
+        let mut buffer = manually_drop_on_zkvm!(Vec::with_capacity(
+            blocks.len() * LEGACY_DA_HEADER_LEN + num_l1_txs * size_of::<B256>(),
+        ));
+
         for block in blocks.iter() {
-            block.legacy_hash_da_header(&mut data_hasher);
+            block.encode_legacy_da_header(&mut buffer);
         }
         for block in blocks.iter() {
-            block.legacy_hash_l1_msg(&mut data_hasher);
+            block.encode_legacy_l1_msg(&mut buffer);
         }
-        let mut data_hash = B256::ZERO;
-        data_hasher.finalize(&mut data_hash.0);
-        data_hash
+        keccak256(&*buffer)
     }
 
     #[inline]
@@ -66,82 +83,74 @@ trait TxBytesHashExt {
     fn tx_bytes_hash_in(self, rlp_buffer: &mut Vec<u8>) -> (usize, B256);
 }
 
-impl<'a, I: IntoIterator<Item = &'a TransactionSigned>> TxBytesHashExt for I
-where
-    I: IntoIterator<Item = &'a TransactionSigned>,
+impl<'a, I: Iterator<Item = &'a TransactionSigned>> TxBytesHashExt for I
 {
     #[inline]
     fn tx_bytes_hash_in(self, rlp_buffer: &mut Vec<u8>) -> (usize, B256) {
-        use tiny_keccak::{Hasher, Keccak};
-
-        let mut tx_bytes_hasher = Keccak::v256();
-        let mut len = 0;
-
+        rlp_buffer.clear();
         // Ignore L1 msg txs.
-        for tx in self.into_iter().filter(|&tx| !tx.is_l1_message()) {
+        for tx in self.filter(|&tx| !tx.is_l1_message()) {
             tx.encode_2718(rlp_buffer);
-            len += rlp_buffer.len();
-            tx_bytes_hasher.update(rlp_buffer);
-            rlp_buffer.clear();
         }
-
-        let mut tx_bytes_hash = B256::ZERO;
-        tx_bytes_hasher.finalize(&mut tx_bytes_hash.0);
-        (len, tx_bytes_hash)
+        let hash = keccak256(&rlp_buffer);
+        rlp_buffer.clear();
+        (rlp_buffer.len(), hash)
     }
 }
 
 /// Chunk related extension methods for Block
 trait BlockChunkExt {
     /// Hash the header of the block
-    fn legacy_hash_da_header(&self, hasher: &mut impl tiny_keccak::Hasher);
+    fn encode_legacy_da_header(&self, buffer: &mut Vec<u8>);
     /// Hash the l1 messages of the block
-    fn legacy_hash_l1_msg(&self, hasher: &mut impl Hasher);
+    fn encode_legacy_l1_msg(&self, buffer: &mut Vec<u8>);
     /// Hash the l1 messages of the block
     fn hash_msg_queue(&self, initial_queue_hash: &B256) -> B256;
 }
 
 impl BlockChunkExt for RecoveredBlock<Block> {
     #[inline]
-    fn legacy_hash_da_header(&self, hasher: &mut impl Hasher) {
-        hasher.update(&self.number.to_be_bytes());
-        hasher.update(&self.timestamp.to_be_bytes());
-        hasher.update(
+    fn encode_legacy_da_header(&self, buffer: &mut Vec<u8>) {
+        buffer.extend_from_slice(&self.number.to_be_bytes());
+        buffer.extend_from_slice(&self.timestamp.to_be_bytes());
+        buffer.extend_from_slice(
             &U256::from_limbs([self.base_fee_per_gas.unwrap_or_default(), 0, 0, 0])
                 .to_be_bytes::<{ U256::BYTES }>(),
         );
-        hasher.update(&self.gas_limit.to_be_bytes());
+        buffer.extend_from_slice(&self.gas_limit.to_be_bytes());
         // FIXME: l1 tx could be skipped, the actual tx count needs to be calculated
-        hasher.update(&(self.body().transactions.len() as u16).to_be_bytes());
+        buffer.extend_from_slice(&(self.body().transactions.len() as u16).to_be_bytes());
     }
 
     #[inline]
-    fn legacy_hash_l1_msg(&self, hasher: &mut impl Hasher) {
+    fn encode_legacy_l1_msg(&self, buffer: &mut Vec<u8>) {
         for tx in self
             .body()
             .transactions
             .iter()
-            .filter(|tx| tx.is_l1_message())
+            .filter_map(|tx| tx.as_l1_message())
         {
-            hasher.update(tx.tx_hash().as_slice())
+            buffer.extend_from_slice(tx.hash_ref().as_ref());
         }
     }
 
     #[inline]
     fn hash_msg_queue(&self, initial_queue_hash: &B256) -> B256 {
         let mut rolling_hash = *initial_queue_hash;
+
+        let mut buffer = [0u8; { size_of::<B256>() * 2 }];
+        buffer[..32].copy_from_slice(rolling_hash.as_ref());
+
         for tx in self
             .body()
             .transactions
             .iter()
             .filter(|tx| tx.is_l1_message())
         {
-            let mut hasher = Keccak::v256();
-            hasher.update(rolling_hash.as_slice());
-            hasher.update(tx.tx_hash().as_slice());
+            buffer[..size_of::<B256>()].copy_from_slice(rolling_hash.as_ref());
+            buffer[size_of::<B256>()..].copy_from_slice(tx.tx_hash().as_ref());
 
-            hasher.finalize(rolling_hash.as_mut_slice());
-
+            rolling_hash = keccak256(&buffer);
             // clear last 32 bits, i.e. 4 bytes.
             // https://github.com/scroll-tech/da-codec/blob/26dc8d575244560611548fada6a3a2745c60fe83/encoding/da.go#L817-L825
             // see also https://github.com/scroll-tech/da-codec/pull/42

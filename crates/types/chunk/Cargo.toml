@@ -19,7 +19,6 @@ sbv-primitives = { workspace = true, features = ["hardforks", "scroll-hardforks"
 sbv-kv = { workspace = true }
 serde.workspace = true
 itertools.workspace = true
-tiny-keccak.workspace = true
 
 openvm = { workspace = true, features = ["std"] }
 openvm-rv32im-guest = {  workspace = true }
