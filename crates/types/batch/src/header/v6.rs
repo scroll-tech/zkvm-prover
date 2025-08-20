@@ -94,4 +94,3 @@ impl BatchHeader for BatchHeaderV6 {
         self.blob_versioned_hash
     }
 }
-

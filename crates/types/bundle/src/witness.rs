@@ -18,7 +18,15 @@ pub struct BundleWitnessEuclid {
 }
 
 /// The witness for the bundle circuit.
-#[derive(Clone, Debug, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, serde::Deserialize, serde::Serialize)]
+#[derive(
+    Clone,
+    Debug,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    serde::Deserialize,
+    serde::Serialize,
+)]
 #[rkyv(derive(Debug))]
 pub struct BundleWitness {
     /// Batch proofs being aggregated in the bundle.

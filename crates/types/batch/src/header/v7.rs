@@ -68,4 +68,3 @@ impl BatchHeader for BatchHeaderV7 {
         self.blob_versioned_hash
     }
 }
-

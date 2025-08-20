@@ -44,10 +44,7 @@ impl Circuit for BatchCircuit {
     }
 
     fn validate(witness: &Self::Witness) -> Self::PublicInputs {
-        (
-            BatchInfo::from(witness),
-            witness.fork_name.clone()
-        )
+        (BatchInfo::from(witness), witness.fork_name.clone())
     }
 }
 

@@ -6747,8 +6747,8 @@ name = "scroll-zkvm-bundle-circuit"
 version = "0.5.0"
 dependencies = [
  "alloy-primitives",
- "openvm 1.4.0-rc.4",
  "bincode 2.0.1",
+ "openvm 1.4.0-rc.4",
  "openvm-algebra-guest 1.4.0-rc.4",
  "openvm-keccak256-guest 1.4.0-rc.4",
  "openvm-rv32im-guest 1.4.0-rc.4",
@@ -6761,6 +6761,7 @@ dependencies = [
 name = "scroll-zkvm-chunk-circuit"
 version = "0.5.0"
 dependencies = [
+ "bincode 2.0.1",
  "k256 0.13.4 (git+https://github.com/openvm-org/openvm.git?rev=51d0aa69694fd33def3c433e48228a5675e4fd97)",
  "openvm 1.4.0-rc.4",
  "openvm-algebra-complex-macros 1.4.0-rc.4",
@@ -8180,9 +8181,9 @@ dependencies = [
 
 [[package]]
 name = "windows-link"
-version = "0.1.1"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "76840935b766e1b0a05c0066835fb9ec80071d4c09a16f6bd5f7e655e3c14c38"
+checksum = "5e6ad25900d524eaabdbbb96d20b4311e1e7ae1699af4fb28c17ae66c80d798a"
 
 [[package]]
 name = "windows-result"

@@ -37,10 +37,7 @@ impl Circuit for BundleCircuit {
     }
 
     fn validate(witness: &Self::Witness) -> Self::PublicInputs {
-        (
-            BundleInfo::from(witness),
-            witness.fork_name.clone(),
-        )
+        (BundleInfo::from(witness), witness.fork_name.clone())
     }
 }
 

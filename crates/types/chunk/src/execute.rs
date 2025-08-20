@@ -1,31 +1,30 @@
-use crate::ArchivedChunkWitness;
+use crate::ChunkWitness;
 use sbv_core::verifier::{self, VerifyResult};
 use sbv_helpers::manually_drop_on_zkvm;
 use sbv_primitives::{
-    B256, BlockWitness, U256,
+    B256, BlockWitness,
     chainspec::{Chain, build_chain_spec_force_hardfork},
     hardforks::Hardfork,
 };
-use std::convert::Infallible;
 use types_base::{
-    fork_name::ArchivedForkName,
+    fork_name::ForkName,
     public_inputs::chunk::{ChunkExt, ChunkInfo},
 };
 
 /// `compression_ratios` can be `None` in host mode.
 /// But in guest mode, it must be provided.
-pub fn execute(witness: &ArchivedChunkWitness) -> Result<ChunkInfo, String> {
+pub fn execute(witness: &ChunkWitness) -> Result<ChunkInfo, String> {
     let chain = Chain::from_id(witness.blocks[0].chain_id());
     let chain_spec = build_chain_spec_force_hardfork(
         chain,
         match witness.fork_name {
-            ArchivedForkName::EuclidV1 => Hardfork::Euclid,
-            ArchivedForkName::EuclidV2 => Hardfork::EuclidV2,
-            ArchivedForkName::Feynman => Hardfork::Feynman,
+            ForkName::EuclidV1 => Hardfork::Euclid,
+            ForkName::EuclidV2 => Hardfork::EuclidV2,
+            ForkName::Feynman => Hardfork::Feynman,
         },
     );
 
-    let state_commit_mode = rkyv::deserialize::<_, Infallible>(&witness.state_commit_mode).unwrap();
+    let state_commit_mode = witness.state_commit_mode.clone();
     println!("state_commit_mode: {:?}", state_commit_mode);
 
     let VerifyResult {
@@ -38,12 +37,7 @@ pub fn execute(witness: &ArchivedChunkWitness) -> Result<ChunkInfo, String> {
         witness.blocks.as_slice(),
         chain_spec.clone(),
         state_commit_mode,
-        Some(
-            witness
-                .compression_ratios
-                .iter()
-                .map(|x| x.iter().map(Into::<U256>::into)),
-        ),
+        Some(witness.compression_ratios.clone()),
     )
     .map_err(|e| format!("verify error: {e}"))?;
 
@@ -51,13 +45,13 @@ pub fn execute(witness: &ArchivedChunkWitness) -> Result<ChunkInfo, String> {
     let mut rlp_buffer = manually_drop_on_zkvm!(Vec::with_capacity(2048));
     let (tx_data_length, tx_data_digest) = blocks.tx_bytes_hash_in(rlp_buffer.as_mut());
 
-    let data_hash = if witness.fork_name < ArchivedForkName::EuclidV2 {
+    let data_hash = if witness.fork_name < ForkName::EuclidV2 {
         blocks.legacy_data_hash()
     } else {
         B256::ZERO
     };
 
-    let post_msg_queue_hash = if witness.fork_name >= ArchivedForkName::EuclidV2 {
+    let post_msg_queue_hash = if witness.fork_name >= ForkName::EuclidV2 {
         blocks.rolling_msg_queue_hash(witness.prev_msg_queue_hash.into())
     } else {
         B256::ZERO

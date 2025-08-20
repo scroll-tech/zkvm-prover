@@ -36,7 +36,15 @@ mod array48 {
 }
 
 /// Witness required by applying point evaluation
-#[derive(Clone, Debug, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, serde::Deserialize, serde::Serialize)]
+#[derive(
+    Clone,
+    Debug,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    serde::Deserialize,
+    serde::Serialize,
+)]
 #[rkyv(derive(Debug))]
 pub struct PointEvalWitness {
     /// kzg commitment
@@ -50,7 +58,15 @@ pub struct PointEvalWitness {
 }
 
 /// Witness to the batch circuit.
-#[derive(Clone, Debug, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, serde::Deserialize, serde::Serialize)]
+#[derive(
+    Clone,
+    Debug,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    serde::Deserialize,
+    serde::Serialize,
+)]
 #[rkyv(derive(Debug))]
 pub struct BatchWitness {
     /// Flattened root proofs from all chunks in the batch.
