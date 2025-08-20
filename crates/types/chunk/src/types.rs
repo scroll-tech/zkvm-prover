@@ -1,4 +1,3 @@
-use std::iter;
 use std::ops::Deref;
 
 use alloy_primitives::keccak256;
@@ -8,13 +7,14 @@ use sbv_primitives::{
     B256, U256,
     types::{
         eips::Encodable2718,
-        reth::primitives::{Block, RecoveredBlock, SignedTransaction, TransactionSigned},
+        reth::primitives::{Block, RecoveredBlock, TransactionSigned},
     },
 };
 use sbv_primitives::types::consensus::TxL1Message;
 use types_base::fork_name::ForkName;
-use crate::ChunkWitness;
+use crate::{ChunkWitness, QueueTransaction};
 use crate::types::validium::SecretKey;
+use crate::witness::ValidiumInputs;
 
 pub mod validium;
 
@@ -32,10 +32,7 @@ pub trait ChunkExt {
     /// Data hash before Euclid V2
     fn legacy_data_hash(&self) -> B256;
     /// Rolling message queue hash after Euclid V2
-    fn rolling_msg_queue_hash<'a, II, I>(&self, rolling_hash: B256, validium_txs: II) -> B256
-    where
-        II: IntoIterator<Item = Option<(I, &'a SecretKey)>>,
-        I: IntoIterator<Item = TxL1Message>;
+    fn rolling_msg_queue_hash(&self, rolling_hash: B256, validium_inputs: Option<&ValidiumInputs>) -> B256;
 }
 
 impl<T: Deref<Target = [RecoveredBlock<Block>]>> ChunkExt for T {
@@ -77,14 +74,19 @@ impl<T: Deref<Target = [RecoveredBlock<Block>]>> ChunkExt for T {
     }
 
     #[inline]
-    fn rolling_msg_queue_hash<'a, II, I>(&self, mut rolling_hash: B256, validium_txs: II) -> B256
-    where
-        II: IntoIterator<Item = Option<(I, &'a SecretKey)>>,
-        I: IntoIterator<Item = TxL1Message>,
-    {
+    fn rolling_msg_queue_hash(&self, mut rolling_hash: B256, validium_inputs: Option<&ValidiumInputs>) -> B256 {
         let blocks = self.as_ref();
-        for (block, validium_txs) in blocks.iter().zip_eq(validium_txs) {
-            rolling_hash = block.hash_msg_queue(&rolling_hash, validium_txs);
+
+        if let Some(ValidiumInputs { validium_txs, secret_key }) = validium_inputs {
+            let secret_key = SecretKey::try_from_bytes(secret_key).expect("valid secret key");
+
+            for (block, validium_txs) in blocks.iter().zip(validium_txs.iter()) {
+                rolling_hash = block.hash_msg_queue(&rolling_hash, Some((validium_txs.as_slice(), &secret_key)));
+            }
+        } else {
+            for block in blocks.iter() {
+                rolling_hash = block.hash_msg_queue(&rolling_hash, None);
+            }
         }
         rolling_hash
     }
@@ -123,9 +125,7 @@ trait BlockChunkExt {
     /// Hash the l1 messages of the block
     fn encode_legacy_l1_msg(&self, buffer: &mut Vec<u8>);
     /// Hash the l1 messages of the block
-    fn hash_msg_queue<I>(&self, initial_queue_hash: &B256, validium_txs: Option<(I, &SecretKey)>) -> B256
-    where
-        I: IntoIterator<Item = TxL1Message>;
+    fn hash_msg_queue(&self, initial_queue_hash: &B256, validium_txs: Option<(&[QueueTransaction], &SecretKey)>) -> B256;
 }
 
 impl BlockChunkExt for RecoveredBlock<Block> {
@@ -165,9 +165,7 @@ impl BlockChunkExt for RecoveredBlock<Block> {
     }
 
     #[inline]
-    fn hash_msg_queue<I>(&self, initial_queue_hash: &B256, validium_txs: Option<(I, &SecretKey)>) -> B256
-    where
-        I: IntoIterator<Item = TxL1Message>,
+    fn hash_msg_queue(&self, initial_queue_hash: &B256, validium_txs: Option<(&[QueueTransaction], &SecretKey)>) -> B256
     {
         let mut rolling_hash = *initial_queue_hash;
 
@@ -189,7 +187,8 @@ impl BlockChunkExt for RecoveredBlock<Block> {
         };
 
         if let Some((txs, secret_key)) = validium_txs {
-            for (validium_tx, tx_in_block)  in txs.into_iter().zip_eq(self.l1_txs_iter()) {
+            for (validium_tx, tx_in_block)  in txs.iter().zip_eq(self.l1_txs_iter()) {
+                let validium_tx = TxL1Message::from(validium_tx);
                 match validium::decrypt(&validium_tx, secret_key) {
                     Ok(decrypted) => {
                         assert_eq!(decrypted, *tx_in_block);
@@ -225,30 +224,9 @@ impl ChunkWitnessExt for ChunkWitness {
 
     #[inline]
     fn rolling_msg_queue_hash(&self, blocks: &[RecoveredBlock<Block>]) -> Option<B256> {
-        if self.fork_name < ForkName::EuclidV2 {
-            return None;
-        }
-
-        let prev_msg_queue_hash: B256 = self.prev_msg_queue_hash.into();
-
-        let rolling_msg_queue_hash = match self.validium.as_ref() {
-            None => blocks.rolling_msg_queue_hash(
-                prev_msg_queue_hash,
-                iter::repeat_n(None::<(Vec<TxL1Message>, &SecretKey)>, blocks.len()),
-            ),
-            Some(validium) => {
-                let secret_key =
-                    SecretKey::try_from_bytes(validium.secret_key.as_ref()).expect("invalid secret key");
-                blocks.rolling_msg_queue_hash(
-                    prev_msg_queue_hash,
-                    validium
-                        .validium_txs
-                        .iter()
-                        .map(|txs| Some((txs.iter().map(|tx| tx.into()), &secret_key))),
-                )
-            }
-        };
-
-        Some(rolling_msg_queue_hash)
+        (self.fork_name < ForkName::EuclidV2).then(|| blocks.rolling_msg_queue_hash(
+            self.prev_msg_queue_hash,
+            self.validium.as_ref(),
+        ))
     }
 }

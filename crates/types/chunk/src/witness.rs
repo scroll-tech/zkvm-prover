@@ -56,11 +56,7 @@ pub struct ChunkWitnessFeynman {
     Debug,
     serde::Deserialize,
     serde::Serialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
 )]
-#[rkyv(derive(Debug))]
 pub struct ChunkWitness {
     /// The block witness for each block in the chunk.
     pub blocks: Vec<BlockWitness>,
@@ -82,11 +78,7 @@ pub struct ChunkWitness {
     Debug,
     serde::Deserialize,
     serde::Serialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
 )]
-#[rkyv(derive(Debug))]
 pub struct ValidiumInputs {
     /// The validium transactions for each block in the chunk.
     pub validium_txs: Vec<Vec<QueueTransaction>>,
@@ -214,9 +206,10 @@ impl ChunkWitness {
         guest_version: Option<ForkName>,
     ) -> Result<AlignedVec, rkyv::rancor::Error> {
         let guest_version = guest_version.unwrap_or(self.fork_name);
+        // FIXME
         if guest_version >= ForkName::Feynman {
             // Use the new rkyv serialization for Feynman and later forks
-            rkyv::to_bytes::<rkyv::rancor::Error>(self)
+            rkyv::to_bytes::<rkyv::rancor::Error>(&self.clone().into_feynman())
         } else {
             // Use the old rkyv serialization for earlier forks
             rkyv::to_bytes::<rkyv::rancor::Error>(&self.clone().into_euclid())

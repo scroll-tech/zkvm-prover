@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 
-use alloy_primitives::{Address, Bytes, U256};
+use alloy_primitives::{Address, Bytes};
 use alloy_sol_types::{sol, SolCall};
 use sbv_primitives::types::consensus::TxL1Message;
 
@@ -11,11 +11,7 @@ sol! {
         Debug,
         serde::Deserialize,
         serde::Serialize,
-        rkyv::Archive,
-        rkyv::Deserialize,
-        rkyv::Serialize,
     )]
-    #[rkyv(derive(Debug))]
     event QueueTransaction(
         address indexed sender,
         address indexed target,
@@ -75,21 +71,6 @@ impl From<&QueueTransaction> for TxL1Message {
             value: tx.value,
             sender: tx.sender,
             input: tx.data.clone(),
-        }
-    }
-}
-
-
-impl From<&ArchivedQueueTransaction> for TxL1Message {
-    fn from(tx: &ArchivedQueueTransaction) -> Self {
-        let gas_limit: U256 = tx.gasLimit.into();
-        TxL1Message {
-            queue_index: tx.queueIndex.to_native(),
-            gas_limit: gas_limit.to(),
-            to: tx.target.into(),
-            value: tx.value.into(),
-            sender: tx.sender.into(),
-            input: Bytes::copy_from_slice(tx.data.as_ref()),
         }
     }
 }
