@@ -1,14 +1,9 @@
 use alloy_primitives::B256;
 use rkyv::util::AlignedVec;
 use sbv_core::verifier::StateCommitMode;
-use sbv_primitives::types::consensus::TxL1Message;
-use sbv_primitives::types::reth::primitives::{Block, RecoveredBlock};
 use sbv_primitives::{U256, types::BlockWitness};
 use std::collections::HashSet;
-use std::iter;
-use types_base::fork_name::ArchivedForkName;
-use types_base::public_inputs::chunk::ChunkExt;
-use types_base::public_inputs::chunk::validium::{QueueTransaction, SecretKey};
+use crate::types::validium::{QueueTransaction, SecretKey};
 use types_base::{fork_name::ForkName, public_inputs::chunk::ChunkInfo};
 
 /// The witness type accepted by the chunk-circuit.
@@ -219,15 +214,13 @@ impl ChunkWitness {
         guest_version: Option<ForkName>,
     ) -> Result<AlignedVec, rkyv::rancor::Error> {
         let guest_version = guest_version.unwrap_or(self.fork_name);
-        // FIXME: Validium compatibility
-        rkyv::to_bytes::<rkyv::rancor::Error>(self)
-        // if guest_version >= ForkName::Feynman {
-        //     // Use the new rkyv serialization for Feynman and later forks
-        //     rkyv::to_bytes::<rkyv::rancor::Error>(self)
-        // } else {
-        //     // Use the old rkyv serialization for earlier forks
-        //     rkyv::to_bytes::<rkyv::rancor::Error>(&self.clone().into_euclid())
-        // }
+        if guest_version >= ForkName::Feynman {
+            // Use the new rkyv serialization for Feynman and later forks
+            rkyv::to_bytes::<rkyv::rancor::Error>(self)
+        } else {
+            // Use the old rkyv serialization for earlier forks
+            rkyv::to_bytes::<rkyv::rancor::Error>(&self.clone().into_euclid())
+        }
     }
 
     pub fn stats(&self) -> ChunkDetails {
@@ -252,47 +245,5 @@ impl TryFrom<&ChunkWitness> for ChunkInfo {
 
     fn try_from(value: &ChunkWitness) -> Result<Self, Self::Error> {
         crate::execute(value)
-    }
-}
-
-pub trait ChunkWitnessExt {
-    fn legacy_data_hash(&self, blocks: &[RecoveredBlock<Block>]) -> Option<B256>;
-
-    fn rolling_msg_queue_hash(&self, blocks: &[RecoveredBlock<Block>]) -> Option<B256>;
-}
-
-impl ChunkWitnessExt for ArchivedChunkWitness {
-    #[inline]
-    fn legacy_data_hash(&self, blocks: &[RecoveredBlock<Block>]) -> Option<B256> {
-        (self.fork_name < ArchivedForkName::EuclidV2).then(|| blocks.legacy_data_hash())
-    }
-
-    #[inline]
-    fn rolling_msg_queue_hash(&self, blocks: &[RecoveredBlock<Block>]) -> Option<B256> {
-        if self.fork_name < ArchivedForkName::EuclidV2 {
-            return None;
-        }
-
-        let prev_msg_queue_hash: B256 = self.prev_msg_queue_hash.into();
-
-        let rolling_msg_queue_hash = match self.validium.as_ref() {
-            None => blocks.rolling_msg_queue_hash(
-                prev_msg_queue_hash,
-                iter::repeat_n(None::<(Vec<TxL1Message>, &SecretKey)>, blocks.len()),
-            ),
-            Some(validium) => {
-                let secret_key =
-                    SecretKey::try_from_bytes(validium.secret_key.as_ref()).expect("invalid secret key");
-                blocks.rolling_msg_queue_hash(
-                    prev_msg_queue_hash,
-                    validium
-                        .validium_txs
-                        .iter()
-                        .map(|txs| Some((txs.iter().map(|tx| tx.into()), &secret_key))),
-                )
-            }
-        };
-
-        Some(rolling_msg_queue_hash)
     }
 }

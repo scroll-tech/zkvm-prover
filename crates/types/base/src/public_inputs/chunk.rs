@@ -4,8 +4,6 @@ use crate::{
 };
 use alloy_primitives::{B256, U256};
 
-pub mod validium;
-
 /// Number of bytes used to serialise [`BlockContextV2`].
 pub const SIZE_BLOCK_CTX: usize = 52;
 
