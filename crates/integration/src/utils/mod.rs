@@ -5,8 +5,7 @@ use sbv_primitives::{
 };
 use scroll_zkvm_types::{
     batch::{
-        BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchInfo, BatchWitness, Bytes48,
-        PointEvalWitness, ReferenceHeader,
+        BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchInfo, BatchWitness, Bytes48, PointEvalWitness, PointEvalWitnessHints, ReferenceHeader
     },
     bundle::{BundleInfo, BundleWitness},
     chunk::{ChunkInfo, ChunkWitness},
@@ -212,8 +211,8 @@ pub fn build_batch_witnesses(
     let kzg_commitment = point_eval::blob_to_kzg_commitment(&kzg_blob);
     let blob_versioned_hash = point_eval::get_versioned_hash(&kzg_commitment);
 
-    // primage = keccak(payload) + blob_versioned_hash
-    let chg_preimage = if testing_hardfork() >= ForkName::EuclidV2 {
+    // preimage = keccak(payload) + blob_versioned_hash
+    let challenge_preimage = if testing_hardfork() >= ForkName::EuclidV2 {
         let mut chg_preimage = keccak256(&blob_bytes).to_vec();
         chg_preimage.extend(blob_versioned_hash.0);
         chg_preimage
@@ -233,7 +232,7 @@ pub fn build_batch_witnesses(
         chg_preimage.extend_from_slice(blob_versioned_hash.as_slice());
         chg_preimage
     };
-    let challenge_digest = keccak256(&chg_preimage);
+    let challenge_digest = keccak256(&challenge_preimage);
 
     let x = point_eval::get_x_from_challenge(challenge_digest);
     let (kzg_proof, z) = point_eval::get_kzg_proof(&kzg_blob, challenge_digest);
@@ -320,22 +319,24 @@ pub fn build_batch_witnesses(
         })
         .collect::<Vec<_>>();
 
+    let (point_eval_witness, point_eval_witness_hints) = build_point_eval_witness(
+        *kzg_commitment.to_bytes().as_ref(),
+        *kzg_proof.to_bytes().as_ref(),
+    );
     Ok(BatchWitness {
         chunk_proofs,
         chunk_infos,
         reference_header,
         blob_bytes,
-        point_eval_witness: build_point_eval_witness(
-            *kzg_commitment.to_bytes().as_ref(),
-            *kzg_proof.to_bytes().as_ref(),
-        ),
+        point_eval_witness,
+        point_eval_witness_hints,
         fork_name,
     })
 }
 
 // TODO: move it to some correct place
 
-fn build_point_eval_witness(kzg_commitment: Bytes48, kzg_proof: Bytes48) -> PointEvalWitness {
+fn build_point_eval_witness(kzg_commitment: Bytes48, kzg_proof: Bytes48) -> (PointEvalWitness,PointEvalWitnessHints) {
     use snark_verifier_sdk::snark_verifier::halo2_base::halo2_proofs::halo2curves::bls12_381;
     let commitment_point = bls12_381::G1Affine::from_compressed_be(&kzg_commitment).unwrap();
     let mut kzg_commitment_hint_x = [0u8; 48];
@@ -353,14 +354,15 @@ fn build_point_eval_witness(kzg_commitment: Bytes48, kzg_proof: Bytes48) -> Poin
     let mut kzg_proof_hint_y = [0u8; 48];
     kzg_proof_hint_x.copy_from_slice(&proof_point.x.to_bytes_be());
     kzg_proof_hint_y.copy_from_slice(&proof_point.y.to_bytes_be());
-    PointEvalWitness {
+    (PointEvalWitness {
         kzg_commitment,
+        kzg_proof
+    }, PointEvalWitnessHints {
         kzg_commitment_hint_x,
         kzg_commitment_hint_y,
-        kzg_proof,
         kzg_proof_hint_x,
         kzg_proof_hint_y,
-    }
+    })
 }
 
 #[test]
