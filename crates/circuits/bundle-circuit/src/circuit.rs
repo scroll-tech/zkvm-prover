@@ -8,7 +8,6 @@ use scroll_zkvm_types_circuit::{
         bundle::{BundleInfo, VersionedBundleInfo},
     },
 };
-use std::convert::Infallible;
 
 use crate::child_commitments;
 

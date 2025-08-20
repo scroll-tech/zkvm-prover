@@ -5,7 +5,6 @@ use scroll_zkvm_types_circuit::{
     io::read_witnesses,
     public_inputs::chunk::{ChunkInfo, VersionedChunkInfo},
 };
-use std::convert::Infallible;
 
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use {

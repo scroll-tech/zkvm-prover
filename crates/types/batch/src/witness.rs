@@ -8,7 +8,7 @@ use crate::{
         BatchInfoBuilder, BatchInfoBuilderV6, BatchInfoBuilderV7, BatchInfoBuilderV8,
         BuilderArgsV6, BuilderArgsV7, BuilderArgsV8,
     },
-    header::{ArchivedReferenceHeader, ReferenceHeader},
+    header::ReferenceHeader,
 };
 
 /// Simply rewrap byte48 to avoid unnecessary dep

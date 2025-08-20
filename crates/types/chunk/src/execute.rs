@@ -1,14 +1,18 @@
-use crate::ChunkWitness;
+use crate::{ChunkWitness, types::ChunkExt};
 use sbv_core::verifier::{self, VerifyResult};
 use sbv_helpers::manually_drop_on_zkvm;
 use sbv_primitives::{
-    B256, BlockWitness,
+    B256, BlockWitness, U256,
     chainspec::{Chain, build_chain_spec_force_hardfork},
     hardforks::Hardfork,
+    types::{
+        consensus::BlockHeader,
+        reth::primitives::{Block, RecoveredBlock},
+    },
 };
 use types_base::{
     fork_name::ForkName,
-    public_inputs::chunk::{ChunkExt, ChunkInfo},
+    public_inputs::chunk::{BlockContextV2, ChunkInfo},
 };
 
 /// `compression_ratios` can be `None` in host mode.
@@ -68,10 +72,50 @@ pub fn execute(witness: &ChunkWitness) -> Result<ChunkInfo, String> {
         initial_block_number: blocks[0].header().number,
         prev_msg_queue_hash: witness.prev_msg_queue_hash.into(),
         post_msg_queue_hash,
-        block_ctxs: blocks.iter().map(Into::into).collect(),
+        block_ctxs: blocks.iter().map(block_to_context).collect(),
     };
 
     println!("chunk_info = {:#?}", chunk_info);
 
     Ok(chunk_info)
 }
+
+fn block_to_context(block: &RecoveredBlock<Block>) -> BlockContextV2 {
+    BlockContextV2 {
+        timestamp: block.timestamp,
+        gas_limit: block.gas_limit,
+        base_fee: U256::from(block.base_fee_per_gas().expect("base_fee_expected")),
+        num_txs: u16::try_from(block.body().transactions.len()).expect("num txs u16"),
+        num_l1_msgs: u16::try_from(
+            block
+                .body()
+                .transactions
+                .iter()
+                .filter(|tx| tx.is_l1_message())
+                .count(),
+        )
+        .expect("num l1 msgs u16"),
+    }
+}
+
+/*
+impl From<&RecoveredBlock<Block>> for BlockContextV2 {
+    fn from(block: &RecoveredBlock<Block>) -> BlockContextV2 {
+        BlockContextV2 {
+            timestamp: block.timestamp,
+            gas_limit: block.gas_limit,
+            base_fee: U256::from(block.base_fee_per_gas().expect("base_fee_expected")),
+            num_txs: u16::try_from(block.body().transactions.len()).expect("num txs u16"),
+            num_l1_msgs: u16::try_from(
+                block
+                    .body()
+                    .transactions
+                    .iter()
+                    .filter(|tx| tx.is_l1_message())
+                    .count(),
+            )
+            .expect("num l1 msgs u16"),
+        }
+    }
+}
+    */

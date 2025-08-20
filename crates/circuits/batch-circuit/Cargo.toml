@@ -6,7 +6,6 @@ repository.workspace = true
 version = "0.5.0"
 
 [dependencies]
-bincode.workspace = true
 scroll-zkvm-types-circuit.workspace = true
 scroll-zkvm-types-batch.workspace = true
 
@@ -23,7 +22,8 @@ openvm-rv32im-guest.workspace = true
 
 halo2curves-axiom = "0.7.0"
 
-alloy-primitives = { workspace = true }
+alloy-primitives = { workspace = true, features = ["native-keccak"] }
+bincode.workspace = true
 bitcode.workspace = true
 itertools.workspace = true
 rkyv.workspace = true
