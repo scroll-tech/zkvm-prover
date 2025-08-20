@@ -31,20 +31,20 @@ bundle_vk=$(jq -r '.bundle_vk' "$VK_JSON")
 
 # Create directories and copy files
 mkdir -p "$RELEASES_DIR/chunk/$chunk_vk"
-mkdir -p "$RELEASES_DIR/batch/$chunk_vk"
-mkdir -p "$RELEASES_DIR/bundle/$chunk_vk"
+mkdir -p "$RELEASES_DIR/batch/$batch_vk"
+mkdir -p "$RELEASES_DIR/bundle/$bundle_vk"
 
 # Copy files from releases/dev to the new directories
 cp -r "$DEV_DIR/chunk"/* "$RELEASES_DIR/chunk/$chunk_vk/"
-cp -r "$DEV_DIR/batch"/* "$RELEASES_DIR/batch/$chunk_vk/"
-cp -r "$DEV_DIR/bundle"/* "$RELEASES_DIR/bundle/$chunk_vk/"
+cp -r "$DEV_DIR/batch"/* "$RELEASES_DIR/batch/$batch_vk/"
+cp -r "$DEV_DIR/bundle"/* "$RELEASES_DIR/bundle/$bundle_vk/"
 mkdir -p $VERIFIER_RELEASES_DIR
 mv $DEV_DIR/* $VERIFIER_RELEASES_DIR
 
 echo "Files organized for release successfully:"
 echo "  chunk files -> $RELEASES_DIR/chunk/$chunk_vk"
-echo "  batch files -> $RELEASES_DIR/batch/$chunk_vk"
-echo "  bundle files -> $RELEASES_DIR/bundle/$chunk_vk"
+echo "  batch files -> $RELEASES_DIR/batch/$batch_vk"
+echo "  bundle files -> $RELEASES_DIR/bundle/$bundle_vk"
 echo "  verifier files -> $VERIFIER_RELEASES_DIR"
 echo "  recursivly upload releases directory"
 
