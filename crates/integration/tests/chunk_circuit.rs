@@ -74,7 +74,7 @@ fn test_execute() -> eyre::Result<()> {
 }
 
 #[test]
-fn test_validium_execute() -> eyre::Result<()> {
+fn test_execute_validium() -> eyre::Result<()> {
     ChunkProverTester::setup()?;
     let prover = ChunkProverTester::load_prover(false)?;
 
