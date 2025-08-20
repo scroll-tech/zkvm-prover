@@ -1876,14 +1876,6 @@ dependencies = [
 [[package]]
 name = "encoder-standard"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/da-codec.git?rev=2cfec8c#2cfec8c99547b68dc64e2b020fa2b83cfb9c0e99"
-dependencies = [
- "zstd",
-]
-
-[[package]]
-name = "encoder-standard"
-version = "0.1.0"
 source = "git+https://github.com/scroll-tech/da-codec#2cfec8c99547b68dc64e2b020fa2b83cfb9c0e99"
 dependencies = [
  "zstd",
@@ -6665,7 +6657,7 @@ dependencies = [
  "alloy-evm",
  "alloy-primitives",
  "auto_impl",
- "encoder-standard 0.1.0 (git+https://github.com/scroll-tech/da-codec)",
+ "encoder-standard",
  "revm 27.1.0",
  "revm-scroll",
  "scroll-alloy-consensus",
@@ -8018,11 +8010,11 @@ checksum = "051eb1abcf10076295e815102942cc58f9d5e3b4560e46e53c21e8ff6f3af7b1"
 [[package]]
 name = "vm-zstd"
 version = "0.1.1"
-source = "git+https://github.com/scroll-tech/rust-zstd-decompressor.git?branch=master#d47c5fb58a1ae8412c721b428a624766cbefa97e"
+source = "git+https://github.com/scroll-tech/rust-zstd-decompressor.git?branch=master#b0273278316245fef733df54cc29ee3baa3d7382"
 dependencies = [
  "anyhow",
  "bitstream-io",
- "encoder-standard 0.1.0 (git+https://github.com/scroll-tech/da-codec.git?rev=2cfec8c)",
+ "encoder-standard",
  "itertools 0.11.0",
  "serde",
  "strum 0.25.0",
