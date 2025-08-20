@@ -78,16 +78,14 @@ impl<P: Payload> super::BatchInfoBuilder for GenericBatchInfoBuilderV7<P> {
             use openvm_algebra_guest::IntMod;
             use openvm_ecc_guest::weierstrass::WeierstrassPoint;
 
-            let buf = &args.kzg_commitment_hint.unwrap();
-            let x = Fp::from_be_bytes(&buf[0..48]).unwrap();
-            let y = Fp::from_be_bytes(&buf[48..96]).unwrap();
+            let x = Fp::from_be_bytes(&args.kzg_commitment_hint_x.unwrap()).unwrap();
+            let y = Fp::from_be_bytes(&args.kzg_commitment_hint_y.unwrap()).unwrap();
             let commitment = G1Affine::from_xy(x, y).unwrap();
             let tt = from_intrinsic_g1(commitment.clone());
             assert_eq!(tt.to_compressed_be(), kzg_commitment);
 
-            let buf = &args.kzg_proof_hint.unwrap();
-            let x = Fp::from_be_bytes(&buf[0..48]).unwrap();
-            let y = Fp::from_be_bytes(&buf[48..96]).unwrap();
+            let x = Fp::from_be_bytes(&args.kzg_proof_hint_x.unwrap()).unwrap();
+            let y = Fp::from_be_bytes(&args.kzg_proof_hint_y.unwrap()).unwrap();
             let proof = G1Affine::from_xy(x, y).unwrap();
             let pp = from_intrinsic_g1(proof.clone());
             assert_eq!(pp.to_compressed_be(), kzg_proof);

@@ -15,7 +15,6 @@ use types_base::{
     public_inputs::chunk::{BlockContextV2, ChunkInfo},
 };
 
-
 /// `compression_ratios` can be `None` in host mode.
 /// But in guest mode, it must be provided.
 pub fn execute(witness: &ChunkWitness) -> Result<ChunkInfo, String> {

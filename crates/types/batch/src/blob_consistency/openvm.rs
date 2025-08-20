@@ -8,11 +8,8 @@ use openvm_algebra_guest::{Field, IntMod};
 use openvm_ecc_guest::{AffinePoint, CyclicGroup, msm, weierstrass::WeierstrassPoint};
 use openvm_pairing::bls12_381::{Bls12_381, G1Affine, G2Affine, Scalar};
 use openvm_pairing_guest::pairing::PairingCheck;
-use std::ops::{AddAssign, MulAssign};
 
 use super::types::ToIntrinsic;
-use crate::blob_consistency::constants::KZG_G2_SETUP_BYTES;
-
 use crate::blob_consistency::constants::KZG_G2_SETUP_BYTES;
 
 use super::{BLOB_WIDTH, LOG_BLOB_WIDTH};
@@ -38,7 +35,7 @@ static ROOTS_OF_UNITY: LazyLock<Vec<Scalar>> = LazyLock::new(|| {
         right[0].mul_assign(&root_of_unity);
     }
     println!("r003");
-        
+
     (0..BLOB_WIDTH)
         .map(|i| {
             let j = u16::try_from(i).unwrap().reverse_bits() >> (16 - LOG_BLOB_WIDTH);
