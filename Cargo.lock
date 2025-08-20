@@ -6745,6 +6745,7 @@ version = "0.5.0"
 dependencies = [
  "bitcode",
  "cargo_metadata 0.19.2",
+ "clap",
  "dotenv",
  "eyre",
  "halo2curves-axiom 0.5.3",

@@ -35,6 +35,7 @@ toml.workspace = true
 
 cargo_metadata = "0.19.1"
 dotenv = "0.15.0"
+clap = { version = "4.0", features = ["derive"] }
 
 [features]
 default = []

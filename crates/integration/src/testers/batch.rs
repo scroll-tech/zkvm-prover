@@ -106,7 +106,7 @@ impl BatchTaskGenerator {
 
         let commitment = ProgramCommitment {
             exe: crate::commitments::chunk_exe_commit::COMMIT,
-            vm: crate::commitments::chunk_leaf_commit::COMMIT,
+            vm: crate::commitments::chunk_vm_commit::COMMIT,
         };
         let ret_wit = build_batch_witnesses(
             &chunks,

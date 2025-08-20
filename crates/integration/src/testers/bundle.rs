@@ -110,7 +110,7 @@ impl BundleTaskGenerator {
         let fork_name = testing_hardfork();
         let commitment = ProgramCommitment {
             exe: crate::commitments::batch_exe_commit::COMMIT,
-            vm: crate::commitments::batch_leaf_commit::COMMIT,
+            vm: crate::commitments::batch_vm_commit::COMMIT,
         };
         let mut batch_proofs = Vec::new();
         let mut batch_infos: Vec<BatchInfo> = Vec::new();
