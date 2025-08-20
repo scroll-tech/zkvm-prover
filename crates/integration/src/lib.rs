@@ -74,10 +74,10 @@ static DIR_TESTRUN: OnceCell<PathBuf> = OnceCell::new();
 /// Circuit that implements functionality required to run e2e tests in specified phase (chunk/batch/bundle).
 pub trait ProverTester {
     /// Tester witness type
-    type Witness: rkyv::Archive + PartialProvingTask;
+    type Witness: PartialProvingTask; // + rkyv::Archive;
 
     /// Tester metadata type
-    type Metadata: for<'a> TryFrom<&'a <Self::Witness as rkyv::Archive>::Archived>;
+    type Metadata; //: for<'a> TryFrom<&'a <Self::Witness as rkyv::Archive>::Archived>;
 
     /// Naming for tester
     const NAME: &str;

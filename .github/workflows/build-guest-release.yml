@@ -59,4 +59,4 @@ jobs:
 
       - name: Upload releases to S3
         run: |
-          aws s3 cp $DIR_OUTPUT s3://circuit-release/scroll-zkvm --recursive
+          aws s3 cp $DIR_OUTPUT s3://circuit-release/scroll-zkvm/releases --recursive

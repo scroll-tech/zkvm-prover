@@ -8,30 +8,69 @@ use crate::{
         BatchInfoBuilder, BatchInfoBuilderV6, BatchInfoBuilderV7, BatchInfoBuilderV8,
         BuilderArgsV6, BuilderArgsV7, BuilderArgsV8,
     },
-    header::{ArchivedReferenceHeader, ReferenceHeader},
+    header::ReferenceHeader,
 };
 
 /// Simply rewrap byte48 to avoid unnecessary dep
 pub type Bytes48 = [u8; 48];
+mod array48 {
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<S>(array: &[u8; 48], serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_bytes(array)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<[u8; 48], D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let bytes: &[u8] = serde::Deserialize::deserialize(deserializer)?;
+        bytes.try_into().map_err(|_| {
+            let msg = format!("expected a byte array of length 48 but got {}", bytes.len());
+            serde::de::Error::custom(msg)
+        })
+    }
+}
 
 /// Witness required by applying point evaluation
-#[derive(Clone, Debug, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(
+    Clone,
+    Debug,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    serde::Deserialize,
+    serde::Serialize,
+)]
 #[rkyv(derive(Debug))]
 pub struct PointEvalWitness {
     /// kzg commitment
     #[rkyv()]
+    #[serde(with = "array48")]
     pub kzg_commitment: Bytes48,
     #[rkyv()]
     pub kzg_commitment_hint: [u8; 96],
     /// kzg proof
     #[rkyv()]
+    #[serde(with = "array48")]
     pub kzg_proof: Bytes48,
     #[rkyv()]
     pub kzg_proof_hint: [u8; 96],
 }
 
 /// Witness to the batch circuit.
-#[derive(Clone, Debug, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(
+    Clone,
+    Debug,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    serde::Deserialize,
+    serde::Serialize,
+)]
 #[rkyv(derive(Debug))]
 pub struct BatchWitness {
     /// Flattened root proofs from all chunks in the batch.
@@ -53,31 +92,30 @@ pub struct BatchWitness {
     pub fork_name: ForkName,
 }
 
-impl ProofCarryingWitness for ArchivedBatchWitness {
-    fn get_proofs(&self) -> Vec<AggregationInput> {
-        self.chunk_proofs
-            .iter()
-            .map(|archived| AggregationInput {
-                public_values: archived
-                    .public_values
-                    .iter()
-                    .map(|u32_le| u32_le.to_native())
-                    .collect(),
-                commitment: ProgramCommitment::from(&archived.commitment),
-            })
-            .collect()
+impl BatchWitness {
+    pub fn bincode_serialize(
+        &self,
+        guest_version: Option<ForkName>,
+    ) -> Result<Vec<u8>, bincode::error::EncodeError> {
+        let config = bincode::config::standard();
+        bincode::serde::encode_to_vec(&self, config)
     }
 }
 
-impl From<&ArchivedBatchWitness> for BatchInfo {
-    fn from(witness: &ArchivedBatchWitness) -> Self {
-        println!("6000");
-        let chunk_infos: Vec<ChunkInfo> = witness.chunk_infos.iter().map(|ci| ci.into()).collect();
+impl ProofCarryingWitness for BatchWitness {
+    fn get_proofs(&self) -> Vec<AggregationInput> {
+        self.chunk_proofs.clone()
+    }
+}
+
+impl From<&BatchWitness> for BatchInfo {
+    fn from(witness: &BatchWitness) -> Self {
+        let chunk_infos: Vec<ChunkInfo> = witness.chunk_infos.iter().map(|ci| ci.clone()).collect();
 
         match &witness.reference_header {
-            ArchivedReferenceHeader::V6(header) => {
+            ReferenceHeader::V6(header) => {
                 let args = BuilderArgsV6 {
-                    header: header.into(),
+                    header: header.clone(),
                     chunk_infos,
                     blob_bytes: witness.blob_bytes.to_vec(),
                     kzg_commitment: None,
@@ -87,9 +125,9 @@ impl From<&ArchivedBatchWitness> for BatchInfo {
                 };
                 BatchInfoBuilderV6::build(args)
             }
-            ArchivedReferenceHeader::V7(header) => {
+            ReferenceHeader::V7(header) => {
                 let args = BuilderArgsV7 {
-                    header: header.into(),
+                    header: header.clone(),
                     chunk_infos,
                     blob_bytes: witness.blob_bytes.to_vec(),
                     kzg_commitment: Some(witness.point_eval_witness.kzg_commitment),
@@ -99,9 +137,9 @@ impl From<&ArchivedBatchWitness> for BatchInfo {
                 };
                 BatchInfoBuilderV7::build(args)
             }
-            ArchivedReferenceHeader::V8(header) => {
+            ReferenceHeader::V8(header) => {
                 let args = BuilderArgsV8 {
-                    header: header.into(),
+                    header: header.clone(),
                     chunk_infos,
                     blob_bytes: witness.blob_bytes.to_vec(),
                     kzg_commitment: Some(witness.point_eval_witness.kzg_commitment),

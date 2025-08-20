@@ -1,8 +1,8 @@
 use alloy_primitives::B256;
 use rkyv::util::AlignedVec;
+use sbv_core::verifier::StateCommitMode;
 use sbv_primitives::{U256, types::BlockWitness};
 use std::collections::HashSet;
-
 use types_base::{fork_name::ForkName, public_inputs::chunk::ChunkInfo};
 
 /// The witness type accepted by the chunk-circuit.
@@ -23,22 +23,6 @@ pub struct ChunkWitnessEuclid {
     pub prev_msg_queue_hash: B256,
     /// The code version specify the chain spec
     pub fork_name: ForkName,
-}
-
-#[derive(
-    Clone,
-    Debug,
-    serde::Deserialize,
-    serde::Serialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-)]
-#[rkyv(derive(Debug))]
-pub enum StateCommitMode {
-    Chunk,
-    Block,
-    Auto,
 }
 
 /// The witness type accepted by the chunk-circuit.
@@ -122,6 +106,13 @@ impl ChunkWitness {
             fork_name: self.fork_name,
         }
     }
+    pub fn bincode_serialize(
+        &self,
+        guest_version: Option<ForkName>,
+    ) -> Result<Vec<u8>, bincode::error::EncodeError> {
+        let config = bincode::config::standard();
+        bincode::serde::encode_to_vec(&self, config)
+    }
     /// `guest_version` is related to the guest program.
     /// It is not always same with the evm hardfork.
     /// For example, a `Feynman` guest program can execute `EuclidV2` blocks.
@@ -158,10 +149,10 @@ impl ChunkWitness {
     }
 }
 
-impl TryFrom<&ArchivedChunkWitness> for ChunkInfo {
+impl TryFrom<&ChunkWitness> for ChunkInfo {
     type Error = String;
 
-    fn try_from(value: &ArchivedChunkWitness) -> Result<Self, Self::Error> {
+    fn try_from(value: &ChunkWitness) -> Result<Self, Self::Error> {
         crate::execute(value)
     }
 }
