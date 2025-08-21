@@ -77,26 +77,18 @@ static DIR_OUTPUT: LazyLock<&Path> = LazyLock::new(|| {
 /// - <DIR_OUTPUT>/bundle-tests-{timestamp}
 static DIR_TESTRUN: OnceCell<PathBuf> = OnceCell::new();
 
-pub trait WTF<'a> = rkyv::Serialize<
-        rkyv::api::high::HighSerializer<
-            AlignedVec,
-            rkyv::ser::allocator::ArenaHandle<'a>,
-            rkyv::rancor::Error,
-        >,
-    >;
-
-pub trait PartialProvingTask: rkyv::Archive + for<'a> WTF<'a> + serde::Serialize {
+pub trait PartialProvingTask: serde::Serialize {
     fn identifier(&self) -> String;
     fn fork_name(&self) -> ForkName;
+
+    fn legacy_rkyv_archive(&self) -> eyre::Result<Vec<u8>>;
 
     fn write_guest_input(&self, stdin: &mut StdIn) -> eyre::Result<()>
     where
         Self: Sized,
     {
         let bytes: Vec<u8> = match guest_version().as_str() {
-            "0.5.2" => rkyv::to_bytes::<rkyv::rancor::Error>(self)?
-                .as_slice()
-                .to_vec(),
+            "0.5.2" => self.legacy_rkyv_archive()?,
             _ => {
                 let config = bincode::config::standard();
                 bincode::serde::encode_to_vec(&self, config)?

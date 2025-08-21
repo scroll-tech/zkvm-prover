@@ -86,7 +86,7 @@ fn test_autofill_trie_nodes() -> eyre::Result<()> {
         );
         let mut test_wit = wit.clone();
         test_wit.blocks[0].states.remove(index);
-        let result = metadata_from_chunk_witnesses(&test_wit);
+        let result = metadata_from_chunk_witnesses(test_wit);
 
         match result {
             Err(err_str) => {

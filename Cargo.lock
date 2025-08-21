@@ -308,6 +308,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "alloy-rpc-types-debug"
+version = "1.0.25"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1c6a6c8ae298c2739706ee3cd996c220b0ea406e6841a4e4290c7336edd5f811"
+dependencies = [
+ "alloy-primitives",
+ "derive_more 2.0.1",
+ "serde",
+]
+
+[[package]]
 name = "alloy-rpc-types-engine"
 version = "1.0.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6515,7 +6526,7 @@ checksum = "28d3b2b1366ec20994f1fd18c3c594f05c5dd4bc44d8bb0c1c632c8d6829481f"
 [[package]]
 name = "sbv-core"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#bf77779ebc14fa6d3f18e25c0dd4101422c29da2"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Frefactor#d836d4e9c6cfcaf288daa8f82206f5ef8e5bbc01"
 dependencies = [
  "cfg-if",
  "itertools 0.14.0",
@@ -6532,7 +6543,7 @@ dependencies = [
 [[package]]
 name = "sbv-helpers"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#bf77779ebc14fa6d3f18e25c0dd4101422c29da2"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Frefactor#d836d4e9c6cfcaf288daa8f82206f5ef8e5bbc01"
 dependencies = [
  "tracing",
 ]
@@ -6540,7 +6551,7 @@ dependencies = [
 [[package]]
 name = "sbv-kv"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#bf77779ebc14fa6d3f18e25c0dd4101422c29da2"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Frefactor#d836d4e9c6cfcaf288daa8f82206f5ef8e5bbc01"
 dependencies = [
  "auto_impl",
  "hashbrown 0.15.5",
@@ -6550,7 +6561,7 @@ dependencies = [
 [[package]]
 name = "sbv-precompile"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#bf77779ebc14fa6d3f18e25c0dd4101422c29da2"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Frefactor#d836d4e9c6cfcaf288daa8f82206f5ef8e5bbc01"
 dependencies = [
  "openvm-ecc-guest 1.4.0-rc.4",
  "openvm-pairing",
@@ -6561,12 +6572,14 @@ dependencies = [
 [[package]]
 name = "sbv-primitives"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#bf77779ebc14fa6d3f18e25c0dd4101422c29da2"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Frefactor#d836d4e9c6cfcaf288daa8f82206f5ef8e5bbc01"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.0.24",
  "alloy-evm",
  "alloy-primitives",
+ "alloy-rpc-types-debug",
+ "alloy-rpc-types-eth",
  "alloy-serde 1.0.24",
  "auto_impl",
  "itertools 0.14.0",
@@ -6588,17 +6601,19 @@ dependencies = [
  "sbv-kv",
  "scroll-alloy-consensus",
  "scroll-alloy-evm",
+ "scroll-alloy-rpc-types",
  "serde",
- "tiny-keccak",
+ "serde_with",
 ]
 
 [[package]]
 name = "sbv-trie"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#bf77779ebc14fa6d3f18e25c0dd4101422c29da2"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Frefactor#d836d4e9c6cfcaf288daa8f82206f5ef8e5bbc01"
 dependencies = [
  "alloy-rlp",
  "alloy-trie",
+ "auto_impl",
  "reth-trie",
  "reth-trie-sparse",
  "sbv-helpers",
@@ -6673,6 +6688,23 @@ dependencies = [
  "alloy-hardforks",
  "auto_impl",
  "serde",
+]
+
+[[package]]
+name = "scroll-alloy-rpc-types"
+version = "1.6.0"
+source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+dependencies = [
+ "alloy-consensus",
+ "alloy-eips 1.0.24",
+ "alloy-network-primitives",
+ "alloy-primitives",
+ "alloy-rpc-types-eth",
+ "alloy-serde 1.0.24",
+ "derive_more 2.0.1",
+ "scroll-alloy-consensus",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

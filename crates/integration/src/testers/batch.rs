@@ -23,6 +23,10 @@ impl PartialProvingTask for BatchWitness {
         header_hash.to_string()
     }
 
+    fn legacy_rkyv_archive(&self) -> eyre::Result<Vec<u8>> {
+        Ok(rkyv::to_bytes::<rkyv::rancor::Error>(self)?.to_vec())
+    }
+
     fn fork_name(&self) -> ForkName {
         ForkName::from(self.fork_name.as_str())
     }
