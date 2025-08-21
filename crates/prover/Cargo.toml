@@ -7,15 +7,15 @@ version.workspace = true
 
 [dependencies]
 scroll-zkvm-types.workspace = true
-scroll-zkvm-types-chunk = { workspace = true, features = ["scroll-compress-ratio"] }
+#scroll-zkvm-types-chunk = { workspace = true, features = ["scroll-compress-ratio"] }
 scroll-zkvm-verifier.workspace = true
-scroll-zkvm-types-batch.workspace = true
+#scroll-zkvm-types-batch.workspace = true
 
-alloy-primitives = { workspace = true, features = ["tiny-keccak"] }
+#alloy-primitives = { workspace = true, features = ["tiny-keccak"] }
 rkyv.workspace = true
 bincode_v1.workspace = true
 hex.workspace = true
-sbv-primitives = { workspace = true }
+#sbv-primitives = { workspace = true }
 tracing.workspace = true
 metrics.workspace = true
 metrics-util.workspace = true
@@ -38,8 +38,8 @@ serde_json = "1.0"
 serde_stacker = "0.1"
 thiserror = "2.0"
 toml = "0.8"
-revm = { workspace = true }
-c-kzg = { workspace = true, features = ["serde"] }
+#revm = { workspace = true }
+#c-kzg = { workspace = true, features = ["serde"] }
 
 [dev-dependencies]
 eyre = "0.6"
