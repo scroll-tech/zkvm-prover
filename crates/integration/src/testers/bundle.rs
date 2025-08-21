@@ -9,8 +9,8 @@ use scroll_zkvm_types::{
 use scroll_zkvm_prover::Prover;
 
 use crate::{
-    PartialProvingTask, ProverTester, prove_verify_single_evm, testers::batch::BatchTaskGenerator,
-    testing_hardfork, utils::metadata_from_batch_witnesses,
+    PartialProvingTask, ProverTester, load_program_commitments, prove_verify_single_evm,
+    testers::batch::BatchTaskGenerator, testing_hardfork, utils::metadata_from_batch_witnesses,
 };
 
 impl PartialProvingTask for BundleWitness {
@@ -101,15 +101,12 @@ impl BundleTaskGenerator {
 
     fn calculate_witness(&mut self) -> eyre::Result<BundleWitness> {
         use scroll_zkvm_types::{
-            public_inputs::MultiVersionPublicInputs,
-            types_agg::{AggregationInput, ProgramCommitment},
+            public_inputs::MultiVersionPublicInputs, types_agg::AggregationInput,
         };
 
         let fork_name = testing_hardfork();
-        let commitment = ProgramCommitment {
-            exe: crate::commitments::batch_exe_commit::COMMIT,
-            vm: crate::commitments::batch_leaf_commit::COMMIT,
-        };
+
+        let commitment = load_program_commitments("batch")?;
         let mut batch_proofs = Vec::new();
         let mut batch_infos: Vec<BatchInfo> = Vec::new();
 

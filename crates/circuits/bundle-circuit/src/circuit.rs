@@ -1,9 +1,14 @@
 use alloy_primitives::B256;
 use scroll_zkvm_types_bundle::BundleWitness;
-use scroll_zkvm_types_circuit::{AggCircuit, AggregationInput, Circuit, ProgramCommitment, io::read_witnesses, public_inputs::{
-    batch::VersionedBatchInfo,
-    bundle::{BundleInfo, VersionedBundleInfo},
-}, manually_drop_on_zkvm};
+use scroll_zkvm_types_circuit::{
+    AggCircuit, AggregationInput, Circuit, ProgramCommitment,
+    io::read_witnesses,
+    manually_drop_on_zkvm,
+    public_inputs::{
+        batch::VersionedBatchInfo,
+        bundle::{BundleInfo, VersionedBundleInfo},
+    },
+};
 
 use crate::child_commitments;
 

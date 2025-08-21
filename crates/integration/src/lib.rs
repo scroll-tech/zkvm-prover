@@ -1,8 +1,6 @@
-#![feature(trait_alias)]
 use cargo_metadata::MetadataCommand;
 use once_cell::sync::OnceCell;
 use openvm_sdk::StdIn;
-use rkyv::util::AlignedVec;
 use scroll_zkvm_prover::{
     Prover,
     utils::{read_json, vm::ExecutionResult, write_json},
@@ -10,6 +8,7 @@ use scroll_zkvm_prover::{
 use scroll_zkvm_types::{
     proof::{EvmProof, ProofEnum, StarkProof},
     public_inputs::ForkName,
+    types_agg::ProgramCommitment,
 };
 use scroll_zkvm_verifier::verifier::UniversalVerifier;
 use std::{
@@ -23,8 +22,6 @@ use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::Subsc
 pub mod testers;
 
 pub mod utils;
-
-pub mod commitments;
 
 /// Directory to store proofs on disc.
 const DIR_PROOFS: &str = "proofs";
@@ -390,6 +387,26 @@ where
     )?;
 
     Ok(proof)
+}
+
+pub fn load_program_commitments(program: &str) -> eyre::Result<ProgramCommitment> {
+    use base64::{Engine, prelude::BASE64_STANDARD};
+    let file_path = WORKSPACE_ROOT
+        .join("releases")
+        .join(guest_version())
+        .join("verifier")
+        .join("openVmVk.json");
+    let json_value: serde_json::Value = {
+        let file = std::fs::File::open(&file_path)?;
+        serde_json::from_reader(file)?
+    };
+    let commitment_string = json_value[&format!("{}_vk", program)]
+        .as_str()
+        .ok_or_else(|| eyre::eyre!("Missing or invalid program commitment for {}", program))?;
+    let commitment_bytes = hex::decode(commitment_string)
+        .or_else(|_| BASE64_STANDARD.decode(commitment_string))
+        .map_err(|_| eyre::eyre!("Failed to decode program commitment for {}", program))?;
+    Ok(ProgramCommitment::deserialize(&commitment_bytes))
 }
 
 #[test]

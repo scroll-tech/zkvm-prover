@@ -5,12 +5,7 @@ use std::collections::HashSet;
 use types_base::{fork_name::ForkName, public_inputs::chunk::ChunkInfo};
 
 /// The witness type accepted by the chunk-circuit.
-#[derive(
-    Clone,
-    Debug,
-    serde::Deserialize,
-    serde::Serialize,
-)]
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct ChunkWitness {
     /// The block witness for each block in the chunk.
     pub blocks: Vec<BlockWitness>,
@@ -126,7 +121,11 @@ impl TryFrom<ChunkWitness> for ChunkInfo {
 impl From<ChunkWitness> for LegacyChunkWitness {
     fn from(value: ChunkWitness) -> Self {
         LegacyChunkWitness {
-            blocks: value.blocks.into_iter().map(|block| block.into_legacy()).collect(),
+            blocks: value
+                .blocks
+                .into_iter()
+                .map(|block| block.into_legacy())
+                .collect(),
             prev_msg_queue_hash: value.prev_msg_queue_hash,
             fork_name: value.fork_name,
             compression_ratios: value.compression_ratios,

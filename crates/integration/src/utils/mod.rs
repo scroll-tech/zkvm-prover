@@ -1,9 +1,9 @@
 use crate::testing_hardfork;
+use sbv_primitives::types::consensus::ScrollTransaction;
 use sbv_primitives::{
     B256,
     types::{BlockWitness, eips::Encodable2718},
 };
-use sbv_primitives::types::consensus::ScrollTransaction;
 use scroll_zkvm_types::{
     batch::{
         BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchInfo, BatchWitness, PointEvalWitness,
@@ -16,7 +16,6 @@ use scroll_zkvm_types::{
     utils::{keccak256, point_eval, serialize_vk},
 };
 use vm_zstd::zstd_encode;
-
 
 #[allow(dead_code)]
 fn final_l1_index(blk: &BlockWitness) -> u64 {

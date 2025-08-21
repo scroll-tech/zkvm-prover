@@ -36,7 +36,10 @@ where
         return Err(eyre::eyre!("File not found: {:?}", path_witness.as_ref()));
     }
     let witness = File::open(path_witness)?;
-    Ok(serde_json::from_reader::<_, sbv_primitives::legacy_types::BlockWitness>(witness)?.into_current())
+    Ok(
+        serde_json::from_reader::<_, sbv_primitives::legacy_types::BlockWitness>(witness)?
+            .into_current(),
+    )
 }
 
 pub struct ChunkProverTester;
@@ -51,7 +54,10 @@ impl PartialProvingTask for ChunkWitness {
     }
 
     fn legacy_rkyv_archive(&self) -> eyre::Result<Vec<u8>> {
-        Ok(rkyv::to_bytes::<rkyv::rancor::Error>(&LegacyChunkWitness::from(self.clone()))?.to_vec())
+        Ok(
+            rkyv::to_bytes::<rkyv::rancor::Error>(&LegacyChunkWitness::from(self.clone()))?
+                .to_vec(),
+        )
     }
 
     fn fork_name(&self) -> ForkName {
