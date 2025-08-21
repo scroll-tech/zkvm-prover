@@ -6776,6 +6776,7 @@ name = "scroll-zkvm-integration"
 version = "0.5.0"
 dependencies = [
  "alloy-primitives",
+ "bincode 2.0.1",
  "cargo_metadata 0.20.0",
  "chrono",
  "eyre",

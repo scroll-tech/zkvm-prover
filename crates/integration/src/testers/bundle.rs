@@ -9,8 +9,7 @@ use scroll_zkvm_types::{
 use scroll_zkvm_prover::Prover;
 
 use crate::{
-    PartialProvingTask, ProverTester, prove_verify_single_evm, testers::batch::BatchTaskGenerator,
-    testing_hardfork, utils::metadata_from_batch_witnesses,
+    prove_verify_single_evm, testers::batch::BatchTaskGenerator, testing_hardfork, utils::metadata_from_batch_witnesses, PartialProvingTask, ProverTester
 };
 
 impl PartialProvingTask for BundleWitness {
@@ -21,12 +20,6 @@ impl PartialProvingTask for BundleWitness {
         );
 
         format!("{first}-{last}")
-    }
-
-    fn write_guest_input(&self, stdin: &mut openvm_sdk::StdIn) -> Result<(), rkyv::rancor::Error> {
-        let b = self.bincode_serialize(None).unwrap();
-        stdin.write_bytes(b.as_slice());
-        Ok(())
     }
 
     fn fork_name(&self) -> ForkName {

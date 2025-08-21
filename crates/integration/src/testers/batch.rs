@@ -8,9 +8,7 @@ use scroll_zkvm_types::{
 };
 
 use crate::{
-    PartialProvingTask, ProverTester, prove_verify,
-    testers::chunk::{ChunkTaskGenerator, preset_chunk_multiple},
-    utils::build_batch_witnesses,
+    prove_verify, testers::chunk::{preset_chunk_multiple, ChunkTaskGenerator}, utils::build_batch_witnesses, PartialProvingTask, ProverTester
 };
 
 impl PartialProvingTask for BatchWitness {
@@ -21,12 +19,6 @@ impl PartialProvingTask for BatchWitness {
             ReferenceHeader::V8(h) => h.batch_hash(),
         };
         header_hash.to_string()
-    }
-
-    fn write_guest_input(&self, stdin: &mut openvm_sdk::StdIn) -> Result<(), rkyv::rancor::Error> {
-        let b = self.bincode_serialize(None).unwrap();
-        stdin.write_bytes(b.as_slice());
-        Ok(())
     }
 
     fn fork_name(&self) -> ForkName {

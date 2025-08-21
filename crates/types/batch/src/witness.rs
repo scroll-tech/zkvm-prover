@@ -88,16 +88,6 @@ pub struct BatchWitness {
     pub fork_name: ForkName,
 }
 
-impl BatchWitness {
-    pub fn bincode_serialize(
-        &self,
-        guest_version: Option<ForkName>,
-    ) -> Result<Vec<u8>, bincode::error::EncodeError> {
-        let config = bincode::config::standard();
-        bincode::serde::encode_to_vec(&self, config)
-    }
-}
-
 impl ProofCarryingWitness for BatchWitness {
     fn get_proofs(&self) -> Vec<AggregationInput> {
         self.chunk_proofs.clone()

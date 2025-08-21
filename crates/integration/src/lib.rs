@@ -1,6 +1,8 @@
+#![feature(trait_alias)]
 use cargo_metadata::MetadataCommand;
 use once_cell::sync::OnceCell;
 use openvm_sdk::StdIn;
+use rkyv::util::AlignedVec;
 use scroll_zkvm_prover::{
     Prover,
     utils::{read_json, vm::ExecutionResult, write_json},
@@ -24,12 +26,28 @@ pub mod utils;
 
 pub mod commitments;
 
-pub trait PartialProvingTask {
-    fn identifier(&self) -> String;
+/// Directory to store proofs on disc.
+const DIR_PROOFS: &str = "proofs";
 
-    fn write_guest_input(&self, stdin: &mut StdIn) -> Result<(), rkyv::rancor::Error>;
+/// File descriptor for app openvm config.
+const FD_APP_CONFIG: &str = "openvm.toml";
 
-    fn fork_name(&self) -> ForkName;
+/// File descriptor for app exe.
+const FD_APP_EXE: &str = "app.vmexe";
+
+/// Environment variable used to set the test-run's output directory for assets.
+const ENV_OUTPUT_DIR: &str = "OUTPUT_DIR";
+
+/// Enviroment settings for test: fork
+pub fn testing_hardfork() -> ForkName {
+    ForkName::Feynman
+}
+
+/// Read the 'GUEST_VERSION' from the environment variable. 
+/// If not existed, return "dev" as default
+/// The returned value will be used to locate asset files: $workspace/releases/$guest_version
+pub fn guest_version() -> String {
+    std::env::var("GUEST_VERSION").unwrap_or_else(|_| "dev".to_string())
 }
 
 pub static WORKSPACE_ROOT: LazyLock<&Path> = LazyLock::new(|| {
@@ -51,18 +69,6 @@ static DIR_OUTPUT: LazyLock<&Path> = LazyLock::new(|| {
     Box::leak(path.into_boxed_path())
 });
 
-/// Directory to store proofs on disc.
-const DIR_PROOFS: &str = "proofs";
-
-/// File descriptor for app openvm config.
-const FD_APP_CONFIG: &str = "openvm.toml";
-
-/// File descriptor for app exe.
-const FD_APP_EXE: &str = "app.vmexe";
-
-/// Environment variable used to set the test-run's output directory for assets.
-const ENV_OUTPUT_DIR: &str = "OUTPUT_DIR";
-
 /// Every test run will write assets to a new directory.
 ///
 /// Possibly one of the following:
@@ -71,10 +77,32 @@ const ENV_OUTPUT_DIR: &str = "OUTPUT_DIR";
 /// - <DIR_OUTPUT>/bundle-tests-{timestamp}
 static DIR_TESTRUN: OnceCell<PathBuf> = OnceCell::new();
 
+pub trait WTF<'a> = rkyv::Serialize<rkyv::api::high::HighSerializer<AlignedVec, rkyv::ser::allocator::ArenaHandle<'a>, rkyv::rancor::Error>>;
+
+pub trait PartialProvingTask: rkyv::Archive + for<'a> WTF<'a> + serde::Serialize {
+    fn identifier(&self) -> String;
+    fn fork_name(&self) -> ForkName;
+
+    fn write_guest_input(&self, stdin: &mut StdIn) -> eyre::Result<()>
+    where
+        Self: Sized,
+    {
+        let bytes: Vec<u8> = match guest_version().as_str() {
+            "0.5.2" => rkyv::to_bytes::<rkyv::rancor::Error>(self)?.as_slice().to_vec(),
+            _ => {
+                let config = bincode::config::standard();
+                bincode::serde::encode_to_vec(&self, config)?
+            }
+        };
+        stdin.write_bytes(&bytes);
+        Ok(())
+    }
+}
+
 /// Circuit that implements functionality required to run e2e tests in specified phase (chunk/batch/bundle).
 pub trait ProverTester {
     /// Tester witness type
-    type Witness: PartialProvingTask; // + rkyv::Archive;
+    type Witness: PartialProvingTask;
 
     /// Tester metadata type
     type Metadata; //: for<'a> TryFrom<&'a <Self::Witness as rkyv::Archive>::Archived>;
@@ -121,7 +149,7 @@ pub trait ProverTester {
 
     /// Load the app config.
     fn load() -> eyre::Result<(PathBuf, PathBuf)> {
-        let assets_version = "dev";
+        let assets_version = guest_version();
         let release_dir = WORKSPACE_ROOT.join("releases").join(assets_version);
         let path_app_config = release_dir.join(Self::NAME).join(FD_APP_CONFIG);
         let path_app_exe = release_dir.join(Self::NAME).join(FD_APP_EXE);
@@ -159,7 +187,7 @@ pub trait ProverTester {
     fn build_guest_input<'a>(
         witness: &Self::Witness,
         aggregated_proofs: impl Iterator<Item = &'a StarkProof>,
-    ) -> Result<StdIn, rkyv::rancor::Error> {
+    ) -> eyre::Result<StdIn> {
         use openvm_native_recursion::hints::Hintable;
 
         let mut stdin = StdIn::default();
@@ -173,11 +201,7 @@ pub trait ProverTester {
         }
         Ok(stdin)
     }
-}
-
-/// Enviroment settings for test: fork
-pub fn testing_hardfork() -> ForkName {
-    ForkName::Feynman
+    
 }
 
 /// Enviroment settings for test: fork dir
@@ -327,7 +351,7 @@ where
     // Dump verifier-only assets to disk.
     let path_verifier_code = WORKSPACE_ROOT
         .join("releases")
-        .join("dev")
+        .join(guest_version())
         .join("verifier")
         .join("verifier.bin");
     let verifier = scroll_zkvm_verifier::verifier::UniversalVerifier::setup(&path_verifier_code)?;

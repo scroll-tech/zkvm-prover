@@ -16,26 +16,6 @@ use types_base::{fork_name::ForkName, public_inputs::chunk::ChunkInfo};
     rkyv::Serialize,
 )]
 #[rkyv(derive(Debug))]
-pub struct ChunkWitnessEuclid {
-    /// The block witness for each block in the chunk.
-    pub blocks: Vec<BlockWitness>,
-    /// The on-chain rolling L1 message queue hash before enqueueing any L1 msg tx from the chunk.
-    pub prev_msg_queue_hash: B256,
-    /// The code version specify the chain spec
-    pub fork_name: ForkName,
-}
-
-/// The witness type accepted by the chunk-circuit.
-#[derive(
-    Clone,
-    Debug,
-    serde::Deserialize,
-    serde::Serialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-)]
-#[rkyv(derive(Debug))]
 pub struct ChunkWitness {
     /// The block witness for each block in the chunk.
     pub blocks: Vec<BlockWitness>,
@@ -96,39 +76,6 @@ impl ChunkWitness {
             fork_name,
             compression_ratios,
             state_commit_mode: StateCommitMode::Auto,
-        }
-    }
-    /// Convert the `ChunkWitness` into a `ChunkWitnessEuclid`.
-    pub fn into_euclid(self) -> ChunkWitnessEuclid {
-        ChunkWitnessEuclid {
-            blocks: self.blocks,
-            prev_msg_queue_hash: self.prev_msg_queue_hash,
-            fork_name: self.fork_name,
-        }
-    }
-    pub fn bincode_serialize(
-        &self,
-        guest_version: Option<ForkName>,
-    ) -> Result<Vec<u8>, bincode::error::EncodeError> {
-        let config = bincode::config::standard();
-        bincode::serde::encode_to_vec(&self, config)
-    }
-    /// `guest_version` is related to the guest program.
-    /// It is not always same with the evm hardfork.
-    /// For example, a `Feynman` guest program can execute `EuclidV2` blocks.
-    /// While in realworld, we keep them same.
-    /// Only during development, we may use different versions.
-    pub fn rkyv_serialize(
-        &self,
-        guest_version: Option<ForkName>,
-    ) -> Result<AlignedVec, rkyv::rancor::Error> {
-        let guest_version = guest_version.unwrap_or(self.fork_name);
-        if guest_version >= ForkName::Feynman {
-            // Use the new rkyv serialization for Feynman and later forks
-            rkyv::to_bytes::<rkyv::rancor::Error>(self)
-        } else {
-            // Use the old rkyv serialization for earlier forks
-            rkyv::to_bytes::<rkyv::rancor::Error>(&self.clone().into_euclid())
         }
     }
 

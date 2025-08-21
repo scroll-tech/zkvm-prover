@@ -1,6 +1,6 @@
 use crate::testing_hardfork;
 use sbv_primitives::{
-    B256, U256,
+    B256,
     types::{BlockWitness, Transaction, eips::Encodable2718, reth::primitives::TransactionSigned},
 };
 use scroll_zkvm_types::{

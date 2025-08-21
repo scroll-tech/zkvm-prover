@@ -12,8 +12,7 @@ use scroll_zkvm_types::{
 };
 
 use crate::{
-    PartialProvingTask, ProverTester, prove_verify, testdata_fork_directory,
-    testers::PATH_TESTDATA, testing_hardfork, utils::metadata_from_chunk_witnesses,
+    prove_verify, testdata_fork_directory, testers::PATH_TESTDATA, testing_hardfork, utils::metadata_from_chunk_witnesses, PartialProvingTask, ProverTester
 };
 
 /// Load a file <block_n>.json in the <PATH_BLOCK_WITNESS> directory.
@@ -48,12 +47,6 @@ impl PartialProvingTask for ChunkWitness {
             self.blocks.last().expect("MUST NOT EMPTY").header.number,
         );
         format!("{first}-{last}")
-    }
-
-    fn write_guest_input(&self, stdin: &mut openvm_sdk::StdIn) -> Result<(), rkyv::rancor::Error> {
-        let b = self.bincode_serialize(None).unwrap();
-        stdin.write_bytes(b.as_slice());
-        Ok(())
     }
 
     fn fork_name(&self) -> ForkName {
