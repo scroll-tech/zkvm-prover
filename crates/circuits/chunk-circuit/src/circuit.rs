@@ -27,17 +27,16 @@ impl Circuit for ChunkCircuit {
         read_witnesses()
     }
 
-    fn deserialize_witness(witness_bytes: &[u8]) -> &Self::Witness {
+    fn deserialize_witness(witness_bytes: &[u8]) -> Self::Witness {
         let config = bincode::config::standard();
         let (witness, _): (Self::Witness, _) =
             bincode::serde::decode_from_slice(witness_bytes, config).unwrap();
-        Box::leak(Box::new(witness))
-        // rkyv::access::<ArchivedChunkWitness, rkyv::rancor::BoxedError>(witness_bytes)
-        //    .expect("ChunkCircuit: rkyv deserialisation of witness bytes failed")
+        witness
     }
 
-    fn validate(witness: &Self::Witness) -> Self::PublicInputs {
+    fn validate(witness: Self::Witness) -> Self::PublicInputs {
+        let fork_name = witness.fork_name.clone();
         let chunk_info = execute(witness).expect("failed to execute chunk");
-        (chunk_info, (witness.fork_name.clone()))
+        (chunk_info, fork_name)
     }
 }

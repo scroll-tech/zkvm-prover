@@ -2,7 +2,7 @@ use crate::{ChunkWitness, types::ChunkExt};
 use sbv_core::verifier::{self, VerifyResult};
 use sbv_helpers::manually_drop_on_zkvm;
 use sbv_primitives::{
-    B256, BlockWitness, U256,
+    B256, U256,
     chainspec::{Chain, build_chain_spec_force_hardfork},
     hardforks::Hardfork,
     types::{
@@ -17,8 +17,8 @@ use types_base::{
 
 /// `compression_ratios` can be `None` in host mode.
 /// But in guest mode, it must be provided.
-pub fn execute(witness: &ChunkWitness) -> Result<ChunkInfo, String> {
-    let chain = Chain::from_id(witness.blocks[0].chain_id());
+pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
+    let chain = Chain::from_id(witness.blocks[0].chain_id);
     let chain_spec = build_chain_spec_force_hardfork(
         chain,
         match witness.fork_name {
@@ -38,7 +38,7 @@ pub fn execute(witness: &ChunkWitness) -> Result<ChunkInfo, String> {
         withdraw_root,
         ..
     } = verifier::run(
-        witness.blocks.as_slice(),
+        witness.blocks,
         chain_spec.clone(),
         state_commit_mode,
         Some(witness.compression_ratios.clone()),
