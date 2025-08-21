@@ -1,5 +1,5 @@
 use types_base::{
-    aggregation::{AggregationInput, ProgramCommitment, ProofCarryingWitness},
+    aggregation::{AggregationInput, ProofCarryingWitness},
     public_inputs::{ForkName, batch::BatchInfo, chunk::ChunkInfo},
 };
 

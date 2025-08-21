@@ -9,7 +9,8 @@ use scroll_zkvm_types::{
 use scroll_zkvm_prover::Prover;
 
 use crate::{
-    prove_verify_single_evm, testers::batch::BatchTaskGenerator, testing_hardfork, utils::metadata_from_batch_witnesses, PartialProvingTask, ProverTester
+    PartialProvingTask, ProverTester, prove_verify_single_evm, testers::batch::BatchTaskGenerator,
+    testing_hardfork, utils::metadata_from_batch_witnesses,
 };
 
 impl PartialProvingTask for BundleWitness {

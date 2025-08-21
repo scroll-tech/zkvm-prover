@@ -190,28 +190,6 @@ impl ChunkInfo {
     }
 }
 
-impl From<&ArchivedChunkInfo> for ChunkInfo {
-    fn from(archived: &ArchivedChunkInfo) -> Self {
-        Self {
-            chain_id: archived.chain_id.into(),
-            prev_state_root: archived.prev_state_root.into(),
-            post_state_root: archived.post_state_root.into(),
-            withdraw_root: archived.withdraw_root.into(),
-            data_hash: archived.data_hash.into(),
-            tx_data_digest: archived.tx_data_digest.into(),
-            prev_msg_queue_hash: archived.prev_msg_queue_hash.into(),
-            post_msg_queue_hash: archived.post_msg_queue_hash.into(),
-            tx_data_length: archived.tx_data_length.into(),
-            initial_block_number: archived.initial_block_number.into(),
-            block_ctxs: archived
-                .block_ctxs
-                .iter()
-                .map(BlockContextV2::from)
-                .collect(),
-        }
-    }
-}
-
 pub type VersionedChunkInfo = (ChunkInfo, ForkName);
 
 impl MultiVersionPublicInputs for ChunkInfo {

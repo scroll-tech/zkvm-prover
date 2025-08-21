@@ -83,8 +83,7 @@ trait TxBytesHashExt {
     fn tx_bytes_hash_in(self, rlp_buffer: &mut Vec<u8>) -> (usize, B256);
 }
 
-impl<'a, I: Iterator<Item = &'a TransactionSigned>> TxBytesHashExt for I
-{
+impl<'a, I: Iterator<Item = &'a TransactionSigned>> TxBytesHashExt for I {
     #[inline]
     fn tx_bytes_hash_in(self, rlp_buffer: &mut Vec<u8>) -> (usize, B256) {
         rlp_buffer.clear();
@@ -93,8 +92,9 @@ impl<'a, I: Iterator<Item = &'a TransactionSigned>> TxBytesHashExt for I
             tx.encode_2718(rlp_buffer);
         }
         let hash = keccak256(&rlp_buffer);
+        let len = rlp_buffer.len();
         rlp_buffer.clear();
-        (rlp_buffer.len(), hash)
+        (len, hash)
     }
 }
 

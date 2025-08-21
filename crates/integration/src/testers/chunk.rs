@@ -12,7 +12,8 @@ use scroll_zkvm_types::{
 };
 
 use crate::{
-    prove_verify, testdata_fork_directory, testers::PATH_TESTDATA, testing_hardfork, utils::metadata_from_chunk_witnesses, PartialProvingTask, ProverTester
+    PartialProvingTask, ProverTester, prove_verify, testdata_fork_directory,
+    testers::PATH_TESTDATA, testing_hardfork, utils::metadata_from_chunk_witnesses,
 };
 
 /// Load a file <block_n>.json in the <PATH_BLOCK_WITNESS> directory.

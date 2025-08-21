@@ -1,9 +1,7 @@
 use openvm::init;
 use scroll_zkvm_types_chunk::{ChunkWitness, execute};
 use scroll_zkvm_types_circuit::{
-    Circuit,
-    io::read_witnesses,
-    public_inputs::chunk::{VersionedChunkInfo},
+    Circuit, io::read_witnesses, public_inputs::chunk::VersionedChunkInfo,
 };
 
 #[allow(unused_imports, clippy::single_component_path_imports)]

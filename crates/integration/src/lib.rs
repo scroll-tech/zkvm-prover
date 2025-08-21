@@ -43,7 +43,7 @@ pub fn testing_hardfork() -> ForkName {
     ForkName::Feynman
 }
 
-/// Read the 'GUEST_VERSION' from the environment variable. 
+/// Read the 'GUEST_VERSION' from the environment variable.
 /// If not existed, return "dev" as default
 /// The returned value will be used to locate asset files: $workspace/releases/$guest_version
 pub fn guest_version() -> String {
@@ -77,7 +77,13 @@ static DIR_OUTPUT: LazyLock<&Path> = LazyLock::new(|| {
 /// - <DIR_OUTPUT>/bundle-tests-{timestamp}
 static DIR_TESTRUN: OnceCell<PathBuf> = OnceCell::new();
 
-pub trait WTF<'a> = rkyv::Serialize<rkyv::api::high::HighSerializer<AlignedVec, rkyv::ser::allocator::ArenaHandle<'a>, rkyv::rancor::Error>>;
+pub trait WTF<'a> = rkyv::Serialize<
+        rkyv::api::high::HighSerializer<
+            AlignedVec,
+            rkyv::ser::allocator::ArenaHandle<'a>,
+            rkyv::rancor::Error,
+        >,
+    >;
 
 pub trait PartialProvingTask: rkyv::Archive + for<'a> WTF<'a> + serde::Serialize {
     fn identifier(&self) -> String;
@@ -88,7 +94,9 @@ pub trait PartialProvingTask: rkyv::Archive + for<'a> WTF<'a> + serde::Serialize
         Self: Sized,
     {
         let bytes: Vec<u8> = match guest_version().as_str() {
-            "0.5.2" => rkyv::to_bytes::<rkyv::rancor::Error>(self)?.as_slice().to_vec(),
+            "0.5.2" => rkyv::to_bytes::<rkyv::rancor::Error>(self)?
+                .as_slice()
+                .to_vec(),
             _ => {
                 let config = bincode::config::standard();
                 bincode::serde::encode_to_vec(&self, config)?
@@ -201,7 +209,6 @@ pub trait ProverTester {
         }
         Ok(stdin)
     }
-    
 }
 
 /// Enviroment settings for test: fork dir
@@ -333,7 +340,7 @@ pub fn prove_verify<T: ProverTester>(
 /// End-to-end test for a single proving task to generate an EVM-verifiable SNARK proof.
 #[instrument(name = "prove_verify_single_evm", skip_all)]
 pub fn prove_verify_single_evm<T>(
-    prover: &Prover,
+    prover: &mut Prover,
     witness: &T::Witness,
     proofs: &[ProofEnum],
 ) -> eyre::Result<ProofEnum>

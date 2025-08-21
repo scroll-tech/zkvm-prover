@@ -8,7 +8,9 @@ use scroll_zkvm_types::{
 };
 
 use crate::{
-    prove_verify, testers::chunk::{preset_chunk_multiple, ChunkTaskGenerator}, utils::build_batch_witnesses, PartialProvingTask, ProverTester
+    PartialProvingTask, ProverTester, prove_verify,
+    testers::chunk::{ChunkTaskGenerator, preset_chunk_multiple},
+    utils::build_batch_witnesses,
 };
 
 impl PartialProvingTask for BatchWitness {
