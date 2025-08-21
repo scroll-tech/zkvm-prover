@@ -42,7 +42,6 @@ impl Circuit for BatchCircuit {
     }
 
     fn validate(witness: Self::Witness) -> Self::PublicInputs {
-        let witness = manually_drop_on_zkvm!(witness);
         let fork_name = witness.fork_name;
         (BatchInfo::from(&witness), fork_name)
     }
