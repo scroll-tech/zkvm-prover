@@ -232,7 +232,6 @@ impl Prover {
         // and do precheck before proving like ensure PI != 0
         self.execute_and_check(&stdin)?;
 
-        ///let sdk = Sdk::new();
         let proof = self
             .prover
             .prove(stdin)
