@@ -1,7 +1,4 @@
-use crate::{
-    ChunkWitness,
-    types::{ChunkExt, ChunkWitnessExt},
-};
+use crate::{ChunkWitness, types::ChunkExt};
 use sbv_core::verifier::{self, VerifyResult};
 use sbv_helpers::manually_drop_on_zkvm;
 use sbv_primitives::{
@@ -52,17 +49,28 @@ pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
     let mut rlp_buffer = manually_drop_on_zkvm!(Vec::with_capacity(2048));
     let (tx_data_length, tx_data_digest) = blocks.tx_bytes_hash_in(rlp_buffer.as_mut());
 
+    let data_hash = if witness.fork_name < ForkName::EuclidV2 {
+        blocks.legacy_data_hash()
+    } else {
+        B256::default()
+    };
+    let post_msg_queue_hash = if witness.fork_name >= ForkName::EuclidV2 {
+        blocks.rolling_msg_queue_hash(witness.prev_msg_queue_hash, witness.validium.as_ref())
+    } else {
+        B256::default()
+    };
+
     let chunk_info = ChunkInfo {
         chain_id: chain.id(),
         prev_state_root: pre_state_root,
         post_state_root,
-        data_hash: witness.legacy_data_hash(&*blocks).unwrap_or_default(),
+        data_hash,
         withdraw_root,
         tx_data_digest,
         tx_data_length: tx_data_length as u64,
         initial_block_number: blocks[0].header().number,
         prev_msg_queue_hash: witness.prev_msg_queue_hash.into(),
-        post_msg_queue_hash: witness.rolling_msg_queue_hash(&*blocks).unwrap_or_default(),
+        post_msg_queue_hash,
         block_ctxs: blocks.iter().map(block_to_context).collect(),
     };
 

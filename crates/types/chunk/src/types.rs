@@ -1,8 +1,8 @@
 use std::ops::Deref;
 
+use crate::QueueTransaction;
 use crate::types::validium::SecretKey;
 use crate::witness::ValidiumInputs;
-use crate::{ChunkWitness, QueueTransaction};
 use alloy_primitives::keccak256;
 use itertools::Itertools;
 use sbv_helpers::manually_drop_on_zkvm;
@@ -14,7 +14,6 @@ use sbv_primitives::{
         reth::primitives::{Block, RecoveredBlock, TransactionSigned},
     },
 };
-use types_base::fork_name::ForkName;
 
 pub mod validium;
 
@@ -129,7 +128,7 @@ impl<'a, I: Iterator<Item = &'a TransactionSigned>> TxBytesHashExt for I {
 }
 
 /// Chunk related extension methods for Block
-trait BlockChunkExt {
+trait BlockExt {
     /// Get an iterator over L1 message transactions in the block.
     fn l1_txs_iter(&self) -> impl Iterator<Item = &TxL1Message>;
 
@@ -145,7 +144,7 @@ trait BlockChunkExt {
     ) -> B256;
 }
 
-impl BlockChunkExt for RecoveredBlock<Block> {
+impl BlockExt for RecoveredBlock<Block> {
     #[inline]
     fn l1_txs_iter(&self) -> impl Iterator<Item = &TxL1Message> {
         self.body()
@@ -226,25 +225,5 @@ impl BlockChunkExt for RecoveredBlock<Block> {
         };
 
         rolling_hash
-    }
-}
-
-pub trait ChunkWitnessExt {
-    fn legacy_data_hash(&self, blocks: &[RecoveredBlock<Block>]) -> Option<B256>;
-
-    fn rolling_msg_queue_hash(&self, blocks: &[RecoveredBlock<Block>]) -> Option<B256>;
-}
-
-impl ChunkWitnessExt for ChunkWitness {
-    #[inline]
-    fn legacy_data_hash(&self, blocks: &[RecoveredBlock<Block>]) -> Option<B256> {
-        (self.fork_name < ForkName::EuclidV2).then(|| blocks.legacy_data_hash())
-    }
-
-    #[inline]
-    fn rolling_msg_queue_hash(&self, blocks: &[RecoveredBlock<Block>]) -> Option<B256> {
-        (self.fork_name >= ForkName::EuclidV2).then(|| {
-            blocks.rolling_msg_queue_hash(self.prev_msg_queue_hash, self.validium.as_ref())
-        })
     }
 }

@@ -5,7 +5,6 @@ use sbv_primitives::{U256, types::BlockWitness};
 use std::collections::HashSet;
 use types_base::{fork_name::ForkName, public_inputs::chunk::ChunkInfo};
 
-
 /// The witness type accepted by the chunk-circuit.
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct ChunkWitness {
@@ -31,7 +30,6 @@ pub struct ValidiumInputs {
     /// The secret key used for decrypting validium transactions.
     pub secret_key: Box<[u8]>,
 }
-
 
 /// The witness type accepted by the chunk-circuit.
 #[derive(
