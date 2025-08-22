@@ -132,6 +132,9 @@ revm-state = { git = "https://github.com/scroll-tech/revm" }
 
 alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "feat/rkyv" }
 
+k256 = { git = "https://github.com/openvm-org/openvm.git", rev = "51d0aa69694fd33def3c433e48228a5675e4fd97" }
+p256 = { git = "https://github.com/openvm-org/openvm.git", rev = "51d0aa69694fd33def3c433e48228a5675e4fd97" }
+
 [profile.maxperf]
 inherits = "release"
 lto = "fat"
@@ -145,3 +148,4 @@ strip = false
 
 [profile.bench]
 inherits = "profiling"
+
