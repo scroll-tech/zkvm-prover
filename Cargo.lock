@@ -2706,6 +2706,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "io-uring"
+version = "0.7.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d93587f37623a1a17d94ef2bc9ada592f5465fe7732084ab7beefabe5c77c0c4"
+dependencies = [
+ "bitflags",
+ "cfg-if",
+ "libc",
+]
+
+[[package]]
 name = "is_terminal_polyfill"
 version = "1.70.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3076,6 +3087,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1fa76a2c86f704bdb222d66965fb3d63269ce38518b83cb0575fca855ebb6316"
 dependencies = [
  "adler2",
+]
+
+[[package]]
+name = "mio"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "78bed444cc8a2160f01cbcf811ef18cac863ad68ae8ca62092e8db51d51c761c"
+dependencies = [
+ "libc",
+ "wasi 0.11.1+wasi-snapshot-preview1",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -3523,6 +3545,48 @@ dependencies = [
 ]
 
 [[package]]
+name = "openvm-benchmarks-prove"
+version = "1.4.0-rc.5"
+source = "git+https://github.com/openvm-org/openvm.git?branch=main#4852493bdd7b90f9c9eca52696b614da40325e40"
+dependencies = [
+ "clap",
+ "derive_more 1.0.0",
+ "eyre",
+ "k256 0.13.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "metrics",
+ "openvm-benchmarks-utils",
+ "openvm-circuit",
+ "openvm-continuations",
+ "openvm-native-circuit",
+ "openvm-native-compiler",
+ "openvm-native-recursion",
+ "openvm-sdk",
+ "openvm-stark-backend",
+ "openvm-stark-sdk",
+ "openvm-transpiler",
+ "rand 0.8.5",
+ "rand_chacha 0.3.1",
+ "tiny-keccak",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "openvm-benchmarks-utils"
+version = "1.4.0-rc.5"
+source = "git+https://github.com/openvm-org/openvm.git?branch=main#4852493bdd7b90f9c9eca52696b614da40325e40"
+dependencies = [
+ "cargo_metadata 0.18.1",
+ "clap",
+ "eyre",
+ "openvm-build",
+ "openvm-transpiler",
+ "tempfile",
+ "tracing",
+ "tracing-subscriber 0.3.19",
+]
+
+[[package]]
 name = "openvm-bigint-circuit"
 version = "1.4.0-rc.5"
 source = "git+https://github.com/openvm-org/openvm.git?branch=main#4852493bdd7b90f9c9eca52696b614da40325e40"
@@ -3605,6 +3669,7 @@ dependencies = [
  "itertools 0.14.0",
  "libc",
  "memmap2",
+ "metrics",
  "openvm-circuit-derive",
  "openvm-circuit-primitives",
  "openvm-circuit-primitives-derive",
@@ -4358,6 +4423,7 @@ dependencies = [
  "derivative",
  "derive-new 0.7.0",
  "itertools 0.14.0",
+ "metrics",
  "p3-air",
  "p3-challenger",
  "p3-commit",
@@ -4421,6 +4487,7 @@ dependencies = [
  "openvm-platform 1.4.0-rc.5",
  "openvm-stark-backend",
  "rrs-lib",
+ "rustc-demangle",
  "thiserror 1.0.69",
 ]
 
@@ -6852,6 +6919,7 @@ dependencies = [
  "bincode 2.0.1",
  "cargo_metadata 0.20.0",
  "chrono",
+ "clap",
  "eyre",
  "ff 0.13.1",
  "glob",
@@ -6859,6 +6927,8 @@ dependencies = [
  "hex",
  "metrics-tracing-context",
  "once_cell",
+ "openvm-benchmarks-prove",
+ "openvm-benchmarks-utils",
  "openvm-build",
  "openvm-circuit",
  "openvm-native-circuit",
@@ -7368,6 +7438,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "85636c14b73d81f541e525f585c0a2109e6744e1565b5c1668e31c70c10ed65c"
 
 [[package]]
+name = "slab"
+version = "0.4.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7a2ae44ef20feb57a68b23d846850f861394c2e02dc425a50098ae8c90267589"
+
+[[package]]
 name = "smallvec"
 version = "1.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7828,6 +7904,32 @@ name = "tinyvec_macros"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
+
+[[package]]
+name = "tokio"
+version = "1.47.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "89e49afdadebb872d3145a5638b59eb0691ea23e46ca484037cfab3b76b95038"
+dependencies = [
+ "backtrace",
+ "io-uring",
+ "libc",
+ "mio",
+ "pin-project-lite",
+ "slab",
+ "tokio-macros",
+]
+
+[[package]]
+name = "tokio-macros"
+version = "2.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e06d43f1345a3bcd39f6a56dbb7dcab2ba47e68e8ac134855e7e2bdbaf8cab8"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.106",
+]
 
 [[package]]
 name = "toml"
