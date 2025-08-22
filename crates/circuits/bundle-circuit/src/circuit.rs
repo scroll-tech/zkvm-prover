@@ -3,6 +3,7 @@ use scroll_zkvm_types_bundle::BundleWitness;
 use scroll_zkvm_types_circuit::{
     AggCircuit, AggregationInput, Circuit, ProgramCommitment,
     io::read_witnesses,
+    manually_drop_on_zkvm,
     public_inputs::{
         batch::VersionedBatchInfo,
         bundle::{BundleInfo, VersionedBundleInfo},
@@ -26,17 +27,17 @@ impl Circuit for BundleCircuit {
         read_witnesses()
     }
 
-    fn deserialize_witness(witness_bytes: &[u8]) -> &Self::Witness {
+    fn deserialize_witness(witness_bytes: &[u8]) -> Self::Witness {
         let config = bincode::config::standard();
         let (witness, _): (Self::Witness, _) =
             bincode::serde::decode_from_slice(witness_bytes, config).unwrap();
-        Box::leak(Box::new(witness))
-        // rkyv::access::<ArchivedBundleWitness, rkyv::rancor::BoxedError>(witness_bytes)
-        //    .expect("BundleCircuit: rkyv deserialization of witness bytes failed")
+        witness
     }
 
-    fn validate(witness: &Self::Witness) -> Self::PublicInputs {
-        (BundleInfo::from(witness), witness.fork_name.clone())
+    fn validate(witness: Self::Witness) -> Self::PublicInputs {
+        let witness = manually_drop_on_zkvm!(witness);
+        let fork_name = witness.fork_name;
+        (BundleInfo::from(&witness), fork_name)
     }
 }
 

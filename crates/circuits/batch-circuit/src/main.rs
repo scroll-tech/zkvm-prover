@@ -17,12 +17,10 @@ fn main() {
     let witness = C::deserialize_witness(&witness_bytes);
 
     // Verify the root proofs being aggregated in the circuit.
-    println!("0002");
-    let agg_proofs = C::verify_proofs(witness);
+    let agg_proofs = C::verify_proofs(&witness);
 
     // Get the public-input values of the proofs being aggregated from witness.
-    println!("0003");
-    let agg_pis = C::aggregated_public_inputs(witness);
+    let agg_pis = C::aggregated_public_inputs(&witness);
 
     // Derive the digests of the public-input values of proofs being aggregated.
 

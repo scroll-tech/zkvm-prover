@@ -253,7 +253,7 @@ impl Prover {
     /// Generate an [evm proof][evm_proof].
     ///
     /// [evm_proof][openvm_native_recursion::halo2::EvmProof]
-    pub fn gen_proof_snark(&self, stdin: StdIn) -> Result<OpenVmEvmProof, Error> {
+    pub fn gen_proof_snark(&mut self, stdin: StdIn) -> Result<OpenVmEvmProof, Error> {
         self.execute_and_check(&stdin)?;
 
         //let sdk = Sdk::new();

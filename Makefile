@@ -7,7 +7,7 @@ export RUST_BACKTRACE
 RUST_LOG ?= off,scroll_zkvm_integration=debug,scroll_zkvm_verifier=debug,scroll_zkvm_prover=debug
 export RUST_LOG
 
-OPENVM_RUST_TOOLCHAIN ?= nightly-2025-08-08
+OPENVM_RUST_TOOLCHAIN ?= nightly-2025-08-18
 export OPENVM_RUST_TOOLCHAIN
 
 TESTDATA_PATH := crates/integration/testdata/phase2

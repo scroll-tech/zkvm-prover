@@ -1,7 +1,8 @@
 use crate::testing_hardfork;
+use sbv_primitives::types::consensus::ScrollTransaction;
 use sbv_primitives::{
-    B256, U256,
-    types::{BlockWitness, Transaction, eips::Encodable2718, reth::primitives::TransactionSigned},
+    B256,
+    types::{BlockWitness, eips::Encodable2718},
 };
 use scroll_zkvm_types::{
     batch::{
@@ -15,31 +16,23 @@ use scroll_zkvm_types::{
 };
 use vm_zstd::zstd_encode;
 
-fn is_l1_tx(tx: &Transaction) -> bool {
-    // 0x7e is l1 tx
-    tx.transaction_type == 0x7e
-}
-
 #[allow(dead_code)]
 fn final_l1_index(blk: &BlockWitness) -> u64 {
     // Get number of l1 txs. L1 txs can be skipped, so just counting is not enough
     // (The comment copied from scroll-prover, but why the max l1 queue index is always
     // the last one for a chunk, or, is the last l1 never being skipped?)
-    blk.transaction
+    blk.transactions
         .iter()
-        .filter(|tx| is_l1_tx(tx))
-        .map(|tx| tx.queue_index.expect("l1 msg should has queue index"))
+        .filter_map(|tx| tx.queue_index())
         .max()
         .unwrap_or_default()
 }
 
 fn blks_tx_bytes<'a>(blks: impl Iterator<Item = &'a BlockWitness>) -> Vec<u8> {
-    blks.flat_map(|blk| &blk.transaction)
-        .filter(|tx| !is_l1_tx(tx))
+    blks.flat_map(|blk| &blk.transactions)
+        .filter(|tx| !tx.is_l1_message())
         .fold(Vec::new(), |mut tx_bytes, tx| {
-            TransactionSigned::try_from(tx)
-                .unwrap()
-                .encode_2718(&mut tx_bytes);
+            tx.encode_2718(&mut tx_bytes);
             tx_bytes
         })
 }
@@ -103,7 +96,7 @@ impl From<&BatchHeaderV7> for LastHeader {
     }
 }
 
-pub fn metadata_from_chunk_witnesses(witness: &ChunkWitness) -> eyre::Result<ChunkInfo> {
+pub fn metadata_from_chunk_witnesses(witness: ChunkWitness) -> eyre::Result<ChunkInfo> {
     witness
         .try_into()
         .map_err(|e| eyre::eyre!("get chunk metadata fail {e}"))
@@ -124,6 +117,7 @@ pub fn build_batch_witnesses(
 ) -> eyre::Result<BatchWitness> {
     let chunk_infos = chunks
         .iter()
+        .cloned()
         .map(metadata_from_chunk_witnesses)
         .collect::<eyre::Result<Vec<_>>>()?;
 
