@@ -6,7 +6,8 @@ use sbv_primitives::{
 };
 use scroll_zkvm_types::{
     batch::{
-        BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchInfo, BatchWitness, Bytes48, PointEvalWitness, PointEvalWitnessHints, ReferenceHeader
+        BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchInfo, BatchWitness, Bytes48,
+        PointEvalWitness, PointEvalWitnessHints, ReferenceHeader,
     },
     bundle::{BundleInfo, BundleWitness},
     chunk::{ChunkInfo, ChunkWitness},
@@ -330,7 +331,10 @@ pub fn build_batch_witnesses(
 
 // TODO: move it to some correct place
 
-fn build_point_eval_witness(kzg_commitment: Bytes48, kzg_proof: Bytes48) -> (PointEvalWitness,PointEvalWitnessHints) {
+fn build_point_eval_witness(
+    kzg_commitment: Bytes48,
+    kzg_proof: Bytes48,
+) -> (PointEvalWitness, PointEvalWitnessHints) {
     use snark_verifier_sdk::snark_verifier::halo2_base::halo2_proofs::halo2curves::bls12_381;
     let commitment_point = bls12_381::G1Affine::from_compressed_be(&kzg_commitment).unwrap();
     let mut kzg_commitment_hint_x = [0u8; 48];
@@ -348,15 +352,18 @@ fn build_point_eval_witness(kzg_commitment: Bytes48, kzg_proof: Bytes48) -> (Poi
     let mut kzg_proof_hint_y = [0u8; 48];
     kzg_proof_hint_x.copy_from_slice(&proof_point.x.to_bytes_be());
     kzg_proof_hint_y.copy_from_slice(&proof_point.y.to_bytes_be());
-    (PointEvalWitness {
-        kzg_commitment,
-        kzg_proof
-    }, PointEvalWitnessHints {
-        kzg_commitment_hint_x,
-        kzg_commitment_hint_y,
-        kzg_proof_hint_x,
-        kzg_proof_hint_y,
-    })
+    (
+        PointEvalWitness {
+            kzg_commitment,
+            kzg_proof,
+        },
+        PointEvalWitnessHints {
+            kzg_commitment_hint_x,
+            kzg_commitment_hint_y,
+            kzg_proof_hint_x,
+            kzg_proof_hint_y,
+        },
+    )
 }
 
 #[test]

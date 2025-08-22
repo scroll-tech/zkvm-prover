@@ -236,7 +236,6 @@ impl Prover {
         let total_cycles = self.execute_and_check(&stdin)?;
         let execution_time_mills = t.elapsed().as_millis() as u64;
 
-        
         let t = std::time::Instant::now();
         let proof = self
             .prover

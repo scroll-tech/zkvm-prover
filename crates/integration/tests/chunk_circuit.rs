@@ -7,7 +7,7 @@ use scroll_zkvm_integration::{
     },
     utils::metadata_from_chunk_witnesses,
 };
-use scroll_zkvm_prover::{utils::vm::ExecutionResult};
+use scroll_zkvm_prover::utils::vm::ExecutionResult;
 use scroll_zkvm_types::chunk::ChunkWitness;
 
 fn exec_chunk(wit: &ChunkWitness) -> eyre::Result<(ExecutionResult, u64)> {
@@ -144,8 +144,7 @@ fn test_execute_multi() -> eyre::Result<()> {
         preset_chunk_multiple()
             .into_iter()
             .map(|mut task| -> (u64, u64) {
-                let (exec_result, gas) =
-                    exec_chunk(&task.get_or_build_witness().unwrap()).unwrap();
+                let (exec_result, gas) = exec_chunk(&task.get_or_build_witness().unwrap()).unwrap();
                 (gas, exec_result.total_cycle)
             })
             .fold(init, adder)

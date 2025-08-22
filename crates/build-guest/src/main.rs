@@ -2,31 +2,31 @@
 //! Build script for guest circuits (chunk, batch, bundle).
 //!
 //! This script builds OpenVM guest programs and generates associated assets:
-//! 
+//!
 //! ## App Assets Generation:
 //! 1. Builds guest programs (ELF) for specified projects
 //! 2. Transpiles ELF files to VM executables (.vmexe)
 //! 3. Generates executable and VM commitments
 //! 4. Creates verification keys and supporting files
-//! 
+//!
 //! ## OpenVM Assets Generation:
 //! 1. Generates root verifier assembly code
 //! 2. Creates EVM verifier contract (Solidity) and bytecode
-//! 
+//!
 //! ## Usage:
 //! ```bash
 //! cargo run --bin build-guest [OPTIONS]
 //! ```
-//! 
+//!
 //! ## Options:
 //! - `--mode <MODE>`: Generation mode (auto|force)
 //!   - `auto`: Skip generation if output files already exist (default, faster for development)
 //!   - `force`: Always regenerate all files (use for clean builds or CI)
-//! 
+//!
 //! ## Environment Variables:
-//! - `BUILD_PROJECT`: Comma-separated list of projects to build (e.g., "chunk,batch"). 
+//! - `BUILD_PROJECT`: Comma-separated list of projects to build (e.g., "chunk,batch").
 //!   Defaults to "chunk,batch,bundle".
-//! 
+//!
 //! ## Output:
 //! - App assets: `releases/dev/{project_name}/`
 //! - OpenVM assets: `releases/dev/verifier/`
@@ -366,7 +366,6 @@ pub fn main() -> Result<()> {
     // Always generate both app and openvm assets
     println!("{LOG_PREFIX} Generating app assets (always overwrite)");
     generate_app_assets(&workspace_dir, &release_output_dir)?;
-
 
     println!("{LOG_PREFIX} Build process completed successfully.");
     Ok(())

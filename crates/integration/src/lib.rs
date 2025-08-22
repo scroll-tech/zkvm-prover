@@ -1,9 +1,11 @@
 use cargo_metadata::MetadataCommand;
 use once_cell::sync::OnceCell;
 use openvm_circuit::arch::instructions::exe::VmExe;
-use openvm_sdk::{config::SdkVmConfig, fs::read_object_from_file, StdIn, F};
+use openvm_sdk::{F, StdIn, config::SdkVmConfig, fs::read_object_from_file};
 use scroll_zkvm_prover::{
-    setup::read_app_config, utils::{read_json, vm::ExecutionResult, write_json}, Prover
+    Prover,
+    setup::read_app_config,
+    utils::{read_json, vm::ExecutionResult, write_json},
 };
 use scroll_zkvm_types::{
     proof::{EvmProof, ProofEnum, StarkProof},
@@ -280,7 +282,11 @@ pub fn tester_execute<T: ProverTester>(
             .map(|p| p.as_stark_proof().expect("must be stark proof")),
     )?;
 
-    Ok(scroll_zkvm_prover::utils::vm::execute_guest(app_config.app_vm_config, app_exe, &stdin)?)
+    Ok(scroll_zkvm_prover::utils::vm::execute_guest(
+        app_config.app_vm_config,
+        app_exe,
+        &stdin,
+    )?)
 }
 
 /// End-to-end test for proving witnesses of the same prover.
