@@ -1,15 +1,14 @@
 use std::ops::Deref;
 
-use crate::QueueTransaction;
 use crate::types::validium::SecretKey;
 use crate::witness::ValidiumInputs;
 use alloy_primitives::keccak256;
 use itertools::Itertools;
 use sbv_helpers::manually_drop_on_zkvm;
-use sbv_primitives::types::consensus::TxL1Message;
 use sbv_primitives::{
     B256, U256,
     types::{
+        consensus::TxL1Message,
         eips::Encodable2718,
         reth::primitives::{Block, RecoveredBlock, TransactionSigned},
     },
@@ -140,7 +139,7 @@ trait BlockExt {
     fn hash_msg_queue(
         &self,
         initial_queue_hash: &B256,
-        validium_txs: Option<(&[QueueTransaction], &SecretKey)>,
+        validium_txs: Option<(&[TxL1Message], &SecretKey)>,
     ) -> B256;
 }
 
@@ -183,7 +182,7 @@ impl BlockExt for RecoveredBlock<Block> {
     fn hash_msg_queue(
         &self,
         initial_queue_hash: &B256,
-        validium_txs: Option<(&[QueueTransaction], &SecretKey)>,
+        validium_txs: Option<(&[TxL1Message], &SecretKey)>,
     ) -> B256 {
         let mut rolling_hash = *initial_queue_hash;
 
@@ -206,7 +205,6 @@ impl BlockExt for RecoveredBlock<Block> {
 
         if let Some((txs, secret_key)) = validium_txs {
             for (validium_tx, tx_in_block) in txs.iter().zip_eq(self.l1_txs_iter()) {
-                let validium_tx = TxL1Message::from(validium_tx);
                 match validium::decrypt(&validium_tx, secret_key) {
                     Ok(decrypted) => {
                         assert_eq!(decrypted, *tx_in_block);

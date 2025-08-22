@@ -1,5 +1,6 @@
 use alloy_primitives::B256;
 use eyre::Ok;
+use sbv_primitives::types::consensus::TxL1Message;
 use scroll_zkvm_integration::testers::PATH_TESTDATA;
 use scroll_zkvm_integration::testers::chunk::read_block_witness;
 use scroll_zkvm_integration::{
@@ -12,7 +13,7 @@ use scroll_zkvm_integration::{
 };
 use scroll_zkvm_prover::utils::read_json;
 use scroll_zkvm_prover::{Prover, utils::vm::ExecutionResult};
-use scroll_zkvm_types::chunk::{ChunkWitness, QueueTransaction, SecretKey};
+use scroll_zkvm_types::chunk::{ChunkWitness, SecretKey};
 use scroll_zkvm_types::public_inputs::ForkName;
 use std::env;
 use std::path::Path;
@@ -83,9 +84,9 @@ fn test_execute_validium() -> eyre::Result<()> {
     let secret_key = hex::decode(env::var("VALIDIUM_KEY")?)?;
     let secret_key = SecretKey::try_from_bytes(&secret_key)?;
 
-    for blk in [1019, 1256, 1276] {
+    for blk in [1019, 1256, 1276, 1141071] {
         let block_witness = read_block_witness(base_dir.join(format!("{blk}.json")))?;
-        let validium_txs: Vec<QueueTransaction> =
+        let validium_txs: Vec<TxL1Message> =
             read_json(base_dir.join(format!("{blk}_validium_txs.json")))?;
 
         let witness = ChunkWitness::new_validium(

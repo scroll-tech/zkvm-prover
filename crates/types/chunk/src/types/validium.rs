@@ -7,20 +7,6 @@ use sbv_primitives::types::consensus::TxL1Message;
 pub use ecies::SecretKey;
 
 sol! {
-    #[derive(
-        Debug,
-        serde::Deserialize,
-        serde::Serialize,
-    )]
-    event QueueTransaction(
-        address indexed sender,
-        address indexed target,
-        uint256 value,
-        uint64 queueIndex,
-        uint256 gasLimit,
-        bytes data
-    );
-
     #[derive(Debug)]
     function relayMessage(
         address sender,
@@ -60,19 +46,6 @@ pub enum ValidiumError {
     Decrypt(#[from] ecies::DecryptError),
     #[error("Invalid target address")]
     InvalidTarget,
-}
-
-impl From<&QueueTransaction> for TxL1Message {
-    fn from(tx: &QueueTransaction) -> Self {
-        TxL1Message {
-            queue_index: tx.queueIndex,
-            gas_limit: tx.gasLimit.to(),
-            to: tx.target,
-            value: tx.value,
-            sender: tx.sender,
-            input: tx.data.clone(),
-        }
-    }
 }
 
 pub fn decrypt(tx: &TxL1Message, secret_key: &SecretKey) -> Result<TxL1Message, ValidiumError> {

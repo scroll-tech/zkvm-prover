@@ -1,6 +1,7 @@
-use crate::types::validium::{QueueTransaction, SecretKey};
+use crate::types::validium::SecretKey;
 use alloy_primitives::B256;
 use sbv_core::verifier::StateCommitMode;
+use sbv_primitives::types::consensus::TxL1Message;
 use sbv_primitives::{U256, types::BlockWitness};
 use std::collections::HashSet;
 use types_base::{fork_name::ForkName, public_inputs::chunk::ChunkInfo};
@@ -26,7 +27,7 @@ pub struct ChunkWitness {
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct ValidiumInputs {
     /// The validium transactions for each block in the chunk.
-    pub validium_txs: Vec<Vec<QueueTransaction>>,
+    pub validium_txs: Vec<Vec<TxL1Message>>,
     /// The secret key used for decrypting validium transactions.
     pub secret_key: Box<[u8]>,
 }
@@ -75,7 +76,7 @@ impl ChunkWitness {
         blocks: &[BlockWitness],
         prev_msg_queue_hash: B256,
         fork_name: ForkName,
-        validium_txs: Vec<Vec<QueueTransaction>>,
+        validium_txs: Vec<Vec<TxL1Message>>,
         secret_key: SecretKey,
     ) -> Self {
         Self::new(
