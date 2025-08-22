@@ -82,9 +82,11 @@ impl Prover {
 
         tracing::info!("setup1");
         let sdk = Sdk::new(app_config).unwrap();
-        tracing::info!("setup15");
+        tracing::info!("setup2");
+        // 45s for first time
         let sdk = sdk.with_agg_pk(AGG_STARK_PROVING_KEY.clone());
-
+        tracing::info!("setup3");
+        // 5s
         let prover = sdk.prover(app_exe.clone()).unwrap();
         tracing::info!("prover setup done");
         Ok(Self {
