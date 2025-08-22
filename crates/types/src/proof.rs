@@ -39,6 +39,10 @@ pub struct EvmProof {
 pub struct StarkProofStat {
     /// total cycles
     pub total_cycles: u64,
+    /// exec time
+    pub execution_time_mills: u64,
+    /// proving time
+    pub proving_time_mills: u64,
 }
 
 /// Helper to modify serde implementations on the remote [`RootProof`] type.
