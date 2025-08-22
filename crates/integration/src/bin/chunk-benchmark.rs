@@ -1,4 +1,4 @@
-use std::env;
+use std::{env, fs};
 use clap::Parser;
 use openvm_benchmarks_prove::util::BenchmarkCli;
 use openvm_benchmarks_utils::build_elf;
@@ -12,6 +12,7 @@ fn main() -> eyre::Result<()> {
     ChunkProverTester::setup(false)?;
 
     let output = DIR_TESTRUN.get().unwrap();
+    fs::create_dir_all(output)?;
     unsafe {
         env::set_var("OUTPUT_PATH", output.join("metrics.json"));
         env::set_var("GUEST_SYMBOLS_PATH", output.join("guest.syms"));
