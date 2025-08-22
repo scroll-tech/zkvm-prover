@@ -1,6 +1,5 @@
-use rkyv::util::AlignedVec;
 use types_base::{
-    aggregation::{AggregationInput, ProgramCommitment, ProofCarryingWitness},
+    aggregation::{AggregationInput, ProofCarryingWitness},
     fork_name::ForkName,
     public_inputs::{batch::BatchInfo, bundle::BundleInfo},
 };
