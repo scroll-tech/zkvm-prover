@@ -4,11 +4,10 @@ use scroll_zkvm_types::{
     chunk::ChunkInfo,
     proof::ProofEnum,
     public_inputs::ForkName,
-    types_agg::ProgramCommitment,
 };
 
 use crate::{
-    PartialProvingTask, ProverTester, prove_verify,
+    PartialProvingTask, ProverTester, load_program_commitments, prove_verify,
     testers::chunk::{ChunkTaskGenerator, preset_chunk_multiple},
     utils::build_batch_witnesses,
 };
@@ -23,10 +22,8 @@ impl PartialProvingTask for BatchWitness {
         header_hash.to_string()
     }
 
-    fn write_guest_input(&self, stdin: &mut openvm_sdk::StdIn) -> Result<(), rkyv::rancor::Error> {
-        let b = self.bincode_serialize(None).unwrap();
-        stdin.write_bytes(b.as_slice());
-        Ok(())
+    fn legacy_rkyv_archive(&self) -> eyre::Result<Vec<u8>> {
+        Ok(rkyv::to_bytes::<rkyv::rancor::Error>(self)?.to_vec())
     }
 
     fn fork_name(&self) -> ForkName {
@@ -104,10 +101,7 @@ impl BatchTaskGenerator {
             .map(|g| g.get_or_build_witness())
             .collect::<eyre::Result<Vec<_>>>()?;
 
-        let commitment = ProgramCommitment {
-            exe: crate::commitments::chunk_exe_commit::COMMIT,
-            vm: crate::commitments::chunk_leaf_commit::COMMIT,
-        };
+        let commitment = load_program_commitments("chunk")?;
         let ret_wit = build_batch_witnesses(
             &chunks,
             &commitment.serialize(),

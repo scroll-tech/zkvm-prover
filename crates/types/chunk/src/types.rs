@@ -122,8 +122,9 @@ impl<'a, I: Iterator<Item = &'a TransactionSigned>> TxBytesHashExt for I {
             tx.encode_2718(rlp_buffer);
         }
         let hash = keccak256(&rlp_buffer);
+        let len = rlp_buffer.len();
         rlp_buffer.clear();
-        (rlp_buffer.len(), hash)
+        (len, hash)
     }
 }
 

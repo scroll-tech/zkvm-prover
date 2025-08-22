@@ -6,7 +6,7 @@ use std::{
 use sbv_primitives::{B256, types::BlockWitness};
 use scroll_zkvm_prover::Prover;
 use scroll_zkvm_types::{
-    chunk::{ChunkInfo, ChunkWitness},
+    chunk::{ChunkInfo, ChunkWitness, LegacyChunkWitness},
     proof::ProofEnum,
     public_inputs::ForkName,
 };
@@ -36,7 +36,10 @@ where
         return Err(eyre::eyre!("File not found: {:?}", path_witness.as_ref()));
     }
     let witness = File::open(path_witness)?;
-    Ok(serde_json::from_reader::<_, BlockWitness>(witness)?)
+    Ok(
+        serde_json::from_reader::<_, sbv_primitives::legacy_types::BlockWitness>(witness)?
+            .into_current(),
+    )
 }
 
 pub struct ChunkProverTester;
@@ -50,10 +53,11 @@ impl PartialProvingTask for ChunkWitness {
         format!("{first}-{last}")
     }
 
-    fn write_guest_input(&self, stdin: &mut openvm_sdk::StdIn) -> Result<(), rkyv::rancor::Error> {
-        let b = self.bincode_serialize(None).unwrap();
-        stdin.write_bytes(b.as_slice());
-        Ok(())
+    fn legacy_rkyv_archive(&self) -> eyre::Result<Vec<u8>> {
+        Ok(
+            rkyv::to_bytes::<rkyv::rancor::Error>(&LegacyChunkWitness::from(self.clone()))?
+                .to_vec(),
+        )
     }
 
     fn fork_name(&self) -> ForkName {
@@ -177,7 +181,7 @@ pub fn create_canonical_tasks(
             witness: Default::default(),
         };
         let chunk_wit = canonical_generator.get_or_build_witness()?;
-        let info = metadata_from_chunk_witnesses(&chunk_wit)?;
+        let info = metadata_from_chunk_witnesses(chunk_wit)?;
 
         prev_message_hash = Some(info.post_msg_queue_hash);
         ret.push(canonical_generator);

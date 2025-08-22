@@ -58,9 +58,9 @@ openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "c
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.1.1" }
 p3-field = { git = "https://github.com/Plonky3/Plonky3.git", rev = "539bbc84085efb609f4f62cb03cf49588388abdb" }
 
-sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = ["scroll", "serde", "rkyv"] }
+sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = ["scroll", "rkyv"] }
 sbv-helpers = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
-sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = ["scroll", "serde", "rkyv"] }
+sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = ["scroll", "rkyv"] }
 sbv-kv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
 sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
 sbv-precompile = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }

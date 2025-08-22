@@ -1,8 +1,8 @@
 mod types;
 mod witness;
 
+pub use witness::{ChunkWitness, LegacyChunkWitness};
 pub use types::validium::{QueueTransaction, SecretKey};
-pub use witness::ChunkWitness;
 
 mod execute;
 pub use execute::execute;

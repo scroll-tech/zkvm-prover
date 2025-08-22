@@ -8,6 +8,7 @@ use scroll_zkvm_prover::{
 use scroll_zkvm_types::{
     proof::{EvmProof, ProofEnum, StarkProof},
     public_inputs::ForkName,
+    types_agg::ProgramCommitment,
 };
 use scroll_zkvm_verifier::verifier::UniversalVerifier;
 use std::{
@@ -22,14 +23,28 @@ pub mod testers;
 
 pub mod utils;
 
-pub mod commitments;
+/// Directory to store proofs on disc.
+const DIR_PROOFS: &str = "proofs";
 
-pub trait PartialProvingTask {
-    fn identifier(&self) -> String;
+/// File descriptor for app openvm config.
+const FD_APP_CONFIG: &str = "openvm.toml";
 
-    fn write_guest_input(&self, stdin: &mut StdIn) -> Result<(), rkyv::rancor::Error>;
+/// File descriptor for app exe.
+const FD_APP_EXE: &str = "app.vmexe";
 
-    fn fork_name(&self) -> ForkName;
+/// Environment variable used to set the test-run's output directory for assets.
+const ENV_OUTPUT_DIR: &str = "OUTPUT_DIR";
+
+/// Enviroment settings for test: fork
+pub fn testing_hardfork() -> ForkName {
+    ForkName::Feynman
+}
+
+/// Read the 'GUEST_VERSION' from the environment variable.
+/// If not existed, return "dev" as default
+/// The returned value will be used to locate asset files: $workspace/releases/$guest_version
+pub fn guest_version() -> String {
+    std::env::var("GUEST_VERSION").unwrap_or_else(|_| "dev".to_string())
 }
 
 pub static WORKSPACE_ROOT: LazyLock<&Path> = LazyLock::new(|| {
@@ -51,18 +66,6 @@ static DIR_OUTPUT: LazyLock<&Path> = LazyLock::new(|| {
     Box::leak(path.into_boxed_path())
 });
 
-/// Directory to store proofs on disc.
-const DIR_PROOFS: &str = "proofs";
-
-/// File descriptor for app openvm config.
-const FD_APP_CONFIG: &str = "openvm.toml";
-
-/// File descriptor for app exe.
-const FD_APP_EXE: &str = "app.vmexe";
-
-/// Environment variable used to set the test-run's output directory for assets.
-const ENV_OUTPUT_DIR: &str = "OUTPUT_DIR";
-
 /// Every test run will write assets to a new directory.
 ///
 /// Possibly one of the following:
@@ -71,10 +74,32 @@ const ENV_OUTPUT_DIR: &str = "OUTPUT_DIR";
 /// - <DIR_OUTPUT>/bundle-tests-{timestamp}
 static DIR_TESTRUN: OnceCell<PathBuf> = OnceCell::new();
 
+pub trait PartialProvingTask: serde::Serialize {
+    fn identifier(&self) -> String;
+    fn fork_name(&self) -> ForkName;
+
+    fn legacy_rkyv_archive(&self) -> eyre::Result<Vec<u8>>;
+
+    fn write_guest_input(&self, stdin: &mut StdIn) -> eyre::Result<()>
+    where
+        Self: Sized,
+    {
+        let bytes: Vec<u8> = match guest_version().as_str() {
+            "0.5.2" => self.legacy_rkyv_archive()?,
+            _ => {
+                let config = bincode::config::standard();
+                bincode::serde::encode_to_vec(&self, config)?
+            }
+        };
+        stdin.write_bytes(&bytes);
+        Ok(())
+    }
+}
+
 /// Circuit that implements functionality required to run e2e tests in specified phase (chunk/batch/bundle).
 pub trait ProverTester {
     /// Tester witness type
-    type Witness: PartialProvingTask; // + rkyv::Archive;
+    type Witness: PartialProvingTask;
 
     /// Tester metadata type
     type Metadata; //: for<'a> TryFrom<&'a <Self::Witness as rkyv::Archive>::Archived>;
@@ -121,7 +146,7 @@ pub trait ProverTester {
 
     /// Load the app config.
     fn load() -> eyre::Result<(PathBuf, PathBuf)> {
-        let assets_version = "dev";
+        let assets_version = guest_version();
         let release_dir = WORKSPACE_ROOT.join("releases").join(assets_version);
         let path_app_config = release_dir.join(Self::NAME).join(FD_APP_CONFIG);
         let path_app_exe = release_dir.join(Self::NAME).join(FD_APP_EXE);
@@ -159,7 +184,7 @@ pub trait ProverTester {
     fn build_guest_input<'a>(
         witness: &Self::Witness,
         aggregated_proofs: impl Iterator<Item = &'a StarkProof>,
-    ) -> Result<StdIn, rkyv::rancor::Error> {
+    ) -> eyre::Result<StdIn> {
         use openvm_native_recursion::hints::Hintable;
 
         let mut stdin = StdIn::default();
@@ -173,11 +198,6 @@ pub trait ProverTester {
         }
         Ok(stdin)
     }
-}
-
-/// Enviroment settings for test: fork
-pub fn testing_hardfork() -> ForkName {
-    ForkName::Feynman
 }
 
 /// Enviroment settings for test: fork dir
@@ -309,7 +329,7 @@ pub fn prove_verify<T: ProverTester>(
 /// End-to-end test for a single proving task to generate an EVM-verifiable SNARK proof.
 #[instrument(name = "prove_verify_single_evm", skip_all)]
 pub fn prove_verify_single_evm<T>(
-    prover: &Prover,
+    prover: &mut Prover,
     witness: &T::Witness,
     proofs: &[ProofEnum],
 ) -> eyre::Result<ProofEnum>
@@ -327,7 +347,7 @@ where
     // Dump verifier-only assets to disk.
     let path_verifier_code = WORKSPACE_ROOT
         .join("releases")
-        .join("dev")
+        .join(guest_version())
         .join("verifier")
         .join("verifier.bin");
     let verifier = scroll_zkvm_verifier::verifier::UniversalVerifier::setup(&path_verifier_code)?;
@@ -367,6 +387,26 @@ where
     )?;
 
     Ok(proof)
+}
+
+pub fn load_program_commitments(program: &str) -> eyre::Result<ProgramCommitment> {
+    use base64::{Engine, prelude::BASE64_STANDARD};
+    let file_path = WORKSPACE_ROOT
+        .join("releases")
+        .join(guest_version())
+        .join("verifier")
+        .join("openVmVk.json");
+    let json_value: serde_json::Value = {
+        let file = std::fs::File::open(&file_path)?;
+        serde_json::from_reader(file)?
+    };
+    let commitment_string = json_value[&format!("{}_vk", program)]
+        .as_str()
+        .ok_or_else(|| eyre::eyre!("Missing or invalid program commitment for {}", program))?;
+    let commitment_bytes = hex::decode(commitment_string)
+        .or_else(|_| BASE64_STANDARD.decode(commitment_string))
+        .map_err(|_| eyre::eyre!("Failed to decode program commitment for {}", program))?;
+    Ok(ProgramCommitment::deserialize(&commitment_bytes))
 }
 
 #[test]

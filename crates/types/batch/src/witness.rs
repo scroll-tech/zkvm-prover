@@ -1,5 +1,5 @@
 use types_base::{
-    aggregation::{AggregationInput, ProgramCommitment, ProofCarryingWitness},
+    aggregation::{AggregationInput, ProofCarryingWitness},
     public_inputs::{ForkName, batch::BatchInfo, chunk::ChunkInfo},
 };
 
@@ -86,16 +86,6 @@ pub struct BatchWitness {
     /// The code version specify the chain spec
     #[rkyv()]
     pub fork_name: ForkName,
-}
-
-impl BatchWitness {
-    pub fn bincode_serialize(
-        &self,
-        guest_version: Option<ForkName>,
-    ) -> Result<Vec<u8>, bincode::error::EncodeError> {
-        let config = bincode::config::standard();
-        bincode::serde::encode_to_vec(&self, config)
-    }
 }
 
 impl ProofCarryingWitness for BatchWitness {
