@@ -153,12 +153,18 @@ impl Prover {
     ) -> Result<crate::utils::vm::ExecutionResult, Error> {
         let config = self.sdk.app_config(); // app_pk.app_vm_pk.vm_config.clone();
         let exe = self.app_exe.clone();
+        let t = std::time::Instant::now();
         let exec_result =
             crate::utils::vm::execute_guest(config.app_vm_config.clone(), exe, stdin)?;
+        let execution_time_mills = t.elapsed().as_millis() as u64;
+        let execution_time_s = (execution_time_mills as f32 / 1000.0f32);
+        let exec_speed = (exec_result.total_cycle as f32 / 1000_000.0f32) / execution_time_s; // MHz
         tracing::info!(
-            "total cycle of {}: {}",
+            "total cycle of {}: {}, exec speed: {:.2}MHz, exec time: {:2}s",
             self.prover_name,
-            exec_result.total_cycle
+            exec_result.total_cycle,
+            exec_speed,
+            execution_time_s
         );
         Ok(exec_result)
     }
@@ -232,6 +238,7 @@ impl Prover {
     pub fn gen_proof_stark(&mut self, stdin: StdIn) -> Result<StarkProof, Error> {
         // Here we always do an execution of the guest program to get the cycle count.
         // and do precheck before proving like ensure PI != 0
+        let total_cycle = self.execute_and_check(&stdin)?;
         let t = std::time::Instant::now();
         let total_cycles = self.execute_and_check(&stdin)?;
         let execution_time_mills = t.elapsed().as_millis() as u64;
@@ -242,6 +249,9 @@ impl Prover {
             .prove(stdin)
             .map_err(|e| Error::GenProof(e.to_string()))?;
         let proving_time_mills = t.elapsed().as_millis() as u64;
+        let prove_speed =
+            (total_cycle as f32 / 1000_000.0f32) / (proving_time_mills as f32 / 1000.0f32); // MHz
+        tracing::info!("proving speed: {:.2}MHz", prove_speed);
         let stat = StarkProofStat {
             total_cycles,
             proving_time_mills,

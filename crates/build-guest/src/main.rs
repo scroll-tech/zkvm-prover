@@ -53,8 +53,12 @@ use openvm_sdk::{
     config::{AggregationConfig, AppConfig, SdkVmConfig},
     fs::{write_object_to_file, write_to_file_json},
     keygen::AggProvingKey,
+    prover::{AppProver, StarkProver},
 };
-use openvm_stark_sdk::{openvm_stark_backend::p3_field::PrimeField32, p3_bn254_fr::Bn254Fr};
+use openvm_stark_sdk::{
+    config::baby_bear_poseidon2::BabyBearPoseidon2Engine,
+    openvm_stark_backend::p3_field::PrimeField32, p3_bn254_fr::Bn254Fr,
+};
 use snark_verifier_sdk::snark_verifier::loader::evm::compile_solidity;
 
 mod verifier;
@@ -203,8 +207,14 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
         println!("{LOG_PREFIX} exe written to {path_app_exe:?}");
 
         // 3. Compute and Write Executable Commitment
-        let prover = sdk.prover(app_exe)?;
-        let app_comm = prover.app_commit();
+        let app_pk = sdk.app_pk();
+        let app_prover: AppProver<BabyBearPoseidon2Engine, _> = AppProver::new(
+            sdk.app_vm_builder().clone(),
+            &app_pk.app_vm_pk,
+            Arc::new(app_exe),
+            app_pk.leaf_committed_exe.get_program_commit(),
+        )?;
+        let app_comm = app_prover.app_commit();
         let exe_commit_u32 = app_comm.app_exe_commit.to_u32_digest();
         let vm_commit_u32 = app_comm.app_vm_commit.to_u32_digest();
 
