@@ -1,5 +1,7 @@
+use crate::types::validium::SecretKey;
 use alloy_primitives::B256;
 use sbv_core::verifier::StateCommitMode;
+use sbv_primitives::types::consensus::TxL1Message;
 use sbv_primitives::{U256, types::BlockWitness};
 use std::collections::HashSet;
 use types_base::{fork_name::ForkName, public_inputs::chunk::ChunkInfo};
@@ -17,6 +19,17 @@ pub struct ChunkWitness {
     pub compression_ratios: Vec<Vec<U256>>,
     /// The mode of state commitment for the chunk.
     pub state_commit_mode: StateCommitMode,
+    /// Validium encrypted txs and secret key if this is a validium chain.
+    pub validium: Option<ValidiumInputs>,
+}
+
+/// The validium inputs for the chunk witness.
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+pub struct ValidiumInputs {
+    /// The validium transactions for each block in the chunk.
+    pub validium_txs: Vec<Vec<TxL1Message>>,
+    /// The secret key used for decrypting validium transactions.
+    pub secret_key: Box<[u8]>,
 }
 
 /// The witness type accepted by the chunk-circuit.
@@ -51,7 +64,38 @@ pub struct ChunkDetails {
 }
 
 impl ChunkWitness {
-    pub fn new(blocks: &[BlockWitness], prev_msg_queue_hash: B256, fork_name: ForkName) -> Self {
+    pub fn new_scroll(
+        blocks: &[BlockWitness],
+        prev_msg_queue_hash: B256,
+        fork_name: ForkName,
+    ) -> Self {
+        Self::new(blocks, prev_msg_queue_hash, fork_name, None)
+    }
+
+    pub fn new_validium(
+        blocks: &[BlockWitness],
+        prev_msg_queue_hash: B256,
+        fork_name: ForkName,
+        validium_txs: Vec<Vec<TxL1Message>>,
+        secret_key: SecretKey,
+    ) -> Self {
+        Self::new(
+            blocks,
+            prev_msg_queue_hash,
+            fork_name,
+            Some(ValidiumInputs {
+                validium_txs,
+                secret_key: secret_key.to_bytes(),
+            }),
+        )
+    }
+
+    pub fn new(
+        blocks: &[BlockWitness],
+        prev_msg_queue_hash: B256,
+        fork_name: ForkName,
+        validium: Option<ValidiumInputs>,
+    ) -> Self {
         let num_codes = blocks.iter().map(|w| w.codes.len()).sum();
         let num_states = blocks.iter().map(|w| w.states.len()).sum();
         let mut codes = HashSet::with_capacity(num_codes);
@@ -90,6 +134,7 @@ impl ChunkWitness {
             fork_name,
             compression_ratios,
             state_commit_mode: StateCommitMode::Auto,
+            validium,
         }
     }
 

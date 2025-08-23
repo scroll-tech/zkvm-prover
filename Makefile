@@ -59,6 +59,9 @@ test-execute-chunk:
 test-execute-chunk-multi:
 	@cargo test --release -p scroll-zkvm-integration --test chunk_circuit test_execute_multi -- --exact --nocapture
 
+test-execute-validium-chunk:
+	@cargo test --release -p scroll-zkvm-integration --test chunk_circuit test_execute_validium -- --exact --nocapture
+
 test-cycle:
 	@cargo test --release -p scroll-zkvm-integration --test chunk_circuit test_cycle -- --exact --nocapture
 

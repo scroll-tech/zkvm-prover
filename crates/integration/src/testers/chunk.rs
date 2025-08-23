@@ -1,5 +1,6 @@
 use std::{
     fs::File,
+    io::{Seek, SeekFrom},
     path::{Path, PathBuf},
 };
 
@@ -35,11 +36,16 @@ where
         println!("File not found: {:?}", path_witness.as_ref());
         return Err(eyre::eyre!("File not found: {:?}", path_witness.as_ref()));
     }
-    let witness = File::open(path_witness)?;
-    Ok(
-        serde_json::from_reader::<_, sbv_primitives::legacy_types::BlockWitness>(witness)?
-            .into_current(),
-    )
+    let mut witness = File::open(path_witness)?;
+    if let Ok(witness) = serde_json::from_reader::<_, BlockWitness>(&mut witness) {
+        Ok(witness)
+    } else {
+        witness.seek(SeekFrom::Start(0))?;
+        Ok(
+            serde_json::from_reader::<_, sbv_primitives::legacy_types::BlockWitness>(&mut witness)?
+                .into_current(),
+        )
+    }
 }
 
 pub struct ChunkProverTester;
@@ -122,7 +128,7 @@ impl ChunkTaskGenerator {
             .map(read_block_witness)
             .collect::<eyre::Result<Vec<BlockWitness>>>()?;
 
-        let witness = ChunkWitness::new(
+        let witness = ChunkWitness::new_scroll(
             &block_witnesses,
             self.prev_message_hash
                 .unwrap_or_else(|| B256::repeat_byte(1u8)),
@@ -146,7 +152,7 @@ pub fn get_witness_from_env_or_builder(
         .iter()
         .map(read_block_witness)
         .collect::<eyre::Result<Vec<BlockWitness>>>()?;
-    Ok(ChunkWitness::new(
+    Ok(ChunkWitness::new_scroll(
         &block_witnesses,
         B256::repeat_byte(1u8),
         testing_hardfork(),
