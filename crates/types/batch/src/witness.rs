@@ -35,7 +35,6 @@ mod array48 {
     }
 }
 
-
 /// Witness required by applying point evaluation
 #[derive(
     Clone,
@@ -149,8 +148,12 @@ impl From<&BatchWitness> for BatchInfo {
                     blob_bytes: witness.blob_bytes.to_vec(),
                     kzg_commitment: Some(witness.point_eval_witness.kzg_commitment),
                     kzg_proof: Some(witness.point_eval_witness.kzg_proof),
-                    kzg_commitment_hint_x: Some(witness.point_eval_witness_hints.kzg_commitment_hint_x),
-                    kzg_commitment_hint_y: Some(witness.point_eval_witness_hints.kzg_commitment_hint_y),
+                    kzg_commitment_hint_x: Some(
+                        witness.point_eval_witness_hints.kzg_commitment_hint_x,
+                    ),
+                    kzg_commitment_hint_y: Some(
+                        witness.point_eval_witness_hints.kzg_commitment_hint_y,
+                    ),
                     kzg_proof_hint_x: Some(witness.point_eval_witness_hints.kzg_proof_hint_x),
                     kzg_proof_hint_y: Some(witness.point_eval_witness_hints.kzg_proof_hint_y),
                 };
@@ -163,8 +166,12 @@ impl From<&BatchWitness> for BatchInfo {
                     blob_bytes: witness.blob_bytes.to_vec(),
                     kzg_commitment: Some(witness.point_eval_witness.kzg_commitment),
                     kzg_proof: Some(witness.point_eval_witness.kzg_proof),
-                    kzg_commitment_hint_x: Some(witness.point_eval_witness_hints.kzg_commitment_hint_x),
-                    kzg_commitment_hint_y: Some(witness.point_eval_witness_hints.kzg_commitment_hint_y),
+                    kzg_commitment_hint_x: Some(
+                        witness.point_eval_witness_hints.kzg_commitment_hint_x,
+                    ),
+                    kzg_commitment_hint_y: Some(
+                        witness.point_eval_witness_hints.kzg_commitment_hint_y,
+                    ),
                     kzg_proof_hint_x: Some(witness.point_eval_witness_hints.kzg_proof_hint_x),
                     kzg_proof_hint_y: Some(witness.point_eval_witness_hints.kzg_proof_hint_y),
                 };

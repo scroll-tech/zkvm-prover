@@ -18,4 +18,6 @@ pub mod blob_consistency;
 mod builder;
 
 mod witness;
-pub use witness::{ArchivedBatchWitness, BatchWitness, Bytes48, PointEvalWitness, PointEvalWitnessHints};
+pub use witness::{
+    ArchivedBatchWitness, BatchWitness, Bytes48, PointEvalWitness, PointEvalWitnessHints,
+};
