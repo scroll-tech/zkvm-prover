@@ -10,17 +10,7 @@ pub const SIZE_BLOCK_CTX: usize = 52;
 /// Represents the version 2 of block context.
 ///
 /// The difference between v2 and v1 is that the block number field has been removed since v2.
-#[derive(
-    Debug,
-    Clone,
-    PartialEq,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    serde::Deserialize,
-    serde::Serialize,
-)]
-#[rkyv(derive(Debug))]
+#[derive(Debug, Clone, PartialEq, serde::Deserialize, serde::Serialize)]
 pub struct BlockContextV2 {
     /// The timestamp of the block.
     pub timestamp: u64,
@@ -32,18 +22,6 @@ pub struct BlockContextV2 {
     pub num_txs: u16,
     /// The number of L1 msg txs in the block.
     pub num_l1_msgs: u16,
-}
-
-impl From<&ArchivedBlockContextV2> for BlockContextV2 {
-    fn from(archived: &ArchivedBlockContextV2) -> Self {
-        Self {
-            timestamp: archived.timestamp.into(),
-            base_fee: archived.base_fee.into(),
-            gas_limit: archived.gas_limit.into(),
-            num_txs: archived.num_txs.into(),
-            num_l1_msgs: archived.num_l1_msgs.into(),
-        }
-    }
 }
 
 impl From<&[u8]> for BlockContextV2 {
@@ -80,51 +58,31 @@ impl BlockContextV2 {
 }
 
 /// Represents header-like information for the chunk.
-#[derive(
-    Debug,
-    Clone,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    serde::Deserialize,
-    serde::Serialize,
-)]
-#[rkyv(derive(Debug))]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct ChunkInfo {
     /// The EIP-155 chain ID for all txs in the chunk.
-    #[rkyv()]
     pub chain_id: u64,
     /// The state root before applying the chunk.
-    #[rkyv()]
     pub prev_state_root: B256,
     /// The state root after applying the chunk.
-    #[rkyv()]
     pub post_state_root: B256,
     /// The withdrawals root after applying the chunk.
-    #[rkyv()]
     pub withdraw_root: B256,
     /// Digest of L1 message txs force included in the chunk.
     /// It is a legacy field and can be omitted in new defination
-    #[rkyv()]
     #[serde(default)]
     pub data_hash: B256,
     /// Digest of L2 tx data flattened over all L2 txs in the chunk.
-    #[rkyv()]
     pub tx_data_digest: B256,
     /// The L1 msg queue hash at the end of the previous chunk.
-    #[rkyv()]
     pub prev_msg_queue_hash: B256,
     /// The L1 msg queue hash at the end of the current chunk.
-    #[rkyv()]
     pub post_msg_queue_hash: B256,
     /// The length of rlp encoded L2 tx bytes flattened over all L2 txs in the chunk.
-    #[rkyv()]
     pub tx_data_length: u64,
     /// The block number of the first block in the chunk.
-    #[rkyv()]
     pub initial_block_number: u64,
     /// The block contexts of the blocks in the chunk.
-    #[rkyv()]
     pub block_ctxs: Vec<BlockContextV2>,
 }
 impl std::fmt::Display for ChunkInfo {

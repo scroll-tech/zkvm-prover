@@ -6,40 +6,23 @@ use crate::{
 };
 
 /// Represents public-input values for a batch.
-#[derive(
-    Clone,
-    Debug,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    serde::Deserialize,
-    serde::Serialize,
-)]
-#[rkyv(derive(Debug))]
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct BatchInfo {
     /// The state root before applying the batch.
-    #[rkyv()]
     pub parent_state_root: B256,
     /// The batch hash of the parent batch.
-    #[rkyv()]
     pub parent_batch_hash: B256,
     /// The state root after applying txs in the batch.
-    #[rkyv()]
     pub state_root: B256,
     /// The batch header hash of the batch.
-    #[rkyv()]
     pub batch_hash: B256,
     /// The EIP-155 chain ID of all txs in the batch.
-    #[rkyv()]
     pub chain_id: u64,
     /// The withdraw root of the last block in the last chunk in the batch.
-    #[rkyv()]
     pub withdraw_root: B256,
     /// The L1 msg queue hash at the end of the previous batch.
-    #[rkyv()]
     pub prev_msg_queue_hash: B256,
     /// The L1 msg queue hash at the end of the current batch.
-    #[rkyv()]
     pub post_msg_queue_hash: B256,
 }
 

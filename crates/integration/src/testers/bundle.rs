@@ -23,10 +23,6 @@ impl PartialProvingTask for BundleWitness {
         format!("{first}-{last}")
     }
 
-    fn legacy_rkyv_archive(&self) -> eyre::Result<Vec<u8>> {
-        Ok(rkyv::to_bytes::<rkyv::rancor::Error>(self)?.to_vec())
-    }
-
     fn fork_name(&self) -> ForkName {
         ForkName::from(self.fork_name.as_str())
     }

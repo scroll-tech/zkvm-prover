@@ -3,8 +3,6 @@ use openvm::platform as openvm_platform;
 
 /// Read the witnesses from the hint stream.
 ///
-/// rkyv needs special alignment for its data structures, use a pre-aligned buffer with rkyv::access_unchecked
-/// is more efficient than rkyv::access.
 #[cfg(target_os = "zkvm")]
 #[inline(always)]
 pub fn read_witnesses_rkyv_raw() -> Vec<u8> {

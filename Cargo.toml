@@ -58,14 +58,14 @@ openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch =
 # more openvm related libs
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.0-rc.2" }
 
-sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = ["scroll", "rkyv"] }
+sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = ["scroll"] }
 sbv-helpers = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
-sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = ["scroll", "rkyv"] }
+sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = ["scroll"] }
 sbv-kv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
 sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
 sbv-precompile = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
 
-alloy-primitives = { version = "1.3", default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
+alloy-primitives = { version = "1.3", default-features = false, features = ["std", "map-hashbrown", "map-fxhash"] }
 alloy-serde = { version = "1.0.13", default-features = false }
 bitcode = { version = "0.6.5", default-features = false, features = ["serde", "derive"] }
 bincode_v1 = { version = "1.3", package = "bincode"}
@@ -82,7 +82,6 @@ metrics = "0.23.0"
 metrics-util = "0.17"
 metrics-tracing-context = "0.16.0"
 rayon = "1.10"
-rkyv = "0.8"
 revm = "27"
 serde = { version = "1", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0" }
@@ -123,8 +122,6 @@ revm-interpreter = { git = "https://github.com/scroll-tech/revm" }
 revm-precompile = { git = "https://github.com/scroll-tech/revm" }
 revm-primitives = { git = "https://github.com/scroll-tech/revm" }
 revm-state = { git = "https://github.com/scroll-tech/revm" }
-
-alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "feat/rkyv" }
 
 [profile.maxperf]
 inherits = "release"

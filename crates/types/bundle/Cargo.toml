@@ -8,7 +8,6 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
-rkyv.workspace = true
 serde.workspace = true
 
 types-base = { path = "../base", package = "scroll-zkvm-types-base"}

@@ -11,6 +11,7 @@ use scroll_zkvm_types::{
     proof::{EvmProof, ProofEnum, StarkProof},
     public_inputs::ForkName,
     types_agg::ProgramCommitment,
+    utils::serialize_vk,
 };
 use scroll_zkvm_verifier::verifier::UniversalVerifier;
 use std::{
@@ -80,14 +81,12 @@ pub trait PartialProvingTask: serde::Serialize {
     fn identifier(&self) -> String;
     fn fork_name(&self) -> ForkName;
 
-    fn legacy_rkyv_archive(&self) -> eyre::Result<Vec<u8>>;
-
     fn write_guest_input(&self, stdin: &mut StdIn) -> eyre::Result<()>
     where
         Self: Sized,
     {
         let bytes: Vec<u8> = match guest_version().as_str() {
-            "0.5.2" => self.legacy_rkyv_archive()?,
+            "0.5.2" => unimplemented!(),
             _ => {
                 let config = bincode::config::standard();
                 bincode::serde::encode_to_vec(&self, config)?
@@ -104,7 +103,7 @@ pub trait ProverTester {
     type Witness: PartialProvingTask;
 
     /// Tester metadata type
-    type Metadata; //: for<'a> TryFrom<&'a <Self::Witness as rkyv::Archive>::Archived>;
+    type Metadata;
 
     /// Naming for tester
     const NAME: &str;
@@ -419,7 +418,7 @@ pub fn load_program_commitments(program: &str) -> eyre::Result<ProgramCommitment
     let commitment_bytes = hex::decode(commitment_string)
         .or_else(|_| BASE64_STANDARD.decode(commitment_string))
         .map_err(|_| eyre::eyre!("Failed to decode program commitment for {}", program))?;
-    Ok(ProgramCommitment::deserialize(&commitment_bytes))
+    Ok(serialize_vk::deserialize(&commitment_bytes))
 }
 
 #[test]

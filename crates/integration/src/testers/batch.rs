@@ -4,6 +4,7 @@ use scroll_zkvm_types::{
     chunk::ChunkInfo,
     proof::ProofEnum,
     public_inputs::ForkName,
+    utils::serialize_vk,
 };
 
 use crate::{
@@ -20,10 +21,6 @@ impl PartialProvingTask for BatchWitness {
             ReferenceHeader::V8(h) => h.batch_hash(),
         };
         header_hash.to_string()
-    }
-
-    fn legacy_rkyv_archive(&self) -> eyre::Result<Vec<u8>> {
-        Ok(rkyv::to_bytes::<rkyv::rancor::Error>(self)?.to_vec())
     }
 
     fn fork_name(&self) -> ForkName {
@@ -104,7 +101,7 @@ impl BatchTaskGenerator {
         let commitment = load_program_commitments("chunk")?;
         let ret_wit = build_batch_witnesses(
             &chunks,
-            &commitment.serialize(),
+            &serialize_vk::serialize(&commitment),
             self.last_witness
                 .as_ref()
                 .map(|wit| (&wit.reference_header).into())
