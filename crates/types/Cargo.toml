@@ -16,6 +16,8 @@ types-bundle = { path = "bundle", package = "scroll-zkvm-types-bundle" }
 openvm-sdk = { workspace = true }
 openvm-native-recursion.workspace = true
 openvm-stark-sdk = { workspace = true, default-features = false }
+
+alloy-primitives = { workspace = true, features = ["tiny-keccak"] }
 snark-verifier-sdk.workspace = true
 sbv-primitives.workspace = true
 serde.workspace = true
