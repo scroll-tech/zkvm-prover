@@ -9,6 +9,7 @@ version.workspace = true
 
 [dependencies]
 alloy-primitives = { workspace = true, features = ["native-keccak"] }
+rkyv.workspace = true
 sbv-helpers.workspace = true
 sbv-core = { workspace = true }
 sbv-primitives = { workspace = true, features = ["hardforks", "scroll-hardforks", "scroll-revm-types"] }

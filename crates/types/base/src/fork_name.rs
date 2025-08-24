@@ -10,9 +10,13 @@ use std::fmt;
     Eq,
     PartialOrd,
     Ord,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
     serde::Deserialize,
     serde::Serialize,
 )]
+#[rkyv(derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord))]
 pub enum ForkName {
     #[default]
     EuclidV1,

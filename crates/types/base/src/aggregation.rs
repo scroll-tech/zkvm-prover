@@ -1,5 +1,14 @@
 /// Represents an openvm program commitments and public values.
-#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+#[derive(
+    Clone,
+    Debug,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    serde::Deserialize,
+    serde::Serialize,
+)]
+#[rkyv(derive(Debug))]
 pub struct AggregationInput {
     /// Public values.
     pub public_values: Vec<u32>,
@@ -8,12 +17,55 @@ pub struct AggregationInput {
 }
 
 /// Represent the commitment needed to verify a [`RootProof`].
-#[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+#[derive(
+    Clone,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    serde::Deserialize,
+    serde::Serialize,
+)]
+#[rkyv(derive(Debug))]
 pub struct ProgramCommitment {
     /// The commitment to the child program exe.
     pub exe: [u32; 8],
     /// The commitment to the child program vm.
     pub vm: [u32; 8],
+}
+
+impl ProgramCommitment {
+    pub fn deserialize(commitment_bytes: &[u8]) -> Self {
+        // TODO: temporary skip deserialize if no vk is provided
+        if commitment_bytes.is_empty() {
+            return Default::default();
+        }
+
+        let archived_data =
+            rkyv::access::<ArchivedProgramCommitment, rkyv::rancor::BoxedError>(commitment_bytes)
+                .unwrap();
+
+        Self {
+            exe: archived_data.exe.map(|u32_le| u32_le.to_native()),
+            vm: archived_data.vm.map(|u32_le| u32_le.to_native()),
+        }
+    }
+
+    pub fn serialize(&self) -> Vec<u8> {
+        rkyv::to_bytes::<rkyv::rancor::BoxedError>(self)
+            .map(|v| v.to_vec())
+            .unwrap()
+    }
+}
+
+impl From<&ArchivedProgramCommitment> for ProgramCommitment {
+    fn from(archived: &ArchivedProgramCommitment) -> Self {
+        Self {
+            exe: archived.exe.map(|u32_le| u32_le.to_native()),
+            vm: archived.vm.map(|u32_le| u32_le.to_native()),
+        }
+    }
 }
 
 /// Number of public-input values, i.e. [u32; N].

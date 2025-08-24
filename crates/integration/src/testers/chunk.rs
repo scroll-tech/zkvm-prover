@@ -53,6 +53,13 @@ impl PartialProvingTask for ChunkWitness {
         format!("{first}-{last}")
     }
 
+    fn legacy_rkyv_archive(&self) -> eyre::Result<Vec<u8>> {
+        Ok(
+            rkyv::to_bytes::<rkyv::rancor::Error>(&LegacyChunkWitness::from(self.clone()))?
+                .to_vec(),
+        )
+    }
+
     fn fork_name(&self) -> ForkName {
         ForkName::from(self.fork_name.as_str())
     }

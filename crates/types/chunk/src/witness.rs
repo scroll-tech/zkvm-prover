@@ -20,7 +20,16 @@ pub struct ChunkWitness {
 }
 
 /// The witness type accepted by the chunk-circuit.
-#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+#[derive(
+    Clone,
+    Debug,
+    serde::Deserialize,
+    serde::Serialize,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
+#[rkyv(derive(Debug))]
 pub struct LegacyChunkWitness {
     /// The block witness for each block in the chunk.
     pub blocks: Vec<sbv_primitives::legacy_types::BlockWitness>,

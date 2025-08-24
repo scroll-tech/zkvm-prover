@@ -36,45 +36,83 @@ mod array48 {
 }
 
 /// Witness required by applying point evaluation
-#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+#[derive(
+    Clone,
+    Debug,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    serde::Deserialize,
+    serde::Serialize,
+)]
+#[rkyv(derive(Debug))]
 pub struct PointEvalWitnessHints {
+    #[rkyv()]
     #[serde(with = "array48")]
     pub kzg_commitment_hint_x: Bytes48,
+    #[rkyv()]
     #[serde(with = "array48")]
     pub kzg_commitment_hint_y: Bytes48,
+    #[rkyv()]
     #[serde(with = "array48")]
     pub kzg_proof_hint_x: Bytes48,
+    #[rkyv()]
     #[serde(with = "array48")]
     pub kzg_proof_hint_y: Bytes48,
 }
 
 /// Witness required by applying point evaluation
-#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+#[derive(
+    Clone,
+    Debug,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    serde::Deserialize,
+    serde::Serialize,
+)]
+#[rkyv(derive(Debug))]
 pub struct PointEvalWitness {
     /// kzg commitment
+    #[rkyv()]
     #[serde(with = "array48")]
     pub kzg_commitment: Bytes48,
     /// kzg proof
+    #[rkyv()]
     #[serde(with = "array48")]
     pub kzg_proof: Bytes48,
 }
 
 /// Witness to the batch circuit.
-#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+#[derive(
+    Clone,
+    Debug,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    serde::Deserialize,
+    serde::Serialize,
+)]
+#[rkyv(derive(Debug))]
 pub struct BatchWitness {
     /// Flattened root proofs from all chunks in the batch.
+    #[rkyv()]
     pub chunk_proofs: Vec<AggregationInput>,
     /// Chunk infos.
+    #[rkyv()]
     pub chunk_infos: Vec<ChunkInfo>,
     /// Blob bytes.
+    #[rkyv()]
     pub blob_bytes: Vec<u8>,
     /// Witness for point evaluation
     pub point_eval_witness: PointEvalWitness,
     /// Hints for point evaluation
     pub point_eval_witness_hints: PointEvalWitnessHints,
     /// Header for reference.
+    #[rkyv()]
     pub reference_header: ReferenceHeader,
     /// The code version specify the chain spec
+    #[rkyv()]
     pub fork_name: ForkName,
 }
 

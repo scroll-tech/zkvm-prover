@@ -4,15 +4,30 @@ use super::BatchHeader;
 use types_base::utils::keccak256;
 
 /// Represents the header summarising the batch of chunks as per DA-codec v7.
-#[derive(Clone, Copy, Debug, Default, serde::Deserialize, serde::Serialize)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    serde::Deserialize,
+    serde::Serialize,
+)]
+#[rkyv(derive(Debug))]
 pub struct BatchHeaderV7 {
     /// The DA-codec version for the batch.
+    #[rkyv()]
     pub version: u8,
     /// The index of the batch
+    #[rkyv()]
     pub batch_index: u64,
     /// The parent batch hash
+    #[rkyv()]
     pub parent_batch_hash: B256,
     /// The versioned hash of the blob with this batch's data
+    #[rkyv()]
     pub blob_versioned_hash: B256,
 }
 

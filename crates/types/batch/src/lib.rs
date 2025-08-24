@@ -1,6 +1,9 @@
 mod header;
 pub use header::{
-    BatchHeader, ReferenceHeader, v6::BatchHeaderV6, v7::BatchHeaderV7, v8::BatchHeaderV8,
+    ArchivedReferenceHeader, BatchHeader, ReferenceHeader,
+    v6::{ArchivedBatchHeaderV6, BatchHeaderV6},
+    v7::{ArchivedBatchHeaderV7, BatchHeaderV7},
+    v8::{ArchivedBatchHeaderV8, BatchHeaderV8},
 };
 
 mod payload;
@@ -15,4 +18,6 @@ pub mod blob_consistency;
 mod builder;
 
 mod witness;
-pub use witness::{BatchWitness, Bytes48, PointEvalWitness, PointEvalWitnessHints};
+pub use witness::{
+    ArchivedBatchWitness, BatchWitness, Bytes48, PointEvalWitness, PointEvalWitnessHints,
+};

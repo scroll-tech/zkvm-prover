@@ -10,6 +10,7 @@ version.workspace = true
 [dependencies]
 alloy-primitives = { workspace = true }
 alloy-serde.workspace = true
+rkyv.workspace = true
 serde.workspace = true
 sha3 = "0.10.8"
 sha2 = "0.10.8"

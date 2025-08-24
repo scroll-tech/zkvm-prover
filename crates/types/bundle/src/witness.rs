@@ -5,13 +5,25 @@ use types_base::{
 };
 
 /// The witness for the bundle circuit.
-#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+#[derive(
+    Clone,
+    Debug,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    serde::Deserialize,
+    serde::Serialize,
+)]
+#[rkyv(derive(Debug))]
 pub struct BundleWitness {
     /// Batch proofs being aggregated in the bundle.
+    #[rkyv()]
     pub batch_proofs: Vec<AggregationInput>,
     /// Public-input values for the corresponding batch proofs.
+    #[rkyv()]
     pub batch_infos: Vec<BatchInfo>,
     /// The code version specify the chain spec
+    #[rkyv()]
     pub fork_name: ForkName,
 }
 
