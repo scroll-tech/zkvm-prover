@@ -64,7 +64,7 @@ fn test_verify_evm_proof() -> eyre::Result<()> {
     .proof;
 
     let evm_verifier: Vec<u8> =
-        scroll_zkvm_prover::utils::read(Path::new(PATH_TESTDATA).join("verifier.bin"))?;
+        std::fs::read(Path::new(PATH_TESTDATA).join("verifier.bin"))?;
 
     let gas_cost = verify_evm_proof(&evm_verifier, &evm_proof.into_evm_proof().unwrap().into())
         .map_err(|e| eyre::eyre!("evm-proof verification failed: {e}"))?;

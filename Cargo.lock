@@ -6888,10 +6888,8 @@ dependencies = [
 name = "scroll-zkvm-prover"
 version = "0.5.0"
 dependencies = [
- "alloy-primitives",
  "base64",
  "bincode 1.3.3",
- "c-kzg",
  "eyre",
  "git-version",
  "hex",
@@ -6909,12 +6907,8 @@ dependencies = [
  "openvm-pairing",
  "openvm-sdk",
  "openvm-stark-sdk",
- "revm 27.1.0",
  "rkyv",
- "sbv-primitives",
  "scroll-zkvm-types",
- "scroll-zkvm-types-batch",
- "scroll-zkvm-types-chunk",
  "scroll-zkvm-verifier",
  "serde",
  "serde_json",
@@ -6929,6 +6923,7 @@ dependencies = [
 name = "scroll-zkvm-types"
 version = "0.5.0"
 dependencies = [
+ "alloy-primitives",
  "base64",
  "bincode 1.3.3",
  "c-kzg",
@@ -7047,7 +7042,6 @@ dependencies = [
  "openvm-sdk",
  "openvm-stark-sdk",
  "revm 27.1.0",
- "scroll-zkvm-prover",
  "scroll-zkvm-types",
  "serde",
  "serde_json",
