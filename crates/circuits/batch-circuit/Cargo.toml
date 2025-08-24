@@ -14,23 +14,12 @@ openvm-algebra-guest.workspace = true
 openvm-pairing = { workspace = true, features = ["bls12_381"] }
 openvm-keccak256-guest.workspace = true
 openvm-sha256-guest.workspace = true
-openvm-sha2.workspace = true
 openvm-ecc-guest = { workspace = true, features = ["halo2curves"] }
-openvm-algebra-complex-macros = { workspace = true } 
-openvm-pairing-guest = { workspace = true, features = ["halo2curves"] }
-openvm-rv32im-guest.workspace = true
-
-halo2curves-axiom = "0.7.0"
 
 alloy-primitives = { workspace = true, features = ["native-keccak"] }
 bincode.workspace = true
-bitcode.workspace = true
-itertools.workspace = true
-rkyv.workspace = true
-serde.workspace = true
 
 [features]
 default = []
 
 [dev-dependencies]
-c-kzg = "2.0"
