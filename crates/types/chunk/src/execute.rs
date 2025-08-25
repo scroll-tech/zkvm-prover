@@ -97,7 +97,3 @@ fn block_to_context(block: &RecoveredBlock<Block>) -> BlockContextV2 {
         .expect("num l1 msgs u16"),
     }
 }
-                .count(),
-        )
-        .expect("num l1 msgs u16"),
-    }

@@ -9,7 +9,6 @@ use openvm_sdk::fs::read_object_from_file;
 use openvm_sdk::{
     F,
     config::{AppConfig, SdkVmConfig},
-    fs::{read_exe_from_file, read_from_file_bitcode},
 };
 use openvm_stark_sdk::{
     openvm_stark_backend::p3_field::{ExtensionField, PackedValue},
