@@ -31,7 +31,7 @@ trap cleanup EXIT
 docker run --cidfile ./build-guest.cid --platform linux/amd64\
   -e BUILD_STAGES=${BUILD_STAGES}\
   build-guest:local\
-  cargo run --release -p scroll-zkvm-build-guest
+  make build-guest-local
 container_id=$(cat ./build-guest.cid)
 
 if [ -n "$(echo ${BUILD_STAGES} | grep stage1)" ]; then

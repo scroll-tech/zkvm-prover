@@ -18,6 +18,7 @@ releases
 *.sh
 !build-guest-actions-entrypoint.sh
 
+*.log
 *.md
 
 openvm-clippy

@@ -28,7 +28,7 @@ fn setup_prove_verify_single() -> eyre::Result<()> {
     BatchProverTester::setup()?;
     let u_task = load_local_task("batch-task.json")?;
 
-    let prover = BatchProverTester::load_prover(false)?;
+    let mut prover = BatchProverTester::load_prover(false)?;
 
     let _ = prover.gen_proof_universal(&u_task, false)?;
 

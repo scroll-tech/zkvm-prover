@@ -8,11 +8,8 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
-alloy-primitives = { workspace = true }
 rkyv.workspace = true
 serde.workspace = true
-itertools.workspace = true
-vm-zstd = { workspace = true }
 
 types-base = { path = "../base", package = "scroll-zkvm-types-base"}
 

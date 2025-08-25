@@ -6,7 +6,7 @@ use types_base::public_inputs::batch::BatchInfo;
 use crate::{
     BatchHeader, PayloadV7,
     blob_consistency::{
-        BlobPolynomial, EccToPairing, N_BLOB_BYTES, kzg_to_versioned_hash, verify_kzg_proof,
+        BlobPolynomial, N_BLOB_BYTES, ToIntrinsic, kzg_to_versioned_hash, verify_kzg_proof,
     },
     payload::{Envelope, Payload},
 };
@@ -63,10 +63,10 @@ impl<P: Payload> super::BatchInfoBuilder for GenericBatchInfoBuilderV7<P> {
         let proof_ok = {
             let commitment = Bls12_381_G1::from_compressed_be(&kzg_commitment)
                 .expect("kzg commitment")
-                .convert();
+                .to_intrinsic();
             let proof = Bls12_381_G1::from_compressed_be(&kzg_proof)
                 .expect("kzg proof")
-                .convert();
+                .to_intrinsic();
             verify_kzg_proof(challenge, evaluation, commitment, proof)
         };
         assert!(proof_ok, "pairing fail!");

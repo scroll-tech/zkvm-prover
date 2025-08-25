@@ -1,5 +1,5 @@
 use alloy_primitives::B256;
-use scroll_zkvm_types_batch::ArchivedBatchWitness;
+use scroll_zkvm_types_batch::BatchWitness;
 use scroll_zkvm_types_circuit::{
     AggCircuit, AggregationInput, Circuit, ProgramCommitment,
     io::read_witnesses,
@@ -25,7 +25,7 @@ openvm::init!();
 pub struct BatchCircuit;
 
 impl Circuit for BatchCircuit {
-    type Witness = ArchivedBatchWitness;
+    type Witness = BatchWitness;
 
     type PublicInputs = VersionedBatchInfo;
 
@@ -33,13 +33,17 @@ impl Circuit for BatchCircuit {
         read_witnesses()
     }
 
-    fn deserialize_witness(witness_bytes: &[u8]) -> &Self::Witness {
-        rkyv::access::<ArchivedBatchWitness, rkyv::rancor::BoxedError>(witness_bytes)
-            .expect("BatchCircuit: rkyc deserialisation of witness bytes failed")
+    fn deserialize_witness(witness_bytes: &[u8]) -> Self::Witness {
+        let config = bincode::config::standard();
+        let (witness, _): (Self::Witness, _) =
+            bincode::serde::decode_from_slice(witness_bytes, config)
+                .expect("BatchCircuit: deserialisation of witness bytes failed");
+        witness
     }
 
-    fn validate(witness: &Self::Witness) -> Self::PublicInputs {
-        (BatchInfo::from(witness), (&witness.fork_name).into())
+    fn validate(witness: Self::Witness) -> Self::PublicInputs {
+        let fork_name = witness.fork_name;
+        (BatchInfo::from(&witness), fork_name)
     }
 }
 
@@ -64,11 +68,11 @@ impl AggCircuit for BatchCircuit {
     }
 
     fn aggregated_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs> {
-        let fork_name = (&witness.fork_name).into();
+        let fork_name = witness.fork_name;
         witness
             .chunk_infos
             .iter()
-            .map(|archived| (archived.into(), fork_name))
+            .map(|chunk_info| (chunk_info.clone(), fork_name))
             .collect()
     }
 
