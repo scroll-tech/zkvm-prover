@@ -96,7 +96,7 @@ impl ProofCarryingWitness for BatchWitness {
 
 impl From<&BatchWitness> for BatchInfo {
     fn from(witness: &BatchWitness) -> Self {
-        let chunk_infos: Vec<ChunkInfo> = witness.chunk_infos.iter().cloned().collect();
+        let chunk_infos: Vec<ChunkInfo> = witness.chunk_infos.to_vec();
 
         match &witness.reference_header {
             ReferenceHeader::V6(header) => {
