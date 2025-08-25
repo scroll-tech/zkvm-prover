@@ -11,8 +11,6 @@ scroll-zkvm-types-circuit = { workspace = true }
 scroll-zkvm-types-chunk = { workspace = true }
 sbv-precompile = { workspace = true } 
 
-rkyv.workspace = true
-
 openvm = { workspace = true, features = ["std", "getrandom-unsupported"] }
 openvm-k256 = { workspace = true }
 openvm-p256 = { workspace = true }

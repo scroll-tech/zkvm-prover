@@ -3,7 +3,6 @@ use scroll_zkvm_types_bundle::BundleWitness;
 use scroll_zkvm_types_circuit::{
     AggCircuit, AggregationInput, Circuit, ProgramCommitment,
     io::read_witnesses,
-    manually_drop_on_zkvm,
     public_inputs::{
         batch::VersionedBatchInfo,
         bundle::{BundleInfo, VersionedBundleInfo},
@@ -36,7 +35,6 @@ impl Circuit for BundleCircuit {
     }
 
     fn validate(witness: Self::Witness) -> Self::PublicInputs {
-        let witness = manually_drop_on_zkvm!(witness);
         let fork_name = witness.fork_name;
         (BundleInfo::from(&witness), fork_name)
     }

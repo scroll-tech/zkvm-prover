@@ -3,6 +3,7 @@ use once_cell::sync::OnceCell;
 use openvm_sdk::StdIn;
 use scroll_zkvm_prover::{
     Prover,
+    setup::{read_app_config, read_app_exe},
     utils::{read_json, vm::ExecutionResult, write_json},
 };
 use scroll_zkvm_types::{
@@ -263,10 +264,12 @@ fn setup_logger() -> eyre::Result<()> {
 /// Light weight testing to simply execute the vm program for test
 #[instrument("tester_execute", skip_all)]
 pub fn tester_execute<T: ProverTester>(
-    prover: &Prover,
     witness: &T::Witness,
     proofs: &[ProofEnum],
 ) -> eyre::Result<ExecutionResult> {
+    let (path_app_config, path_app_exe) = T::load()?;
+    let app_exe = read_app_exe(&path_app_exe)?;
+    let app_config = read_app_config(&path_app_config)?;
     let stdin = T::build_guest_input(
         witness,
         proofs
@@ -274,7 +277,8 @@ pub fn tester_execute<T: ProverTester>(
             .map(|p| p.as_stark_proof().expect("must be stark proof")),
     )?;
 
-    let ret = prover.execute_and_check_with_full_result(&stdin)?;
+    let ret =
+        scroll_zkvm_prover::utils::vm::execute_guest(app_config.app_vm_config, app_exe, &stdin)?;
     Ok(ret)
 }
 
