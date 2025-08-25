@@ -6517,7 +6517,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-batch-circuit"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "alloy-primitives",
  "bincode 2.0.1",
@@ -6533,7 +6533,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-build-guest"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "cargo_metadata 0.19.2",
  "dotenv",
@@ -6555,7 +6555,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-bundle-circuit"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "alloy-primitives",
  "bincode 2.0.1",
@@ -6567,7 +6567,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-chunk-circuit"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "bincode 2.0.1",
  "k256 0.13.4 (git+https://github.com/openvm-org/openvm.git?rev=51d0aa69694fd33def3c433e48228a5675e4fd97)",
@@ -6588,7 +6588,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-integration"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "alloy-primitives",
  "base64",
@@ -6621,7 +6621,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-prover"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "base64",
  "bincode 1.3.3",
@@ -6645,7 +6645,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-types"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "alloy-primitives",
  "base64",
@@ -6665,7 +6665,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-types-base"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "alloy-primitives",
  "alloy-serde 1.0.24",
@@ -6677,7 +6677,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-types-batch"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "alloy-primitives",
  "bincode 2.0.1",
@@ -6698,7 +6698,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-types-bundle"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "rkyv",
  "scroll-zkvm-types-base",
@@ -6707,7 +6707,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-types-chunk"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "alloy-primitives",
  "rkyv",
@@ -6720,7 +6720,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-types-circuit"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "alloy-primitives",
  "getrandom 0.2.16",
@@ -6735,7 +6735,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-verifier"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "bincode 1.3.3",
  "eyre",
