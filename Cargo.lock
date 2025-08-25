@@ -84,7 +84,7 @@ dependencies = [
  "c-kzg",
  "derive_more 2.0.1",
  "either",
- "k256",
+ "k256 0.13.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "once_cell",
  "rand 0.8.5",
  "secp256k1 0.30.0",
@@ -139,7 +139,7 @@ checksum = "9d4769c6ffddca380b0070d71c8b7f30bed375543fe76bb2f74ec0acf4b7cd16"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
- "k256",
+ "k256 0.13.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde",
  "serde_with",
  "thiserror 2.0.15",
@@ -272,7 +272,7 @@ dependencies = [
  "hashbrown 0.15.5",
  "indexmap 2.10.0",
  "itoa",
- "k256",
+ "k256 0.13.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "keccak-asm",
  "paste",
  "proptest",
@@ -1887,7 +1887,7 @@ dependencies = [
 [[package]]
 name = "encoder-standard"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/da-codec#2cfec8c99547b68dc64e2b020fa2b83cfb9c0e99"
+source = "git+https://github.com/scroll-tech/da-codec#cddc263e5ef69917b925bbdba3be36503612d044"
 dependencies = [
  "zstd",
 ]
@@ -2754,6 +2754,20 @@ dependencies = [
  "group 0.12.1",
  "rand_core 0.6.4",
  "subtle",
+]
+
+[[package]]
+name = "k256"
+version = "0.13.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f6e3919bbaa2945715f0bb6d3934a173d1e9a59ac23767fbaaef277265a7411b"
+dependencies = [
+ "cfg-if",
+ "ecdsa",
+ "elliptic-curve",
+ "once_cell",
+ "serdect",
+ "sha2 0.10.9",
 ]
 
 [[package]]
@@ -4377,6 +4391,18 @@ checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
 [[package]]
 name = "p256"
 version = "0.13.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c9863ad85fa8f4460f9c48cb909d38a0d689dba1f6f6988a5e3e0d31071bcd4b"
+dependencies = [
+ "ecdsa",
+ "elliptic-curve",
+ "primeorder",
+ "sha2 0.10.9",
+]
+
+[[package]]
+name = "p256"
+version = "0.13.2"
 source = "git+https://github.com/openvm-org/openvm.git?rev=51d0aa69694fd33def3c433e48228a5675e4fd97#51d0aa69694fd33def3c433e48228a5675e4fd97"
 dependencies = [
  "ecdsa",
@@ -4956,6 +4982,15 @@ checksum = "479ca8adacdd7ce8f1fb39ce9ecccbfe93a3f1344b3d0d97f20bc0196208f62b"
 dependencies = [
  "proc-macro2",
  "syn 2.0.106",
+]
+
+[[package]]
+name = "primeorder"
+version = "0.13.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "353e1ca18966c16d9deb1c69278edbc5f194139612772bd9537af60ac231e1e6"
+dependencies = [
+ "elliptic-curve",
 ]
 
 [[package]]
@@ -6008,10 +6043,10 @@ dependencies = [
  "blst",
  "c-kzg",
  "cfg-if",
- "k256",
+ "k256 0.13.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "libsecp256k1",
  "once_cell",
- "p256",
+ "p256 0.13.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "revm-primitives 18.0.0",
  "ripemd",
  "secp256k1 0.30.0",
@@ -6033,10 +6068,10 @@ dependencies = [
  "blst",
  "c-kzg",
  "cfg-if",
- "k256",
+ "k256 0.13.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "libsecp256k1",
  "once_cell",
- "p256",
+ "p256 0.13.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "revm-primitives 20.1.0",
  "ripemd",
  "rug",
@@ -6299,7 +6334,7 @@ checksum = "28d3b2b1366ec20994f1fd18c3c594f05c5dd4bc44d8bb0c1c632c8d6829481f"
 [[package]]
 name = "sbv-core"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#482b62d1350445ae86f19d7e5d79a598c7a49135"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#b01386033edf72289d86d0cce17717c248441e5e"
 dependencies = [
  "cfg-if",
  "itertools 0.14.0",
@@ -6316,7 +6351,7 @@ dependencies = [
 [[package]]
 name = "sbv-helpers"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#482b62d1350445ae86f19d7e5d79a598c7a49135"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#b01386033edf72289d86d0cce17717c248441e5e"
 dependencies = [
  "tracing",
 ]
@@ -6324,7 +6359,7 @@ dependencies = [
 [[package]]
 name = "sbv-kv"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#482b62d1350445ae86f19d7e5d79a598c7a49135"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#b01386033edf72289d86d0cce17717c248441e5e"
 dependencies = [
  "auto_impl",
  "hashbrown 0.15.5",
@@ -6334,7 +6369,7 @@ dependencies = [
 [[package]]
 name = "sbv-precompile"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#482b62d1350445ae86f19d7e5d79a598c7a49135"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#b01386033edf72289d86d0cce17717c248441e5e"
 dependencies = [
  "openvm-ecc-guest 1.4.0-rc.4",
  "openvm-pairing",
@@ -6345,7 +6380,7 @@ dependencies = [
 [[package]]
 name = "sbv-primitives"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#482b62d1350445ae86f19d7e5d79a598c7a49135"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#b01386033edf72289d86d0cce17717c248441e5e"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.0.24",
@@ -6382,7 +6417,7 @@ dependencies = [
 [[package]]
 name = "sbv-trie"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#482b62d1350445ae86f19d7e5d79a598c7a49135"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#b01386033edf72289d86d0cce17717c248441e5e"
 dependencies = [
  "alloy-rlp",
  "alloy-trie",
@@ -6535,7 +6570,7 @@ name = "scroll-zkvm-chunk-circuit"
 version = "0.5.0"
 dependencies = [
  "bincode 2.0.1",
- "k256",
+ "k256 0.13.4 (git+https://github.com/openvm-org/openvm.git?rev=51d0aa69694fd33def3c433e48228a5675e4fd97)",
  "openvm 1.4.0-rc.4",
  "openvm-algebra-complex-macros 1.4.0-rc.4",
  "openvm-algebra-guest 1.4.0-rc.4",
@@ -6545,7 +6580,7 @@ dependencies = [
  "openvm-pairing",
  "openvm-pairing-guest 1.4.0-rc.4",
  "openvm-rv32im-guest 1.4.0-rc.4",
- "p256",
+ "p256 0.13.2 (git+https://github.com/openvm-org/openvm.git?rev=51d0aa69694fd33def3c433e48228a5675e4fd97)",
  "sbv-precompile",
  "scroll-zkvm-types-chunk",
  "scroll-zkvm-types-circuit",
