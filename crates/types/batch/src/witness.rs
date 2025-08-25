@@ -2,7 +2,7 @@ use types_base::{
     aggregation::{AggregationInput, ProofCarryingWitness},
     public_inputs::{ForkName, batch::BatchInfo, chunk::ChunkInfo},
 };
-
+//use snark_verifier_sdk::snark_verifier::halo2_base::halo2_proofs::halo2curves::bls12_381;
 use crate::{
     builder::{
         BatchInfoBuilder, BatchInfoBuilderV6, BatchInfoBuilderV7, BatchInfoBuilderV8,
@@ -33,6 +33,32 @@ mod array48 {
             serde::de::Error::custom(msg)
         })
     }
+}
+
+/// Witness required by applying point evaluation
+#[derive(
+    Clone,
+    Debug,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    serde::Deserialize,
+    serde::Serialize,
+)]
+#[rkyv(derive(Debug))]
+pub struct PointEvalWitnessHints {
+    #[rkyv()]
+    #[serde(with = "array48")]
+    pub kzg_commitment_hint_x: Bytes48,
+    #[rkyv()]
+    #[serde(with = "array48")]
+    pub kzg_commitment_hint_y: Bytes48,
+    #[rkyv()]
+    #[serde(with = "array48")]
+    pub kzg_proof_hint_x: Bytes48,
+    #[rkyv()]
+    #[serde(with = "array48")]
+    pub kzg_proof_hint_y: Bytes48,
 }
 
 /// Witness required by applying point evaluation
@@ -80,6 +106,8 @@ pub struct BatchWitness {
     pub blob_bytes: Vec<u8>,
     /// Witness for point evaluation
     pub point_eval_witness: PointEvalWitness,
+    /// Hints for point evaluation
+    pub point_eval_witness_hints: PointEvalWitnessHints,
     /// Header for reference.
     #[rkyv()]
     pub reference_header: ReferenceHeader,
@@ -106,6 +134,10 @@ impl From<&BatchWitness> for BatchInfo {
                     blob_bytes: witness.blob_bytes.to_vec(),
                     kzg_commitment: None,
                     kzg_proof: None,
+                    kzg_commitment_hint_x: None,
+                    kzg_commitment_hint_y: None,
+                    kzg_proof_hint_x: None,
+                    kzg_proof_hint_y: None,
                 };
                 BatchInfoBuilderV6::build(args)
             }
@@ -116,6 +148,14 @@ impl From<&BatchWitness> for BatchInfo {
                     blob_bytes: witness.blob_bytes.to_vec(),
                     kzg_commitment: Some(witness.point_eval_witness.kzg_commitment),
                     kzg_proof: Some(witness.point_eval_witness.kzg_proof),
+                    kzg_commitment_hint_x: Some(
+                        witness.point_eval_witness_hints.kzg_commitment_hint_x,
+                    ),
+                    kzg_commitment_hint_y: Some(
+                        witness.point_eval_witness_hints.kzg_commitment_hint_y,
+                    ),
+                    kzg_proof_hint_x: Some(witness.point_eval_witness_hints.kzg_proof_hint_x),
+                    kzg_proof_hint_y: Some(witness.point_eval_witness_hints.kzg_proof_hint_y),
                 };
                 BatchInfoBuilderV7::build(args)
             }
@@ -126,7 +166,17 @@ impl From<&BatchWitness> for BatchInfo {
                     blob_bytes: witness.blob_bytes.to_vec(),
                     kzg_commitment: Some(witness.point_eval_witness.kzg_commitment),
                     kzg_proof: Some(witness.point_eval_witness.kzg_proof),
+                    kzg_commitment_hint_x: Some(
+                        witness.point_eval_witness_hints.kzg_commitment_hint_x,
+                    ),
+                    kzg_commitment_hint_y: Some(
+                        witness.point_eval_witness_hints.kzg_commitment_hint_y,
+                    ),
+                    kzg_proof_hint_x: Some(witness.point_eval_witness_hints.kzg_proof_hint_x),
+                    kzg_proof_hint_y: Some(witness.point_eval_witness_hints.kzg_proof_hint_y),
                 };
+
+                println!("6001");
                 BatchInfoBuilderV8::build(args)
             }
         }

@@ -51,7 +51,7 @@ pub struct BatchTaskGenerator {
     witness: Option<BatchWitness>,
     chunk_generators: Vec<ChunkTaskGenerator>,
     last_witness: Option<BatchWitness>,
-    proof: Option<ProofEnum>,
+    pub proof: Option<ProofEnum>,
 }
 
 impl BatchTaskGenerator {

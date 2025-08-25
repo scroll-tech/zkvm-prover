@@ -10,10 +10,7 @@ version.workspace = true
 [dependencies]
 scroll-zkvm-types-base.workspace = true
 alloy-primitives.workspace = true
-rkyv.workspace = true
-serde.workspace = true
 openvm = { workspace = true, features = ["std"] }
 openvm-rv32im-guest.workspace = true
 openvm-custom-insn.workspace = true
 itertools.workspace = true
-getrandom = { version = "0.2", features = ["custom"] }

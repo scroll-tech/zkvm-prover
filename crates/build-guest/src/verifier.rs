@@ -1,31 +1,22 @@
-use std::path::Path;
-
 use super::LOG_PREFIX;
 use eyre::Result;
-use openvm_native_recursion::halo2::utils::{CacheHalo2ParamsReader, Halo2ParamsReader};
-use openvm_sdk::{DefaultStaticVerifierPvHandler, Sdk, config::AggConfig};
+use openvm_native_recursion::halo2::utils::Halo2ParamsReader;
+use openvm_sdk::Sdk;
 use snark_verifier_sdk::SHPLONK;
 
-/// The default directory to locate openvm's halo2 SRS parameters.
-const DEFAULT_PARAMS_DIR: &str = concat!(env!("HOME"), "/.openvm/params/");
-
 pub fn generate_evm_verifier() -> Result<String> {
-    let dir_halo2_params = Path::new(DEFAULT_PARAMS_DIR).to_path_buf();
-    let halo2_params_reader = CacheHalo2ParamsReader::new(&dir_halo2_params);
-    let agg_pk = Sdk::new().agg_keygen(
-        AggConfig::default(),
-        &halo2_params_reader,
-        &DefaultStaticVerifierPvHandler,
-    )?;
+    let sdk = Sdk::riscv32();
+    let halo2_params_reader = sdk.halo2_params_reader();
+    let halo2_pk = sdk.halo2_pk();
     let halo2_params =
-        halo2_params_reader.read_params(agg_pk.halo2_pk.wrapper.pinning.metadata.config_params.k);
+        halo2_params_reader.read_params(halo2_pk.wrapper.pinning.metadata.config_params.k);
     let sol_code = snark_verifier_sdk::evm::gen_evm_verifier_sol_code::<
         snark_verifier_sdk::halo2::aggregation::AggregationCircuit,
         SHPLONK,
     >(
         &halo2_params,
-        agg_pk.halo2_pk.wrapper.pinning.pk.get_vk(),
-        agg_pk.halo2_pk.wrapper.pinning.metadata.num_pvs.clone(),
+        halo2_pk.wrapper.pinning.pk.get_vk(),
+        halo2_pk.wrapper.pinning.metadata.num_pvs.clone(),
     );
 
     // 1. write sol_code to a tmp file

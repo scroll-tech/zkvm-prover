@@ -1,6 +1,7 @@
 use cargo_metadata::MetadataCommand;
 use once_cell::sync::OnceCell;
-use openvm_sdk::StdIn;
+use openvm_circuit::arch::instructions::exe::VmExe;
+use openvm_sdk::{F, StdIn, config::SdkVmConfig, fs::read_object_from_file};
 use scroll_zkvm_prover::{
     Prover,
     setup::{read_app_config, read_app_exe},
@@ -16,7 +17,7 @@ use scroll_zkvm_verifier::verifier::UniversalVerifier;
 use std::{
     path::{Path, PathBuf},
     process,
-    sync::LazyLock,
+    sync::{Arc, LazyLock},
 };
 use tracing::instrument;
 use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::SubscriberInitExt};
@@ -155,9 +156,12 @@ pub trait ProverTester {
         Ok((path_app_config, path_app_exe))
     }
 
-    /// Load the prover
+    /// Load the prover with caching
     #[instrument("Prover::load_prover")]
     fn load_prover(with_evm: bool) -> eyre::Result<Prover> {
+        // Since Prover doesn't implement Clone or Send, we can't cache instances directly
+        // Instead, we'll use a simple approach to ensure setup happens only once per test run
+
         let (path_app_config, path_app_exe) = Self::load()?;
 
         let path_assets = DIR_TESTRUN
@@ -171,6 +175,7 @@ pub trait ProverTester {
             path_app_config,
             ..Default::default()
         };
+
         let prover = scroll_zkvm_prover::Prover::setup(config, with_evm, Some(Self::NAME))?;
 
         Ok(prover)
@@ -268,7 +273,8 @@ pub fn tester_execute<T: ProverTester>(
     proofs: &[ProofEnum],
 ) -> eyre::Result<ExecutionResult> {
     let (path_app_config, path_app_exe) = T::load()?;
-    let app_exe = read_app_exe(&path_app_exe)?;
+    let app_exe: VmExe<F> = read_app_exe(&path_app_exe).unwrap();
+    let app_exe = Arc::new(app_exe);
     let app_config = read_app_config(&path_app_config)?;
     let stdin = T::build_guest_input(
         witness,
@@ -277,9 +283,11 @@ pub fn tester_execute<T: ProverTester>(
             .map(|p| p.as_stark_proof().expect("must be stark proof")),
     )?;
 
-    let ret =
-        scroll_zkvm_prover::utils::vm::execute_guest(app_config.app_vm_config, app_exe, &stdin)?;
-    Ok(ret)
+    Ok(scroll_zkvm_prover::utils::vm::execute_guest(
+        app_config.app_vm_config,
+        app_exe,
+        &stdin,
+    )?)
 }
 
 /// End-to-end test for proving witnesses of the same prover.
@@ -355,7 +363,8 @@ where
         .join(guest_version())
         .join("verifier")
         .join("verifier.bin");
-    let verifier = scroll_zkvm_verifier::verifier::UniversalVerifier::setup(&path_verifier_code)?;
+    let verifier =
+        scroll_zkvm_verifier::verifier::UniversalVerifier::setup(Some(&path_verifier_code))?;
 
     // Try reading proof from cache if available, and early return in that case.
     let task_id = witness.identifier();
