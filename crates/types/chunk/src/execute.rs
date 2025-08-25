@@ -97,25 +97,3 @@ fn block_to_context(block: &RecoveredBlock<Block>) -> BlockContextV2 {
         .expect("num l1 msgs u16"),
     }
 }
-
-/*
-impl From<&RecoveredBlock<Block>> for BlockContextV2 {
-    fn from(block: &RecoveredBlock<Block>) -> BlockContextV2 {
-        BlockContextV2 {
-            timestamp: block.timestamp,
-            gas_limit: block.gas_limit,
-            base_fee: U256::from(block.base_fee_per_gas().expect("base_fee_expected")),
-            num_txs: u16::try_from(block.body().transactions.len()).expect("num txs u16"),
-            num_l1_msgs: u16::try_from(
-                block
-                    .body()
-                    .transactions
-                    .iter()
-                    .filter(|tx| tx.is_l1_message())
-                    .count(),
-            )
-            .expect("num l1 msgs u16"),
-        }
-    }
-}
-    */
