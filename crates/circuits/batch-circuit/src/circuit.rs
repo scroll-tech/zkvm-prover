@@ -68,7 +68,7 @@ impl AggCircuit for BatchCircuit {
     }
 
     fn aggregated_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs> {
-        let fork_name = witness.fork_name.clone();
+        let fork_name = witness.fork_name;
         witness
             .chunk_infos
             .iter()

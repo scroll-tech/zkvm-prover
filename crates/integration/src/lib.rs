@@ -90,7 +90,7 @@ pub trait PartialProvingTask: serde::Serialize {
             "0.5.2" => self.legacy_rkyv_archive()?,
             _ => {
                 let config = bincode::config::standard();
-                bincode::serde::encode_to_vec(&self, config)?
+                bincode::serde::encode_to_vec(self, config)?
             }
         };
         stdin.write_bytes(&bytes);

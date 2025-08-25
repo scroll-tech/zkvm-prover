@@ -96,12 +96,12 @@ impl ProofCarryingWitness for BatchWitness {
 
 impl From<&BatchWitness> for BatchInfo {
     fn from(witness: &BatchWitness) -> Self {
-        let chunk_infos: Vec<ChunkInfo> = witness.chunk_infos.iter().map(|ci| ci.clone()).collect();
+        let chunk_infos: Vec<ChunkInfo> = witness.chunk_infos.iter().cloned().collect();
 
         match &witness.reference_header {
             ReferenceHeader::V6(header) => {
                 let args = BuilderArgsV6 {
-                    header: header.clone(),
+                    header: *header,
                     chunk_infos,
                     blob_bytes: witness.blob_bytes.to_vec(),
                     kzg_commitment: None,
@@ -111,7 +111,7 @@ impl From<&BatchWitness> for BatchInfo {
             }
             ReferenceHeader::V7(header) => {
                 let args = BuilderArgsV7 {
-                    header: header.clone(),
+                    header: *header,
                     chunk_infos,
                     blob_bytes: witness.blob_bytes.to_vec(),
                     kzg_commitment: Some(witness.point_eval_witness.kzg_commitment),
@@ -121,7 +121,7 @@ impl From<&BatchWitness> for BatchInfo {
             }
             ReferenceHeader::V8(header) => {
                 let args = BuilderArgsV8 {
-                    header: header.clone(),
+                    header: *header,
                     chunk_infos,
                     blob_bytes: witness.blob_bytes.to_vec(),
                     kzg_commitment: Some(witness.point_eval_witness.kzg_commitment),

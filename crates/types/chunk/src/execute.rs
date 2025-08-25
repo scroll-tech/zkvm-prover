@@ -56,7 +56,7 @@ pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
     };
 
     let post_msg_queue_hash = if witness.fork_name >= ForkName::EuclidV2 {
-        blocks.rolling_msg_queue_hash(witness.prev_msg_queue_hash.into())
+        blocks.rolling_msg_queue_hash(witness.prev_msg_queue_hash)
     } else {
         B256::ZERO
     };
@@ -70,7 +70,7 @@ pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
         tx_data_digest,
         tx_data_length: tx_data_length as u64,
         initial_block_number: blocks[0].header().number,
-        prev_msg_queue_hash: witness.prev_msg_queue_hash.into(),
+        prev_msg_queue_hash: witness.prev_msg_queue_hash,
         post_msg_queue_hash,
         block_ctxs: blocks.iter().map(block_to_context).collect(),
     };

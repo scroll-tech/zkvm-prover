@@ -38,7 +38,7 @@ impl Circuit for ChunkCircuit {
     }
 
     fn validate(witness: Self::Witness) -> Self::PublicInputs {
-        let fork_name = witness.fork_name.clone();
+        let fork_name = witness.fork_name;
         let chunk_info = ChunkInfo::try_from(witness).expect("failed to execute chunk");
         (chunk_info, fork_name)
     }
