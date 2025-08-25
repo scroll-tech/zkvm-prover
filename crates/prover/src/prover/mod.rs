@@ -24,6 +24,7 @@ use tracing::instrument;
 // Re-export from openvm_sdk.
 pub use openvm_sdk::{self};
 
+use crate::setup::read_app_exe;
 use crate::{Error, setup::read_app_config, task::ProvingTask};
 
 use scroll_zkvm_types::proof::{EvmProof, ProofEnum, StarkProof, StarkProofStat};
@@ -70,7 +71,7 @@ impl Prover {
     #[instrument("Prover::setup")]
     pub fn setup(config: ProverConfig, with_evm: bool, name: Option<&str>) -> Result<Self, Error> {
         tracing::info!("prover setup");
-        let app_exe: VmExe<F> = read_object_from_file(&config.path_app_exe).unwrap();
+        let app_exe: VmExe<F> = read_app_exe(&config.path_app_exe).unwrap();
         let app_exe = Arc::new(app_exe);
         let mut app_config = read_app_config(&config.path_app_config)?;
         let segment_len = config.segment_len.unwrap_or(DEFAULT_SEGMENT_SIZE);

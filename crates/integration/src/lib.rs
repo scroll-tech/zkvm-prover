@@ -4,7 +4,7 @@ use openvm_circuit::arch::instructions::exe::VmExe;
 use openvm_sdk::{F, StdIn, config::SdkVmConfig, fs::read_object_from_file};
 use scroll_zkvm_prover::{
     Prover,
-    setup::read_app_config,
+    setup::{read_app_config, read_app_exe},
     utils::{read_json, vm::ExecutionResult, write_json},
 };
 use scroll_zkvm_types::{
@@ -272,7 +272,7 @@ pub fn tester_execute<T: ProverTester>(
     proofs: &[ProofEnum],
 ) -> eyre::Result<ExecutionResult> {
     let (path_app_config, path_app_exe) = T::load()?;
-    let app_exe: VmExe<F> = read_object_from_file(&path_app_exe).unwrap();
+    let app_exe: VmExe<F> = read_app_exe(&path_app_exe).unwrap();
     let app_exe = Arc::new(app_exe);
     let app_config = read_app_config(&path_app_config)?;
     let stdin = T::build_guest_input(

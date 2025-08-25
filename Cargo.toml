@@ -56,7 +56,7 @@ openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", branch = "main"
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
 
 # more openvm related libs
-openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.0-rc.2" }
+openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.0-rc.4" }
 
 sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = ["scroll", "rkyv"] }
 sbv-helpers = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
