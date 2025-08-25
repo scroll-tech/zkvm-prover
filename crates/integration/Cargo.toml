@@ -7,9 +7,10 @@ edition.workspace = true
 scroll-zkvm-types.workspace = true
 scroll-zkvm-prover.workspace = true
 scroll-zkvm-verifier.workspace = true
+
+rkyv.workspace = true
 sbv-primitives = { workspace = true }
 tracing.workspace = true
-rkyv.workspace = true
 tracing-subscriber.workspace = true
 metrics-tracing-context.workspace = true
 openvm-circuit.workspace = true

@@ -1891,7 +1891,7 @@ dependencies = [
 [[package]]
 name = "encoder-standard"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/da-codec#2cfec8c99547b68dc64e2b020fa2b83cfb9c0e99"
+source = "git+https://github.com/scroll-tech/da-codec#cddc263e5ef69917b925bbdba3be36503612d044"
 dependencies = [
  "zstd",
 ]
@@ -6390,7 +6390,7 @@ checksum = "28d3b2b1366ec20994f1fd18c3c594f05c5dd4bc44d8bb0c1c632c8d6829481f"
 [[package]]
 name = "sbv-core"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#482b62d1350445ae86f19d7e5d79a598c7a49135"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#b01386033edf72289d86d0cce17717c248441e5e"
 dependencies = [
  "cfg-if",
  "itertools 0.14.0",
@@ -6407,7 +6407,7 @@ dependencies = [
 [[package]]
 name = "sbv-helpers"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#482b62d1350445ae86f19d7e5d79a598c7a49135"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#b01386033edf72289d86d0cce17717c248441e5e"
 dependencies = [
  "tracing",
 ]
@@ -6415,7 +6415,7 @@ dependencies = [
 [[package]]
 name = "sbv-kv"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#482b62d1350445ae86f19d7e5d79a598c7a49135"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#b01386033edf72289d86d0cce17717c248441e5e"
 dependencies = [
  "auto_impl",
  "hashbrown 0.15.5",
@@ -6425,7 +6425,7 @@ dependencies = [
 [[package]]
 name = "sbv-precompile"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#482b62d1350445ae86f19d7e5d79a598c7a49135"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#b01386033edf72289d86d0cce17717c248441e5e"
 dependencies = [
  "openvm-ecc-guest 1.4.0-rc.4",
  "openvm-pairing",
@@ -6436,7 +6436,7 @@ dependencies = [
 [[package]]
 name = "sbv-primitives"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#482b62d1350445ae86f19d7e5d79a598c7a49135"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#b01386033edf72289d86d0cce17717c248441e5e"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.0.24",
@@ -6473,7 +6473,7 @@ dependencies = [
 [[package]]
 name = "sbv-trie"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#482b62d1350445ae86f19d7e5d79a598c7a49135"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#b01386033edf72289d86d0cce17717c248441e5e"
 dependencies = [
  "alloy-rlp",
  "alloy-trie",

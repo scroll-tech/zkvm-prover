@@ -150,7 +150,7 @@ impl BlockChunkExt for RecoveredBlock<Block> {
             buffer[..size_of::<B256>()].copy_from_slice(rolling_hash.as_ref());
             buffer[size_of::<B256>()..].copy_from_slice(tx.tx_hash().as_ref());
 
-            rolling_hash = keccak256(&buffer);
+            rolling_hash = keccak256(buffer);
             // clear last 32 bits, i.e. 4 bytes.
             // https://github.com/scroll-tech/da-codec/blob/26dc8d575244560611548fada6a3a2745c60fe83/encoding/da.go#L817-L825
             // see also https://github.com/scroll-tech/da-codec/pull/42

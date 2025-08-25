@@ -5,13 +5,11 @@ use openvm_circuit::arch::instructions::{
     instruction::{DebugInfo, Instruction},
     program::Program,
 };
-use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
 use openvm_sdk::fs::read_object_from_file;
 use openvm_sdk::{
-    DefaultStaticVerifierPvHandler, F, Sdk,
-    commit::AppExecutionCommit,
+    F,
     config::{AppConfig, SdkVmConfig},
-    keygen::{AggProvingKey, AppProvingKey},
+    fs::{read_exe_from_file, read_from_file_bitcode},
 };
 use openvm_stark_sdk::{
     openvm_stark_backend::p3_field::{ExtensionField, PackedValue},
