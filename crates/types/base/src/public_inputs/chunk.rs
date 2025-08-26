@@ -3,10 +3,6 @@ use crate::{
     utils::keccak256,
 };
 use alloy_primitives::{B256, U256};
-use sbv_primitives::types::{
-    consensus::BlockHeader,
-    reth::primitives::{Block, RecoveredBlock},
-};
 
 /// Number of bytes used to serialise [`BlockContextV2`].
 pub const SIZE_BLOCK_CTX: usize = 52;
@@ -66,26 +62,6 @@ impl From<&[u8]> for BlockContextV2 {
             gas_limit,
             num_txs,
             num_l1_msgs,
-        }
-    }
-}
-
-impl From<&RecoveredBlock<Block>> for BlockContextV2 {
-    fn from(block: &RecoveredBlock<Block>) -> BlockContextV2 {
-        BlockContextV2 {
-            timestamp: block.timestamp,
-            gas_limit: block.gas_limit,
-            base_fee: U256::from(block.base_fee_per_gas().expect("base_fee_expected")),
-            num_txs: u16::try_from(block.body().transactions.len()).expect("num txs u16"),
-            num_l1_msgs: u16::try_from(
-                block
-                    .body()
-                    .transactions
-                    .iter()
-                    .filter(|tx| tx.is_l1_message())
-                    .count(),
-            )
-            .expect("num l1 msgs u16"),
         }
     }
 }
@@ -211,28 +187,6 @@ impl ChunkInfo {
                 .cloned()
                 .collect::<Vec<u8>>(),
         )
-    }
-}
-
-impl From<&ArchivedChunkInfo> for ChunkInfo {
-    fn from(archived: &ArchivedChunkInfo) -> Self {
-        Self {
-            chain_id: archived.chain_id.into(),
-            prev_state_root: archived.prev_state_root.into(),
-            post_state_root: archived.post_state_root.into(),
-            withdraw_root: archived.withdraw_root.into(),
-            data_hash: archived.data_hash.into(),
-            tx_data_digest: archived.tx_data_digest.into(),
-            prev_msg_queue_hash: archived.prev_msg_queue_hash.into(),
-            post_msg_queue_hash: archived.post_msg_queue_hash.into(),
-            tx_data_length: archived.tx_data_length.into(),
-            initial_block_number: archived.initial_block_number.into(),
-            block_ctxs: archived
-                .block_ctxs
-                .iter()
-                .map(BlockContextV2::from)
-                .collect(),
-        }
     }
 }
 

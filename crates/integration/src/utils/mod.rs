@@ -1,7 +1,8 @@
 use crate::testing_hardfork;
+use sbv_primitives::types::consensus::ScrollTransaction;
 use sbv_primitives::{
     B256,
-    types::{BlockWitness, Transaction, eips::Encodable2718, reth::primitives::TransactionSigned},
+    types::{BlockWitness, eips::Encodable2718},
 };
 use scroll_zkvm_types::{
     batch::{
@@ -16,31 +17,23 @@ use scroll_zkvm_types::{
 };
 use vm_zstd::zstd_encode;
 
-fn is_l1_tx(tx: &Transaction) -> bool {
-    // 0x7e is l1 tx
-    tx.transaction_type == 0x7e
-}
-
 #[allow(dead_code)]
 fn final_l1_index(blk: &BlockWitness) -> u64 {
     // Get number of l1 txs. L1 txs can be skipped, so just counting is not enough
     // (The comment copied from scroll-prover, but why the max l1 queue index is always
     // the last one for a chunk, or, is the last l1 never being skipped?)
-    blk.transaction
+    blk.transactions
         .iter()
-        .filter(|tx| is_l1_tx(tx))
-        .map(|tx| tx.queue_index.expect("l1 msg should has queue index"))
+        .filter_map(|tx| tx.queue_index())
         .max()
         .unwrap_or_default()
 }
 
 fn blks_tx_bytes<'a>(blks: impl Iterator<Item = &'a BlockWitness>) -> Vec<u8> {
-    blks.flat_map(|blk| &blk.transaction)
-        .filter(|tx| !is_l1_tx(tx))
+    blks.flat_map(|blk| &blk.transactions)
+        .filter(|tx| !tx.is_l1_message())
         .fold(Vec::new(), |mut tx_bytes, tx| {
-            TransactionSigned::try_from(tx)
-                .unwrap()
-                .encode_2718(&mut tx_bytes);
+            tx.encode_2718(&mut tx_bytes);
             tx_bytes
         })
 }
@@ -104,27 +97,18 @@ impl From<&BatchHeaderV7> for LastHeader {
     }
 }
 
-pub fn metadata_from_chunk_witnesses(witness: &ChunkWitness) -> eyre::Result<ChunkInfo> {
-    use scroll_zkvm_types::chunk::ArchivedChunkWitness;
-    let bytes = witness.rkyv_serialize(None)?;
-    let archieved_wit = rkyv::access::<ArchivedChunkWitness, rkyv::rancor::BoxedError>(&bytes)?;
-    archieved_wit
+pub fn metadata_from_chunk_witnesses(witness: ChunkWitness) -> eyre::Result<ChunkInfo> {
+    witness
         .try_into()
         .map_err(|e| eyre::eyre!("get chunk metadata fail {e}"))
 }
 
 pub fn metadata_from_batch_witnesses(witness: &BatchWitness) -> eyre::Result<BatchInfo> {
-    use scroll_zkvm_types::batch::ArchivedBatchWitness;
-    let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(witness)?;
-    let archieved_wit = rkyv::access::<ArchivedBatchWitness, rkyv::rancor::BoxedError>(&bytes)?;
-    Ok(archieved_wit.into())
+    Ok(witness.into())
 }
 
 pub fn metadata_from_bundle_witnesses(witness: &BundleWitness) -> eyre::Result<BundleInfo> {
-    use scroll_zkvm_types::bundle::ArchivedBundleWitness;
-    let bytes = witness.rkyv_serialize(None)?;
-    let archieved_wit = rkyv::access::<ArchivedBundleWitness, rkyv::rancor::BoxedError>(&bytes)?;
-    Ok(archieved_wit.into())
+    Ok(witness.into())
 }
 
 pub fn build_batch_witnesses(
@@ -134,6 +118,7 @@ pub fn build_batch_witnesses(
 ) -> eyre::Result<BatchWitness> {
     let chunk_infos = chunks
         .iter()
+        .cloned()
         .map(metadata_from_chunk_witnesses)
         .collect::<eyre::Result<Vec<_>>>()?;
 
@@ -222,14 +207,14 @@ pub fn build_batch_witnesses(
     let blob_versioned_hash = point_eval::get_versioned_hash(&kzg_commitment);
 
     // primage = keccak(payload) + blob_versioned_hash
-    let chg_preimage = if testing_hardfork() >= ForkName::EuclidV2 {
-        let mut chg_preimage = keccak256(&blob_bytes).to_vec();
-        chg_preimage.extend(blob_versioned_hash.0);
-        chg_preimage
+    let challenge_preimage = if testing_hardfork() >= ForkName::EuclidV2 {
+        let mut challenge_preimage = keccak256(&blob_bytes).to_vec();
+        challenge_preimage.extend(blob_versioned_hash.0);
+        challenge_preimage
     } else {
-        let mut chg_preimage = Vec::from(keccak256(&meta_chunk_bytes).0);
+        let mut challenge_preimage = Vec::from(keccak256(&meta_chunk_bytes).0);
         let last_digest = chunk_digests.last().expect("at least we have one");
-        chg_preimage.extend(
+        challenge_preimage.extend(
             chunk_digests
                 .iter()
                 .chain(std::iter::repeat(last_digest))
@@ -239,10 +224,10 @@ pub fn build_batch_witnesses(
                     ret
                 }),
         );
-        chg_preimage.extend_from_slice(blob_versioned_hash.as_slice());
-        chg_preimage
+        challenge_preimage.extend_from_slice(blob_versioned_hash.as_slice());
+        challenge_preimage
     };
-    let challenge_digest = keccak256(&chg_preimage);
+    let challenge_digest = keccak256(&challenge_preimage);
 
     let x = point_eval::get_x_from_challenge(challenge_digest);
     let (kzg_proof, z) = point_eval::get_kzg_proof(&kzg_blob, challenge_digest);

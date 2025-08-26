@@ -1,9 +1,7 @@
-mod utils;
-
+mod types;
 mod witness;
 
-pub use utils::{BlockHashProvider, CodeDb, NodesProvider, make_providers};
-pub use witness::{ArchivedChunkWitness, ChunkWitness};
+pub use witness::{ChunkWitness, LegacyChunkWitness};
 
 mod execute;
 pub use execute::execute;

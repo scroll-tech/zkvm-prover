@@ -3,19 +3,17 @@ name = "scroll-zkvm-bundle-circuit"
 edition.workspace = true
 readme.workspace = true
 repository.workspace = true
-version = "0.5.0"
+version = "0.6.0"
 
 [dependencies]
+bincode.workspace = true
 scroll-zkvm-types-circuit.workspace = true
 scroll-zkvm-types-bundle.workspace = true
 
 openvm = { workspace = true, features = ["std"] }
-openvm-algebra-guest.workspace = true
 openvm-keccak256-guest.workspace = true
-openvm-rv32im-guest.workspace = true
 
 alloy-primitives = { workspace = true }
-rkyv.workspace = true
 
 [features]
 default = []

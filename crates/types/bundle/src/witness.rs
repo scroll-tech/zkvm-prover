@@ -1,24 +1,19 @@
-use rkyv::util::AlignedVec;
 use types_base::{
-    aggregation::{AggregationInput, ProgramCommitment, ProofCarryingWitness},
+    aggregation::{AggregationInput, ProofCarryingWitness},
     fork_name::ForkName,
     public_inputs::{batch::BatchInfo, bundle::BundleInfo},
 };
 
 /// The witness for the bundle circuit.
-#[derive(Clone, Debug, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
-#[rkyv(derive(Debug))]
-pub struct BundleWitnessEuclid {
-    /// Batch proofs being aggregated in the bundle.
-    #[rkyv()]
-    pub batch_proofs: Vec<AggregationInput>,
-    /// Public-input values for the corresponding batch proofs.
-    #[rkyv()]
-    pub batch_infos: Vec<BatchInfo>,
-}
-
-/// The witness for the bundle circuit.
-#[derive(Clone, Debug, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
+#[derive(
+    Clone,
+    Debug,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    serde::Deserialize,
+    serde::Serialize,
+)]
 #[rkyv(derive(Debug))]
 pub struct BundleWitness {
     /// Batch proofs being aggregated in the bundle.
@@ -32,48 +27,14 @@ pub struct BundleWitness {
     pub fork_name: ForkName,
 }
 
-impl BundleWitness {
-    /// Convert the `BundleWitness` into a `BundleWitnessEuclid`.
-    pub fn into_euclid(self) -> BundleWitnessEuclid {
-        BundleWitnessEuclid {
-            batch_proofs: self.batch_proofs,
-            batch_infos: self.batch_infos,
-        }
-    }
-    /// See ChunkWitnessEuclid::rkyv_serialize for details.
-    pub fn rkyv_serialize(
-        &self,
-        guest_version: Option<ForkName>,
-    ) -> Result<AlignedVec, rkyv::rancor::Error> {
-        let guest_version = guest_version.unwrap_or(self.fork_name);
-        if guest_version >= ForkName::Feynman {
-            // Use the new rkyv serialization for Feynman and later forks
-            rkyv::to_bytes::<rkyv::rancor::Error>(self)
-        } else {
-            // Use the old rkyv serialization for earlier forks
-            rkyv::to_bytes::<rkyv::rancor::Error>(&self.clone().into_euclid())
-        }
-    }
-}
-
-impl ProofCarryingWitness for ArchivedBundleWitness {
+impl ProofCarryingWitness for BundleWitness {
     fn get_proofs(&self) -> Vec<AggregationInput> {
-        self.batch_proofs
-            .iter()
-            .map(|archived| AggregationInput {
-                public_values: archived
-                    .public_values
-                    .iter()
-                    .map(|u32_le| u32_le.to_native())
-                    .collect(),
-                commitment: ProgramCommitment::from(&archived.commitment),
-            })
-            .collect()
+        self.batch_proofs.clone()
     }
 }
 
-impl From<&ArchivedBundleWitness> for BundleInfo {
-    fn from(witness: &ArchivedBundleWitness) -> Self {
+impl From<&BundleWitness> for BundleInfo {
+    fn from(witness: &BundleWitness) -> Self {
         assert!(
             !witness.batch_infos.is_empty(),
             "at least one batch in a bundle"
@@ -90,14 +51,14 @@ impl From<&ArchivedBundleWitness> for BundleInfo {
                 .expect("at least one batch in bundle"),
         );
 
-        let chain_id = first_batch.chain_id.into();
+        let chain_id = first_batch.chain_id;
         let num_batches = u32::try_from(witness.batch_infos.len()).expect("num_batches: u32");
-        let prev_state_root = first_batch.parent_state_root.into();
-        let prev_batch_hash = first_batch.parent_batch_hash.into();
-        let post_state_root = last_batch.state_root.into();
-        let batch_hash = last_batch.batch_hash.into();
-        let withdraw_root = last_batch.withdraw_root.into();
-        let msg_queue_hash = last_batch.post_msg_queue_hash.into();
+        let prev_state_root = first_batch.parent_state_root;
+        let prev_batch_hash = first_batch.parent_batch_hash;
+        let post_state_root = last_batch.state_root;
+        let batch_hash = last_batch.batch_hash;
+        let withdraw_root = last_batch.withdraw_root;
+        let msg_queue_hash = last_batch.post_msg_queue_hash;
 
         BundleInfo {
             chain_id,

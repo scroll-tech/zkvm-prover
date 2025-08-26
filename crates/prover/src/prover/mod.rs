@@ -95,11 +95,10 @@ impl Prover {
             &app_pk.leaf_committed_exe,
         );
 
-        let evm_prover = with_evm.then(Self::setup_evm_prover).transpose()?;
         Ok(Self {
             app_committed_exe,
             app_pk: Arc::new(app_pk),
-            evm_prover,
+            evm_prover: None,
             commits,
             config,
             prover_name: name.unwrap_or("universal").to_string(),
@@ -135,7 +134,7 @@ impl Prover {
     /// otherwise generate and return the proof after writing to disc.
     #[instrument("Prover::gen_proof_universal", skip_all, fields(task_id))]
     pub fn gen_proof_universal(
-        &self,
+        &mut self,
         task: &impl ProvingTask,
         with_snark: bool,
     ) -> Result<ProofEnum, Error> {
@@ -279,10 +278,13 @@ impl Prover {
     /// Generate an [evm proof][evm_proof].
     ///
     /// [evm_proof][openvm_native_recursion::halo2::EvmProof]
-    pub fn gen_proof_snark(&self, stdin: StdIn) -> Result<OpenVmEvmProof, Error> {
+    pub fn gen_proof_snark(&mut self, stdin: StdIn) -> Result<OpenVmEvmProof, Error> {
         self.execute_and_check(&stdin)?;
 
         let sdk = Sdk::new();
+        if self.evm_prover.is_none() {
+            self.evm_prover = Some(Self::setup_evm_prover()?);
+        }
         let evm_prover = self.evm_prover.as_ref().expect("evm prover not inited");
         let evm_proof = sdk
             .generate_evm_proof(

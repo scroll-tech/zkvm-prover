@@ -43,21 +43,6 @@ pub struct BatchInfo {
     pub post_msg_queue_hash: B256,
 }
 
-impl From<&ArchivedBatchInfo> for BatchInfo {
-    fn from(archived: &ArchivedBatchInfo) -> Self {
-        Self {
-            parent_state_root: archived.parent_state_root.into(),
-            parent_batch_hash: archived.parent_batch_hash.into(),
-            state_root: archived.state_root.into(),
-            batch_hash: archived.batch_hash.into(),
-            chain_id: archived.chain_id.into(),
-            withdraw_root: archived.withdraw_root.into(),
-            prev_msg_queue_hash: archived.prev_msg_queue_hash.into(),
-            post_msg_queue_hash: archived.post_msg_queue_hash.into(),
-        }
-    }
-}
-
 impl BatchInfo {
     /// Public input hash for a batch (euclidv1 or da-codec@v6) is defined as
     ///

@@ -28,10 +28,10 @@ pub trait Circuit {
     fn read_witness_bytes() -> Vec<u8>;
 
     /// Deserialize raw bytes into the circuit's witness type.
-    fn deserialize_witness(witness_bytes: &[u8]) -> &Self::Witness;
+    fn deserialize_witness(witness_bytes: &[u8]) -> Self::Witness;
 
     /// Validate the witness to produce the circuit's public inputs.
-    fn validate(witness: &Self::Witness) -> Self::PublicInputs;
+    fn validate(witness: Self::Witness) -> Self::PublicInputs;
 
     /// Reveal the public inputs.
     fn reveal_pi(pi: &Self::PublicInputs) {
@@ -124,4 +124,22 @@ fn verify_proof(commitment: &ProgramCommitment, public_inputs: &[u32]) {
     unsafe {
         std::arch::asm!(include_str!("../../../build-guest/root_verifier.asm"),)
     }
+}
+
+/// This macro is used to manually drop an expression on zkvm (non x86/aarch64 targets).
+#[macro_export]
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")))]
+macro_rules! manually_drop_on_zkvm {
+    ($e:expr) => {
+        std::mem::ManuallyDrop::new($e)
+    };
+}
+
+/// This macro is used to manually drop an expression on zkvm (non x86/aarch64 targets).
+#[macro_export]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]
+macro_rules! manually_drop_on_zkvm {
+    ($e:expr) => {
+        $e
+    };
 }

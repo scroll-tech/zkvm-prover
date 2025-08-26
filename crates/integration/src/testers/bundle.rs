@@ -9,8 +9,8 @@ use scroll_zkvm_types::{
 use scroll_zkvm_prover::Prover;
 
 use crate::{
-    PartialProvingTask, ProverTester, prove_verify_single_evm, testers::batch::BatchTaskGenerator,
-    testing_hardfork, utils::metadata_from_batch_witnesses,
+    PartialProvingTask, ProverTester, load_program_commitments, prove_verify_single_evm,
+    testers::batch::BatchTaskGenerator, testing_hardfork, utils::metadata_from_batch_witnesses,
 };
 
 impl PartialProvingTask for BundleWitness {
@@ -23,10 +23,8 @@ impl PartialProvingTask for BundleWitness {
         format!("{first}-{last}")
     }
 
-    fn write_guest_input(&self, stdin: &mut openvm_sdk::StdIn) -> Result<(), rkyv::rancor::Error> {
-        let b = self.rkyv_serialize(None)?;
-        stdin.write_bytes(b.as_slice());
-        Ok(())
+    fn legacy_rkyv_archive(&self) -> eyre::Result<Vec<u8>> {
+        Ok(rkyv::to_bytes::<rkyv::rancor::Error>(self)?.to_vec())
     }
 
     fn fork_name(&self) -> ForkName {
@@ -103,15 +101,12 @@ impl BundleTaskGenerator {
 
     fn calculate_witness(&mut self) -> eyre::Result<BundleWitness> {
         use scroll_zkvm_types::{
-            public_inputs::MultiVersionPublicInputs,
-            types_agg::{AggregationInput, ProgramCommitment},
+            public_inputs::MultiVersionPublicInputs, types_agg::AggregationInput,
         };
 
         let fork_name = testing_hardfork();
-        let commitment = ProgramCommitment {
-            exe: crate::commitments::batch_exe_commit::COMMIT,
-            vm: crate::commitments::batch_leaf_commit::COMMIT,
-        };
+
+        let commitment = load_program_commitments("batch")?;
         let mut batch_proofs = Vec::new();
         let mut batch_infos: Vec<BatchInfo> = Vec::new();
 

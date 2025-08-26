@@ -16,7 +16,7 @@ use std::fmt;
     serde::Deserialize,
     serde::Serialize,
 )]
-#[rkyv(derive(Debug))]
+#[rkyv(derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord))]
 pub enum ForkName {
     #[default]
     EuclidV1,
@@ -50,16 +50,6 @@ impl ForkName {
             ForkName::EuclidV1 => 6,
             ForkName::EuclidV2 => 7,
             ForkName::Feynman => 8,
-        }
-    }
-}
-
-impl From<&ArchivedForkName> for ForkName {
-    fn from(archived: &ArchivedForkName) -> Self {
-        match archived {
-            ArchivedForkName::EuclidV1 => ForkName::EuclidV1,
-            ArchivedForkName::EuclidV2 => ForkName::EuclidV2,
-            ArchivedForkName::Feynman => ForkName::Feynman,
         }
     }
 }
