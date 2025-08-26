@@ -3,7 +3,6 @@ use scroll_zkvm_types_bundle::BundleWitness;
 use scroll_zkvm_types_circuit::{
     AggCircuit, AggregationInput, Circuit, ProgramCommitment,
     io::read_witnesses,
-    manually_drop_on_zkvm,
     public_inputs::{
         batch::VersionedBatchInfo,
         bundle::{BundleInfo, VersionedBundleInfo},
@@ -30,12 +29,12 @@ impl Circuit for BundleCircuit {
     fn deserialize_witness(witness_bytes: &[u8]) -> Self::Witness {
         let config = bincode::config::standard();
         let (witness, _): (Self::Witness, _) =
-            bincode::serde::decode_from_slice(witness_bytes, config).unwrap();
+            bincode::serde::decode_from_slice(witness_bytes, config)
+                .expect("BundleCircuit: deserialization of witness bytes failed");
         witness
     }
 
     fn validate(witness: Self::Witness) -> Self::PublicInputs {
-        let witness = manually_drop_on_zkvm!(witness);
         let fork_name = witness.fork_name;
         (BundleInfo::from(&witness), fork_name)
     }
@@ -62,11 +61,11 @@ impl AggCircuit for BundleCircuit {
     }
 
     fn aggregated_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs> {
-        let fork_name = (witness.fork_name).clone();
+        let fork_name = witness.fork_name;
         witness
             .batch_infos
             .iter()
-            .map(|archived| (archived.clone(), fork_name))
+            .map(|batch_info| (batch_info.clone(), fork_name))
             .collect()
     }
 
