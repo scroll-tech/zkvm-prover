@@ -1,4 +1,5 @@
 use alloy_primitives::B256;
+#[allow(deprecated)]
 use sbv_core::verifier::StateCommitMode;
 use sbv_primitives::{U256, types::BlockWitness};
 use std::collections::HashSet;
@@ -15,8 +16,6 @@ pub struct ChunkWitness {
     pub fork_name: ForkName,
     /// The compression ratios for each block in the chunk.
     pub compression_ratios: Vec<Vec<U256>>,
-    /// The mode of state commitment for the chunk.
-    pub state_commit_mode: StateCommitMode,
 }
 
 /// The witness type accepted by the chunk-circuit.
@@ -40,6 +39,7 @@ pub struct LegacyChunkWitness {
     /// The compression ratios for each block in the chunk.
     pub compression_ratios: Vec<Vec<U256>>,
     /// The mode of state commitment for the chunk.
+    #[allow(deprecated)]
     pub state_commit_mode: StateCommitMode,
 }
 
@@ -89,7 +89,6 @@ impl ChunkWitness {
             prev_msg_queue_hash,
             fork_name,
             compression_ratios,
-            state_commit_mode: StateCommitMode::Auto,
         }
     }
 
@@ -129,7 +128,8 @@ impl From<ChunkWitness> for LegacyChunkWitness {
             prev_msg_queue_hash: value.prev_msg_queue_hash,
             fork_name: value.fork_name,
             compression_ratios: value.compression_ratios,
-            state_commit_mode: value.state_commit_mode,
+            #[allow(deprecated)]
+            state_commit_mode: StateCommitMode::Auto,
         }
     }
 }
