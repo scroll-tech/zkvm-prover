@@ -127,33 +127,6 @@ pub struct ChunkInfo {
     #[rkyv()]
     pub block_ctxs: Vec<BlockContextV2>,
 }
-impl std::fmt::Display for ChunkInfo {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // Create a wrapper struct that implements Debug
-        struct DisplayWrapper<'a>(&'a ChunkInfo);
-
-        impl<'a> std::fmt::Debug for DisplayWrapper<'a> {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                f.debug_struct("ChunkInfo")
-                    .field("chain_id", &self.0.chain_id)
-                    .field("prev_state_root", &self.0.prev_state_root)
-                    .field("post_state_root", &self.0.post_state_root)
-                    .field("withdraw_root", &self.0.withdraw_root)
-                    .field("data_hash", &self.0.data_hash)
-                    .field("tx_data_digest", &self.0.tx_data_digest)
-                    .field("prev_msg_queue_hash", &self.0.prev_msg_queue_hash)
-                    .field("post_msg_queue_hash", &self.0.post_msg_queue_hash)
-                    .field("tx_data_length", &self.0.tx_data_length)
-                    .field("initial_block_number", &self.0.initial_block_number)
-                    .field("block_ctxs", &"<omitted>")
-                    .finish()
-            }
-        }
-
-        // Use the Debug implementation with pretty formatting
-        write!(f, "{:#?}", DisplayWrapper(self))
-    }
-}
 
 impl ChunkInfo {
     /// Public input hash for a given chunk (euclidv1 or da-codec@v6) is defined as
