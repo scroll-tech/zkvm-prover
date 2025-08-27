@@ -1,4 +1,4 @@
-use crate::testing_hardfork;
+use crate::{testing_hardfork, testing_version};
 use sbv_primitives::types::consensus::ScrollTransaction;
 use sbv_primitives::{
     B256,
@@ -6,8 +6,8 @@ use sbv_primitives::{
 };
 use scroll_zkvm_types::{
     batch::{
-        BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchInfo, BatchWitness, PointEvalWitness,
-        ReferenceHeader,
+        BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchHeaderValidium, BatchInfo, BatchWitness,
+        PointEvalWitness, ReferenceHeader,
     },
     bundle::{BundleInfo, BundleWitness},
     chunk::{ChunkInfo, ChunkWitness},
@@ -71,6 +71,7 @@ impl From<&ReferenceHeader> for LastHeader {
             ReferenceHeader::V6(h) => h.into(),
             ReferenceHeader::V7(h) => h.into(),
             ReferenceHeader::V8(h) => h.into(),
+            ReferenceHeader::Validium(h) => h.into(),
         }
     }
 }
@@ -91,6 +92,17 @@ impl From<&BatchHeaderV7> for LastHeader {
         Self {
             batch_index: h.batch_index,
             version: h.version,
+            batch_hash: h.batch_hash(),
+            l1_message_index: 0,
+        }
+    }
+}
+
+impl From<&BatchHeaderValidium> for LastHeader {
+    fn from(h: &BatchHeaderValidium) -> Self {
+        Self {
+            batch_index: h.index(),
+            version: h.version(),
             batch_hash: h.batch_hash(),
             l1_message_index: 0,
         }
@@ -314,7 +326,10 @@ pub fn build_batch_witnesses(
         })
         .collect::<Vec<_>>();
 
+    let version = testing_version().as_version_byte();
+
     Ok(BatchWitness {
+        version,
         chunk_proofs,
         chunk_infos,
         reference_header,
@@ -370,6 +385,9 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
         ReferenceHeader::V8(h) => {
             let enveloped = batch::EnvelopeV8::from_slice(&task_wit.blob_bytes);
             <batch::PayloadV8 as Payload>::from_envelope(&enveloped).validate(h, infos);
+        }
+        ReferenceHeader::Validium(_h) => {
+            todo!()
         }
     }
 

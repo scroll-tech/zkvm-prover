@@ -70,6 +70,9 @@ pub struct PointEvalWitness {
 )]
 #[rkyv(derive(Debug))]
 pub struct BatchWitness {
+    /// The version byte as per [version][types_base::version].
+    #[rkyv()]
+    pub version: u8,
     /// Flattened root proofs from all chunks in the batch.
     #[rkyv()]
     pub chunk_proofs: Vec<AggregationInput>,

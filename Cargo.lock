@@ -6874,7 +6874,6 @@ dependencies = [
  "openvm-sha2",
  "p256 0.13.2 (git+https://github.com/openvm-org/openvm.git?rev=51d0aa69694fd33def3c433e48228a5675e4fd97)",
  "sbv-precompile",
- "scroll-zkvm-types-base",
  "scroll-zkvm-types-chunk",
  "scroll-zkvm-types-circuit",
 ]

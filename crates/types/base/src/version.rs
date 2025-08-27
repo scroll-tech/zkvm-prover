@@ -105,7 +105,7 @@ impl Version {
         ((self.domain as u8) << N_BITS_STF_VERSION) + (self.stf_version as u8)
     }
 
-    const fn euclid_v1() -> Self {
+    pub const fn euclid_v1() -> Self {
         Self {
             domain: Domain::Scroll,
             stf_version: STFVersion::V6,
@@ -114,7 +114,7 @@ impl Version {
         }
     }
 
-    const fn euclid_v2() -> Self {
+    pub const fn euclid_v2() -> Self {
         Self {
             domain: Domain::Scroll,
             stf_version: STFVersion::V7,
@@ -123,7 +123,7 @@ impl Version {
         }
     }
 
-    const fn feynman() -> Self {
+    pub const fn feynman() -> Self {
         Self {
             domain: Domain::Scroll,
             stf_version: STFVersion::V8,
@@ -132,7 +132,7 @@ impl Version {
         }
     }
 
-    const fn validium_v1() -> Self {
+    pub const fn validium_v1() -> Self {
         Self {
             domain: Domain::Validium,
             stf_version: STFVersion::V1,

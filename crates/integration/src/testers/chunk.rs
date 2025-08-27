@@ -14,7 +14,8 @@ use scroll_zkvm_types::{
 
 use crate::{
     PartialProvingTask, ProverTester, prove_verify, testdata_fork_directory,
-    testers::PATH_TESTDATA, testing_hardfork, utils::metadata_from_chunk_witnesses,
+    testers::PATH_TESTDATA, testing_hardfork, testing_version,
+    utils::metadata_from_chunk_witnesses,
 };
 
 /// Load a file <block_n>.json in the <PATH_BLOCK_WITNESS> directory.
@@ -128,7 +129,10 @@ impl ChunkTaskGenerator {
             .map(read_block_witness)
             .collect::<eyre::Result<Vec<BlockWitness>>>()?;
 
+        let version = testing_version().as_version_byte();
+
         let witness = ChunkWitness::new_scroll(
+            version,
             &block_witnesses,
             self.prev_message_hash
                 .unwrap_or_else(|| B256::repeat_byte(1u8)),
@@ -152,7 +156,11 @@ pub fn get_witness_from_env_or_builder(
         .iter()
         .map(read_block_witness)
         .collect::<eyre::Result<Vec<BlockWitness>>>()?;
+
+    let version = testing_version().as_version_byte();
+
     Ok(ChunkWitness::new_scroll(
+        version,
         &block_witnesses,
         B256::repeat_byte(1u8),
         testing_hardfork(),

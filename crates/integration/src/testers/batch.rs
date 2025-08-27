@@ -19,6 +19,7 @@ impl PartialProvingTask for BatchWitness {
             ReferenceHeader::V6(h) => h.batch_hash(),
             ReferenceHeader::V7(h) => h.batch_hash(),
             ReferenceHeader::V8(h) => h.batch_hash(),
+            ReferenceHeader::Validium(h) => h.batch_hash(),
         };
         header_hash.to_string()
     }

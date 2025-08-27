@@ -10,7 +10,8 @@ use scroll_zkvm_prover::Prover;
 
 use crate::{
     PartialProvingTask, ProverTester, load_program_commitments, prove_verify_single_evm,
-    testers::batch::BatchTaskGenerator, testing_hardfork, utils::metadata_from_batch_witnesses,
+    testers::batch::BatchTaskGenerator, testing_hardfork, testing_version,
+    utils::metadata_from_batch_witnesses,
 };
 
 impl PartialProvingTask for BundleWitness {
@@ -133,7 +134,10 @@ impl BundleTaskGenerator {
             batch_infos.push(info);
         }
 
+        let version = testing_version().as_version_byte();
+
         Ok(BundleWitness {
+            version,
             batch_infos,
             batch_proofs,
             fork_name,

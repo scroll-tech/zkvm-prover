@@ -16,6 +16,9 @@ use types_base::{
 )]
 #[rkyv(derive(Debug))]
 pub struct BundleWitness {
+    /// The version byte as per [version][types_base::version].
+    #[rkyv()]
+    pub version: u8,
     /// Batch proofs being aggregated in the bundle.
     #[rkyv()]
     pub batch_proofs: Vec<AggregationInput>,
