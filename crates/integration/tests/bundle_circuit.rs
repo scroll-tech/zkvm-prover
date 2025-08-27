@@ -52,7 +52,7 @@ fn print_vks() -> eyre::Result<()> {
             ..Default::default()
         };
 
-        let app_vk = hex::encode(Prover::setup(config, false, None).unwrap().get_app_vk());
+        let app_vk = hex::encode(Prover::setup(config, None).unwrap().get_app_vk());
         println!("{circuit}: {app_vk}");
         app_vk
     });

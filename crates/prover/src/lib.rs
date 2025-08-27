@@ -1,3 +1,5 @@
+#![feature(once_cell_try)]
+
 mod error;
 pub use error::Error;
 

@@ -176,7 +176,7 @@ pub trait ProverTester {
             ..Default::default()
         };
 
-        let prover = scroll_zkvm_prover::Prover::setup(config, with_evm, Some(Self::NAME))?;
+        let prover = scroll_zkvm_prover::Prover::setup(config, Some(Self::NAME))?;
 
         Ok(prover)
     }

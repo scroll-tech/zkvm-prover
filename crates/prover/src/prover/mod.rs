@@ -1,7 +1,7 @@
 use std::{
     path::{Path, PathBuf},
     str::FromStr,
-    sync::Arc,
+    sync::{Arc, OnceLock},
 };
 
 //use openvm_native_circuit::{NativeGpuBuilder};
@@ -55,9 +55,9 @@ pub struct Prover {
     //pub evm_prover: Option<EvmProver>,
     /// Configuration for the prover.
     pub config: ProverConfig,
-    pub sdk: Sdk,
+    sdk: OnceLock<Sdk>,
     //pub prover: StarkProver<DefaultStarkEngine, SdkVmGpuBuilder, NativeGpuBuilder>,
-    pub prover: StarkProver<DefaultStarkEngine, SdkVmCpuBuilder, NativeCpuBuilder>,
+    prover: OnceLock<StarkProver<DefaultStarkEngine, SdkVmCpuBuilder, NativeCpuBuilder>>,
 }
 
 /// Configure the [`Prover`].
@@ -76,51 +76,72 @@ const DEFAULT_SEGMENT_SIZE: usize = (1 << 22) - 1000;
 impl Prover {
     /// Setup the [`Prover`] given paths to the application's exe and proving key.
     #[instrument("Prover::setup")]
-    pub fn setup(config: ProverConfig, with_evm: bool, name: Option<&str>) -> Result<Self, Error> {
+    pub fn setup(config: ProverConfig, name: Option<&str>) -> Result<Self, Error> {
         tracing::info!("prover setup");
         let app_exe: VmExe<F> = read_app_exe(&config.path_app_exe).unwrap();
         let app_exe = Arc::new(app_exe);
-        let mut app_config = read_app_config(&config.path_app_config)?;
-        let segment_len = config.segment_len.unwrap_or(DEFAULT_SEGMENT_SIZE);
-        let segmentation_limits = &mut app_config.app_vm_config.system.config.segmentation_limits;
-        segmentation_limits.max_trace_height = segment_len as u32;
-        segmentation_limits.max_cells = 700_000_000 as usize; // For 24G vram
-
-        tracing::info!("setup1");
-        let sdk = Sdk::new(app_config).unwrap();
-        tracing::info!("setup2");
-        // 45s for first time
-        let sdk = sdk.with_agg_pk(AGG_STARK_PROVING_KEY.clone());
-        tracing::info!("setup3");
-        // 5s
-        let prover = sdk.prover(app_exe.clone()).unwrap();
+        
         tracing::info!("prover setup done");
         Ok(Self {
-            sdk,
-            prover,
             app_exe,
             config,
             prover_name: name.unwrap_or("universal").to_string(),
+            sdk: OnceLock::new(),
+            prover: OnceLock::new(),
         })
     }
 
+    /// Get or initialize the SDK lazily
+    fn get_sdk(&self) -> Result<&Sdk, Error> {
+        self.sdk.get_or_try_init(|| {
+            tracing::info!("Lazy initializing SDK...");
+            let mut app_config = read_app_config(&self.config.path_app_config)?;
+            let segment_len = self.config.segment_len.unwrap_or(DEFAULT_SEGMENT_SIZE);
+            let segmentation_limits = &mut app_config.app_vm_config.system.config.segmentation_limits;
+            segmentation_limits.max_trace_height = segment_len as u32;
+            segmentation_limits.max_cells = 700_000_000 as usize; // For 24G vram
+
+            tracing::info!("setup1");
+            let sdk = Sdk::new(app_config).unwrap();
+            tracing::info!("setup2");
+            // 45s for first time
+            let sdk = sdk.with_agg_pk(AGG_STARK_PROVING_KEY.clone());
+            tracing::info!("setup3");
+            Ok(sdk)
+        })
+    }
+
+    /// Get or initialize the prover lazily
+    fn get_prover_mut(&mut self) -> Result<&mut StarkProver<DefaultStarkEngine, SdkVmCpuBuilder, NativeCpuBuilder>, Error> {
+        if self.prover.get().is_none() {
+            tracing::info!("Lazy initializing prover...");
+            let sdk = self.get_sdk()?;
+            // 5s
+            let prover = sdk.prover(self.app_exe.clone()).unwrap();
+            let _ = self.prover.set(prover);
+        }
+        Ok(self.prover.get_mut().unwrap())
+    }
     /// Pick up loaded app commit, to distinguish from which circuit the proof comes
-    pub fn get_app_commitment(&self) -> ProgramCommitment {
-        let commits = self.prover.app_commit();
+    pub fn get_app_commitment(&mut self) -> ProgramCommitment {
+        let prover = self.get_prover_mut().expect("Failed to initialize prover");
+        let commits = prover.app_commit();
         let exe = commits.app_exe_commit.to_u32_digest();
         let vm = commits.app_vm_commit.to_u32_digest();
         ProgramCommitment { exe, vm }
     }
+    
 
     /// Pick up loaded app commit as "vk" in proof, to distinguish from which circuit the proof comes
-    pub fn get_app_vk(&self) -> Vec<u8> {
+    pub fn get_app_vk(&mut self) -> Vec<u8> {
         serialize_vk::serialize(&self.get_app_commitment())
     }
 
     /// Pick up the actual vk (serialized) for evm proof, would be empty if prover
     /// do not contain evm prover
     pub fn get_evm_vk(&self) -> Vec<u8> {
-        scroll_zkvm_verifier::evm::serialize_vk(self.sdk.halo2_pk().wrapper.pinning.pk.get_vk())
+        let sdk = self.get_sdk().expect("Failed to initialize SDK");
+        scroll_zkvm_verifier::evm::serialize_vk(sdk.halo2_pk().wrapper.pinning.pk.get_vk())
     }
 
     /// Simple wrapper of gen_proof_stark/snark, Early-return if a proof is found in disc,
@@ -157,7 +178,8 @@ impl Prover {
         &self,
         stdin: &StdIn,
     ) -> Result<crate::utils::vm::ExecutionResult, Error> {
-        let config = self.sdk.app_config(); // app_pk.app_vm_pk.vm_config.clone();
+        let sdk = self.get_sdk()?;
+        let config = sdk.app_config(); // app_pk.app_vm_pk.vm_config.clone();
         let exe = self.app_exe.clone();
         let t = std::time::Instant::now();
         let exec_result =
@@ -275,8 +297,8 @@ impl Prover {
                 tracing::info!("Wrote stdin to {}", filename);
             }
         }
-        let proof = self
-            .prover
+        let prover = self.get_prover_mut()?;
+        let proof = prover
             .prove(stdin)
             .map_err(|e| Error::GenProof(e.to_string()))?;
         let proving_time_mills = t.elapsed().as_millis() as u64;
@@ -310,8 +332,8 @@ impl Prover {
 
         //let sdk = Sdk::new();
         //let evm_prover = self.evm_prover.as_ref().expect("evm prover not inited");
-        let evm_proof = self
-            .sdk
+        let sdk = self.get_sdk()?;
+        let evm_proof = sdk
             .prove_evm(self.app_exe.clone(), stdin)
             .map_err(|e| Error::GenProof(format!("{}", e)))?;
 
