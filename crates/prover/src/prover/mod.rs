@@ -91,6 +91,11 @@ impl Prover {
         })
     }
 
+    pub fn reset(&mut self) {
+        self.sdk = OnceLock::new();
+        self.prover = OnceLock::new();
+    }
+
     /// Get or initialize the SDK lazily
     fn get_sdk(&self) -> Result<&Sdk, Error> {
         self.sdk.get_or_try_init(|| {
