@@ -294,23 +294,6 @@ fn generate_root_verifier(workspace_dir: &Path, force_overwrite: bool) -> Result
         root_verifier_path.display()
     );
 
-    // Check if file exists and skip if in auto mode
-    if !force_overwrite && root_verifier_path.exists() {
-        println!(
-            "{LOG_PREFIX} Root verifier already exists, skipping (use --output-mode force to overwrite)"
-        );
-        return Ok(());
-    }
-
-    let agg_stark_pk = AggStarkProvingKey::keygen(AggStarkConfig::default());
-    let asm = openvm_sdk::Sdk::new().generate_root_verifier_asm(&agg_stark_pk);
-    std::fs::write(&root_verifier_path, asm).expect("fail to write");
-
-    println!(
-        "{LOG_PREFIX} Root verifier generated at: {}",
-        root_verifier_path.display()
-    );
-
     Ok(())
 }
 
