@@ -15,7 +15,7 @@ use crate::{
 /// Simply rewrap byte48 to avoid unnecessary dep
 pub type Bytes48 = [u8; 48];
 mod array48 {
-    use serde::{Deserialize, Deserializer, Serializer};
+    use serde::{Deserializer, Serializer};
 
     pub fn serialize<S>(array: &[u8; 48], serializer: S) -> Result<S::Ok, S::Error>
     where

@@ -207,14 +207,14 @@ pub fn build_batch_witnesses(
     let blob_versioned_hash = point_eval::get_versioned_hash(&kzg_commitment);
 
     // primage = keccak(payload) + blob_versioned_hash
-    let chg_preimage = if testing_hardfork() >= ForkName::EuclidV2 {
-        let mut chg_preimage = keccak256(&blob_bytes).to_vec();
-        chg_preimage.extend(blob_versioned_hash.0);
-        chg_preimage
+    let challenge_preimage = if testing_hardfork() >= ForkName::EuclidV2 {
+        let mut challenge_preimage = keccak256(&blob_bytes).to_vec();
+        challenge_preimage.extend(blob_versioned_hash.0);
+        challenge_preimage
     } else {
-        let mut chg_preimage = Vec::from(keccak256(&meta_chunk_bytes).0);
+        let mut challenge_preimage = Vec::from(keccak256(&meta_chunk_bytes).0);
         let last_digest = chunk_digests.last().expect("at least we have one");
-        chg_preimage.extend(
+        challenge_preimage.extend(
             chunk_digests
                 .iter()
                 .chain(std::iter::repeat(last_digest))
@@ -224,10 +224,10 @@ pub fn build_batch_witnesses(
                     ret
                 }),
         );
-        chg_preimage.extend_from_slice(blob_versioned_hash.as_slice());
-        chg_preimage
+        challenge_preimage.extend_from_slice(blob_versioned_hash.as_slice());
+        challenge_preimage
     };
-    let challenge_digest = keccak256(&chg_preimage);
+    let challenge_digest = keccak256(&challenge_preimage);
 
     let x = point_eval::get_x_from_challenge(challenge_digest);
     let (kzg_proof, z) = point_eval::get_kzg_proof(&kzg_blob, challenge_digest);

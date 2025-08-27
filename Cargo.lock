@@ -1964,7 +1964,7 @@ dependencies = [
 [[package]]
 name = "encoder-standard"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/da-codec#2cfec8c99547b68dc64e2b020fa2b83cfb9c0e99"
+source = "git+https://github.com/scroll-tech/da-codec#cddc263e5ef69917b925bbdba3be36503612d044"
 dependencies = [
  "zstd",
 ]
@@ -2358,7 +2358,7 @@ dependencies = [
  "crossbeam",
  "ff 0.13.1",
  "group 0.13.0",
- "halo2curves-axiom 0.7.0",
+ "halo2curves-axiom",
  "itertools 0.11.0",
  "maybe-rayon",
  "pairing 0.23.0",
@@ -2452,33 +2452,6 @@ dependencies = [
  "static_assertions",
  "subtle",
  "unroll",
-]
-
-[[package]]
-name = "halo2curves-axiom"
-version = "0.5.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "75bb262279138550a603b35a73da944fcde987a321eb550c05276ce7b0a4e692"
-dependencies = [
- "blake2b_simd",
- "digest 0.10.7",
- "ff 0.13.1",
- "group 0.13.0",
- "hex",
- "lazy_static",
- "maybe-rayon",
- "num-bigint 0.4.6",
- "num-traits",
- "pairing 0.23.0",
- "pasta_curves 0.5.1",
- "paste",
- "rand 0.8.5",
- "rand_core 0.6.4",
- "serde",
- "serde_arrays 0.1.0",
- "sha2 0.10.9",
- "static_assertions",
- "subtle",
 ]
 
 [[package]]
@@ -3549,7 +3522,7 @@ name = "openvm-algebra-guest"
 version = "1.3.0"
 source = "git+https://github.com/openvm-org/openvm.git?rev=c033e184cdb04a5bfdbd95ca5651c44f5a355c0c#c033e184cdb04a5bfdbd95ca5651c44f5a355c0c"
 dependencies = [
- "halo2curves-axiom 0.7.0",
+ "halo2curves-axiom",
  "num-bigint 0.4.6",
  "once_cell",
  "openvm-algebra-complex-macros 1.3.0",
@@ -3565,7 +3538,7 @@ name = "openvm-algebra-guest"
 version = "1.4.0-rc.4"
 source = "git+https://github.com/openvm-org/openvm.git?rev=51d0aa69694fd33def3c433e48228a5675e4fd97#51d0aa69694fd33def3c433e48228a5675e4fd97"
 dependencies = [
- "halo2curves-axiom 0.7.0",
+ "halo2curves-axiom",
  "num-bigint 0.4.6",
  "once_cell",
  "openvm-algebra-complex-macros 1.4.0-rc.4",
@@ -3818,7 +3791,7 @@ dependencies = [
  "ecdsa",
  "elliptic-curve",
  "group 0.13.0",
- "halo2curves-axiom 0.7.0",
+ "halo2curves-axiom",
  "once_cell",
  "openvm 1.3.0",
  "openvm-algebra-guest 1.3.0",
@@ -3837,7 +3810,7 @@ dependencies = [
  "ecdsa",
  "elliptic-curve",
  "group 0.13.0",
- "halo2curves-axiom 0.7.0",
+ "halo2curves-axiom",
  "once_cell",
  "openvm 1.4.0-rc.4",
  "openvm-algebra-guest 1.4.0-rc.4",
@@ -4103,7 +4076,7 @@ version = "1.4.0-rc.4"
 source = "git+https://github.com/openvm-org/openvm.git?rev=51d0aa69694fd33def3c433e48228a5675e4fd97#51d0aa69694fd33def3c433e48228a5675e4fd97"
 dependencies = [
  "group 0.13.0",
- "halo2curves-axiom 0.7.0",
+ "halo2curves-axiom",
  "hex-literal",
  "itertools 0.14.0",
  "num-bigint 0.4.6",
@@ -4130,7 +4103,7 @@ dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
  "eyre",
- "halo2curves-axiom 0.7.0",
+ "halo2curves-axiom",
  "itertools 0.14.0",
  "num-bigint 0.4.6",
  "num-traits",
@@ -4158,7 +4131,7 @@ name = "openvm-pairing-guest"
 version = "1.3.0"
 source = "git+https://github.com/openvm-org/openvm.git?rev=c033e184cdb04a5bfdbd95ca5651c44f5a355c0c#c033e184cdb04a5bfdbd95ca5651c44f5a355c0c"
 dependencies = [
- "halo2curves-axiom 0.7.0",
+ "halo2curves-axiom",
  "hex-literal",
  "itertools 0.14.0",
  "lazy_static",
@@ -4179,7 +4152,7 @@ name = "openvm-pairing-guest"
 version = "1.4.0-rc.4"
 source = "git+https://github.com/openvm-org/openvm.git?rev=51d0aa69694fd33def3c433e48228a5675e4fd97#51d0aa69694fd33def3c433e48228a5675e4fd97"
 dependencies = [
- "halo2curves-axiom 0.7.0",
+ "halo2curves-axiom",
  "hex-literal",
  "itertools 0.14.0",
  "lazy_static",
@@ -6651,7 +6624,7 @@ checksum = "28d3b2b1366ec20994f1fd18c3c594f05c5dd4bc44d8bb0c1c632c8d6829481f"
 [[package]]
 name = "sbv-core"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#482b62d1350445ae86f19d7e5d79a598c7a49135"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#b01386033edf72289d86d0cce17717c248441e5e"
 dependencies = [
  "cfg-if",
  "itertools 0.14.0",
@@ -6668,7 +6641,7 @@ dependencies = [
 [[package]]
 name = "sbv-helpers"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#482b62d1350445ae86f19d7e5d79a598c7a49135"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#b01386033edf72289d86d0cce17717c248441e5e"
 dependencies = [
  "tracing",
 ]
@@ -6676,7 +6649,7 @@ dependencies = [
 [[package]]
 name = "sbv-kv"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#482b62d1350445ae86f19d7e5d79a598c7a49135"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#b01386033edf72289d86d0cce17717c248441e5e"
 dependencies = [
  "auto_impl",
  "hashbrown 0.15.5",
@@ -6686,7 +6659,7 @@ dependencies = [
 [[package]]
 name = "sbv-precompile"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#482b62d1350445ae86f19d7e5d79a598c7a49135"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#b01386033edf72289d86d0cce17717c248441e5e"
 dependencies = [
  "openvm-ecc-guest 1.4.0-rc.4",
  "openvm-pairing",
@@ -6697,7 +6670,7 @@ dependencies = [
 [[package]]
 name = "sbv-primitives"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#482b62d1350445ae86f19d7e5d79a598c7a49135"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#b01386033edf72289d86d0cce17717c248441e5e"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.0.24",
@@ -6734,7 +6707,7 @@ dependencies = [
 [[package]]
 name = "sbv-trie"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#482b62d1350445ae86f19d7e5d79a598c7a49135"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#b01386033edf72289d86d0cce17717c248441e5e"
 dependencies = [
  "alloy-rlp",
  "alloy-trie",
@@ -6834,81 +6807,57 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-batch-circuit"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "alloy-primitives",
  "bincode 2.0.1",
- "bitcode",
- "c-kzg",
- "halo2curves-axiom 0.7.0",
- "itertools 0.14.0",
  "openvm 1.4.0-rc.4",
- "openvm-algebra-complex-macros 1.4.0-rc.4",
  "openvm-algebra-guest 1.4.0-rc.4",
  "openvm-ecc-guest 1.4.0-rc.4",
  "openvm-keccak256-guest 1.4.0-rc.4",
  "openvm-pairing",
- "openvm-pairing-guest 1.4.0-rc.4",
- "openvm-rv32im-guest 1.4.0-rc.4",
- "openvm-sha2",
  "openvm-sha256-guest 1.4.0-rc.4",
- "rkyv",
  "scroll-zkvm-types-batch",
  "scroll-zkvm-types-circuit",
- "serde",
 ]
 
 [[package]]
 name = "scroll-zkvm-build-guest"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
- "bitcode",
  "cargo_metadata 0.19.2",
  "dotenv",
  "eyre",
- "halo2curves-axiom 0.5.3",
  "hex",
- "hex-literal",
  "openvm-build",
  "openvm-circuit",
  "openvm-instructions",
- "openvm-native-circuit",
  "openvm-native-compiler",
  "openvm-native-recursion",
- "openvm-native-transpiler",
- "openvm-rv32im-transpiler",
  "openvm-sdk",
  "openvm-stark-sdk",
- "openvm-transpiler",
- "p3-field 0.1.0",
  "scroll-zkvm-types",
  "serde",
  "serde_json",
- "serde_with",
  "snark-verifier-sdk",
  "toml",
- "tracing",
- "tracing-subscriber 0.3.19",
 ]
 
 [[package]]
 name = "scroll-zkvm-bundle-circuit"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "alloy-primitives",
  "bincode 2.0.1",
  "openvm 1.4.0-rc.4",
- "openvm-algebra-guest 1.4.0-rc.4",
  "openvm-keccak256-guest 1.4.0-rc.4",
- "openvm-rv32im-guest 1.4.0-rc.4",
- "rkyv",
  "scroll-zkvm-types-bundle",
  "scroll-zkvm-types-circuit",
 ]
 
 [[package]]
 name = "scroll-zkvm-chunk-circuit"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "bincode 2.0.1",
  "ecies",
@@ -6924,7 +6873,6 @@ dependencies = [
  "openvm-rv32im-guest 1.4.0-rc.4",
  "openvm-sha2",
  "p256 0.13.2 (git+https://github.com/openvm-org/openvm.git?rev=51d0aa69694fd33def3c433e48228a5675e4fd97)",
- "rkyv",
  "sbv-precompile",
  "scroll-zkvm-types-chunk",
  "scroll-zkvm-types-circuit",
@@ -6932,7 +6880,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-integration"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "alloy-primitives",
  "base64",
@@ -6940,20 +6888,13 @@ dependencies = [
  "cargo_metadata 0.20.0",
  "chrono",
  "eyre",
- "ff 0.13.1",
  "glob",
- "halo2curves-axiom 0.7.0",
  "hex",
  "metrics-tracing-context",
  "once_cell",
- "openvm-build",
  "openvm-circuit",
- "openvm-native-circuit",
- "openvm-native-compiler",
  "openvm-native-recursion",
- "openvm-native-transpiler",
  "openvm-sdk",
- "openvm-transpiler",
  "rayon",
  "regex",
  "revm 27.1.0",
@@ -6964,7 +6905,6 @@ dependencies = [
  "scroll-zkvm-verifier",
  "serde",
  "serde_json",
- "sha2 0.10.9",
  "snark-verifier-sdk",
  "tracing",
  "tracing-subscriber 0.3.19",
@@ -6973,37 +6913,23 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-prover"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
- "alloy-primitives",
  "base64",
  "bincode 1.3.3",
- "c-kzg",
  "eyre",
  "git-version",
- "hex",
- "metrics",
- "metrics-tracing-context",
- "metrics-util",
- "munge",
- "once_cell",
  "openvm-circuit",
- "openvm-continuations",
  "openvm-native-circuit",
  "openvm-native-recursion",
  "openvm-sdk",
  "openvm-stark-sdk",
- "revm 27.1.0",
  "rkyv",
- "sbv-primitives",
  "scroll-zkvm-types",
- "scroll-zkvm-types-batch",
- "scroll-zkvm-types-chunk",
  "scroll-zkvm-verifier",
  "serde",
  "serde_json",
  "serde_stacker",
- "snark-verifier-sdk",
  "thiserror 2.0.15",
  "toml",
  "tracing",
@@ -7011,16 +6937,15 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-types"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
+ "alloy-primitives",
  "base64",
  "bincode 1.3.3",
  "c-kzg",
- "openvm-continuations",
  "openvm-native-recursion",
  "openvm-sdk",
  "openvm-stark-sdk",
- "rkyv",
  "sbv-primitives",
  "scroll-zkvm-types-base",
  "scroll-zkvm-types-batch",
@@ -7032,26 +6957,24 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-types-base"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "alloy-primitives",
  "alloy-serde 1.0.24",
- "itertools 0.14.0",
  "rkyv",
  "serde",
  "sha2 0.10.9",
  "sha3",
- "tiny-keccak",
 ]
 
 [[package]]
 name = "scroll-zkvm-types-batch"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "alloy-primitives",
  "bincode 2.0.1",
  "c-kzg",
- "halo2curves-axiom 0.7.0",
+ "halo2curves-axiom",
  "itertools 0.14.0",
  "openvm 1.4.0-rc.4",
  "openvm-ecc-guest 1.4.0-rc.4",
@@ -7067,36 +6990,26 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-types-bundle"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
- "alloy-primitives",
- "bincode 2.0.1",
- "itertools 0.14.0",
  "rkyv",
  "scroll-zkvm-types-base",
  "serde",
- "vm-zstd",
 ]
 
 [[package]]
 name = "scroll-zkvm-types-chunk"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
- "bincode 2.0.1",
  "ecies",
  "itertools 0.14.0",
- "openvm 1.4.0-rc.4",
- "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?rev=51d0aa69694fd33def3c433e48228a5675e4fd97)",
- "openvm-rv32im-guest 1.4.0-rc.4",
  "revm-precompile 21.0.0",
  "rkyv",
  "sbv-core",
  "sbv-helpers",
- "sbv-kv",
  "sbv-primitives",
- "sbv-trie",
  "scroll-zkvm-types-base",
  "serde",
  "thiserror 2.0.15",
@@ -7104,7 +7017,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-types-circuit"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "alloy-primitives",
  "getrandom 0.2.16",
@@ -7119,21 +7032,14 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-verifier"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
- "base64",
  "bincode 1.3.3",
  "eyre",
- "itertools 0.14.0",
  "once_cell",
- "openvm-circuit",
  "openvm-continuations",
- "openvm-native-circuit",
  "openvm-native-recursion",
  "openvm-sdk",
- "openvm-stark-sdk",
- "revm 27.1.0",
- "scroll-zkvm-prover",
  "scroll-zkvm-types",
  "serde",
  "serde_json",

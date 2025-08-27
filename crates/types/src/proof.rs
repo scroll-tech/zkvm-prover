@@ -34,6 +34,17 @@ pub struct EvmProof {
      */
 }
 
+/// Stat for the insight of stark proofing
+#[derive(Clone, Serialize, Deserialize)]
+pub struct StarkProofStat {
+    /// total cycles
+    pub total_cycles: u64,
+    /// exec time
+    pub execution_time_mills: u64,
+    /// proving time
+    pub proving_time_mills: u64,
+}
+
 /// Helper to modify serde implementations on the remote [`RootProof`] type.
 #[derive(Clone, Serialize, Deserialize)]
 pub struct StarkProof {
@@ -46,6 +57,7 @@ pub struct StarkProof {
     pub public_values: Vec<BabyBear>,
     //pub exe_commitment: [u32; 8],
     //pub vm_commitment: [u32; 8],
+    pub stat: StarkProofStat,
 }
 
 pub use openvm_sdk::types::EvmProof as OpenVmEvmProof;

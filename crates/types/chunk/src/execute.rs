@@ -69,14 +69,14 @@ pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
         tx_data_digest,
         tx_data_length: tx_data_length as u64,
         initial_block_number: blocks[0].header().number,
-        prev_msg_queue_hash: witness.prev_msg_queue_hash.into(),
+        prev_msg_queue_hash: witness.prev_msg_queue_hash,
         post_msg_queue_hash,
         block_ctxs: blocks.iter().map(block_to_context).collect(),
         prev_blockhash: B256::default(),
         post_blockhash: B256::default(),
     };
 
-    println!("chunk_info = {:#?}", chunk_info);
+    // println!("chunk_info = {}", chunk_info);
 
     Ok(chunk_info)
 }
@@ -98,25 +98,3 @@ fn block_to_context(block: &RecoveredBlock<Block>) -> BlockContextV2 {
         .expect("num l1 msgs u16"),
     }
 }
-
-/*
-impl From<&RecoveredBlock<Block>> for BlockContextV2 {
-    fn from(block: &RecoveredBlock<Block>) -> BlockContextV2 {
-        BlockContextV2 {
-            timestamp: block.timestamp,
-            gas_limit: block.gas_limit,
-            base_fee: U256::from(block.base_fee_per_gas().expect("base_fee_expected")),
-            num_txs: u16::try_from(block.body().transactions.len()).expect("num txs u16"),
-            num_l1_msgs: u16::try_from(
-                block
-                    .body()
-                    .transactions
-                    .iter()
-                    .filter(|tx| tx.is_l1_message())
-                    .count(),
-            )
-            .expect("num l1 msgs u16"),
-        }
-    }
-}
-    */

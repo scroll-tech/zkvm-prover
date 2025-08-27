@@ -35,30 +35,6 @@ pub struct ProgramCommitment {
     pub vm: [u32; 8],
 }
 
-impl ProgramCommitment {
-    pub fn deserialize(commitment_bytes: &[u8]) -> Self {
-        // TODO: temporary skip deserialize if no vk is provided
-        if commitment_bytes.is_empty() {
-            return Default::default();
-        }
-
-        let archived_data =
-            rkyv::access::<ArchivedProgramCommitment, rkyv::rancor::BoxedError>(commitment_bytes)
-                .unwrap();
-
-        Self {
-            exe: archived_data.exe.map(|u32_le| u32_le.to_native()),
-            vm: archived_data.vm.map(|u32_le| u32_le.to_native()),
-        }
-    }
-
-    pub fn serialize(&self) -> Vec<u8> {
-        rkyv::to_bytes::<rkyv::rancor::BoxedError>(self)
-            .map(|v| v.to_vec())
-            .unwrap()
-    }
-}
-
 impl From<&ArchivedProgramCommitment> for ProgramCommitment {
     fn from(archived: &ArchivedProgramCommitment) -> Self {
         Self {
