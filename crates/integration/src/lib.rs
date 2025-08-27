@@ -291,7 +291,7 @@ pub fn tester_execute<T: ProverTester>(
 }
 
 /// End-to-end test for proving witnesses of the same prover.
-#[instrument(name = "prove_verify", skip_all, fields(task_id))]
+#[instrument(name = "prove_verify", skip_all, fields(task_id, prover_name = prover.prover_name))]
 pub fn prove_verify<T: ProverTester>(
     prover: &mut Prover,
     witness: &T::Witness,

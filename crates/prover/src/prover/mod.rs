@@ -4,8 +4,8 @@ use std::{
     sync::{Arc, OnceLock},
 };
 
-//use openvm_native_circuit::{NativeGpuBuilder};
-//use openvm_sdk::config::SdkVmGpuBuilder;
+use openvm_native_circuit::{NativeGpuBuilder};
+use openvm_sdk::config::SdkVmGpuBuilder;
 
 use openvm_circuit::arch::instructions::exe::VmExe;
 use openvm_native_circuit::NativeCpuBuilder;
@@ -57,7 +57,8 @@ pub struct Prover {
     pub config: ProverConfig,
     sdk: OnceLock<Sdk>,
     //pub prover: StarkProver<DefaultStarkEngine, SdkVmGpuBuilder, NativeGpuBuilder>,
-    prover: OnceLock<StarkProver<DefaultStarkEngine, SdkVmCpuBuilder, NativeCpuBuilder>>,
+    prover: OnceLock<StarkProver<DefaultStarkEngine, SdkVmGpuBuilder, NativeGpuBuilder>>,
+    //pub prover: StarkProver<DefaultStarkEngine, SdkVmGpuBuilder, NativeGpuBuilder>,
 }
 
 /// Configure the [`Prover`].
@@ -117,7 +118,7 @@ impl Prover {
     }
 
     /// Get or initialize the prover lazily
-    fn get_prover_mut(&mut self) -> Result<&mut StarkProver<DefaultStarkEngine, SdkVmCpuBuilder, NativeCpuBuilder>, Error> {
+    fn get_prover_mut(&mut self) -> Result<&mut StarkProver<DefaultStarkEngine, SdkVmGpuBuilder, NativeGpuBuilder>, Error> {
         if self.prover.get().is_none() {
             tracing::info!("Lazy initializing prover...");
             let sdk = self.get_sdk()?;
@@ -309,7 +310,7 @@ impl Prover {
         let proving_time_mills = t.elapsed().as_millis() as u64;
         let prove_speed =
             (total_cycle as f32 / 1000_000.0f32) / (proving_time_mills as f32 / 1000.0f32); // MHz
-        tracing::info!("proving speed: {:.2}MHz", prove_speed);
+        tracing::info!("{} proving speed: {:.2}MHz", self.prover_name, prove_speed);
         let stat = StarkProofStat {
             total_cycles,
             proving_time_mills,
