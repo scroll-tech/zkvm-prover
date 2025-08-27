@@ -380,12 +380,12 @@ pub fn main() -> Result<()> {
         release_output_dir.display()
     );
 
-    println!("{LOG_PREFIX} Generating app assets (always overwrite)");
-    generate_app_assets(&workspace_dir, &release_output_dir)?;
-
     println!("{LOG_PREFIX} Generating openvm assets");
     let force_overwrite = matches!(cli.mode, OutputMode::Force);
     generate_openvm_assets(&workspace_dir, &release_output_dir, force_overwrite)?;
+
+    println!("{LOG_PREFIX} Generating app assets (always overwrite)");
+    generate_app_assets(&workspace_dir, &release_output_dir)?;
 
     println!("{LOG_PREFIX} Build process completed successfully.");
     Ok(())
