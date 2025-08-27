@@ -66,7 +66,7 @@ fn decrypt_data(data: &Bytes, secret_key: &SecretKey) -> Result<Bytes, ValidiumE
             .message
             .starts_with(&finalizeDepositERC20EncryptedCall::SELECTOR)
         {
-            msg.message = decrypt_message(&mut msg.message, secret_key)?;
+            msg.message = decrypt_message(&msg.message, secret_key)?;
             return Ok(Bytes::from(msg.abi_encode()));
         }
     }
