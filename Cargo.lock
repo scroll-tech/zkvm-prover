@@ -6536,6 +6536,7 @@ name = "scroll-zkvm-build-guest"
 version = "0.6.0"
 dependencies = [
  "cargo_metadata 0.19.2",
+ "clap",
  "dotenv",
  "eyre",
  "hex",
@@ -6547,7 +6548,6 @@ dependencies = [
  "openvm-sdk",
  "openvm-stark-sdk",
  "scroll-zkvm-types",
- "serde",
  "serde_json",
  "snark-verifier-sdk",
  "toml",
