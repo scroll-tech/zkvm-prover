@@ -73,6 +73,10 @@ struct Cli {
     /// - force: Always regenerate all files (use for clean builds or CI)
     #[arg(long, value_enum, default_value_t = OutputMode::Auto)]
     mode: OutputMode,
+
+    /// Output directory name under releases/ (default: "dev")
+    #[arg(long, default_value = "dev")]
+    output: String,
 }
 
 const LOG_PREFIX: &str = "[build-guest]";
@@ -369,20 +373,19 @@ pub fn main() -> Result<()> {
     let workspace_dir = metadata.workspace_root.into_std_path_buf();
     println!("{LOG_PREFIX} Workspace root: {}", workspace_dir.display());
 
-    let release_output_dir: std::path::PathBuf = workspace_dir.join("releases").join("dev");
+    let release_output_dir: std::path::PathBuf = workspace_dir.join("releases").join(&cli.output);
     std::fs::create_dir_all(&release_output_dir)?;
     println!(
         "{LOG_PREFIX} Release output directory: {}",
         release_output_dir.display()
     );
 
+    println!("{LOG_PREFIX} Generating app assets (always overwrite)");
+    generate_app_assets(&workspace_dir, &release_output_dir)?;
+
     println!("{LOG_PREFIX} Generating openvm assets");
     let force_overwrite = matches!(cli.mode, OutputMode::Force);
     generate_openvm_assets(&workspace_dir, &release_output_dir, force_overwrite)?;
-
-    // Always generate both app and openvm assets
-    println!("{LOG_PREFIX} Generating app assets (always overwrite)");
-    generate_app_assets(&workspace_dir, &release_output_dir)?;
 
     println!("{LOG_PREFIX} Build process completed successfully.");
     Ok(())
