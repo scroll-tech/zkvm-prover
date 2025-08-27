@@ -3467,7 +3467,7 @@ checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
 [[package]]
 name = "openvm"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "bytemuck",
  "num-bigint 0.4.6",
@@ -3495,7 +3495,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-circuit"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -3524,7 +3524,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-complex-macros"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "openvm-macros-common 1.3.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe)",
  "quote",
@@ -3544,7 +3544,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-guest"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "halo2curves-axiom 0.7.0",
  "num-bigint 0.4.6",
@@ -3576,7 +3576,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-moduli-macros"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "num-bigint 0.4.6",
  "num-prime",
@@ -3600,7 +3600,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-transpiler"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "openvm-algebra-guest 1.3.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe)",
  "openvm-instructions",
@@ -3614,7 +3614,7 @@ dependencies = [
 [[package]]
 name = "openvm-bigint-circuit"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -3636,7 +3636,7 @@ dependencies = [
 [[package]]
 name = "openvm-bigint-guest"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "openvm-platform 1.3.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe)",
  "strum_macros 0.26.4",
@@ -3654,7 +3654,7 @@ dependencies = [
 [[package]]
 name = "openvm-bigint-transpiler"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "openvm-bigint-guest 1.3.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe)",
  "openvm-instructions",
@@ -3669,7 +3669,7 @@ dependencies = [
 [[package]]
 name = "openvm-build"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "cargo_metadata 0.18.1",
  "eyre",
@@ -3681,7 +3681,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "backtrace",
  "cfg-if",
@@ -3712,7 +3712,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit-derive"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "itertools 0.14.0",
  "quote",
@@ -3722,7 +3722,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit-primitives"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "derive-new 0.6.0",
  "itertools 0.14.0",
@@ -3737,7 +3737,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit-primitives-derive"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "itertools 0.14.0",
  "quote",
@@ -3747,7 +3747,7 @@ dependencies = [
 [[package]]
 name = "openvm-continuations"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "derivative",
  "openvm-circuit",
@@ -3762,7 +3762,7 @@ dependencies = [
 [[package]]
 name = "openvm-custom-insn"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3782,7 +3782,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-circuit"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -3810,7 +3810,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-guest"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
@@ -3848,7 +3848,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-sw-macros"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "openvm-macros-common 1.3.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe)",
  "quote",
@@ -3868,7 +3868,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-transpiler"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "openvm-ecc-guest 1.3.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe)",
  "openvm-instructions",
@@ -3882,7 +3882,7 @@ dependencies = [
 [[package]]
 name = "openvm-instructions"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "backtrace",
  "derive-new 0.6.0",
@@ -3899,7 +3899,7 @@ dependencies = [
 [[package]]
 name = "openvm-instructions-derive"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "quote",
  "syn 2.0.101",
@@ -3908,7 +3908,7 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-circuit"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -3934,7 +3934,7 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-guest"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "openvm-platform 1.3.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe)",
 ]
@@ -3950,7 +3950,7 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-transpiler"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "openvm-instructions",
  "openvm-instructions-derive",
@@ -3964,7 +3964,7 @@ dependencies = [
 [[package]]
 name = "openvm-macros-common"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "syn 2.0.101",
 ]
@@ -3980,7 +3980,7 @@ dependencies = [
 [[package]]
 name = "openvm-mod-circuit-builder"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "itertools 0.14.0",
  "num-bigint 0.4.6",
@@ -3999,7 +3999,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-circuit"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -4026,7 +4026,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-compiler"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "backtrace",
  "itertools 0.14.0",
@@ -4050,7 +4050,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-compiler-derive"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "quote",
  "syn 2.0.101",
@@ -4059,7 +4059,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-recursion"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "cfg-if",
  "itertools 0.14.0",
@@ -4087,7 +4087,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-transpiler"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "openvm-instructions",
  "openvm-transpiler",
@@ -4122,7 +4122,7 @@ dependencies = [
 [[package]]
 name = "openvm-pairing-circuit"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -4153,7 +4153,7 @@ dependencies = [
 [[package]]
 name = "openvm-pairing-guest"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "halo2curves-axiom 0.7.0",
  "hex-literal",
@@ -4195,7 +4195,7 @@ dependencies = [
 [[package]]
 name = "openvm-pairing-transpiler"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "openvm-instructions",
  "openvm-instructions-derive",
@@ -4209,7 +4209,7 @@ dependencies = [
 [[package]]
 name = "openvm-platform"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "libm",
  "openvm-custom-insn 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe)",
@@ -4229,7 +4229,7 @@ dependencies = [
 [[package]]
 name = "openvm-poseidon2-air"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "derivative",
  "lazy_static",
@@ -4246,7 +4246,7 @@ dependencies = [
 [[package]]
 name = "openvm-rv32-adapters"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "derive-new 0.6.0",
  "itertools 0.14.0",
@@ -4266,7 +4266,7 @@ dependencies = [
 [[package]]
 name = "openvm-rv32im-circuit"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -4289,7 +4289,7 @@ dependencies = [
 [[package]]
 name = "openvm-rv32im-guest"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "openvm-custom-insn 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe)",
  "p3-field 0.1.0",
@@ -4309,7 +4309,7 @@ dependencies = [
 [[package]]
 name = "openvm-rv32im-transpiler"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "openvm-instructions",
  "openvm-instructions-derive",
@@ -4325,7 +4325,7 @@ dependencies = [
 [[package]]
 name = "openvm-sdk"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "async-trait",
  "bitcode",
@@ -4388,7 +4388,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-air"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "openvm-circuit-primitives",
  "openvm-stark-backend",
@@ -4399,7 +4399,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-circuit"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -4422,7 +4422,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-guest"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "openvm-platform 1.3.0 (git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe)",
 ]
@@ -4438,7 +4438,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-transpiler"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "openvm-instructions",
  "openvm-instructions-derive",
@@ -4452,7 +4452,7 @@ dependencies = [
 [[package]]
 name = "openvm-stark-backend"
 version = "1.1.1"
-source = "git+ssh://git@github.com/scroll-tech/openvm-stark-gpu.git?branch=main#f76c8c752d90ae70b816ec79590e2b43c9249f7d"
+source = "git+ssh://git@github.com/scroll-tech/openvm-stark-gpu.git?branch=main#392b1b1495c8c0b70f4f6d4fdcdb50c08d798ad9"
 dependencies = [
  "bitcode",
  "cfg-if",
@@ -4481,7 +4481,7 @@ dependencies = [
 [[package]]
 name = "openvm-stark-sdk"
 version = "1.1.1"
-source = "git+ssh://git@github.com/scroll-tech/openvm-stark-gpu.git?branch=main#f76c8c752d90ae70b816ec79590e2b43c9249f7d"
+source = "git+ssh://git@github.com/scroll-tech/openvm-stark-gpu.git?branch=main#392b1b1495c8c0b70f4f6d4fdcdb50c08d798ad9"
 dependencies = [
  "derivative",
  "derive_more 0.99.20",
@@ -4518,7 +4518,7 @@ dependencies = [
 [[package]]
 name = "openvm-transpiler"
 version = "1.3.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#cb0e562263ab5acf60e319a3463c812c42ec67f1"
+source = "git+ssh://git@github.com/scroll-tech/openvm-gpu.git?branch=patch-v1.4.0-c033e18-pipe#7d918c8d0cd4eb5a7ea4ce528ad7e606ee94c7ff"
 dependencies = [
  "elf",
  "eyre",
@@ -4592,7 +4592,7 @@ dependencies = [
 [[package]]
 name = "p3-air"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "p3-field 0.1.0",
  "p3-matrix 0.1.0",
@@ -4601,7 +4601,7 @@ dependencies = [
 [[package]]
 name = "p3-baby-bear"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "p3-field 0.1.0",
  "p3-mds 0.1.0",
@@ -4630,7 +4630,7 @@ dependencies = [
 [[package]]
 name = "p3-blake3"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "blake3",
  "p3-symmetric 0.1.0",
@@ -4640,7 +4640,7 @@ dependencies = [
 [[package]]
 name = "p3-bn254-fr"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "ff 0.13.1",
  "halo2curves",
@@ -4655,7 +4655,7 @@ dependencies = [
 [[package]]
 name = "p3-challenger"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "p3-field 0.1.0",
  "p3-maybe-rayon 0.1.0",
@@ -4667,7 +4667,7 @@ dependencies = [
 [[package]]
 name = "p3-commit"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "anyhow",
  "itertools 0.14.0",
@@ -4683,7 +4683,7 @@ dependencies = [
 [[package]]
 name = "p3-dft"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "itertools 0.14.0",
  "p3-field 0.1.0",
@@ -4709,7 +4709,7 @@ dependencies = [
 [[package]]
 name = "p3-field"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "itertools 0.14.0",
  "num-bigint 0.4.6",
@@ -4740,7 +4740,7 @@ dependencies = [
 [[package]]
 name = "p3-fri"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "anyhow",
  "itertools 0.14.0",
@@ -4764,7 +4764,7 @@ dependencies = [
 [[package]]
 name = "p3-goldilocks"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "num-bigint 0.4.6",
  "p3-dft 0.1.0",
@@ -4781,7 +4781,7 @@ dependencies = [
 [[package]]
 name = "p3-gpu-backend"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -4818,7 +4818,7 @@ dependencies = [
 [[package]]
 name = "p3-gpu-base"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -4835,7 +4835,7 @@ dependencies = [
 [[package]]
 name = "p3-gpu-build"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "cc",
  "directories",
@@ -4848,12 +4848,12 @@ dependencies = [
 [[package]]
 name = "p3-gpu-field"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 
 [[package]]
 name = "p3-gpu-module"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "itertools 0.14.0",
  "p3-field 0.1.0",
@@ -4866,7 +4866,7 @@ dependencies = [
 [[package]]
 name = "p3-interpolation"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "p3-field 0.1.0",
  "p3-matrix 0.1.0",
@@ -4877,7 +4877,7 @@ dependencies = [
 [[package]]
 name = "p3-keccak"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "itertools 0.14.0",
  "p3-field 0.1.0",
@@ -4889,7 +4889,7 @@ dependencies = [
 [[package]]
 name = "p3-keccak-air"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "p3-air",
  "p3-field 0.1.0",
@@ -4905,7 +4905,7 @@ dependencies = [
 [[package]]
 name = "p3-koala-bear"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "p3-field 0.1.0",
  "p3-mds 0.1.0",
@@ -4919,7 +4919,7 @@ dependencies = [
 [[package]]
 name = "p3-matrix"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "itertools 0.14.0",
  "p3-field 0.1.0",
@@ -4949,7 +4949,7 @@ dependencies = [
 [[package]]
 name = "p3-maybe-rayon"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "rayon",
 ]
@@ -4963,7 +4963,7 @@ checksum = "c3968ad1160310296eb04f91a5f4edfa38fe1d6b2b8cd6b5c64e6f9b7370979e"
 [[package]]
 name = "p3-mds"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "itertools 0.14.0",
  "p3-dft 0.1.0",
@@ -4992,7 +4992,7 @@ dependencies = [
 [[package]]
 name = "p3-merkle-tree"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "anyhow",
  "itertools 0.14.0",
@@ -5011,7 +5011,7 @@ dependencies = [
 [[package]]
 name = "p3-monty-31"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "itertools 0.14.0",
  "num-bigint 0.4.6",
@@ -5032,7 +5032,7 @@ dependencies = [
 [[package]]
 name = "p3-poseidon"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "p3-field 0.1.0",
  "p3-mds 0.1.0",
@@ -5043,7 +5043,7 @@ dependencies = [
 [[package]]
 name = "p3-poseidon2"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "gcd",
  "p3-field 0.1.0",
@@ -5069,7 +5069,7 @@ dependencies = [
 [[package]]
 name = "p3-poseidon2-air"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "p3-air",
  "p3-field 0.1.0",
@@ -5085,7 +5085,7 @@ dependencies = [
 [[package]]
 name = "p3-symmetric"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "itertools 0.14.0",
  "p3-field 0.1.0",
@@ -5106,7 +5106,7 @@ dependencies = [
 [[package]]
 name = "p3-uni-stark"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "itertools 0.14.0",
  "p3-air",
@@ -5124,7 +5124,7 @@ dependencies = [
 [[package]]
 name = "p3-util"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.1#d5a0613e224fd972dda579f03bdce02523b79b1c"
+source = "git+ssh://git@github.com/scroll-tech/plonky3-gpu.git?tag=v0.2.2#268308ecc358998c6813dc481cd05aae5f03dab9"
 dependencies = [
  "serde",
 ]
