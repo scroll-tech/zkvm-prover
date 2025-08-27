@@ -3,6 +3,10 @@ name = "scroll-zkvm-integration"
 version.workspace = true
 edition.workspace = true
 
+[[bin]]
+name = "chunk-benchmark"
+path = "src/bin/chunk-benchmark.rs"
+
 [dependencies]
 scroll-zkvm-types.workspace = true
 scroll-zkvm-prover.workspace = true
@@ -13,6 +17,8 @@ sbv-primitives = { workspace = true }
 tracing.workspace = true
 tracing-subscriber.workspace = true
 metrics-tracing-context.workspace = true
+openvm-benchmarks-prove = { workspace = true, default-features = false }
+openvm-benchmarks-utils = { workspace = true, default-features = false }
 openvm-circuit.workspace = true
 openvm-sdk = { workspace = true, default-features = false }
 openvm-native-recursion = { workspace = true, default-features = false }
@@ -21,9 +27,11 @@ alloy-primitives.workspace = true
 base64.workspace = true
 bincode.workspace = true
 cargo_metadata.workspace = true
+clap.workspace = true
 eyre.workspace = true
 rayon.workspace = true
 serde.workspace = true
+toml.workspace = true
 vm-zstd = { workspace = true, features = ["zstd"] }
 
 hex.workspace = true
@@ -45,3 +53,4 @@ glob = "0.3"
 [features]
 default = []
 limit-logs = []
+perf-metrics = ["openvm-sdk/perf-metrics"]

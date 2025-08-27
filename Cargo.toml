@@ -40,9 +40,10 @@ openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "51
 openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "51d0aa69694fd33def3c433e48228a5675e4fd97", default-features = false }
 openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "51d0aa69694fd33def3c433e48228a5675e4fd97", default-features = false }
 openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "51d0aa69694fd33def3c433e48228a5675e4fd97", default-features = false }
-openvm-verify-stark = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution", default-features = false }
 
 # openvm host libs
+openvm-benchmarks-prove = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-benchmarks-utils = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
 openvm-build = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
 openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
 openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
@@ -71,6 +72,7 @@ bitcode = { version = "0.6.5", default-features = false, features = ["serde", "d
 bincode_v1 = { version = "1.3", package = "bincode"}
 bincode = { version = "2.0", features = ["serde"] }
 cargo_metadata = "0.20"
+clap = "4.5"
 c-kzg = { version = "2.0" }
 derivative = "2.2.0"
 eyre = "0.6"
@@ -130,3 +132,13 @@ alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch =
 inherits = "release"
 lto = "fat"
 codegen-units = 1
+
+[profile.profiling]
+inherits = "release"
+debug = 2
+debug-assertions = false
+strip = false
+
+[profile.bench]
+inherits = "profiling"
+
