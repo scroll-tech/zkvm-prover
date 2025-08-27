@@ -347,7 +347,7 @@ fn generate_openvm_assets(
     force_overwrite: bool,
 ) -> Result<()> {
     // to use the 'foundry.toml'
-    env::set_current_dir(&workspace_dir)?;
+    env::set_current_dir(workspace_dir)?;
 
     generate_root_verifier(workspace_dir, force_overwrite)?;
     generate_evm_verifier(&release_output_dir.join("verifier"), true, force_overwrite)?;
