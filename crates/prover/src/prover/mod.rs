@@ -1,16 +1,21 @@
 use std::{
     path::{Path, PathBuf},
+    str::FromStr,
     sync::Arc,
 };
 
-use openvm_sdk::DefaultStarkEngine;
+//use openvm_native_circuit::{NativeGpuBuilder};
+//use openvm_sdk::config::SdkVmGpuBuilder;
+
 use openvm_circuit::arch::instructions::exe::VmExe;
-use openvm_native_circuit::NativeGpuBuilder;
+use openvm_native_circuit::NativeCpuBuilder;
 use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
+use openvm_sdk::config::SdkVmCpuBuilder;
+use openvm_sdk::{DefaultStarkEngine, config::SdkVmBuilder};
 use openvm_sdk::{
     DefaultStaticVerifierPvHandler, F, GenericSdk, Sdk, StdIn,
     commit::AppExecutionCommit,
-    config::{AppConfig, SdkVmConfig, SdkVmGpuBuilder},
+    config::{AppConfig, SdkVmConfig},
     fs::read_object_from_file,
     keygen::{AggProvingKey, AppProvingKey},
     prover::StarkProver,
@@ -51,7 +56,8 @@ pub struct Prover {
     /// Configuration for the prover.
     pub config: ProverConfig,
     pub sdk: Sdk,
-    pub prover: StarkProver<DefaultStarkEngine, SdkVmGpuBuilder, NativeGpuBuilder>,
+    //pub prover: StarkProver<DefaultStarkEngine, SdkVmGpuBuilder, NativeGpuBuilder>,
+    pub prover: StarkProver<DefaultStarkEngine, SdkVmCpuBuilder, NativeCpuBuilder>,
 }
 
 /// Configure the [`Prover`].
@@ -65,7 +71,7 @@ pub struct ProverConfig {
     pub segment_len: Option<usize>,
 }
 
-const DEFAULT_SEGMENT_SIZE: usize = (1 << 22) - 10000;
+const DEFAULT_SEGMENT_SIZE: usize = (1 << 22) - 1000;
 
 impl Prover {
     /// Setup the [`Prover`] given paths to the application's exe and proving key.
@@ -76,11 +82,9 @@ impl Prover {
         let app_exe = Arc::new(app_exe);
         let mut app_config = read_app_config(&config.path_app_config)?;
         let segment_len = config.segment_len.unwrap_or(DEFAULT_SEGMENT_SIZE);
-        app_config.app_vm_config.system.config = app_config
-            .app_vm_config
-            .system
-            .config
-            .with_max_segment_len(segment_len);
+        let segmentation_limits = &mut app_config.app_vm_config.system.config.segmentation_limits;
+        segmentation_limits.max_trace_height = segment_len as u32;
+        segmentation_limits.max_cells = 700_000_000 as usize; // For 24G vram
 
         tracing::info!("setup1");
         let sdk = Sdk::new(app_config).unwrap();
@@ -246,6 +250,31 @@ impl Prover {
         let execution_time_mills = t.elapsed().as_millis() as u64;
 
         let t = std::time::Instant::now();
+        if true {
+            // dump stdin to file
+            let mut json: serde_json::Value = serde_json::from_str("{\"input\":[]}").unwrap();
+            let json_input = json["input"].as_array_mut().unwrap();
+            for item in &stdin.buffer {
+                use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
+                let mut bytes: Vec<u8> = vec![0x02];
+                for f in item {
+                    let u32_bytes = f.as_canonical_u32().to_le_bytes();
+                    bytes.extend_from_slice(&u32_bytes);
+                }
+                json_input.push(serde_json::Value::String(format!(
+                    "0x{}",
+                    hex::encode(bytes)
+                )));
+            }
+            // write the `json` to ${self.name}.json
+            let filename = format!("{}.json", self.prover_name);
+            if let Err(e) = std::fs::write(&filename, serde_json::to_string_pretty(&json).unwrap())
+            {
+                tracing::warn!("Failed to write stdin to {}: {}", filename, e);
+            } else {
+                tracing::info!("Wrote stdin to {}", filename);
+            }
+        }
         let proof = self
             .prover
             .prove(stdin)
