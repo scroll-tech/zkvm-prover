@@ -24,7 +24,7 @@ fn main() -> eyre::Result<()> {
     let project_path = WORKSPACE_ROOT.join("crates").join("circuits").join("chunk-circuit");
     let current_dir = env::current_dir()?;
     env::set_current_dir(&project_path)?;
-    let elf = build_elf(&project_path.join("Cargo.toml"), if args.profiling { "profiling" } else { "maxperf" })?;
+    let elf = build_elf(&project_path, if args.profiling { "profiling" } else { "maxperf" })?;
     env::set_current_dir(current_dir)?;
 
     let mut stdin = StdIn::default();
