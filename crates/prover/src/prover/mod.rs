@@ -308,8 +308,8 @@ impl Prover {
             .map_err(|e| Error::GenProof(e.to_string()))?;
         let proving_time_mills = t.elapsed().as_millis() as u64;
         let prove_speed =
-            (total_cycle as f32 / 1000_000.0f32) / (proving_time_mills as f32 / 1000.0f32); // MHz
-        tracing::info!("proving speed: {:.2}MHz", prove_speed);
+            (total_cycles as f32 / 1_000_000.0f32) / (proving_time_mills as f32 / 1000.0f32); // MHz
+        tracing::info!("{} proving speed: {:.2}MHz", self.prover_name, prove_speed);
         let stat = StarkProofStat {
             total_cycles,
             proving_time_mills,

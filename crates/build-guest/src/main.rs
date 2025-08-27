@@ -33,7 +33,6 @@
 //! - Commitment files: Written to respective circuit crate directories
 
 use std::{
-    collections::{BTreeSet, HashMap},
     env,
     fs::read_to_string,
     path::{Path, PathBuf},
@@ -80,6 +79,10 @@ struct Cli {
     /// - force: Always regenerate all files (use for clean builds or CI)
     #[arg(long, value_enum, default_value_t = OutputMode::Auto)]
     mode: OutputMode,
+
+    /// Output directory name under releases/ (default: "dev")
+    #[arg(long, default_value = "dev")]
+    output: String,
 }
 
 const LOG_PREFIX: &str = "[build-guest]";
@@ -217,6 +220,7 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
         let app_comm = app_prover.app_commit();
         let exe_commit_u32 = app_comm.app_exe_commit.to_u32_digest();
         let vm_commit_u32 = app_comm.app_vm_commit.to_u32_digest();
+           
 
         write_commitment(
             &Path::new(project_dir).join(format!("{project_name}_exe_commit.rs")),
@@ -281,9 +285,27 @@ fn generate_root_verifier(workspace_dir: &Path, force_overwrite: bool) -> Result
             "{LOG_PREFIX} Root verifier already exists, skipping (use --output-mode force to overwrite)"
         );
         return Ok(());
-    }
+}
 
     let asm = openvm_sdk::Sdk::riscv32().generate_root_verifier_asm();
+    std::fs::write(&root_verifier_path, asm).expect("fail to write");
+
+    println!(
+        "{LOG_PREFIX} Root verifier generated at: {}",
+        root_verifier_path.display()
+    );
+
+
+    // Check if file exists and skip if in auto mode
+    if !force_overwrite && root_verifier_path.exists() {
+        println!(
+            "{LOG_PREFIX} Root verifier already exists, skipping (use --output-mode force to overwrite)"
+        );
+        return Ok(());
+    }
+
+    let agg_stark_pk = AggStarkProvingKey::keygen(AggStarkConfig::default());
+    let asm = openvm_sdk::Sdk::new().generate_root_verifier_asm(&agg_stark_pk);
     std::fs::write(&root_verifier_path, asm).expect("fail to write");
 
     println!(
@@ -336,7 +358,7 @@ fn generate_openvm_assets(
     force_overwrite: bool,
 ) -> Result<()> {
     // to use the 'foundry.toml'
-    env::set_current_dir(&workspace_dir)?;
+    env::set_current_dir(workspace_dir)?;
 
     generate_root_verifier(workspace_dir, force_overwrite)?;
     generate_evm_verifier(&release_output_dir.join("verifier"), true, force_overwrite)?;
@@ -362,7 +384,7 @@ pub fn main() -> Result<()> {
     let workspace_dir = metadata.workspace_root.into_std_path_buf();
     println!("{LOG_PREFIX} Workspace root: {}", workspace_dir.display());
 
-    let release_output_dir: std::path::PathBuf = workspace_dir.join("releases").join("dev");
+    let release_output_dir: std::path::PathBuf = workspace_dir.join("releases").join(&cli.output);
     std::fs::create_dir_all(&release_output_dir)?;
     println!(
         "{LOG_PREFIX} Release output directory: {}",
@@ -373,7 +395,6 @@ pub fn main() -> Result<()> {
     let force_overwrite = matches!(cli.mode, OutputMode::Force);
     generate_openvm_assets(&workspace_dir, &release_output_dir, force_overwrite)?;
 
-    // Always generate both app and openvm assets
     println!("{LOG_PREFIX} Generating app assets (always overwrite)");
     generate_app_assets(&workspace_dir, &release_output_dir)?;
 

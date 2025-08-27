@@ -51,6 +51,6 @@ regex = "1.11.1"
 glob = "0.3"
 
 [features]
-default = []
+default = ["limit-logs"]
 limit-logs = []
 perf-metrics = ["openvm-sdk/perf-metrics"]
