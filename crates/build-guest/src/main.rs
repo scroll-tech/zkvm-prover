@@ -1,24 +1,45 @@
 #![allow(clippy::ptr_arg)]
 //! Build script for guest circuits (chunk, batch, bundle).
 //!
-//! This script handles several stages:
-//! 1. Generating leaf commitments for circuit verifiers.
-//! 2. Generating the root verifier assembly code (if batch or bundle is built).
-//! 3. Building guest programs (ELF), transpiling them to VM executables (.vmexe),
-//!    and generating executable commitments.
+//! This script builds OpenVM guest programs and generates associated assets:
 //!
-//! Environment variables control behavior:
-//! - `BUILD_PROJECT`: Comma-separated list of projects to build (e.g., "chunk,batch"). Defaults to "chunk,batch,bundle".
-//! - `BUILD_STAGES`: Comma-separated list of stages to run (e.g., "stage1,stage3"). Defaults to "stage1,stage2,stage3".
+//! ## App Assets Generation:
+//! 1. Builds guest programs (ELF) for specified projects
+//! 2. Transpiles ELF files to VM executables (.vmexe)
+//! 3. Generates executable and VM commitments
+//! 4. Creates verification keys and supporting files
+//!
+//! ## OpenVM Assets Generation:
+//! 1. Generates root verifier assembly code
+//! 2. Creates EVM verifier contract (Solidity) and bytecode
+//!
+//! ## Usage:
+//! ```bash
+//! cargo run --bin build-guest [OPTIONS]
+//! ```
+//!
+//! ## Options:
+//! - `--mode <MODE>`: Generation mode (auto|force)
+//!   - `auto`: Skip generation if output files already exist (default, faster for development)
+//!   - `force`: Always regenerate all files (use for clean builds or CI)
+//!
+//! ## Environment Variables:
+//! - `BUILD_PROJECT`: Comma-separated list of projects to build (e.g., "chunk,batch").
+//!   Defaults to "chunk,batch,bundle".
+//!
+//! ## Output:
+//! - App assets: `releases/dev/{project_name}/`
+//! - OpenVM assets: `releases/dev/verifier/`
+//! - Commitment files: Written to respective circuit crate directories
 
 use std::{
-    collections::{BTreeSet, HashMap},
     env,
     fs::read_to_string,
     path::{Path, PathBuf},
     time::Instant,
 };
 
+use clap::{Parser, ValueEnum};
 use dotenv::dotenv;
 use eyre::Result;
 use openvm_build::GuestOptions;
@@ -26,15 +47,39 @@ use openvm_native_compiler::ir::DIGEST_SIZE;
 use openvm_sdk::{
     F, Sdk,
     commit::CommitBytes,
-    config::{AppConfig, SdkVmConfig},
-    fs::write_exe_to_file,
+    config::{AggStarkConfig, AppConfig, SdkVmConfig},
+    fs::write_object_to_file,
+    keygen::AggStarkProvingKey,
 };
 use openvm_stark_sdk::{openvm_stark_backend::p3_field::PrimeField32, p3_bn254_fr::Bn254Fr};
 use snark_verifier_sdk::snark_verifier::loader::evm::compile_solidity;
 
 mod verifier;
 
-pub(crate) const LOG_PREFIX: &str = "[build-guest]";
+#[derive(Debug, Clone, ValueEnum)]
+enum OutputMode {
+    /// Skip generation when output file already exists (default)
+    Auto,
+    /// Always overwrite existing files
+    Force,
+}
+
+#[derive(Parser)]
+#[command(name = "build-guest")]
+#[command(about = "Build script for guest circuits (chunk, batch, bundle)")]
+struct Cli {
+    /// Generation mode for OpenVM assets:
+    /// - auto: Skip generation if output files already exist (faster for development)
+    /// - force: Always regenerate all files (use for clean builds or CI)
+    #[arg(long, value_enum, default_value_t = OutputMode::Auto)]
+    mode: OutputMode,
+
+    /// Output directory name under releases/ (default: "dev")
+    #[arg(long, default_value = "dev")]
+    output: String,
+}
+
+const LOG_PREFIX: &str = "[build-guest]";
 
 /// File descriptor for app openvm config.
 const FD_APP_CONFIG: &str = "openvm.toml";
@@ -48,7 +93,9 @@ fn write_commitment(output_path: &PathBuf, commitment: [u32; DIGEST_SIZE]) -> Re
         std::fs::create_dir_all(parent)?;
     }
     std::fs::write(output_path, content)?;
+
     println!("{LOG_PREFIX} Wrote commitment to {}", output_path.display());
+
     Ok(())
 }
 
@@ -70,100 +117,27 @@ fn write_commitment_as_evm_hex(
     println!("{LOG_PREFIX} Wrote commitment to {}", output_path.display());
     Ok(())
 }
-
 /// Compresses an 8-element u32 commitment into a single Fr element.
 /// Used for generating digests compatible with on-chain verifiers.
 fn compress_commitment(commitment: &[u32; DIGEST_SIZE]) -> Bn254Fr {
     CommitBytes::from_u32_digest(commitment).to_bn254()
 }
 
-/// Stage 1: Generates and writes leaf commitments for each specified project.
-fn run_stage1_leaf_commitments(
-    project_names: &[&str],
-    workspace_dir: &Path,
-    release_output_dir: &PathBuf,
-) -> Result<HashMap<String, [u32; DIGEST_SIZE]>> {
-    println!("{LOG_PREFIX} === Stage 1: Generating Leaf Commitments ===");
-    let mut leaf_commitments = HashMap::new();
-    for &project_name in project_names {
-        println!("{LOG_PREFIX} Processing project: {project_name}");
-        let project_dir = workspace_dir
-            .join("crates")
-            .join("circuits")
-            .join(format!("{project_name}-circuit"));
-        let path_app_config = Path::new(&project_dir).join(FD_APP_CONFIG);
-        let app_config: AppConfig<SdkVmConfig> =
-            toml::from_str(&read_to_string(&path_app_config).unwrap()).unwrap();
+/// Builds guest programs, transpiles them, and generates executable commitments.
+fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Result<()> {
+    println!("{LOG_PREFIX} === Generating App Assets ===");
 
-        // Generate public key (which includes leaf commitment)
-        let app_pk = Sdk::new().app_keygen(app_config.clone())?;
-        let leaf_vm_verifier_commit_f: [F; DIGEST_SIZE] = app_pk
-            .leaf_committed_exe
-            .committed_program
-            .commitment
-            .into();
-        let leaf_vm_verifier_commit_u32 = leaf_vm_verifier_commit_f.map(|f| f.as_canonical_u32());
-        leaf_commitments.insert(project_name.to_string(), leaf_vm_verifier_commit_u32);
+    // Determine which projects to build
+    let projects_to_build_str = env::var("BUILD_PROJECT");
+    let projects_to_build = projects_to_build_str
+        .as_ref()
+        .map(|s| s.split(',').filter(|p| !p.is_empty()).collect::<Vec<_>>())
+        .unwrap_or_else(|_| vec!["chunk", "batch", "bundle"]); // Default projects
 
-        // Write the commitment to a .rs file
-        let output_path = project_dir.join(format!("{project_name}_leaf_commit.rs"));
-        write_commitment(&output_path, leaf_vm_verifier_commit_u32)?;
+    println!("{LOG_PREFIX} Projects to build: {:?}", projects_to_build);
 
-        // Special handling for bundle project: generate digest_2
-        if project_name == "bundle" {
-            println!("{LOG_PREFIX} Generating digest_2 for bundle project...");
-            let output_path = release_output_dir.join(project_name).join("digest_2.hex");
-            write_commitment_as_evm_hex(&output_path, leaf_vm_verifier_commit_u32)?;
-        }
-    }
-    println!("{LOG_PREFIX} === Stage 1 Finished ===");
-    Ok(leaf_commitments)
-}
-
-/// Stage 2: Generates the root verifier assembly code.
-fn run_stage2_root_verifier(project_names: &[&str], workspace_dir: &Path) -> Result<()> {
-    println!("{LOG_PREFIX} === Stage 2: Generating Root Verifier ===");
-    use openvm_sdk::{config::AggStarkConfig, keygen::AggStarkProvingKey};
-    // Only generate if "batch" or "bundle" is being built, as they use recursive verification.
-    if project_names
-        .iter()
-        .any(|&name| name == "batch" || name == "bundle")
-    {
-        println!("{LOG_PREFIX} Generating root verifier assembly...");
-        let root_verifier_path = workspace_dir
-            .join("crates")
-            .join("build-guest")
-            .join("root_verifier.asm");
-
-        println!("generating AggStarkProvingKey");
-        let agg_stark_pk = AggStarkProvingKey::keygen(AggStarkConfig::default());
-
-        println!("generating root_verifier.asm");
-        let asm = openvm_sdk::Sdk::new().generate_root_verifier_asm(&agg_stark_pk);
-        std::fs::write(&root_verifier_path, asm).expect("fail to write");
-
-        println!(
-            "{LOG_PREFIX} Root verifier generated at: {}",
-            root_verifier_path.display()
-        );
-    } else {
-        println!(
-            "{LOG_PREFIX} Skipping root verifier generation (not needed for selected projects)."
-        );
-    }
-    println!("{LOG_PREFIX} === Stage 2 Finished ===");
-    Ok(())
-}
-
-/// Stage 3: Builds guest programs, transpiles them, and generates executable commitments.
-fn run_stage3_exe_commits(
-    project_names: &[&str],
-    workspace_dir: &Path,
-    release_output_dir: &PathBuf,
-) -> Result<HashMap<String, [u32; DIGEST_SIZE]>> {
-    println!("{LOG_PREFIX} === Stage 3: Generating Executable Commitments ===");
-    let mut exe_commitments = HashMap::new();
-    for &project_name in project_names {
+    let mut vk_dump: serde_json::Value = serde_json::from_str("{}").unwrap();
+    for project_name in projects_to_build {
         let project_path = workspace_dir
             .join("crates")
             .join("circuits")
@@ -203,7 +177,8 @@ fn run_stage3_exe_commits(
         );
         let guest_opts = GuestOptions::default();
         let guest_opts = guest_opts.with_profile("maxperf".to_string());
-        let elf = Sdk::new()
+        let sdk = Sdk::new();
+        let elf = sdk
             .build(
                 guest_opts,
                 &app_config.app_vm_config,
@@ -232,15 +207,12 @@ fn run_stage3_exe_commits(
         std::fs::create_dir_all(&path_assets)?;
         // Write exe to disc.
         let path_app_exe: PathBuf = path_assets.join("app.vmexe");
-        write_exe_to_file(app_exe.clone(), &path_app_exe)?;
-
+        write_object_to_file(&path_app_exe, app_exe.clone())?;
         println!("{LOG_PREFIX} exe written to {path_app_exe:?}");
 
-        // 3. Commit VM Executable
+        // 3. Compute and Write Executable Commitment
         let app_committed_exe =
             Sdk::new().commit_app_exe(app_config.app_fri_params.fri_params, app_exe)?;
-
-        // 4. Compute and Write Executable Commitment
         use openvm_circuit::arch::VmConfig;
         let exe_commit_f: [F; DIGEST_SIZE] = app_committed_exe
             .compute_exe_commit(
@@ -248,88 +220,108 @@ fn run_stage3_exe_commits(
             )
             .into();
         let exe_commit_u32: [u32; DIGEST_SIZE] = exe_commit_f.map(|f| f.as_canonical_u32());
-        exe_commitments.insert(project_name.to_string(), exe_commit_u32);
+        let app_pk = Sdk::new().app_keygen(app_config.clone())?;
+        let vm_commit_f: [F; DIGEST_SIZE] = app_pk
+            .leaf_committed_exe
+            .committed_program
+            .commitment
+            .into();
+        let vm_commit_u32 = vm_commit_f.map(|f| f.as_canonical_u32());
 
-        let commit_filename = format!("{project_name}_exe_commit.rs");
+        write_commitment(
+            &Path::new(project_dir).join(format!("{project_name}_exe_commit.rs")),
+            exe_commit_u32,
+        )?;
+        write_commitment(
+            &Path::new(project_dir).join(format!("{project_name}_vm_commit.rs")),
+            vm_commit_u32,
+        )?;
 
-        let output_path = Path::new(project_dir).join(&commit_filename);
-        write_commitment(&output_path, exe_commit_u32)?;
-
-        // Special handling for bundle project: generate digest_1
+        // Special handling for bundle project
         if project_name == "bundle" {
-            println!("{LOG_PREFIX} Generating digest_1 for bundle project...",);
             let output_path = release_output_dir.join(project_name).join("digest_1.hex");
             write_commitment_as_evm_hex(&output_path, exe_commit_u32)?;
+            let output_path = release_output_dir.join(project_name).join("digest_2.hex");
+            write_commitment_as_evm_hex(&output_path, vm_commit_u32)?;
         }
+
+        use scroll_zkvm_types::{types_agg::ProgramCommitment, utils::serialize_vk};
+        let app_vk = serialize_vk::serialize(&ProgramCommitment {
+            exe: exe_commit_u32,
+            vm: vm_commit_u32,
+        });
+
+        let app_vk = hex::encode(&app_vk);
+        println!("{project_name}: {app_vk}");
+
+        vk_dump[format!("{project_name}_vk")] = serde_json::Value::String(app_vk);
 
         println!(
             "{LOG_PREFIX} Finished build for config in {:?}",
             start_time.elapsed()
         );
     }
-    println!("{LOG_PREFIX} === Stage 3 Finished ===");
-    Ok(exe_commitments)
-}
 
-/// Stage 4: Dumps VK data to a JSON file if both exe and leaf commitments are available.
-fn run_stage4_dump_vk_json(
-    release_output_dir: &PathBuf,
-    leaf_commitments: Option<HashMap<String, [u32; DIGEST_SIZE]>>,
-    exe_commitments: Option<HashMap<String, [u32; DIGEST_SIZE]>>,
-) -> Result<()> {
-    println!("{LOG_PREFIX} === Stage 4: Dumping VK JSON ===");
-
-    // Only dump VKs when both exe_commitments and leaf_commitments are available
-    if let (Some(exe_commitments), Some(leaf_commitments)) = (&exe_commitments, &leaf_commitments) {
-        #[derive(Default, Debug, serde::Serialize)]
-        struct VKDump {
-            pub chunk_vk: String,
-            pub batch_vk: String,
-            pub bundle_vk: String,
-        }
-        let [chunk_vk, batch_vk, bundle_vk] = ["chunk", "batch", "bundle"].map(|circuit| {
-            if let (Some(exe), Some(leaf)) =
-                (exe_commitments.get(circuit), leaf_commitments.get(circuit))
-            {
-                use scroll_zkvm_types::{types_agg::ProgramCommitment, utils::serialize_vk};
-                let app_vk = serialize_vk::serialize(&ProgramCommitment {
-                    exe: *exe,
-                    vm: *leaf,
-                });
-
-                let app_vk = hex::encode(&app_vk);
-                println!("{circuit}: {app_vk}");
-                app_vk
-            } else {
-                String::new() // Empty string for circuits that weren't built
-            }
-        });
-
-        let dump = VKDump {
-            chunk_vk,
-            batch_vk,
-            bundle_vk,
-        };
-
-        let output_path = release_output_dir.join("verifier").join("openVmVk.json");
-        if let Some(parent) = output_path.parent() {
-            std::fs::create_dir_all(parent)?;
-        }
-        let f = std::fs::File::create(output_path)?;
-        serde_json::to_writer(f, &dump)?;
-        println!(
-            "{LOG_PREFIX} openVmVk.json: {}",
-            serde_json::to_string_pretty(&dump)?
-        );
-        println!("{LOG_PREFIX} VK data written to openVmVk.json");
+    let output_path = release_output_dir.join("verifier").join("openVmVk.json");
+    if let Some(parent) = output_path.parent() {
+        std::fs::create_dir_all(parent)?;
     }
+    let f = std::fs::File::create(output_path)?;
+    serde_json::to_writer(f, &vk_dump)?;
+    println!(
+        "{LOG_PREFIX} openVmVk.json: {}",
+        serde_json::to_string_pretty(&vk_dump)?
+    );
+    println!("{LOG_PREFIX} VK data written to openVmVk.json");
     Ok(())
 }
 
-fn run_stage5_dump_evm_verifier(verifier_output_dir: &PathBuf, recompute_mode: bool) -> Result<()> {
-    println!("{LOG_PREFIX} === Stage 5: Dumping EVM VERIFIER ===");
+/// Generates the root verifier assembly code.
+fn generate_root_verifier(workspace_dir: &Path, force_overwrite: bool) -> Result<()> {
+    println!("{LOG_PREFIX} === Generating Root Verifier Assembly ===");
+
+    let root_verifier_path = workspace_dir
+        .join("crates")
+        .join("build-guest")
+        .join("root_verifier.asm");
+
+    // Check if file exists and skip if in auto mode
+    if !force_overwrite && root_verifier_path.exists() {
+        println!(
+            "{LOG_PREFIX} Root verifier already exists, skipping (use --output-mode force to overwrite)"
+        );
+        return Ok(());
+    }
+
+    let agg_stark_pk = AggStarkProvingKey::keygen(AggStarkConfig::default());
+    let asm = openvm_sdk::Sdk::new().generate_root_verifier_asm(&agg_stark_pk);
+    std::fs::write(&root_verifier_path, asm).expect("fail to write");
+
+    println!(
+        "{LOG_PREFIX} Root verifier generated at: {}",
+        root_verifier_path.display()
+    );
+
+    Ok(())
+}
+
+fn generate_evm_verifier(
+    verifier_output_dir: &PathBuf,
+    recompute_mode: bool,
+    force_overwrite: bool,
+) -> Result<()> {
+    println!("{LOG_PREFIX} === Dumping EVM VERIFIER ===");
     let path_verifier_sol = verifier_output_dir.join("verifier.sol");
     let path_verifier_bin = verifier_output_dir.join("verifier.bin");
+
+    // Check if files exist and skip if in auto mode
+    if !force_overwrite && path_verifier_sol.exists() && path_verifier_bin.exists() {
+        println!(
+            "{LOG_PREFIX} EVM verifier files already exist, skipping (use --output-mode force to overwrite)"
+        );
+        return Ok(());
+    }
+
     if let Some(parent) = path_verifier_bin.parent() {
         std::fs::create_dir_all(parent)?;
     }
@@ -346,11 +338,28 @@ fn run_stage5_dump_evm_verifier(verifier_output_dir: &PathBuf, recompute_mode: b
     std::fs::write(&path_verifier_bin, &verifier_bin)?;
     println!("{LOG_PREFIX} verifier_bin written to {path_verifier_bin:?}");
 
-    println!("{LOG_PREFIX} === Stage 5 Finished ===");
+    Ok(())
+}
+
+fn generate_openvm_assets(
+    workspace_dir: &PathBuf,
+    release_output_dir: &PathBuf,
+    force_overwrite: bool,
+) -> Result<()> {
+    // to use the 'foundry.toml'
+    env::set_current_dir(workspace_dir)?;
+
+    generate_root_verifier(workspace_dir, force_overwrite)?;
+    generate_evm_verifier(&release_output_dir.join("verifier"), true, force_overwrite)?;
     Ok(())
 }
 
 pub fn main() -> Result<()> {
+    let cli = Cli::parse();
+
+    println!("{LOG_PREFIX} Generation mode: {:?}", cli.mode);
+    println!("{LOG_PREFIX} Will generate both app and openvm assets");
+
     // Set current directory to the crate's root
     let manifest_dir = env::var("CARGO_MANIFEST_DIR")?;
     env::set_current_dir(&manifest_dir)?;
@@ -364,78 +373,19 @@ pub fn main() -> Result<()> {
     let workspace_dir = metadata.workspace_root.into_std_path_buf();
     println!("{LOG_PREFIX} Workspace root: {}", workspace_dir.display());
 
-    let release_output_dir: std::path::PathBuf = workspace_dir.join("releases").join("dev");
+    let release_output_dir: std::path::PathBuf = workspace_dir.join("releases").join(&cli.output);
     std::fs::create_dir_all(&release_output_dir)?;
     println!(
         "{LOG_PREFIX} Release output directory: {}",
         release_output_dir.display()
     );
 
-    // Determine which projects to build
-    let projects_to_build_str = env::var("BUILD_PROJECT");
-    let projects_to_build = projects_to_build_str
-        .as_ref()
-        .map(|s| s.split(',').filter(|p| !p.is_empty()).collect::<Vec<_>>())
-        .unwrap_or_else(|_| vec!["chunk", "batch", "bundle"]); // Default projects
+    println!("{LOG_PREFIX} Generating openvm assets");
+    let force_overwrite = matches!(cli.mode, OutputMode::Force);
+    generate_openvm_assets(&workspace_dir, &release_output_dir, force_overwrite)?;
 
-    if projects_to_build.is_empty() {
-        println!("{LOG_PREFIX} No projects specified in BUILD_PROJECT. Exiting.");
-        return Ok(());
-    }
-    println!("{LOG_PREFIX} Projects to build: {:?}", projects_to_build);
-
-    // Determine which stages to run
-    let stages_env =
-        env::var("BUILD_STAGES").unwrap_or_else(|_| "stage1,stage2,stage3".to_string());
-    let stages_to_run: BTreeSet<&str> = if stages_env.trim().is_empty() {
-        // If empty string is provided, run all stages
-        ["stage1", "stage2", "stage3"].iter().cloned().collect()
-    } else {
-        stages_env.split(',').filter(|s| !s.is_empty()).collect()
-    };
-
-    if stages_to_run.is_empty() {
-        println!("{LOG_PREFIX} No stages specified in BUILD_STAGES. Exiting.");
-        return Ok(());
-    }
-    println!("{LOG_PREFIX} Stages to run: {:?}", stages_to_run);
-
-    // Execute selected stages
-    let leaf_commitments = if stages_to_run.contains("stage1") {
-        Some(run_stage1_leaf_commitments(
-            &projects_to_build,
-            &workspace_dir,
-            &release_output_dir,
-        )?)
-    } else {
-        println!("{LOG_PREFIX} Skipping Stage 1: Leaf Commitments");
-        None
-    };
-
-    if stages_to_run.contains("stage2") {
-        run_stage2_root_verifier(&projects_to_build, &workspace_dir)?;
-    } else {
-        println!("{LOG_PREFIX} Skipping Stage 2: Root Verifier");
-    };
-
-    let exe_commitments = if stages_to_run.contains("stage3") {
-        Some(run_stage3_exe_commits(
-            &projects_to_build,
-            &workspace_dir,
-            &release_output_dir,
-        )?)
-    } else {
-        println!("{LOG_PREFIX} Skipping Stage 3: Exe Commits");
-        None
-    };
-
-    run_stage4_dump_vk_json(&release_output_dir, leaf_commitments, exe_commitments)?;
-
-    env::set_current_dir(&workspace_dir)?;
-    run_stage5_dump_evm_verifier(
-        &release_output_dir.join("verifier"),
-        stages_to_run.contains("stage5"),
-    )?;
+    println!("{LOG_PREFIX} Generating app assets (always overwrite)");
+    generate_app_assets(&workspace_dir, &release_output_dir)?;
 
     println!("{LOG_PREFIX} Build process completed successfully.");
     Ok(())

@@ -15,7 +15,6 @@ openvm-build = { workspace = true, default-features = false }
 openvm-circuit = { workspace = true }
 
 eyre.workspace = true
-serde.workspace = true
 hex.workspace = true
 serde_json.workspace = true
 snark-verifier-sdk.workspace = true
@@ -23,6 +22,7 @@ toml.workspace = true
 
 cargo_metadata = "0.19.1"
 dotenv = "0.15.0"
+clap = { version = "4.0", features = ["derive"] }
 
 [features]
 default = []

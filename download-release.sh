@@ -23,7 +23,9 @@ function download_by_http() {
     bundle/openvm.toml \
     batch/app.vmexe \
     batch/openvm.toml; do
-    wget https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/releases/$SCROLL_ZKVM_VERSION/$f -O releases/$SCROLL_ZKVM_VERSION/$f
+    output_path="releases/$SCROLL_ZKVM_VERSION/$f"
+    mkdir -p "$(dirname "$output_path")"
+    wget https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/releases/$SCROLL_ZKVM_VERSION/$f -O "$output_path"
   done
 }
 
