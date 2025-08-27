@@ -6729,7 +6729,7 @@ dependencies = [
  "metrics-tracing-context",
  "once_cell",
  "openvm-benchmarks-prove",
- "openvm-build",
+ "openvm-benchmarks-utils",
  "openvm-circuit",
  "openvm-native-recursion",
  "openvm-sdk",

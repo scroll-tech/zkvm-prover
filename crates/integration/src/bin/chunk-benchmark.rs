@@ -1,9 +1,9 @@
 use std::{env, fs};
 use clap::Parser;
 use openvm_benchmarks_prove::util::BenchmarkCli;
-use openvm_build::GuestOptions;
+use openvm_benchmarks_utils::build_elf;
 use openvm_circuit::openvm_stark_sdk::bench::run_with_metric_collection;
-use openvm_sdk::config::{AppConfig, SdkVmConfig, SdkVmCpuBuilder};
+use openvm_sdk::config::{SdkVmConfig, SdkVmCpuBuilder};
 use openvm_sdk::{Sdk, StdIn};
 use scroll_zkvm_integration::testers::chunk::{get_witness_from_env_or_builder, preset_chunk, ChunkProverTester};
 use scroll_zkvm_integration::{PartialProvingTask, ProverTester, DIR_TESTRUN, WORKSPACE_ROOT};
@@ -20,19 +20,12 @@ fn main() -> eyre::Result<()> {
 
     let args: BenchmarkCli = BenchmarkCli::parse();
 
-    let app_config: AppConfig<SdkVmConfig> =
-        toml::from_str(include_str!("../../../circuits/chunk-circuit/openvm.toml"))?;
-    let sdk = Sdk::new(app_config.clone())?;
-    let elf = sdk.build(
-        GuestOptions::default().with_profile(if args.profiling {
-            "profiling"
-        } else {
-            "maxperf"
-        }.to_string()),
-        WORKSPACE_ROOT.join("crates").join("circuits").join("chunk-circuit"),
-        &Default::default(),
-        None
-    )?;
+    let app_vm_config = SdkVmConfig::from_toml(include_str!("../../../circuits/chunk-circuit/openvm.toml"))?.app_vm_config;
+    let project_path = WORKSPACE_ROOT.join("crates").join("circuits").join("chunk-circuit");
+    let current_dir = env::current_dir()?;
+    env::set_current_dir(&project_path)?;
+    let elf = build_elf(&project_path.join("Cargo.toml"), if args.profiling { "profiling" } else { "maxperf" })?;
+    env::set_current_dir(current_dir)?;
 
     let mut stdin = StdIn::default();
 
@@ -42,7 +35,7 @@ fn main() -> eyre::Result<()> {
     run_with_metric_collection("OUTPUT_PATH", || {
         args.bench_from_exe::<SdkVmCpuBuilder, _>(
             "chunk-circuit",
-            app_config.app_vm_config,
+            app_vm_config,
             elf,
             stdin,
         )

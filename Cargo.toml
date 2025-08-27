@@ -43,6 +43,7 @@ openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", rev = 
 
 # openvm host libs
 openvm-benchmarks-prove = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-benchmarks-utils = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
 openvm-build = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
 openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
 openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }

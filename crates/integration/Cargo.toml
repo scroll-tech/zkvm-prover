@@ -18,7 +18,7 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 metrics-tracing-context.workspace = true
 openvm-benchmarks-prove = { workspace = true, default-features = false }
-openvm-build = { workspace = true, default-features = false }
+openvm-benchmarks-utils = { workspace = true, default-features = false }
 openvm-circuit.workspace = true
 openvm-sdk = { workspace = true, default-features = false }
 openvm-native-recursion = { workspace = true, default-features = false }
