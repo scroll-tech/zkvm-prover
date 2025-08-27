@@ -112,7 +112,7 @@ impl BatchInfo {
     }
 }
 
-pub type VersionedBatchInfo = (BatchInfo, ForkName);
+pub type VersionedBatchInfo = (BatchInfo, Version);
 
 impl MultiVersionPublicInputs for BatchInfo {
     fn pi_hash_by_fork(&self, fork_name: ForkName) -> B256 {
@@ -123,8 +123,7 @@ impl MultiVersionPublicInputs for BatchInfo {
         }
     }
 
-    fn pi_hash_by_version(&self, version: u8) -> B256 {
-        let version = Version::from(version);
+    fn pi_hash_by_version(&self, version: Version) -> B256 {
         match (version.domain, version.stf_version) {
             (Domain::Scroll, STFVersion::V6) => self.pi_hash_by_fork(ForkName::EuclidV1),
             (Domain::Scroll, STFVersion::V7) => self.pi_hash_by_fork(ForkName::EuclidV2),
@@ -142,13 +141,11 @@ impl MultiVersionPublicInputs for BatchInfo {
     /// - state roots MUST be chained
     /// - batch hashes MUST be chained
     /// - L1 msg queue hashes MUST be chained
-    fn validate(&self, prev_pi: &Self, version: u8) {
+    fn validate(&self, prev_pi: &Self, version: Version) {
         assert_eq!(self.chain_id, prev_pi.chain_id);
         assert_eq!(self.parent_state_root, prev_pi.state_root);
         assert_eq!(self.parent_batch_hash, prev_pi.batch_hash);
         assert_eq!(self.prev_msg_queue_hash, prev_pi.post_msg_queue_hash);
-
-        let version = Version::from(version);
 
         if version.fork == ForkName::EuclidV1 {
             assert_eq!(self.prev_msg_queue_hash, B256::ZERO);

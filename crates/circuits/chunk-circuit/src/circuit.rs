@@ -1,4 +1,5 @@
 use openvm::init;
+use scroll_zkvm_types_base::version::Version;
 use scroll_zkvm_types_chunk::ChunkWitness;
 use scroll_zkvm_types_circuit::{
     Circuit,
@@ -38,8 +39,10 @@ impl Circuit for ChunkCircuit {
     }
 
     fn validate(witness: Self::Witness) -> Self::PublicInputs {
-        let fork_name = witness.fork_name;
+        let version = Version::from(witness.version);
+        assert_eq!(version.fork, witness.fork_name);
+
         let chunk_info = ChunkInfo::try_from(witness).expect("failed to execute chunk");
-        (chunk_info, fork_name)
+        (chunk_info, version)
     }
 }

@@ -8,6 +8,7 @@ version = "0.6.0"
 [dependencies]
 bincode = { workspace = true }
 ecies = { workspace = true }
+scroll-zkvm-types-base = { workspace = true }
 scroll-zkvm-types-circuit = { workspace = true }
 scroll-zkvm-types-chunk = { workspace = true }
 sbv-precompile = { workspace = true }

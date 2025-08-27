@@ -237,7 +237,7 @@ impl ChunkInfo {
     }
 }
 
-pub type VersionedChunkInfo = (ChunkInfo, ForkName);
+pub type VersionedChunkInfo = (ChunkInfo, Version);
 
 impl MultiVersionPublicInputs for ChunkInfo {
     /// Compute the public input hash for the chunk.
@@ -256,8 +256,7 @@ impl MultiVersionPublicInputs for ChunkInfo {
     }
 
     /// Compute the public input hash for the chunk given the version tuple.
-    fn pi_hash_by_version(&self, version: u8) -> B256 {
-        let version = Version::from(version);
+    fn pi_hash_by_version(&self, version: Version) -> B256 {
         match (version.domain, version.stf_version) {
             (Domain::Scroll, STFVersion::V6) => self.pi_hash_by_fork(ForkName::EuclidV1),
             (Domain::Scroll, STFVersion::V7) => self.pi_hash_by_fork(ForkName::EuclidV2),
@@ -276,12 +275,10 @@ impl MultiVersionPublicInputs for ChunkInfo {
     /// - L1 msg queue hash MUST be chained
     ///
     /// Furthermore, for validiums we must also chain the blockhashes.
-    fn validate(&self, prev_pi: &Self, version: u8) {
+    fn validate(&self, prev_pi: &Self, version: Version) {
         assert_eq!(self.chain_id, prev_pi.chain_id);
         assert_eq!(self.prev_state_root, prev_pi.post_state_root);
         assert_eq!(self.prev_msg_queue_hash, prev_pi.post_msg_queue_hash);
-
-        let version = Version::from(version);
 
         // message queue hash is used only after euclidv2 (da-codec@v7)
         if version.fork == ForkName::EuclidV1 {

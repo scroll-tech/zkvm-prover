@@ -3,7 +3,8 @@ use alloy_primitives::B256;
 pub mod batch;
 pub mod bundle;
 pub mod chunk;
-pub use crate::fork_name::ForkName;
+
+pub use crate::{fork_name::ForkName, version::Version};
 
 /// Defines behaviour to be implemented by types representing the public-input values of a circuit.
 pub trait PublicInputs {
@@ -18,18 +19,18 @@ pub trait PublicInputs {
 /// helper trait to extend PublicInputs
 pub trait MultiVersionPublicInputs {
     fn pi_hash_by_fork(&self, fork_name: ForkName) -> B256;
-    fn pi_hash_by_version(&self, version: u8) -> B256;
-    fn validate(&self, prev_pi: &Self, version: u8);
+    fn pi_hash_by_version(&self, version: Version) -> B256;
+    fn validate(&self, prev_pi: &Self, version: Version);
 }
 
-impl<T: MultiVersionPublicInputs> PublicInputs for (T, u8) {
+impl<T: MultiVersionPublicInputs> PublicInputs for (T, Version) {
     fn pi_hash(&self) -> B256 {
         self.0.pi_hash_by_version(self.1)
     }
 
     fn validate(&self, prev_pi: &Self) {
         // version remains unchanged.
-        assert_eq!(self.1, prev_pi.1);
+        assert_eq!(self.1.as_version_byte(), prev_pi.1.as_version_byte());
 
         // perform inner validation.
         self.0.validate(&prev_pi.0, self.1)

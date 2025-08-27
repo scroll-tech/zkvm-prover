@@ -103,10 +103,11 @@ impl BundleInfo {
         keccak256(pi)
     }
 
-    pub fn pi_hash_versioned(&self, version: u8, pi: &[u8]) -> B256 {
+    pub fn pi_hash_versioned(&self, version: Version, pi: &[u8]) -> B256 {
+        let version_byte = version.as_version_byte();
         keccak256(
             std::iter::empty()
-                .chain(B256::left_padding_from(&version.to_be_bytes()).as_slice())
+                .chain(B256::left_padding_from(&version_byte.to_be_bytes()).as_slice())
                 .chain(pi)
                 .cloned()
                 .collect::<Vec<u8>>(),
@@ -127,7 +128,7 @@ impl BundleInfo {
     }
 }
 
-pub type VersionedBundleInfo = (BundleInfo, ForkName);
+pub type VersionedBundleInfo = (BundleInfo, Version);
 
 impl MultiVersionPublicInputs for BundleInfo {
     fn pi_hash_by_fork(&self, fork_name: ForkName) -> B256 {
@@ -138,9 +139,8 @@ impl MultiVersionPublicInputs for BundleInfo {
         }
     }
 
-    fn pi_hash_by_version(&self, version: u8) -> B256 {
-        let parsed_version = Version::from(version);
-        match (parsed_version.domain, parsed_version.stf_version) {
+    fn pi_hash_by_version(&self, version: Version) -> B256 {
+        match (version.domain, version.stf_version) {
             (Domain::Scroll, STFVersion::V6) => self.pi_hash_euclidv1(),
             (Domain::Scroll, STFVersion::V7) => self.pi_hash_euclidv2(),
             (Domain::Scroll, STFVersion::V8) => self.pi_hash_feynman(),
@@ -153,7 +153,7 @@ impl MultiVersionPublicInputs for BundleInfo {
         }
     }
 
-    fn validate(&self, _prev_pi: &Self, _version: u8) {
+    fn validate(&self, _prev_pi: &Self, _version: Version) {
         unreachable!("bundle is the last layer and is not aggregated by any other circuit");
     }
 }
