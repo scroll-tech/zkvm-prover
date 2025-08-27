@@ -3,13 +3,14 @@ use std::{
     sync::Arc,
 };
 
+use openvm_sdk::DefaultStarkEngine;
 use openvm_circuit::arch::instructions::exe::VmExe;
-use openvm_native_circuit::NativeCpuBuilder;
+use openvm_native_circuit::NativeGpuBuilder;
 use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
 use openvm_sdk::{
     DefaultStaticVerifierPvHandler, F, GenericSdk, Sdk, StdIn,
     commit::AppExecutionCommit,
-    config::{AppConfig, SdkVmConfig, SdkVmCpuBuilder},
+    config::{AppConfig, SdkVmConfig, SdkVmGpuBuilder},
     fs::read_object_from_file,
     keygen::{AggProvingKey, AppProvingKey},
     prover::StarkProver,
@@ -50,7 +51,7 @@ pub struct Prover {
     /// Configuration for the prover.
     pub config: ProverConfig,
     pub sdk: Sdk,
-    pub prover: StarkProver<BabyBearPoseidon2Engine, SdkVmCpuBuilder, NativeCpuBuilder>,
+    pub prover: StarkProver<DefaultStarkEngine, SdkVmGpuBuilder, NativeGpuBuilder>,
 }
 
 /// Configure the [`Prover`].
@@ -64,7 +65,7 @@ pub struct ProverConfig {
     pub segment_len: Option<usize>,
 }
 
-const DEFAULT_SEGMENT_SIZE: usize = (1 << 22) - 100;
+const DEFAULT_SEGMENT_SIZE: usize = (1 << 22) - 10000;
 
 impl Prover {
     /// Setup the [`Prover`] given paths to the application's exe and proving key.

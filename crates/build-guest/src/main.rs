@@ -208,7 +208,7 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
 
         // 3. Compute and Write Executable Commitment
         let app_pk = sdk.app_pk();
-        let app_prover: AppProver<BabyBearPoseidon2Engine, _> = AppProver::new(
+        let app_prover: AppProver<openvm_sdk::DefaultStarkEngine, _> = AppProver::new(
             sdk.app_vm_builder().clone(),
             &app_pk.app_vm_pk,
             Arc::new(app_exe),
