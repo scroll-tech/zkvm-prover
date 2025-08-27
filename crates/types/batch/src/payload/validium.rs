@@ -1,144 +1,84 @@
-use alloy_primitives::B256;
+use alloy_primitives::{B256, keccak256};
 use types_base::{
     public_inputs::chunk::{BlockContextV2, ChunkInfo, SIZE_BLOCK_CTX},
-    utils::keccak256,
+    version::VALIDIUM_V1,
 };
 
-use crate::BatchHeaderV7;
+use crate::{BatchHeader, header::validium::BatchHeaderValidium};
 
-use super::{DA_CODEC_VERSION_V7, N_BLOB_BYTES};
+use super::v7::{
+    INDEX_BLOCK_CTX, INDEX_L2_BLOCK_NUM, INDEX_NUM_BLOCKS, INDEX_POST_MSG_QUEUE_HASH,
+    INDEX_PREV_MSG_QUEUE_HASH,
+};
 
-/// Envelope@v7 represents the generic envelope type from v7 onwards, marked by the appropriate
-/// da-codec version byte.
-pub type EnvelopeV7 = GenericEnvelopeV7<DA_CODEC_VERSION_V7>;
-
-pub type PayloadV7 = GenericPayloadV7<DA_CODEC_VERSION_V7>;
-
-/// Represents the data contained within an EIP-4844 blob that is published on-chain.
-///
-/// The bytes following some metadata represent zstd-encoded [`PayloadV7`] if the envelope is
-/// indicated as `is_encoded == true`.
-///
-/// Both da-codec@v7 and da-codec@v8 use the same envelope and payload structure, the only
-/// difference being the codec version byte in the envelope. Hence we supply that as a generic
-/// version type to [`EnvelopeV7`].
-#[derive(Debug, Clone)]
-pub struct GenericEnvelopeV7<const CODEC_VERSION: u8> {
+pub struct ValidiumEnvelope<const VERSION: u8> {
     /// The original envelope bytes supplied.
     ///
     /// Caching just for re-use later in challenge digest computation.
+    #[allow(dead_code)]
     pub envelope_bytes: Vec<u8>,
-    /// The version from da-codec, i.e. v7 in this case.
+    /// The [`Version`][version] byte as per new versioning system.
+    ///
+    /// [version]: types_base::version::Version
     pub version: u8,
-    /// A single byte boolean flag (value is 0 or 1) to denote whether or not the following blob
+    /// A single byte boolean flag (value is 0 or 1) to denote whether or not the following
     /// bytes represent a batch in its zstd-encoded or raw form.
     pub is_encoded: u8,
-    /// The unpadded bytes that possibly encode the [`PayloadV7`].
+    /// The unpadded bytes that can be decoded to the [`ValidiumPayload`].
     pub unpadded_bytes: Vec<u8>,
 }
 
-impl<const CODEC_VERSION: u8> super::Envelope for GenericEnvelopeV7<CODEC_VERSION> {
-    fn from_slice(blob_bytes: &[u8]) -> Self {
-        // The number of bytes is as expected.
-        assert_eq!(blob_bytes.len(), N_BLOB_BYTES);
+pub struct ValidiumPayload<const VERSION: u8> {
+    /// The [`Version`][version] byte as per new versioning system.
+    ///
+    /// [version]: types_base::version::Version
+    pub version: u8,
+    /// Message queue hash at the end of the previous validium batch.
+    pub prev_msg_queue_hash: B256,
+    /// Message queue hash at the end of the current validium batch.
+    pub post_msg_queue_hash: B256,
+    /// The block number of the first block in the validium batch.
+    pub initial_block_number: u64,
+    /// The number of blocks in the validium batch.
+    pub num_blocks: u16,
+    /// The block contexts of each block in the validium batch.
+    pub block_contexts: Vec<BlockContextV2>,
+    /// The L3 tx data flattened over every tx in every block in the batch.
+    pub tx_data: Vec<u8>,
+}
 
-        // The version of the blob encoding was as expected, i.e. da-codec@v7.
-        let version = blob_bytes[0];
-        assert_eq!(version, CODEC_VERSION);
+impl<const VERSION: u8> ValidiumEnvelope<VERSION> {
+    pub fn from_bytes(bytes: &[u8]) -> Self {
+        // Check the version of the batch.
+        let version = bytes[0];
+        assert_eq!(version, VERSION);
 
         // Calculate the unpadded size of the encoded payload.
-        //
-        // It should be at most the maximum number of bytes allowed.
-        let unpadded_size = (blob_bytes[1] as usize) * 256 * 256
-            + (blob_bytes[2] as usize) * 256
-            + blob_bytes[3] as usize;
-        assert!(unpadded_size <= N_BLOB_BYTES - 5);
+        let unpadded_size =
+            (bytes[1] as usize) * 256 * 256 + (bytes[2] as usize) * 256 + bytes[3] as usize;
 
         // Whether the envelope represents encoded payload or raw payload.
         //
         // Is a boolean.
-        let is_encoded = blob_bytes[4];
+        let is_encoded = bytes[4];
         assert!(is_encoded <= 1);
 
         // The padded bytes are all 0s.
-        for &padded_byte in blob_bytes.iter().skip(5 + unpadded_size) {
+        for &padded_byte in bytes.iter().skip(5 + unpadded_size) {
             assert_eq!(padded_byte, 0);
         }
 
         Self {
             version,
             is_encoded,
-            unpadded_bytes: blob_bytes[5..(5 + unpadded_size)].to_vec(),
-            envelope_bytes: blob_bytes.to_vec(),
+            unpadded_bytes: bytes[5..(5 + unpadded_size)].to_vec(),
+            envelope_bytes: bytes.to_vec(),
         }
     }
-
-    /// The verification of the EIP-4844 blob is done via point-evaluation precompile
-    /// implemented in-circuit.
-    ///
-    /// We require a random challenge point for this, and using Fiat-Shamir we compute it with
-    /// every byte in the blob along with the blob's versioned hash, i.e. an identifier for its KZG
-    /// commitment.
-    ///
-    /// keccak256(
-    ///     keccak256(envelope) ||
-    ///     versioned hash
-    /// )
-    fn challenge_digest(&self, blob_versioned_hash: B256) -> B256 {
-        keccak256(
-            std::iter::empty()
-                .chain(keccak256(&self.envelope_bytes))
-                .chain(blob_versioned_hash.0)
-                .collect::<Vec<u8>>(),
-        )
-    }
 }
 
-pub const INDEX_PREV_MSG_QUEUE_HASH: usize = 0;
-pub const INDEX_POST_MSG_QUEUE_HASH: usize = INDEX_PREV_MSG_QUEUE_HASH + 32;
-pub const INDEX_L2_BLOCK_NUM: usize = INDEX_POST_MSG_QUEUE_HASH + 32;
-pub const INDEX_NUM_BLOCKS: usize = INDEX_L2_BLOCK_NUM + 8;
-pub const INDEX_BLOCK_CTX: usize = INDEX_NUM_BLOCKS + 2;
-
-/// Represents the batch data, eventually encoded into an [`GenericEnvelopeV7`].
-///
-/// | Field                  | # Bytes | Type           | Index         |
-/// |------------------------|---------|----------------|---------------|
-/// | prevL1MessageQueueHash | 32      | bytes32        | 0             |
-/// | postL1MessageQueueHash | 32      | bytes32        | 32            |
-/// | initialL2BlockNumber   | 8       | u64            | 64            |
-/// | numBlocks              | 2       | u16            | 72            |
-/// | blockCtxs[0]           | 52      | BlockContextV2 | 74            |
-/// | ... blockCtxs[i] ...   | 52      | BlockContextV2 | 74 + 52*i     |
-/// | blockCtxs[n-1]         | 52      | BlockContextV2 | 74 + 52*(n-1) |
-/// | l2TxsData              | dynamic | bytes          | 74 + 52*n     |
-#[derive(Debug, Clone)]
-pub struct GenericPayloadV7<const CODEC_VERSION: u8> {
-    /// The version from da-codec, i.e. v7 in this case.
-    ///
-    /// Note: This is not really a part of payload, simply coopied from the envelope for
-    /// convenience.
-    pub version: u8,
-    /// Message queue hash at the end of the previous batch.
-    pub prev_msg_queue_hash: B256,
-    /// Message queue hash at the end of the current batch.
-    pub post_msg_queue_hash: B256,
-    /// The block number of the first block in the batch.
-    pub initial_block_number: u64,
-    /// The number of blocks in the batch.
-    pub num_blocks: u16,
-    /// The block contexts of each block in the batch.
-    pub block_contexts: Vec<BlockContextV2>,
-    /// The L2 tx data flattened over every tx in every block in the batch.
-    pub tx_data: Vec<u8>,
-}
-
-impl<const CODEC_VERSION: u8> super::Payload for GenericPayloadV7<CODEC_VERSION> {
-    type BatchHeader = BatchHeaderV7;
-
-    type Envelope = GenericEnvelopeV7<CODEC_VERSION>;
-
-    fn from_envelope(envelope: &Self::Envelope) -> Self {
+impl<const VERSION: u8> ValidiumPayload<VERSION> {
+    pub fn from_envelope(envelope: &ValidiumEnvelope<VERSION>) -> Self {
         // Conditionally decode depending on the flag set in the envelope.
         let payload_bytes = if envelope.is_encoded & 1 == 1 {
             vm_zstd::process(&envelope.unpadded_bytes)
@@ -192,9 +132,9 @@ impl<const CODEC_VERSION: u8> super::Payload for GenericPayloadV7<CODEC_VERSION>
         }
     }
 
-    fn validate<'a>(
+    pub fn validate<'a>(
         &self,
-        header: &Self::BatchHeader,
+        header: &BatchHeaderValidium,
         chunk_infos: &'a [ChunkInfo],
     ) -> (&'a ChunkInfo, &'a ChunkInfo) {
         // Get the first and last chunks' info, to construct the batch info.
@@ -204,7 +144,7 @@ impl<const CODEC_VERSION: u8> super::Payload for GenericPayloadV7<CODEC_VERSION>
         );
 
         // version from payload is what's present in the on-chain batch header
-        assert_eq!(self.version, header.version);
+        assert_eq!(self.version, header.version());
 
         // number of blocks in the batch
         assert_eq!(
@@ -263,3 +203,7 @@ impl<const CODEC_VERSION: u8> super::Payload for GenericPayloadV7<CODEC_VERSION>
         (first_chunk, last_chunk)
     }
 }
+
+pub type ValidiumEnvelopeV1 = ValidiumEnvelope<{ VALIDIUM_V1 }>;
+
+pub type ValidiumPayloadV1 = ValidiumPayload<{ VALIDIUM_V1 }>;

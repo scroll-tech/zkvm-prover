@@ -3,6 +3,7 @@ use alloy_primitives::B256;
 use crate::{
     public_inputs::{ForkName, MultiVersionPublicInputs},
     utils::keccak256,
+    version::{Domain, STFVersion, Version},
 };
 
 /// Represents fields required to compute the public-inputs digest of a bundle.
@@ -102,6 +103,21 @@ impl BundleInfo {
         keccak256(pi)
     }
 
+    pub fn pi_hash_versioned(&self, version: u8, pi: &[u8]) -> B256 {
+        keccak256(
+            std::iter::empty()
+                .chain(B256::left_padding_from(&version.to_be_bytes()).as_slice())
+                .chain(pi)
+                .cloned()
+                .collect::<Vec<u8>>(),
+        )
+    }
+
+    pub fn pi_validium_v1(&self) -> Vec<u8> {
+        // TODO: PI for Validium is TBD.
+        self.pi_euclidv2()
+    }
+
     pub fn pi_hash(&self, fork_name: ForkName) -> B256 {
         match fork_name {
             ForkName::EuclidV1 => self.pi_hash_euclidv1(),
@@ -122,7 +138,22 @@ impl MultiVersionPublicInputs for BundleInfo {
         }
     }
 
-    fn validate(&self, _prev_pi: &Self, _fork_name: ForkName) {
+    fn pi_hash_by_version(&self, version: u8) -> B256 {
+        let parsed_version = Version::from(version);
+        match (parsed_version.domain, parsed_version.stf_version) {
+            (Domain::Scroll, STFVersion::V6) => self.pi_hash_euclidv1(),
+            (Domain::Scroll, STFVersion::V7) => self.pi_hash_euclidv2(),
+            (Domain::Scroll, STFVersion::V8) => self.pi_hash_feynman(),
+            (Domain::Validium, STFVersion::V1) => {
+                self.pi_hash_versioned(version, self.pi_validium_v1().as_slice())
+            }
+            (domain, stf_version) => {
+                unreachable!("unsupported version=({domain:?}, {stf_version:?})")
+            }
+        }
+    }
+
+    fn validate(&self, _prev_pi: &Self, _version: u8) {
         unreachable!("bundle is the last layer and is not aggregated by any other circuit");
     }
 }

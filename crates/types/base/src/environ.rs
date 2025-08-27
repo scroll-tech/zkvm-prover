@@ -55,7 +55,7 @@ impl EnvironStub {
 
     /// Returns the value associated with the given key, if it exists.
     #[cfg(not(target_os = "zkvm"))]
-    pub fn get(key: &str) -> Option<Cow<str>> {
+    pub fn get(key: &str) -> Option<Cow<'_, str>> {
         std::env::var(key).ok().map(Cow::Owned)
     }
 }
