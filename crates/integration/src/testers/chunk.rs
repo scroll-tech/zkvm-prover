@@ -192,11 +192,8 @@ pub fn create_canonical_tasks(
 
 /// preset examples for multiple task
 pub fn preset_chunk_multiple() -> Vec<ChunkTaskGenerator> {
-    static PRESET_RESULT: std::sync::OnceLock<Vec<ChunkTaskGenerator>> = std::sync::OnceLock::new();
-
-    PRESET_RESULT
-        .get_or_init(|| {
-            create_canonical_tasks(
+    thread_local! {
+        static PRESET_RESULT: Vec<ChunkTaskGenerator> = create_canonical_tasks(
                 match testing_hardfork() {
                     ForkName::EuclidV1 => vec![
                         12508460u64..=12508460u64,
@@ -212,7 +209,7 @@ pub fn preset_chunk_multiple() -> Vec<ChunkTaskGenerator> {
                 }
                 .into_iter(),
             )
-            .expect("must success for preset collections")
-        })
-        .clone()
+            .expect("must success for preset collections");
+    }
+    PRESET_RESULT.with(|r| r.clone())
 }

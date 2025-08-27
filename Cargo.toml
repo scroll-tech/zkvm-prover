@@ -59,12 +59,19 @@ openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch =
 # more openvm related libs
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.0-rc.6" }
 
-sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "fix/blockhash", features = ["scroll", "rkyv"] }
-sbv-helpers = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "fix/blockhash" }
-sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "fix/blockhash", features = ["scroll", "rkyv"] }
-sbv-kv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "fix/blockhash" }
-sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "fix/blockhash" }
-sbv-precompile = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "fix/blockhash" }
+#sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = ["scroll", "rkyv"] }
+#sbv-helpers = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
+#sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = ["scroll", "rkyv"] }
+#sbv-kv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
+#sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
+#sbv-precompile = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
+sbv-core = { path = "../stateless-block-verifier/crates/core", features = ["scroll", "rkyv"] }
+sbv-helpers = { path = "../stateless-block-verifier/crates/helpers" }
+sbv-primitives = { path = "../stateless-block-verifier/crates/primitives", features = ["scroll", "rkyv"] }
+sbv-kv = { path = "../stateless-block-verifier/crates/kv" }
+sbv-trie = { path = "../stateless-block-verifier/crates/trie" }
+sbv-precompile = { path = "../stateless-block-verifier/crates/precompile" }
+
 
 alloy-primitives = { version = "1.3", default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
 alloy-serde = { version = "1.0.13", default-features = false }
