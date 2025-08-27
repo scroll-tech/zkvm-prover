@@ -1,3 +1,10 @@
+//! To get flamegraphs, following instructions are needed:
+//!
+//! 1. run in `crates/integration` dir:
+//!   `OPENVM_RUST_TOOLCHAIN=nightly-2025-08-18 cargo run --release --bin chunk-benchmark --features perf-metrics -- --profiling`
+//! 2. run in `.output/chunk-tests-*_*`:
+//!   `python <path to openvm repo>/ci/scripts/metric_unify/flamegraph.py metrics.json --guest-symbols guest.syms`
+//! 3. get flamegraphs in `.bench_metrics/flamegraphs`
 use std::{env, fs};
 use clap::Parser;
 use openvm_benchmarks_prove::util::BenchmarkCli;
