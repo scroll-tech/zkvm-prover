@@ -80,7 +80,7 @@ impl Prover {
         tracing::info!("prover setup");
         let app_exe: VmExe<F> = read_app_exe(&config.path_app_exe).unwrap();
         let app_exe = Arc::new(app_exe);
-        
+
         tracing::info!("prover setup done");
         Ok(Self {
             app_exe,
@@ -102,7 +102,8 @@ impl Prover {
             tracing::info!("Lazy initializing SDK...");
             let mut app_config = read_app_config(&self.config.path_app_config)?;
             let segment_len = self.config.segment_len.unwrap_or(DEFAULT_SEGMENT_SIZE);
-            let segmentation_limits = &mut app_config.app_vm_config.system.config.segmentation_limits;
+            let segmentation_limits =
+                &mut app_config.app_vm_config.system.config.segmentation_limits;
             segmentation_limits.max_trace_height = segment_len as u32;
             segmentation_limits.max_cells = 700_000_000 as usize; // For 24G vram
 
@@ -117,7 +118,10 @@ impl Prover {
     }
 
     /// Get or initialize the prover lazily
-    fn get_prover_mut(&mut self) -> Result<&mut StarkProver<DefaultStarkEngine, SdkVmCpuBuilder, NativeCpuBuilder>, Error> {
+    fn get_prover_mut(
+        &mut self,
+    ) -> Result<&mut StarkProver<DefaultStarkEngine, SdkVmCpuBuilder, NativeCpuBuilder>, Error>
+    {
         if self.prover.get().is_none() {
             tracing::info!("Lazy initializing prover...");
             let sdk = self.get_sdk()?;
@@ -135,7 +139,6 @@ impl Prover {
         let vm = commits.app_vm_commit.to_u32_digest();
         ProgramCommitment { exe, vm }
     }
-    
 
     /// Pick up loaded app commit as "vk" in proof, to distinguish from which circuit the proof comes
     pub fn get_app_vk(&mut self) -> Vec<u8> {

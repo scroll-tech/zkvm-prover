@@ -220,7 +220,6 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
         let app_comm = app_prover.app_commit();
         let exe_commit_u32 = app_comm.app_exe_commit.to_u32_digest();
         let vm_commit_u32 = app_comm.app_vm_commit.to_u32_digest();
-           
 
         write_commitment(
             &Path::new(project_dir).join(format!("{project_name}_exe_commit.rs")),
@@ -285,7 +284,7 @@ fn generate_root_verifier(workspace_dir: &Path, force_overwrite: bool) -> Result
             "{LOG_PREFIX} Root verifier already exists, skipping (use --output-mode force to overwrite)"
         );
         return Ok(());
-}
+    }
 
     let asm = openvm_sdk::Sdk::riscv32().generate_root_verifier_asm();
     std::fs::write(&root_verifier_path, asm).expect("fail to write");
@@ -294,7 +293,6 @@ fn generate_root_verifier(workspace_dir: &Path, force_overwrite: bool) -> Result
         "{LOG_PREFIX} Root verifier generated at: {}",
         root_verifier_path.display()
     );
-
 
     // Check if file exists and skip if in auto mode
     if !force_overwrite && root_verifier_path.exists() {
