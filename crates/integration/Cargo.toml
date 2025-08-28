@@ -52,5 +52,6 @@ glob = "0.3"
 
 [features]
 default = ["limit-logs"]
+cuda = ["scroll-zkvm-prover/cuda"]
 limit-logs = []
 perf-metrics = ["openvm-sdk/perf-metrics"]

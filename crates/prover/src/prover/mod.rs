@@ -4,13 +4,13 @@ use std::{
     sync::{Arc, OnceLock},
 };
 
-//use openvm_native_circuit::{NativeGpuBuilder};
-//use openvm_sdk::config::SdkVmGpuBuilder;
+#[cfg(feature = "cuda")]
+use openvm_native_circuit::{NativeGpuBuilder as NativeBuilder};
+#[cfg(not(feature = "cuda"))]
+use openvm_native_circuit::{NativeCpuBuilder as NativeBuilder};
 
 use openvm_circuit::arch::instructions::exe::VmExe;
-use openvm_native_circuit::NativeCpuBuilder;
 use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
-use openvm_sdk::config::SdkVmCpuBuilder;
 use openvm_sdk::{DefaultStarkEngine, config::SdkVmBuilder};
 use openvm_sdk::{
     DefaultStaticVerifierPvHandler, F, GenericSdk, Sdk, StdIn,
@@ -56,8 +56,8 @@ pub struct Prover {
     /// Configuration for the prover.
     pub config: ProverConfig,
     sdk: OnceLock<Sdk>,
-    //pub prover: StarkProver<DefaultStarkEngine, SdkVmGpuBuilder, NativeGpuBuilder>,
-    prover: OnceLock<StarkProver<DefaultStarkEngine, SdkVmCpuBuilder, NativeCpuBuilder>>,
+
+    prover: OnceLock<StarkProver<DefaultStarkEngine, SdkVmBuilder, NativeBuilder>>,
 }
 
 /// Configure the [`Prover`].
@@ -118,10 +118,7 @@ impl Prover {
     }
 
     /// Get or initialize the prover lazily
-    fn get_prover_mut(
-        &mut self,
-    ) -> Result<&mut StarkProver<DefaultStarkEngine, SdkVmCpuBuilder, NativeCpuBuilder>, Error>
-    {
+    fn get_prover_mut(&mut self) -> Result<&mut StarkProver<DefaultStarkEngine, SdkVmBuilder, NativeBuilder>, Error> {
         if self.prover.get().is_none() {
             tracing::info!("Lazy initializing prover...");
             let sdk = self.get_sdk()?;
@@ -274,7 +271,6 @@ impl Prover {
     pub fn gen_proof_stark(&mut self, stdin: StdIn) -> Result<StarkProof, Error> {
         // Here we always do an execution of the guest program to get the cycle count.
         // and do precheck before proving like ensure PI != 0
-        let total_cycle = self.execute_and_check(&stdin)?;
         let t = std::time::Instant::now();
         let total_cycles = self.execute_and_check(&stdin)?;
         let execution_time_mills = t.elapsed().as_millis() as u64;
@@ -307,12 +303,12 @@ impl Prover {
         }
         let prover = self.get_prover_mut()?;
         let proof = prover
-            .prove(stdin)
-            .map_err(|e| Error::GenProof(e.to_string()))?;
+            .prove(stdin);
         let proving_time_mills = t.elapsed().as_millis() as u64;
         let prove_speed =
             (total_cycles as f32 / 1_000_000.0f32) / (proving_time_mills as f32 / 1000.0f32); // MHz
         tracing::info!("{} proving speed: {:.2}MHz", self.prover_name, prove_speed);
+        let proof = proof.map_err(|e| Error::GenProof(e.to_string()))?;
         let stat = StarkProofStat {
             total_cycles,
             proving_time_mills,
