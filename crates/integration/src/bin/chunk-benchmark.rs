@@ -9,7 +9,7 @@ use clap::Parser;
 use openvm_benchmarks_prove::util::BenchmarkCli;
 use openvm_benchmarks_utils::build_elf;
 use openvm_circuit::openvm_stark_sdk::bench::run_with_metric_collection;
-use openvm_sdk::config::{SdkVmConfig, SdkVmBuilder};
+use openvm_sdk::config::{SdkVmBuilder, SdkVmConfig};
 use openvm_sdk::{Sdk, StdIn};
 use scroll_zkvm_integration::testers::chunk::{
     ChunkProverTester, get_witness_from_env_or_builder, preset_chunk,

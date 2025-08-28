@@ -4,10 +4,10 @@ use std::{
     sync::{Arc, OnceLock},
 };
 
-#[cfg(feature = "cuda")]
-use openvm_native_circuit::{NativeGpuBuilder as NativeBuilder};
 #[cfg(not(feature = "cuda"))]
-use openvm_native_circuit::{NativeCpuBuilder as NativeBuilder};
+use openvm_native_circuit::NativeCpuBuilder as NativeBuilder;
+#[cfg(feature = "cuda")]
+use openvm_native_circuit::NativeGpuBuilder as NativeBuilder;
 
 use openvm_circuit::arch::instructions::exe::VmExe;
 use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
@@ -118,7 +118,9 @@ impl Prover {
     }
 
     /// Get or initialize the prover lazily
-    fn get_prover_mut(&mut self) -> Result<&mut StarkProver<DefaultStarkEngine, SdkVmBuilder, NativeBuilder>, Error> {
+    fn get_prover_mut(
+        &mut self,
+    ) -> Result<&mut StarkProver<DefaultStarkEngine, SdkVmBuilder, NativeBuilder>, Error> {
         if self.prover.get().is_none() {
             tracing::info!("Lazy initializing prover...");
             let sdk = self.get_sdk()?;
@@ -302,8 +304,7 @@ impl Prover {
             }
         }
         let prover = self.get_prover_mut()?;
-        let proof = prover
-            .prove(stdin);
+        let proof = prover.prove(stdin);
         let proving_time_mills = t.elapsed().as_millis() as u64;
         let prove_speed =
             (total_cycles as f32 / 1_000_000.0f32) / (proving_time_mills as f32 / 1000.0f32); // MHz

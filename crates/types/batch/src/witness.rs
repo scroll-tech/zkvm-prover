@@ -116,6 +116,50 @@ pub struct BatchWitness {
     pub fork_name: ForkName,
 }
 
+/// Witness to the batch circuit.
+#[derive(
+    Clone,
+    Debug,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+    serde::Deserialize,
+    serde::Serialize,
+)]
+#[rkyv(derive(Debug))]
+pub struct BatchWitnessLegacy {
+    /// Flattened root proofs from all chunks in the batch.
+    #[rkyv()]
+    pub chunk_proofs: Vec<AggregationInput>,
+    /// Chunk infos.
+    #[rkyv()]
+    pub chunk_infos: Vec<ChunkInfo>,
+    /// Blob bytes.
+    #[rkyv()]
+    pub blob_bytes: Vec<u8>,
+    /// Witness for point evaluation
+    pub point_eval_witness: PointEvalWitness,
+    /// Header for reference.
+    #[rkyv()]
+    pub reference_header: ReferenceHeader,
+    /// The code version specify the chain spec
+    #[rkyv()]
+    pub fork_name: ForkName,
+}
+
+impl From<BatchWitness> for BatchWitnessLegacy {
+    fn from(value: BatchWitness) -> Self {
+        Self {
+            chunk_proofs: value.chunk_proofs,
+            chunk_infos: value.chunk_infos,
+            blob_bytes: value.blob_bytes,
+            point_eval_witness: value.point_eval_witness,
+            reference_header: value.reference_header,
+            fork_name: value.fork_name,
+        }
+    }
+}
+
 impl ProofCarryingWitness for BatchWitness {
     fn get_proofs(&self) -> Vec<AggregationInput> {
         self.chunk_proofs.clone()
