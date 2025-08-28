@@ -12,7 +12,7 @@ export OPENVM_RUST_TOOLCHAIN
 
 # Set GPU config if GPU=1 is set
 ifeq ($(GPU),1)
-CARGO_CONFIG_FLAG = --config Cargo.toml.gpu
+CARGO_CONFIG_FLAG = --features scroll-zkvm-integration/cuda
 else
 CARGO_CONFIG_FLAG =
 endif
