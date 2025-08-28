@@ -12,8 +12,6 @@ openvm-native-recursion.workspace = true
 openvm-sdk.workspace = true
 openvm-stark-sdk.workspace = true
 openvm-build = { workspace = true, default-features = false }
-openvm-circuit = { workspace = true }
-
 eyre.workspace = true
 hex.workspace = true
 serde_json.workspace = true

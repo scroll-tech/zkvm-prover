@@ -33,7 +33,7 @@ fn exec_chunk(wit: &ChunkWitness) -> eyre::Result<(ExecutionResult, u64)> {
 #[ignore = "can only run under eculidv2 hardfork"]
 #[test]
 fn test_cycle() -> eyre::Result<()> {
-    ChunkProverTester::setup()?;
+    ChunkProverTester::setup(true)?;
 
     // use rayon::prelude::*;
 
@@ -54,7 +54,7 @@ fn test_cycle() -> eyre::Result<()> {
 
 #[test]
 fn test_execute() -> eyre::Result<()> {
-    ChunkProverTester::setup()?;
+    ChunkProverTester::setup(true)?;
 
     let wit = get_witness_from_env_or_builder(&mut preset_chunk())?;
     let (exec_result, total_gas_used) = exec_chunk(&wit)?;
@@ -68,7 +68,7 @@ fn test_execute() -> eyre::Result<()> {
 #[test]
 fn test_autofill_trie_nodes() -> eyre::Result<()> {
     use std::result::Result::Ok;
-    ChunkProverTester::setup()?;
+    ChunkProverTester::setup(true)?;
 
     let mut template_wit = get_witness_from_env_or_builder(&mut preset_chunk())?;
     template_wit.blocks.truncate(1);
@@ -128,7 +128,7 @@ fn test_autofill_trie_nodes() -> eyre::Result<()> {
 fn test_execute_multi() -> eyre::Result<()> {
     // use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
-    ChunkProverTester::setup()?;
+    ChunkProverTester::setup(true)?;
 
     // Initialize Rayon thread pool with 8 threads
     let parallel = 8;
@@ -162,7 +162,7 @@ fn test_execute_multi() -> eyre::Result<()> {
 
 #[test]
 fn guest_profiling() -> eyre::Result<()> {
-    ChunkProverTester::setup()?;
+    ChunkProverTester::setup(true)?;
 
     let wit = get_witness_from_env_or_builder(&mut preset_chunk())?;
     let (exec_result, _) = exec_chunk(&wit)?;
@@ -178,7 +178,7 @@ fn guest_profiling() -> eyre::Result<()> {
 
 #[test]
 fn setup_prove_verify_single() -> eyre::Result<()> {
-    ChunkProverTester::setup()?;
+    ChunkProverTester::setup(true)?;
     let mut prover = ChunkProverTester::load_prover(false)?;
 
     let wit = get_witness_from_env_or_builder(&mut preset_chunk())?;
@@ -189,7 +189,7 @@ fn setup_prove_verify_single() -> eyre::Result<()> {
 
 #[test]
 fn setup_prove_verify_multi() -> eyre::Result<()> {
-    ChunkProverTester::setup()?;
+    ChunkProverTester::setup(true)?;
     let mut prover = ChunkProverTester::load_prover(false)?;
 
     for mut task in preset_chunk_multiple() {

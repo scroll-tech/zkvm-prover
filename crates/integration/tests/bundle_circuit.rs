@@ -52,7 +52,7 @@ fn print_vks() -> eyre::Result<()> {
             ..Default::default()
         };
 
-        let app_vk = hex::encode(Prover::setup(config, false, None).unwrap().get_app_vk());
+        let app_vk = hex::encode(Prover::setup(config, None).unwrap().get_app_vk());
         println!("{circuit}: {app_vk}");
         app_vk
     });
@@ -71,7 +71,7 @@ fn print_vks() -> eyre::Result<()> {
 #[ignore = "need local stuff"]
 #[test]
 fn setup_prove_verify_local_task() -> eyre::Result<()> {
-    BundleProverTester::setup()?;
+    BundleProverTester::setup(true)?;
     let u_task = load_local_task("bundle-task.json")?;
     let mut prover = BundleProverTester::load_prover(true)?;
 
@@ -119,7 +119,7 @@ fn verify_bundle_info_pi() {
 
 #[test]
 fn e2e() -> eyre::Result<()> {
-    BundleProverTester::setup()?;
+    BundleProverTester::setup(true)?;
 
     let mut chunk_prover = ChunkProverTester::load_prover(false)?;
     let mut batch_prover = BatchProverTester::load_prover(false)?;

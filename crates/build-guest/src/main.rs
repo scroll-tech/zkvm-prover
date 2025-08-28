@@ -36,6 +36,7 @@ use std::{
     env,
     fs::read_to_string,
     path::{Path, PathBuf},
+    sync::Arc,
     time::Instant,
 };
 
@@ -43,15 +44,16 @@ use clap::{Parser, ValueEnum};
 use dotenv::dotenv;
 use eyre::Result;
 use openvm_build::GuestOptions;
+use openvm_instructions::exe::VmExe;
 use openvm_native_compiler::ir::DIGEST_SIZE;
 use openvm_sdk::{
     F, Sdk,
     commit::CommitBytes,
-    config::{AggStarkConfig, AppConfig, SdkVmConfig},
+    config::{AppConfig, SdkVmConfig},
     fs::write_object_to_file,
-    keygen::AggStarkProvingKey,
+    prover::AppProver,
 };
-use openvm_stark_sdk::{openvm_stark_backend::p3_field::PrimeField32, p3_bn254_fr::Bn254Fr};
+use openvm_stark_sdk::p3_bn254_fr::Bn254Fr;
 use snark_verifier_sdk::snark_verifier::loader::evm::compile_solidity;
 
 mod verifier;
@@ -177,15 +179,9 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
         );
         let guest_opts = GuestOptions::default();
         let guest_opts = guest_opts.with_profile("maxperf".to_string());
-        let sdk = Sdk::new();
+        let sdk = Sdk::new(app_config)?;
         let elf = sdk
-            .build(
-                guest_opts,
-                &app_config.app_vm_config,
-                project_dir,
-                &Default::default(),
-                Some("/tmp/init.rs"),
-            )
+            .build(guest_opts, project_dir, &Default::default(), None)
             .inspect_err(|_err| {
                 println!("{LOG_PREFIX} Building failed in {}", project_dir);
             })?;
@@ -199,8 +195,7 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
         );
 
         // 2. Transpile ELF to VM Executable
-        let transpiler = app_config.app_vm_config.transpiler();
-        let app_exe = Sdk::new().transpile(elf, transpiler)?;
+        let app_exe: VmExe<F> = (*sdk.convert_to_exe(elf)?).clone();
 
         // Create the assets dir if not already present.
         let path_assets = Path::new(release_output_dir).join(project_name);
@@ -211,22 +206,16 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
         println!("{LOG_PREFIX} exe written to {path_app_exe:?}");
 
         // 3. Compute and Write Executable Commitment
-        let app_committed_exe =
-            Sdk::new().commit_app_exe(app_config.app_fri_params.fri_params, app_exe)?;
-        use openvm_circuit::arch::VmConfig;
-        let exe_commit_f: [F; DIGEST_SIZE] = app_committed_exe
-            .compute_exe_commit(
-                &<SdkVmConfig as VmConfig<F>>::system(&app_config.app_vm_config).memory_config,
-            )
-            .into();
-        let exe_commit_u32: [u32; DIGEST_SIZE] = exe_commit_f.map(|f| f.as_canonical_u32());
-        let app_pk = Sdk::new().app_keygen(app_config.clone())?;
-        let vm_commit_f: [F; DIGEST_SIZE] = app_pk
-            .leaf_committed_exe
-            .committed_program
-            .commitment
-            .into();
-        let vm_commit_u32 = vm_commit_f.map(|f| f.as_canonical_u32());
+        let app_pk = sdk.app_pk();
+        let app_prover: AppProver<openvm_sdk::DefaultStarkEngine, _> = AppProver::new(
+            sdk.app_vm_builder().clone(),
+            &app_pk.app_vm_pk,
+            Arc::new(app_exe),
+            app_pk.leaf_committed_exe.get_program_commit(),
+        )?;
+        let app_comm = app_prover.app_commit();
+        let exe_commit_u32 = app_comm.app_exe_commit.to_u32_digest();
+        let vm_commit_u32 = app_comm.app_vm_commit.to_u32_digest();
 
         write_commitment(
             &Path::new(project_dir).join(format!("{project_name}_exe_commit.rs")),
@@ -293,8 +282,7 @@ fn generate_root_verifier(workspace_dir: &Path, force_overwrite: bool) -> Result
         return Ok(());
     }
 
-    let agg_stark_pk = AggStarkProvingKey::keygen(AggStarkConfig::default());
-    let asm = openvm_sdk::Sdk::new().generate_root_verifier_asm(&agg_stark_pk);
+    let asm = openvm_sdk::Sdk::riscv32().generate_root_verifier_asm();
     std::fs::write(&root_verifier_path, asm).expect("fail to write");
 
     println!(

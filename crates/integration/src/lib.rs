@@ -1,6 +1,7 @@
 use cargo_metadata::MetadataCommand;
 use once_cell::sync::OnceCell;
-use openvm_sdk::StdIn;
+use openvm_circuit::arch::instructions::exe::VmExe;
+use openvm_sdk::{F, StdIn};
 use scroll_zkvm_prover::{
     Prover,
     setup::{read_app_config, read_app_exe},
@@ -16,7 +17,7 @@ use scroll_zkvm_verifier::verifier::UniversalVerifier;
 use std::{
     path::{Path, PathBuf},
     process,
-    sync::LazyLock,
+    sync::{Arc, LazyLock},
 };
 use tracing::instrument;
 use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::SubscriberInitExt};
@@ -74,7 +75,7 @@ static DIR_OUTPUT: LazyLock<&Path> = LazyLock::new(|| {
 /// - <DIR_OUTPUT>/chunk-tests-{timestamp}
 /// - <DIR_OUTPUT>/batch-tests-{timestamp}
 /// - <DIR_OUTPUT>/bundle-tests-{timestamp}
-static DIR_TESTRUN: OnceCell<PathBuf> = OnceCell::new();
+pub static DIR_TESTRUN: OnceCell<PathBuf> = OnceCell::new();
 
 pub trait PartialProvingTask: serde::Serialize {
     fn identifier(&self) -> String;
@@ -116,9 +117,11 @@ pub trait ProverTester {
     const DIR_ASSETS: &str;
 
     /// Setup directory structure for the test suite.
-    fn setup() -> eyre::Result<()> {
+    fn setup(setup_logger: bool) -> eyre::Result<()> {
         // Setup tracing subscriber.
-        setup_logger()?;
+        if setup_logger {
+            crate::setup_logger()?;
+        }
 
         // If user has set an output directory, use it.
         let dir_testrun = if let Ok(env_dir) = std::env::var(ENV_OUTPUT_DIR) {
@@ -171,7 +174,7 @@ pub trait ProverTester {
             path_app_config,
             ..Default::default()
         };
-        let prover = scroll_zkvm_prover::Prover::setup(config, with_evm, Some(Self::NAME))?;
+        let prover = scroll_zkvm_prover::Prover::setup(config, Some(Self::NAME))?;
 
         Ok(prover)
     }
@@ -268,7 +271,8 @@ pub fn tester_execute<T: ProverTester>(
     proofs: &[ProofEnum],
 ) -> eyre::Result<ExecutionResult> {
     let (path_app_config, path_app_exe) = T::load()?;
-    let app_exe = read_app_exe(&path_app_exe)?;
+    let app_exe: VmExe<F> = read_app_exe(&path_app_exe).unwrap();
+    let app_exe = Arc::new(app_exe);
     let app_config = read_app_config(&path_app_config)?;
     let stdin = T::build_guest_input(
         witness,
@@ -277,13 +281,15 @@ pub fn tester_execute<T: ProverTester>(
             .map(|p| p.as_stark_proof().expect("must be stark proof")),
     )?;
 
-    let ret =
-        scroll_zkvm_prover::utils::vm::execute_guest(app_config.app_vm_config, app_exe, &stdin)?;
-    Ok(ret)
+    Ok(scroll_zkvm_prover::utils::vm::execute_guest(
+        app_config.app_vm_config,
+        app_exe,
+        &stdin,
+    )?)
 }
 
 /// End-to-end test for proving witnesses of the same prover.
-#[instrument(name = "prove_verify", skip_all, fields(task_id))]
+#[instrument(name = "prove_verify", skip_all, fields(task_id, prover_name = prover.prover_name))]
 pub fn prove_verify<T: ProverTester>(
     prover: &mut Prover,
     witness: &T::Witness,
