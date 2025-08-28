@@ -107,3 +107,63 @@ pub mod as_base64 {
         bincode_v1::deserialize(&v_bytes).map_err(serde::de::Error::custom)
     }
 }
+
+/// Print GPU memory usage information including used, free, and total memory in GiB.
+pub fn print_gpu_memory_usage() -> Result<(), Error> {
+    #[cfg(feature = "cuda")]
+    {
+        match try_print_gpu_memory_cudarc() {
+            Ok(_) => return Ok(()),
+            Err(e) => {
+                println!("GPU memory monitoring failed: {}", e);
+                println!("Make sure CUDA is properly installed and cudarc dependency is added");
+            }
+        }
+    }
+    
+    #[cfg(not(feature = "cuda"))]
+    {
+        println!("GPU memory monitoring not available (CUDA feature not enabled)");
+    }
+    
+    Ok(())
+}
+
+#[cfg(feature = "cuda")]
+fn try_print_gpu_memory_cudarc() -> Result<(), Box<dyn std::error::Error>> {
+    use cudarc::driver::{CudaDevice, DriverError};
+    
+    // Initialize CUDA and get device count
+    let device_count = CudaDevice::device_count()?;
+    
+    if device_count == 0 {
+        println!("No CUDA devices found");
+        return Ok(());
+    }
+    
+    println!("GPU Memory Usage:");
+    println!("{:-<50}", "");
+    
+    for device_id in 0..device_count {
+        match CudaDevice::new(device_id) {
+            Ok(device) => {
+                let (free_bytes, total_bytes) = device.memory_info()?;
+                
+                let total_gib = total_bytes as f64 / (1024.0 * 1024.0 * 1024.0);
+                let free_gib = free_bytes as f64 / (1024.0 * 1024.0 * 1024.0);
+                let used_gib = total_gib - free_gib;
+                let usage_percent = (used_gib / total_gib) * 100.0;
+                
+                println!("GPU {}: Used: {:.2} GiB, Free: {:.2} GiB, Total: {:.2} GiB ({:.1}% used)",
+                    device_id, used_gib, free_gib, total_gib, usage_percent);
+            }
+            Err(e) => {
+                println!("GPU {}: Failed to initialize device - {}", device_id, e);
+            }
+        }
+    }
+    println!("{:-<50}", "");
+    
+    Ok(())
+}
+
