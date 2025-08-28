@@ -1,5 +1,31 @@
+diff --git a/crates/sdk/src/config/mod.rs b/crates/sdk/src/config/mod.rs
+index 76808725..c6853131 100644
+--- a/crates/sdk/src/config/mod.rs
++++ b/crates/sdk/src/config/mod.rs
+@@ -16,7 +16,7 @@ pub const DEFAULT_APP_LOG_BLOWUP: usize = 1;
+ pub const DEFAULT_LEAF_LOG_BLOWUP: usize = 1;
+ pub const DEFAULT_INTERNAL_LOG_BLOWUP: usize = 2;
+ pub const DEFAULT_ROOT_LOG_BLOWUP: usize = 3;
+-pub const DEFAULT_HALO2_VERIFIER_K: usize = 23;
++pub const DEFAULT_HALO2_VERIFIER_K: usize = 24;
+ 
+ // Aggregation Tree Defaults
+ pub const DEFAULT_NUM_CHILDREN_LEAF: usize = 1;
+diff --git a/crates/sdk/src/keygen/mod.rs b/crates/sdk/src/keygen/mod.rs
+index 8b12782c..7e76c24d 100644
+--- a/crates/sdk/src/keygen/mod.rs
++++ b/crates/sdk/src/keygen/mod.rs
+@@ -393,7 +393,7 @@ impl AggProvingKey {
+             // ID ordering:
+             root_air_perm.permute(&mut vm_pk.per_air);
+             for thc in &mut vm_pk.trace_height_constraints {
+-                root_air_perm.permute(&mut thc.coefficients);
++                //root_air_perm.permute(&mut thc.coefficients);
+             }
+ 
+             RootVerifierProvingKey {
 diff --git a/crates/vm/src/arch/config.rs b/crates/vm/src/arch/config.rs
-index 6b30a7c27..9d6fe2ab8 100644
+index 6b30a7c2..9d6fe2ab 100644
 --- a/crates/vm/src/arch/config.rs
 +++ b/crates/vm/src/arch/config.rs
 @@ -211,7 +211,7 @@ impl MemoryConfig {
@@ -12,7 +38,7 @@ index 6b30a7c27..9d6fe2ab8 100644
              AddressSpaceHostConfig::new(0, DEFAULT_U8_BLOCK_SIZE, MemoryCellType::U8);
  
 diff --git a/extensions/rv32im/circuit/src/adapters/mod.rs b/extensions/rv32im/circuit/src/adapters/mod.rs
-index b07e2449b..708546b94 100644
+index b07e2449..708546b9 100644
 --- a/extensions/rv32im/circuit/src/adapters/mod.rs
 +++ b/extensions/rv32im/circuit/src/adapters/mod.rs
 @@ -112,7 +112,12 @@ pub fn timed_read<const N: usize>(
