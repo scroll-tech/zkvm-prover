@@ -3,9 +3,9 @@ name = "scroll-zkvm-integration"
 version.workspace = true
 edition.workspace = true
 
-[[bin]]
-name = "chunk-benchmark"
-path = "src/bin/chunk-benchmark.rs"
+#[[bin]]
+#name = "chunk-benchmark"
+#path = "src/bin/chunk-benchmark.rs"
 
 [dependencies]
 scroll-zkvm-types.workspace = true
