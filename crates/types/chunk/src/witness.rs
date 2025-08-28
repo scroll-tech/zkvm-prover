@@ -2,7 +2,11 @@ use alloy_primitives::B256;
 #[allow(deprecated)]
 use sbv_core::verifier::StateCommitMode;
 use sbv_primitives::{U256, types::BlockWitness};
-use std::collections::HashSet;
+use std::collections::{HashSet};
+use sbv_kv::nohash::NoHashMap;
+use sbv_primitives::chainspec::{build_chain_spec_force_hardfork, Chain};
+use sbv_primitives::hardforks::Hardfork;
+use sbv_trie::{BlockWitnessTrieExt, PartialStateTrie};
 use types_base::{fork_name::ForkName, public_inputs::chunk::ChunkInfo};
 
 /// The witness type accepted by the chunk-circuit.
@@ -16,6 +20,8 @@ pub struct ChunkWitness {
     pub fork_name: ForkName,
     /// The compression ratios for each block in the chunk.
     pub compression_ratios: Vec<Vec<U256>>,
+    /// The partial state trie constructed outside the circuit.
+    pub cached_trie: PartialStateTrie,
 }
 
 /// The witness type accepted by the chunk-circuit.
@@ -57,6 +63,23 @@ impl ChunkWitness {
         let mut codes = HashSet::with_capacity(num_codes);
         let mut states = HashSet::with_capacity(num_states);
 
+        let chain = Chain::from_id(blocks[0].chain_id);
+        let chain_spec = build_chain_spec_force_hardfork(
+            chain,
+            match fork_name {
+                ForkName::EuclidV1 => Hardfork::Euclid,
+                ForkName::EuclidV2 => Hardfork::EuclidV2,
+                ForkName::Feynman => Hardfork::Feynman,
+            },
+        );
+
+        let result = sbv_core::verifier::run(blocks.to_vec(), chain_spec, None::<Vec<Vec<U256>>>, None).expect("");
+        let access_list = result.access_list.unwrap();
+        let mut nodes_provider = NoHashMap::with_capacity_and_hasher(num_states, Default::default());
+        blocks.import_nodes(&mut nodes_provider);
+        let cached_trie = PartialStateTrie::open_preloaded(&nodes_provider, blocks[0].prev_state_root, access_list)
+            .expect("failed to open trie from the first block's prev_state_root");
+
         let blocks: Vec<BlockWitness> = blocks
             .iter()
             .map(|block| BlockWitness {
@@ -89,6 +112,7 @@ impl ChunkWitness {
             prev_msg_queue_hash,
             fork_name,
             compression_ratios,
+            cached_trie,
         }
     }
 

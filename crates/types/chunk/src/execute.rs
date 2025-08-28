@@ -37,7 +37,8 @@ pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
     } = verifier::run(
         witness.blocks,
         chain_spec.clone(),
-        Some(witness.compression_ratios.clone()),
+        Some(witness.compression_ratios),
+        Some(witness.cached_trie)
     )
     .map_err(|e| format!("verify error: {e}"))?;
 

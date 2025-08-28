@@ -5462,7 +5462,7 @@ dependencies = [
 [[package]]
 name = "reth-chainspec"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-chains",
  "alloy-consensus",
@@ -5482,7 +5482,7 @@ dependencies = [
 [[package]]
 name = "reth-codecs"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.0.24",
@@ -5500,7 +5500,7 @@ dependencies = [
 [[package]]
 name = "reth-codecs-derive"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "convert_case 0.7.1",
  "proc-macro2",
@@ -5511,7 +5511,7 @@ dependencies = [
 [[package]]
 name = "reth-db-models"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-eips 1.0.24",
  "alloy-primitives",
@@ -5521,7 +5521,7 @@ dependencies = [
 [[package]]
 name = "reth-ethereum-forks"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-eip2124",
  "alloy-hardforks",
@@ -5533,7 +5533,7 @@ dependencies = [
 [[package]]
 name = "reth-ethereum-primitives"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.0.24",
@@ -5548,7 +5548,7 @@ dependencies = [
 [[package]]
 name = "reth-evm"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.0.24",
@@ -5570,7 +5570,7 @@ dependencies = [
 [[package]]
 name = "reth-evm-ethereum"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.0.24",
@@ -5590,7 +5590,7 @@ dependencies = [
 [[package]]
 name = "reth-execution-errors"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-evm",
  "alloy-primitives",
@@ -5603,7 +5603,7 @@ dependencies = [
 [[package]]
 name = "reth-execution-types"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.0.24",
@@ -5619,7 +5619,7 @@ dependencies = [
 [[package]]
 name = "reth-network-peers"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -5631,7 +5631,7 @@ dependencies = [
 [[package]]
 name = "reth-primitives"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-consensus",
  "once_cell",
@@ -5644,7 +5644,7 @@ dependencies = [
 [[package]]
 name = "reth-primitives-traits"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.0.24",
@@ -5672,7 +5672,7 @@ dependencies = [
 [[package]]
 name = "reth-prune-types"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-primitives",
  "derive_more 2.0.1",
@@ -5682,7 +5682,7 @@ dependencies = [
 [[package]]
 name = "reth-scroll-chainspec"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-chains",
  "alloy-consensus",
@@ -5707,7 +5707,7 @@ dependencies = [
 [[package]]
 name = "reth-scroll-evm"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.0.24",
@@ -5737,7 +5737,7 @@ dependencies = [
 [[package]]
 name = "reth-scroll-forks"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-chains",
  "alloy-primitives",
@@ -5751,7 +5751,7 @@ dependencies = [
 [[package]]
 name = "reth-scroll-primitives"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.0.24",
@@ -5768,7 +5768,7 @@ dependencies = [
 [[package]]
 name = "reth-stages-types"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-primitives",
  "reth-trie-common",
@@ -5777,7 +5777,7 @@ dependencies = [
 [[package]]
 name = "reth-static-file-types"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-primitives",
  "derive_more 2.0.1",
@@ -5788,7 +5788,7 @@ dependencies = [
 [[package]]
 name = "reth-storage-api"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.0.24",
@@ -5810,7 +5810,7 @@ dependencies = [
 [[package]]
 name = "reth-storage-errors"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-eips 1.0.24",
  "alloy-primitives",
@@ -5826,7 +5826,7 @@ dependencies = [
 [[package]]
 name = "reth-trie"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.0.24",
@@ -5848,23 +5848,27 @@ dependencies = [
 [[package]]
 name = "reth-trie-common"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
  "alloy-rlp",
+ "alloy-rpc-types-eth",
  "alloy-trie",
+ "bytes",
  "derive_more 2.0.1",
  "itertools 0.14.0",
  "nybbles",
+ "reth-codecs",
  "reth-primitives-traits",
  "revm-database 7.0.2",
+ "serde",
 ]
 
 [[package]]
 name = "reth-trie-sparse"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -5873,6 +5877,7 @@ dependencies = [
  "reth-execution-errors",
  "reth-primitives-traits",
  "reth-trie-common",
+ "serde",
  "smallvec",
  "tracing",
 ]
@@ -5880,7 +5885,7 @@ dependencies = [
 [[package]]
 name = "reth-zstd-compressors"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "zstd",
 ]
@@ -6457,7 +6462,7 @@ checksum = "28d3b2b1366ec20994f1fd18c3c594f05c5dd4bc44d8bb0c1c632c8d6829481f"
 [[package]]
 name = "sbv-core"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=fix%2Fblockhash#499c28de3328dce43a0ded419fab77ff8da986fa"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fzktrie-import#3e513db3885e01df0a98d4b2df934e152017c969"
 dependencies = [
  "cfg-if",
  "itertools 0.14.0",
@@ -6474,7 +6479,7 @@ dependencies = [
 [[package]]
 name = "sbv-helpers"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=fix%2Fblockhash#499c28de3328dce43a0ded419fab77ff8da986fa"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fzktrie-import#3e513db3885e01df0a98d4b2df934e152017c969"
 dependencies = [
  "tracing",
 ]
@@ -6482,7 +6487,7 @@ dependencies = [
 [[package]]
 name = "sbv-kv"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=fix%2Fblockhash#499c28de3328dce43a0ded419fab77ff8da986fa"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fzktrie-import#3e513db3885e01df0a98d4b2df934e152017c969"
 dependencies = [
  "auto_impl",
  "hashbrown 0.15.5",
@@ -6492,7 +6497,7 @@ dependencies = [
 [[package]]
 name = "sbv-precompile"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=fix%2Fblockhash#499c28de3328dce43a0ded419fab77ff8da986fa"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fzktrie-import#3e513db3885e01df0a98d4b2df934e152017c969"
 dependencies = [
  "openvm-ecc-guest 1.4.0-rc.4",
  "openvm-pairing",
@@ -6503,7 +6508,7 @@ dependencies = [
 [[package]]
 name = "sbv-primitives"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=fix%2Fblockhash#499c28de3328dce43a0ded419fab77ff8da986fa"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fzktrie-import#3e513db3885e01df0a98d4b2df934e152017c969"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.0.24",
@@ -6540,7 +6545,7 @@ dependencies = [
 [[package]]
 name = "sbv-trie"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=fix%2Fblockhash#499c28de3328dce43a0ded419fab77ff8da986fa"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fzktrie-import#3e513db3885e01df0a98d4b2df934e152017c969"
 dependencies = [
  "alloy-rlp",
  "alloy-trie",
@@ -6550,6 +6555,7 @@ dependencies = [
  "sbv-helpers",
  "sbv-kv",
  "sbv-primitives",
+ "serde",
  "thiserror 2.0.15",
 ]
 
@@ -6586,7 +6592,7 @@ checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 [[package]]
 name = "scroll-alloy-consensus"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.0.24",
@@ -6602,7 +6608,7 @@ dependencies = [
 [[package]]
 name = "scroll-alloy-evm"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.0.24",
@@ -6620,7 +6626,7 @@ dependencies = [
 [[package]]
 name = "scroll-alloy-hardforks"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-hardforks",
  "auto_impl",
@@ -6630,7 +6636,7 @@ dependencies = [
 [[package]]
 name = "scroll-alloy-rpc-types"
 version = "1.6.0"
-source = "git+https://github.com/scroll-tech/reth?rev=a6f827a71c5523d1d32e579456dfdab2cb003c66#a6f827a71c5523d1d32e579456dfdab2cb003c66"
+source = "git+https://github.com/scroll-tech/reth?branch=feat%2Fscroll-trie-deserialize#60932470dc39fae25591f60c5a82350ab4b61002"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.0.24",
@@ -6844,7 +6850,9 @@ dependencies = [
  "rkyv",
  "sbv-core",
  "sbv-helpers",
+ "sbv-kv",
  "sbv-primitives",
+ "sbv-trie",
  "scroll-zkvm-types-base",
  "serde",
 ]

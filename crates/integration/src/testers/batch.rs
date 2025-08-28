@@ -176,14 +176,14 @@ pub fn preset_batch() -> BatchTaskGenerator {
 
 /// preset examples for multiple task
 pub fn preset_batch_multiple() -> Vec<BatchTaskGenerator> {
-    static PRESET_RESULT: std::sync::OnceLock<Vec<BatchTaskGenerator>> = std::sync::OnceLock::new();
-
-    PRESET_RESULT
-        .get_or_init(|| {
+    thread_local! {
+        static PRESET_RESULT: Vec<BatchTaskGenerator> = {
             let chunks = preset_chunk_multiple();
             assert!(chunks.len() > 2);
             create_canonical_tasks([&chunks[0..1], &chunks[1..]].into_iter())
                 .expect("must success for preset collections")
-        })
-        .clone()
+        };
+    }
+
+    PRESET_RESULT.with(|v| v.clone())
 }
