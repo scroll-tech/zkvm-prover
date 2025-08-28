@@ -33,7 +33,6 @@
 //! - Commitment files: Written to respective circuit crate directories
 
 use std::{
-    collections::{BTreeSet, HashMap},
     env,
     fs::read_to_string,
     path::{Path, PathBuf},
@@ -80,6 +79,10 @@ struct Cli {
     /// - force: Always regenerate all files (use for clean builds or CI)
     #[arg(long, value_enum, default_value_t = OutputMode::Auto)]
     mode: OutputMode,
+
+    /// Output directory name under releases/ (default: "dev")
+    #[arg(long, default_value = "dev")]
+    output: String,
 }
 
 const LOG_PREFIX: &str = "[build-guest]";
@@ -336,7 +339,7 @@ fn generate_openvm_assets(
     force_overwrite: bool,
 ) -> Result<()> {
     // to use the 'foundry.toml'
-    env::set_current_dir(&workspace_dir)?;
+    env::set_current_dir(workspace_dir)?;
 
     generate_root_verifier(workspace_dir, force_overwrite)?;
     generate_evm_verifier(&release_output_dir.join("verifier"), true, force_overwrite)?;
@@ -362,7 +365,7 @@ pub fn main() -> Result<()> {
     let workspace_dir = metadata.workspace_root.into_std_path_buf();
     println!("{LOG_PREFIX} Workspace root: {}", workspace_dir.display());
 
-    let release_output_dir: std::path::PathBuf = workspace_dir.join("releases").join("dev");
+    let release_output_dir: std::path::PathBuf = workspace_dir.join("releases").join(&cli.output);
     std::fs::create_dir_all(&release_output_dir)?;
     println!(
         "{LOG_PREFIX} Release output directory: {}",
@@ -373,7 +376,6 @@ pub fn main() -> Result<()> {
     let force_overwrite = matches!(cli.mode, OutputMode::Force);
     generate_openvm_assets(&workspace_dir, &release_output_dir, force_overwrite)?;
 
-    // Always generate both app and openvm assets
     println!("{LOG_PREFIX} Generating app assets (always overwrite)");
     generate_app_assets(&workspace_dir, &release_output_dir)?;
 

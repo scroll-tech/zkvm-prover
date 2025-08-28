@@ -81,7 +81,7 @@ impl Prover {
         tracing::info!("prover setup");
         let app_exe: VmExe<F> = read_app_exe(&config.path_app_exe).unwrap();
         let app_exe = Arc::new(app_exe);
-        
+
         tracing::info!("prover setup done");
         Ok(Self {
             app_exe,
@@ -103,7 +103,8 @@ impl Prover {
             tracing::info!("Lazy initializing SDK...");
             let mut app_config = read_app_config(&self.config.path_app_config)?;
             let segment_len = self.config.segment_len.unwrap_or(DEFAULT_SEGMENT_SIZE);
-            let segmentation_limits = &mut app_config.app_vm_config.system.config.segmentation_limits;
+            let segmentation_limits =
+                &mut app_config.app_vm_config.system.config.segmentation_limits;
             segmentation_limits.max_trace_height = segment_len as u32;
             segmentation_limits.max_cells = 700_000_000 as usize; // For 24G vram
 
@@ -136,7 +137,6 @@ impl Prover {
         let vm = commits.app_vm_commit.to_u32_digest();
         ProgramCommitment { exe, vm }
     }
-    
 
     /// Pick up loaded app commit as "vk" in proof, to distinguish from which circuit the proof comes
     pub fn get_app_vk(&mut self) -> Vec<u8> {
@@ -272,7 +272,6 @@ impl Prover {
     pub fn gen_proof_stark(&mut self, stdin: StdIn) -> Result<StarkProof, Error> {
         // Here we always do an execution of the guest program to get the cycle count.
         // and do precheck before proving like ensure PI != 0
-        let total_cycle = self.execute_and_check(&stdin)?;
         let t = std::time::Instant::now();
         let total_cycles = self.execute_and_check(&stdin)?;
         let execution_time_mills = t.elapsed().as_millis() as u64;
@@ -309,7 +308,7 @@ impl Prover {
             .map_err(|e| Error::GenProof(e.to_string()))?;
         let proving_time_mills = t.elapsed().as_millis() as u64;
         let prove_speed =
-            (total_cycle as f32 / 1000_000.0f32) / (proving_time_mills as f32 / 1000.0f32); // MHz
+            (total_cycles as f32 / 1_000_000.0f32) / (proving_time_mills as f32 / 1000.0f32); // MHz
         tracing::info!("{} proving speed: {:.2}MHz", self.prover_name, prove_speed);
         let stat = StarkProofStat {
             total_cycles,
