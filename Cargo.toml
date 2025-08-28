@@ -53,7 +53,7 @@ openvm-native-compiler = { git = "https://github.com/openvm-org/openvm.git", bra
 openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/legacy-support", default-features = false }
 openvm-native-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/legacy-support", default-features = false }
 openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/legacy-support", default-features = false }
-openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/legacy-support", default-features = false, features = ["parallel", "evm-prove"] }
+openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/legacy-support", default-features = false, features = ["parallel", "evm-prove","legacy"] }
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/legacy-support", default-features = false }
 
 # more openvm related libs
