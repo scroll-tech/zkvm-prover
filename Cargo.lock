@@ -6457,7 +6457,7 @@ checksum = "28d3b2b1366ec20994f1fd18c3c594f05c5dd4bc44d8bb0c1c632c8d6829481f"
 [[package]]
 name = "sbv-core"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#482b62d1350445ae86f19d7e5d79a598c7a49135"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=fix%2Fblockhash#499c28de3328dce43a0ded419fab77ff8da986fa"
 dependencies = [
  "cfg-if",
  "itertools 0.14.0",
@@ -6474,7 +6474,7 @@ dependencies = [
 [[package]]
 name = "sbv-helpers"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#482b62d1350445ae86f19d7e5d79a598c7a49135"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=fix%2Fblockhash#499c28de3328dce43a0ded419fab77ff8da986fa"
 dependencies = [
  "tracing",
 ]
@@ -6482,7 +6482,7 @@ dependencies = [
 [[package]]
 name = "sbv-kv"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#482b62d1350445ae86f19d7e5d79a598c7a49135"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=fix%2Fblockhash#499c28de3328dce43a0ded419fab77ff8da986fa"
 dependencies = [
  "auto_impl",
  "hashbrown 0.15.5",
@@ -6492,7 +6492,7 @@ dependencies = [
 [[package]]
 name = "sbv-precompile"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#482b62d1350445ae86f19d7e5d79a598c7a49135"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=fix%2Fblockhash#499c28de3328dce43a0ded419fab77ff8da986fa"
 dependencies = [
  "openvm-ecc-guest 1.4.0-rc.4",
  "openvm-pairing",
@@ -6503,7 +6503,7 @@ dependencies = [
 [[package]]
 name = "sbv-primitives"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#482b62d1350445ae86f19d7e5d79a598c7a49135"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=fix%2Fblockhash#499c28de3328dce43a0ded419fab77ff8da986fa"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.0.24",
@@ -6540,7 +6540,7 @@ dependencies = [
 [[package]]
 name = "sbv-trie"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#482b62d1350445ae86f19d7e5d79a598c7a49135"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=fix%2Fblockhash#499c28de3328dce43a0ded419fab77ff8da986fa"
 dependencies = [
  "alloy-rlp",
  "alloy-trie",
