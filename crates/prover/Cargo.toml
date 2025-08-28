@@ -31,6 +31,6 @@ toml = "0.8"
 [dev-dependencies]
 
 [features]
-default = []
+default = ["cuda"]
 cuda = ["openvm-sdk/cuda"]
 
