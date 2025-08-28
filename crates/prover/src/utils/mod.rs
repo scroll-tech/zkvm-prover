@@ -131,10 +131,11 @@ pub fn print_gpu_memory_usage() -> Result<(), Error> {
 
 #[cfg(feature = "cuda")]
 fn try_print_gpu_memory_cudarc() -> Result<(), Box<dyn std::error::Error>> {
-    use cudarc::driver::{CudaDevice, DriverError};
+    use cudarc::driver::result::{device, mem_get_info};
+    use cudarc::driver::safe::CudaDevice;
     
     // Initialize CUDA and get device count
-    let device_count = CudaDevice::device_count()?;
+    let device_count = device::get_count()? as usize;
     
     if device_count == 0 {
         println!("No CUDA devices found");
@@ -146,8 +147,9 @@ fn try_print_gpu_memory_cudarc() -> Result<(), Box<dyn std::error::Error>> {
     
     for device_id in 0..device_count {
         match CudaDevice::new(device_id) {
-            Ok(device) => {
-                let (free_bytes, total_bytes) = device.memory_info()?;
+            Ok(_device) => {
+                // Create a temporary context to get memory info for this device
+                let (free_bytes, total_bytes) = mem_get_info()?;
                 
                 let total_gib = total_bytes as f64 / (1024.0 * 1024.0 * 1024.0);
                 let free_gib = free_bytes as f64 / (1024.0 * 1024.0 * 1024.0);
