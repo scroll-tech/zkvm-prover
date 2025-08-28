@@ -18,8 +18,8 @@ use tracing::instrument;
 // Re-export from openvm_sdk.
 pub use openvm_sdk::{self};
 
-use crate::{setup::read_app_exe, utils::print_gpu_memory_usage};
 use crate::{Error, setup::read_app_config, task::ProvingTask};
+use crate::{setup::read_app_exe, utils::print_gpu_memory_usage};
 
 use scroll_zkvm_types::proof::{EvmProof, ProofEnum, StarkProof, StarkProofStat};
 
@@ -67,12 +67,11 @@ impl Prover {
     /// Release OpenVM SDK resources
     pub fn reset(&mut self) {
         println!("before reset");
-        print_gpu_memory_usage();
+        let _ = print_gpu_memory_usage();
         self.sdk = OnceLock::new();
         self.prover = OnceLock::new();
         println!("after reset");
-        print_gpu_memory_usage();
-
+        let _ = print_gpu_memory_usage();
     }
 
     /// Get or initialize the SDK lazily
@@ -199,11 +198,11 @@ impl Prover {
         let prover = self.get_prover_mut()?;
 
         println!("before prove");
-        print_gpu_memory_usage();
+        let _ = print_gpu_memory_usage();
         let proof = prover.prove(stdin);
 
         println!("after prove");
-        print_gpu_memory_usage();
+        let _ = print_gpu_memory_usage();
 
         let proving_time_mills = t.elapsed().as_millis() as u64;
         let prove_speed =

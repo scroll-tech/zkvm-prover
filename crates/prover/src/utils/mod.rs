@@ -120,52 +120,49 @@ pub fn print_gpu_memory_usage() -> Result<(), Error> {
             }
         }
     }
-    
+
     #[cfg(not(feature = "cuda"))]
     {
         println!("GPU memory monitoring not available (CUDA feature not enabled)");
     }
-    
+
     Ok(())
 }
 
 #[cfg(feature = "cuda")]
 fn try_print_gpu_memory_cudarc() -> Result<(), Box<dyn std::error::Error>> {
     use cudarc::driver::result::{device, mem_get_info};
-    use cudarc::driver::safe::CudaDevice;
-    
-    // Initialize CUDA and get device count
+
+    // Get device count without creating new contexts
     let device_count = device::get_count()? as usize;
-    
+
     if device_count == 0 {
         println!("No CUDA devices found");
         return Ok(());
     }
-    
+
     println!("GPU Memory Usage:");
     println!("{:-<50}", "");
-    
-    for device_id in 0..device_count {
-        match CudaDevice::new(device_id) {
-            Ok(_device) => {
-                // Create a temporary context to get memory info for this device
-                let (free_bytes, total_bytes) = mem_get_info()?;
-                
-                let total_gib = total_bytes as f64 / (1024.0 * 1024.0 * 1024.0);
-                let free_gib = free_bytes as f64 / (1024.0 * 1024.0 * 1024.0);
-                let used_gib = total_gib - free_gib;
-                let usage_percent = (used_gib / total_gib) * 100.0;
-                
-                println!("GPU {}: Used: {:.2} GiB, Free: {:.2} GiB, Total: {:.2} GiB ({:.1}% used)",
-                    device_id, used_gib, free_gib, total_gib, usage_percent);
-            }
-            Err(e) => {
-                println!("GPU {}: Failed to initialize device - {}", device_id, e);
-            }
+
+    // Try to get memory info from current context instead of creating new ones
+    match mem_get_info() {
+        Ok((free_bytes, total_bytes)) => {
+            let total_gib = total_bytes as f64 / (1024.0 * 1024.0 * 1024.0);
+            let free_gib = free_bytes as f64 / (1024.0 * 1024.0 * 1024.0);
+            let used_gib = total_gib - free_gib;
+            let usage_percent = (used_gib / total_gib) * 100.0;
+
+            println!(
+                "Current GPU: Used: {:.2} GiB, Free: {:.2} GiB, Total: {:.2} GiB ({:.1}% used)",
+                used_gib, free_gib, total_gib, usage_percent
+            );
+        }
+        Err(e) => {
+            println!("Could not get GPU memory info (no active context): {}", e);
         }
     }
+
     println!("{:-<50}", "");
-    
+
     Ok(())
 }
-
