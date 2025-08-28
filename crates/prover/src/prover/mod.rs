@@ -27,10 +27,13 @@ use scroll_zkvm_types::proof::{EvmProof, ProofEnum, StarkProof, StarkProofStat};
 pub struct Prover {
     /// Prover name
     pub prover_name: String,
-    /// Commitment to app exe.
+    /// The program exe.
     pub app_exe: Arc<VmExe<F>>,
+    /// Prover configuration.
     pub config: ProverConfig,
+    /// Lazily initialized SDK
     sdk: OnceLock<Sdk>,
+    /// Lazily initialized stark prover
     prover: OnceLock<StarkProver<DefaultStarkEngine, SdkVmBuilder, NativeBuilder>>,
 }
 
@@ -51,13 +54,9 @@ impl Prover {
     /// Setup the [`Prover`] given paths to the application's exe and proving key.
     #[instrument("Prover::setup")]
     pub fn setup(config: ProverConfig, name: Option<&str>) -> Result<Self, Error> {
-        tracing::info!("prover setup");
-        let app_exe: VmExe<F> = read_app_exe(&config.path_app_exe).unwrap();
-        let app_exe = Arc::new(app_exe);
-
-        tracing::info!("prover setup done");
+        let app_exe = read_app_exe(&config.path_app_exe)?;
         Ok(Self {
-            app_exe,
+            app_exe: Arc::new(app_exe),
             config,
             prover_name: name.unwrap_or("universal").to_string(),
             sdk: OnceLock::new(),
@@ -65,6 +64,7 @@ impl Prover {
         })
     }
 
+    /// Release OpenVM SDK resources
     pub fn reset(&mut self) {
         self.sdk = OnceLock::new();
         self.prover = OnceLock::new();
@@ -81,7 +81,7 @@ impl Prover {
             segmentation_limits.max_trace_height = segment_len as u32;
             segmentation_limits.max_cells = 700_000_000 as usize; // For 24G vram
 
-            let sdk = Sdk::new(app_config).unwrap();
+            let sdk = Sdk::new(app_config).expect("sdk init failed");
             // 45s for first time
             let sdk = sdk.with_agg_pk(AGG_STARK_PROVING_KEY.clone());
             Ok(sdk)
@@ -157,11 +157,10 @@ impl Prover {
         stdin: &StdIn,
     ) -> Result<crate::utils::vm::ExecutionResult, Error> {
         let sdk = self.get_sdk()?;
-        let config = sdk.app_config(); // app_pk.app_vm_pk.vm_config.clone();
-        let exe = self.app_exe.clone();
+        let config = sdk.app_config();
         let t = std::time::Instant::now();
         let exec_result =
-            crate::utils::vm::execute_guest(config.app_vm_config.clone(), exe, stdin)?;
+            crate::utils::vm::execute_guest(config.app_vm_config.clone(), &self.app_exe, stdin)?;
         let execution_time_mills = t.elapsed().as_millis() as u64;
         let execution_time_s = execution_time_mills as f32 / 1000.0f32;
         let exec_speed = (exec_result.total_cycle as f32 / 1000_000.0f32) / execution_time_s; // MHz

@@ -1,6 +1,6 @@
 use once_cell::sync::Lazy;
 use openvm_sdk::commit::AppExecutionCommit;
-use openvm_sdk::keygen::{AggProvingKey, AggVerifyingKey};
+use openvm_sdk::keygen::AggProvingKey;
 use openvm_sdk::{Sdk, commit::CommitBytes};
 use scroll_zkvm_types::proof::OpenVmEvmProof;
 use scroll_zkvm_types::{proof::StarkProof, utils::serialize_vk};
@@ -13,20 +13,13 @@ pub static AGG_STARK_PROVING_KEY: Lazy<AggProvingKey> =
 
 pub struct UniversalVerifier {
     pub evm_verifier: Vec<u8>,
-    pub agg_vk: AggVerifyingKey,
 }
 
 impl UniversalVerifier {
     pub fn setup<P: AsRef<Path>>(path_verifier_code: P) -> eyre::Result<Self> {
         let evm_verifier = std::fs::read(path_verifier_code.as_ref())?;
 
-        let agg_vk = AGG_STARK_PROVING_KEY.get_agg_vk();
-
-        tracing::info!("verifier setup done");
-        Ok(Self {
-            evm_verifier,
-            agg_vk,
-        })
+        Ok(Self { evm_verifier })
     }
 
     pub fn verify_stark_proof(stark_proof: &StarkProof, vk: &[u8]) -> eyre::Result<()> {
@@ -41,6 +34,7 @@ impl UniversalVerifier {
         }
         */
 
+        let agg_stark_vk = &AGG_STARK_PROVING_KEY.get_agg_vk();
         use openvm_continuations::verifier::internal::types::VmStarkProof;
         let vm_stark_proof = VmStarkProof {
             inner: stark_proof.proofs[0].clone(),
@@ -50,11 +44,7 @@ impl UniversalVerifier {
             app_exe_commit: CommitBytes::from_u32_digest(&prog_commit.exe),
             app_vm_commit: CommitBytes::from_u32_digest(&prog_commit.vm),
         };
-        Sdk::verify_proof(
-            &AGG_STARK_PROVING_KEY.get_agg_vk(),
-            expected_app_commit,
-            &vm_stark_proof,
-        )?;
+        Sdk::verify_proof(agg_stark_vk, expected_app_commit, &vm_stark_proof)?;
 
         Ok(())
     }
