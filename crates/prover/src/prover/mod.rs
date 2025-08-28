@@ -4,13 +4,13 @@ use std::{
     sync::{Arc, OnceLock},
 };
 
-use openvm_native_circuit::{NativeGpuBuilder};
-use openvm_sdk::config::SdkVmGpuBuilder;
+#[cfg(feature = "cuda")]
+use openvm_native_circuit::{NativeGpuBuilder as NativeBuilder};
+#[cfg(not(feature = "cuda"))]
+use openvm_native_circuit::{NativeCpuBuilder as NativeBuilder};
 
 use openvm_circuit::arch::instructions::exe::VmExe;
-use openvm_native_circuit::NativeCpuBuilder;
 use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
-use openvm_sdk::config::SdkVmCpuBuilder;
 use openvm_sdk::{DefaultStarkEngine, config::SdkVmBuilder};
 use openvm_sdk::{
     DefaultStaticVerifierPvHandler, F, GenericSdk, Sdk, StdIn,
@@ -56,9 +56,8 @@ pub struct Prover {
     /// Configuration for the prover.
     pub config: ProverConfig,
     sdk: OnceLock<Sdk>,
-    //pub prover: StarkProver<DefaultStarkEngine, SdkVmGpuBuilder, NativeGpuBuilder>,
-    prover: OnceLock<StarkProver<DefaultStarkEngine, SdkVmGpuBuilder, NativeGpuBuilder>>,
-    //pub prover: StarkProver<DefaultStarkEngine, SdkVmGpuBuilder, NativeGpuBuilder>,
+
+    prover: OnceLock<StarkProver<DefaultStarkEngine, SdkVmBuilder, NativeBuilder>>,
 }
 
 /// Configure the [`Prover`].
@@ -119,7 +118,7 @@ impl Prover {
     }
 
     /// Get or initialize the prover lazily
-    fn get_prover_mut(&mut self) -> Result<&mut StarkProver<DefaultStarkEngine, SdkVmGpuBuilder, NativeGpuBuilder>, Error> {
+    fn get_prover_mut(&mut self) -> Result<&mut StarkProver<DefaultStarkEngine, SdkVmBuilder, NativeBuilder>, Error> {
         if self.prover.get().is_none() {
             tracing::info!("Lazy initializing prover...");
             let sdk = self.get_sdk()?;
