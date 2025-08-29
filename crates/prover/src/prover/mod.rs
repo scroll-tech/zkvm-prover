@@ -71,7 +71,11 @@ impl Prover {
         self.sdk = OnceLock::new();
         self.prover = OnceLock::new();
         println!("after reset");
-        let _ = print_gpu_memory_usage();
+        for i in 1..=50 {
+            println!("GPU memory usage check #{}", i);
+            let _ = print_gpu_memory_usage();
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
     }
 
     /// Get or initialize the SDK lazily
