@@ -68,9 +68,11 @@ impl Prover {
     pub fn reset(&mut self) {
         println!("before reset");
         let _ = print_gpu_memory_usage();
-        self.sdk = OnceLock::new();
         self.prover = OnceLock::new();
-        println!("after reset");
+        println!("after reset prover");
+        let _ = print_gpu_memory_usage();
+        self.sdk = OnceLock::new();
+        println!("after reset sdk");
         for i in 1..=50 {
             println!("GPU memory usage check #{}", i);
             let _ = print_gpu_memory_usage();
