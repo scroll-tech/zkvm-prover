@@ -68,16 +68,16 @@ impl Prover {
     pub fn reset(&mut self) {
         println!("before reset");
         let _ = print_gpu_memory_usage();
-        self.prover = OnceLock::new();
+        //self.prover = OnceLock::new();
         println!("after reset prover");
         let _ = print_gpu_memory_usage();
-        self.sdk = OnceLock::new();
+        //self.sdk = OnceLock::new();
         println!("after reset sdk");
-        for i in 1..=50 {
-            println!("GPU memory usage check #{}", i);
+        //for i in 1..=50 {
+          //  println!("GPU memory usage check #{}", i);
             let _ = print_gpu_memory_usage();
-            std::thread::sleep(std::time::Duration::from_millis(100));
-        }
+            //std::thread::sleep(std::time::Duration::from_millis(100));
+        //}
     }
 
     /// Get or initialize the SDK lazily
@@ -103,10 +103,11 @@ impl Prover {
         &mut self,
     ) -> Result<&mut StarkProver<DefaultStarkEngine, SdkVmBuilder, NativeBuilder>, Error> {
         if self.prover.get().is_none() {
-            tracing::info!("Lazy initializing prover...");
             let sdk = self.get_sdk()?;
             // 5s
+            tracing::info!("Lazy initializing prover...");
             let prover = sdk.prover(self.app_exe.clone()).unwrap();
+            tracing::info!("Lazy initializing prover done");
             let _ = self.prover.set(prover);
         }
         Ok(self.prover.get_mut().unwrap())

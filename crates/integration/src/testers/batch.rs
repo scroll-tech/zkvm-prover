@@ -87,7 +87,6 @@ impl BatchTaskGenerator {
             let proof = chunk_gen.get_or_build_proof(child_prover)?;
             proofs.push(proof);
         }
-        child_prover.reset();
         Ok(proofs)
     }
 
