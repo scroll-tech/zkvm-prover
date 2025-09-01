@@ -40,7 +40,7 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@56f84321dbccf38fb67ce29ab63e4754056677e0
         with:
-          toolchain: nightly-2025-08-19
+          toolchain: nightly-2025-08-18
           components: rustfmt
 
       - name: Cargo fmt
@@ -61,7 +61,7 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@56f84321dbccf38fb67ce29ab63e4754056677e0
         with:
-          toolchain: nightly-2025-08-19
+          toolchain: nightly-2025-08-18
           components: clippy
 
       - name: Clippy

@@ -23,7 +23,7 @@ jobs:
       - name: Install Rust nightly toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2025-08-19
+          toolchain: nightly-2025-08-18
           target: x86_64-unknown-linux-gnu
           components: rust-src
           override: true
