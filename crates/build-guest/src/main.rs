@@ -208,7 +208,7 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
         // 3. Compute and Write Executable Commitment
         let app_pk = sdk.app_pk();
         let app_prover: AppProver<openvm_sdk::DefaultStarkEngine, _> = AppProver::new(
-            sdk.app_vm_builder().clone(),
+            *sdk.app_vm_builder(),
             &app_pk.app_vm_pk,
             Arc::new(app_exe),
             app_pk.leaf_committed_exe.get_program_commit(),

@@ -79,7 +79,7 @@ impl Prover {
             let segmentation_limits =
                 &mut app_config.app_vm_config.system.config.segmentation_limits;
             segmentation_limits.max_trace_height = segment_len as u32;
-            segmentation_limits.max_cells = 700_000_000 as usize; // For 24G vram
+            segmentation_limits.max_cells = 700_000_000_usize; // For 24G vram
 
             let sdk = Sdk::new(app_config).expect("sdk init failed");
             // 45s for first time
@@ -163,7 +163,7 @@ impl Prover {
             crate::utils::vm::execute_guest(config.app_vm_config.clone(), &self.app_exe, stdin)?;
         let execution_time_mills = t.elapsed().as_millis() as u64;
         let execution_time_s = execution_time_mills as f32 / 1000.0f32;
-        let exec_speed = (exec_result.total_cycle as f32 / 1000_000.0f32) / execution_time_s; // MHz
+        let exec_speed = (exec_result.total_cycle as f32 / 1_000_000.0f32) / execution_time_s; // MHz
         tracing::info!(
             "total cycle of {}: {}, exec speed: {:.2}MHz, exec time: {:2}s",
             self.prover_name,
