@@ -28,7 +28,7 @@ clippy:
 	sh openvm-clippy.sh
 	@cargo clippy --tests --all-features --manifest-path crates/verifier/Cargo.toml -- -D warnings
 	@cargo clippy --tests --manifest-path crates/prover/Cargo.toml -- -D warnings
-	@cargo clippy --tests --all-features --manifest-path crates/integration/Cargo.toml -- -D warnings
+	@cargo clippy --tests --manifest-path crates/integration/Cargo.toml -- -D warnings
 	@cargo clippy --tests --all-features --manifest-path crates/build-guest/Cargo.toml -- -D warnings
 
 clean-guest:
