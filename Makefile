@@ -4,7 +4,7 @@ export RUST_MIN_STACK
 RUST_BACKTRACE ?= 1
 export RUST_BACKTRACE
 
-RUST_LOG ?= off,scroll_zkvm_integration=debug,scroll_zkvm_verifier=debug,scroll_zkvm_prover=debug,openvm_circuit=debug
+RUST_LOG ?= off,scroll_zkvm_integration=debug,scroll_zkvm_verifier=debug,scroll_zkvm_prover=debug,p3_fri=warn,p3_dft=warn,openvm_circuit=warn
 export RUST_LOG
 
 OPENVM_RUST_TOOLCHAIN ?= nightly-2025-08-18
@@ -12,7 +12,7 @@ export OPENVM_RUST_TOOLCHAIN
 
 # Set GPU config if GPU=1 is set
 ifeq ($(GPU),1)
-CARGO_CONFIG_FLAG = --config Cargo.toml.gpu
+CARGO_CONFIG_FLAG = --features scroll-zkvm-integration/cuda
 else
 CARGO_CONFIG_FLAG =
 endif
@@ -27,8 +27,8 @@ clippy:
 	@cargo clippy --tests --manifest-path crates/types/Cargo.toml -- -D warnings
 	sh openvm-clippy.sh
 	@cargo clippy --tests --all-features --manifest-path crates/verifier/Cargo.toml -- -D warnings
-	@cargo clippy --tests --all-features --manifest-path crates/prover/Cargo.toml -- -D warnings
-	@cargo clippy --tests --all-features --manifest-path crates/integration/Cargo.toml -- -D warnings
+	@cargo clippy --tests --manifest-path crates/prover/Cargo.toml -- -D warnings
+	@cargo clippy --tests --manifest-path crates/integration/Cargo.toml -- -D warnings
 	@cargo clippy --tests --all-features --manifest-path crates/build-guest/Cargo.toml -- -D warnings
 
 clean-guest:

@@ -74,7 +74,7 @@ static DIR_OUTPUT: LazyLock<&Path> = LazyLock::new(|| {
 /// - <DIR_OUTPUT>/chunk-tests-{timestamp}
 /// - <DIR_OUTPUT>/batch-tests-{timestamp}
 /// - <DIR_OUTPUT>/bundle-tests-{timestamp}
-static DIR_TESTRUN: OnceCell<PathBuf> = OnceCell::new();
+pub static DIR_TESTRUN: OnceCell<PathBuf> = OnceCell::new();
 
 pub trait PartialProvingTask: serde::Serialize {
     fn identifier(&self) -> String;
@@ -116,9 +116,11 @@ pub trait ProverTester {
     const DIR_ASSETS: &str;
 
     /// Setup directory structure for the test suite.
-    fn setup() -> eyre::Result<()> {
+    fn setup(setup_logger: bool) -> eyre::Result<()> {
         // Setup tracing subscriber.
-        setup_logger()?;
+        if setup_logger {
+            crate::setup_logger()?;
+        }
 
         // If user has set an output directory, use it.
         let dir_testrun = if let Ok(env_dir) = std::env::var(ENV_OUTPUT_DIR) {
@@ -171,7 +173,7 @@ pub trait ProverTester {
             path_app_config,
             ..Default::default()
         };
-        let prover = scroll_zkvm_prover::Prover::setup(config, with_evm, Some(Self::NAME))?;
+        let prover = scroll_zkvm_prover::Prover::setup(config, Some(Self::NAME))?;
 
         Ok(prover)
     }
@@ -278,12 +280,12 @@ pub fn tester_execute<T: ProverTester>(
     )?;
 
     let ret =
-        scroll_zkvm_prover::utils::vm::execute_guest(app_config.app_vm_config, app_exe, &stdin)?;
+        scroll_zkvm_prover::utils::vm::execute_guest(app_config.app_vm_config, &app_exe, &stdin)?;
     Ok(ret)
 }
 
 /// End-to-end test for proving witnesses of the same prover.
-#[instrument(name = "prove_verify", skip_all, fields(task_id))]
+#[instrument(name = "prove_verify", skip_all, fields(task_id, prover_name = prover.prover_name))]
 pub fn prove_verify<T: ProverTester>(
     prover: &mut Prover,
     witness: &T::Witness,
