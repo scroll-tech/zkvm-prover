@@ -47,6 +47,10 @@ pub fn testing_version() -> Version {
     Version::feynman()
 }
 
+pub fn testing_version_validium() -> Version {
+    Version::validium_v1()
+}
+
 /// Read the 'GUEST_VERSION' from the environment variable.
 /// If not existed, return "dev" as default
 /// The returned value will be used to locate asset files: $workspace/releases/$guest_version

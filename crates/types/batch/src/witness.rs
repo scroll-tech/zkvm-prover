@@ -82,8 +82,11 @@ pub struct BatchWitness {
     /// Blob bytes.
     #[rkyv()]
     pub blob_bytes: Vec<u8>,
-    /// Witness for point evaluation
-    pub point_eval_witness: PointEvalWitness,
+    /// Witness for point evaluation.
+    ///
+    /// Optional field as some domains (for eg. Validium) may not utilise EIP-4844 for DA,
+    /// in case of which there is no point-eval witness.
+    pub point_eval_witness: Option<PointEvalWitness>,
     /// Header for reference.
     #[rkyv()]
     pub reference_header: ReferenceHeader,
@@ -114,22 +117,30 @@ impl From<&BatchWitness> for BatchInfo {
                 BatchInfoBuilderV6::build(args)
             }
             ReferenceHeader::V7(header) => {
+                let point_eval_witness = witness
+                    .point_eval_witness
+                    .as_ref()
+                    .expect("point_eval_witness missing for header::v7");
                 let args = BuilderArgsV7 {
                     header: *header,
                     chunk_infos,
                     blob_bytes: witness.blob_bytes.to_vec(),
-                    kzg_commitment: Some(witness.point_eval_witness.kzg_commitment),
-                    kzg_proof: Some(witness.point_eval_witness.kzg_proof),
+                    kzg_commitment: Some(point_eval_witness.kzg_commitment),
+                    kzg_proof: Some(point_eval_witness.kzg_proof),
                 };
                 BatchInfoBuilderV7::build(args)
             }
             ReferenceHeader::V8(header) => {
+                let point_eval_witness = witness
+                    .point_eval_witness
+                    .as_ref()
+                    .expect("point_eval_witness missing for header::v8");
                 let args = BuilderArgsV8 {
                     header: *header,
                     chunk_infos,
                     blob_bytes: witness.blob_bytes.to_vec(),
-                    kzg_commitment: Some(witness.point_eval_witness.kzg_commitment),
-                    kzg_proof: Some(witness.point_eval_witness.kzg_proof),
+                    kzg_commitment: Some(point_eval_witness.kzg_commitment),
+                    kzg_proof: Some(point_eval_witness.kzg_proof),
                 };
                 BatchInfoBuilderV8::build(args)
             }

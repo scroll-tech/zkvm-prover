@@ -4,6 +4,7 @@ use sbv_core::verifier::StateCommitMode;
 use sbv_primitives::types::consensus::TxL1Message;
 use sbv_primitives::{U256, types::BlockWitness};
 use std::collections::HashSet;
+use types_base::version::Version;
 use types_base::{fork_name::ForkName, public_inputs::chunk::ChunkInfo};
 
 /// The witness type accepted by the chunk-circuit.
@@ -159,6 +160,10 @@ impl ChunkWitness {
             num_txs,
             total_gas_used,
         }
+    }
+
+    pub fn version(&self) -> Version {
+        Version::from(self.version)
     }
 }
 

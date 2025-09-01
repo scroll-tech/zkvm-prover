@@ -10,8 +10,7 @@ use scroll_zkvm_prover::Prover;
 
 use crate::{
     PartialProvingTask, ProverTester, load_program_commitments, prove_verify_single_evm,
-    testers::batch::BatchTaskGenerator, testing_hardfork, testing_version,
-    utils::metadata_from_batch_witnesses,
+    testers::batch::BatchTaskGenerator, utils::metadata_from_batch_witnesses,
 };
 
 impl PartialProvingTask for BundleWitness {
@@ -78,6 +77,7 @@ impl BundleTaskGenerator {
         self.proof.replace(proof.clone());
         Ok(proof)
     }
+
     fn get_or_build_child_proofs(
         &mut self,
         batch_prover: &mut Prover,
@@ -105,7 +105,12 @@ impl BundleTaskGenerator {
             public_inputs::MultiVersionPublicInputs, types_agg::AggregationInput,
         };
 
-        let fork_name = testing_hardfork();
+        let version = self
+            .batch_generators
+            .first()
+            .expect("at least 1 batch in a bundle")
+            .version();
+        let fork_name = version.fork;
 
         let commitment = load_program_commitments("batch")?;
         let mut batch_proofs = Vec::new();
@@ -121,7 +126,7 @@ impl BundleTaskGenerator {
                 assert_eq!(info.parent_batch_hash, last_info.batch_hash, "batch hash",);
             }
 
-            let pi_hash = info.pi_hash_by_fork(fork_name);
+            let pi_hash = info.pi_hash_by_version(version);
             let proof = AggregationInput {
                 public_values: pi_hash
                     .as_slice()
@@ -134,10 +139,8 @@ impl BundleTaskGenerator {
             batch_infos.push(info);
         }
 
-        let version = testing_version().as_version_byte();
-
         Ok(BundleWitness {
-            version,
+            version: version.as_version_byte(),
             batch_infos,
             batch_proofs,
             fork_name,

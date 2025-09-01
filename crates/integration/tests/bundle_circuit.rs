@@ -1,26 +1,28 @@
 use sbv_primitives::B256;
 use scroll_zkvm_integration::{
-    ProverTester, // utils::{LastHeader, build_batch_task, testing_hardfork},
+    ProverTester,
     testers::{
-        batch::{BatchProverTester, preset_batch_multiple},
+        batch::{BatchProverTester, preset_batch_multiple, preset_batch_validium},
         bundle::{BundleProverTester, BundleTaskGenerator},
         chunk::ChunkProverTester,
         load_local_task,
     },
-    testing_hardfork,
+    testing_hardfork, testing_version_validium,
     utils::metadata_from_bundle_witnesses,
 };
-use scroll_zkvm_prover::{
-    // AsRootProof, BatchProof, ChunkProof, IntoEvmProof,
-    // setup::{read_app_config, read_app_exe},
-    Prover,
-    ProverConfig,
+use scroll_zkvm_prover::{Prover, ProverConfig};
+use scroll_zkvm_types::{
+    proof::OpenVmEvmProof,
+    public_inputs::{ForkName, MultiVersionPublicInputs},
 };
-use scroll_zkvm_types::{proof::OpenVmEvmProof, public_inputs::ForkName};
 use std::str::FromStr;
 
 fn preset_bundle() -> BundleTaskGenerator {
     BundleTaskGenerator::from_batch_tasks(&preset_batch_multiple())
+}
+
+fn preset_bundle_validium() -> BundleTaskGenerator {
+    BundleTaskGenerator::from_batch_tasks(&[preset_batch_validium()])
 }
 
 #[test]
@@ -150,6 +152,39 @@ fn e2e() -> eyre::Result<()> {
 
     let observed_instances = &evm_proof.user_public_values;
 
+    for (i, (&expected, &observed)) in expected_pi_hash
+        .iter()
+        .zip(observed_instances.iter())
+        .enumerate()
+    {
+        assert_eq!(
+            expected, observed,
+            "pi inconsistent at index {i}: expected={expected}, observed={observed:?}"
+        );
+    }
+
+    Ok(())
+}
+
+#[test]
+fn test_execute_validium() -> eyre::Result<()> {
+    BundleProverTester::setup()?;
+
+    let version = testing_version_validium();
+
+    let mut chunk_prover = ChunkProverTester::load_prover(false)?;
+    let mut batch_prover = BatchProverTester::load_prover(false)?;
+    let mut bundle_prover = BundleProverTester::load_prover(true)?;
+
+    let mut task = preset_bundle_validium();
+    let wit = task.get_or_build_witness()?;
+    let metadata = metadata_from_bundle_witnesses(&wit)?;
+    let expected_pi_hash = metadata.pi_hash_by_version(version);
+
+    let proof =
+        task.get_or_build_proof(&mut bundle_prover, &mut batch_prover, &mut chunk_prover)?;
+    let evm_proof: OpenVmEvmProof = proof.into_evm_proof().unwrap().into();
+    let observed_instances = &evm_proof.user_public_values;
     for (i, (&expected, &observed)) in expected_pi_hash
         .iter()
         .zip(observed_instances.iter())

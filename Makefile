@@ -74,6 +74,9 @@ test-execute-batch-fast: $(TESTDATA_PATH)/tasks/batch-task.json
 test-execute-bundle:
 	@cargo test --release -p scroll-zkvm-integration --test bundle_circuit test_execute -- --exact --nocapture
 
+test-execute-validium-e2e:
+	@cargo test --release -p scroll-zkvm-integration --test bundle_circuit test_execute_validium -- --exact --nocapture
+
 test-single-chunk:
 	@cargo test --release -p scroll-zkvm-integration --test chunk_circuit setup_prove_verify_single -- --exact --nocapture
 

@@ -140,6 +140,16 @@ impl Version {
             codec: Codec::V9,
         }
     }
+
+    pub fn is_validium(&self) -> bool {
+        self.domain == Domain::Validium
+    }
+}
+
+impl Default for Version {
+    fn default() -> Self {
+        Self::feynman()
+    }
 }
 
 impl From<u8> for Version {

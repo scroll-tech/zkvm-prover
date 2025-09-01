@@ -4,7 +4,7 @@ pub use header::{
     v6::{ArchivedBatchHeaderV6, BatchHeaderV6},
     v7::{ArchivedBatchHeaderV7, BatchHeaderV7},
     v8::{ArchivedBatchHeaderV8, BatchHeaderV8},
-    validium::BatchHeaderValidium,
+    validium::{BatchHeaderValidium, BatchHeaderValidiumV1},
 };
 
 mod payload;
