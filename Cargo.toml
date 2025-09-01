@@ -42,19 +42,19 @@ openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev =
 openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "51d0aa69694fd33def3c433e48228a5675e4fd97", default-features = false }
 
 # openvm host libs
-openvm-benchmarks-prove = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/legacy-support", default-features = false }
-openvm-benchmarks-utils = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/legacy-support", default-features = false }
-openvm-build = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/legacy-support", default-features = false }
-openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/legacy-support", default-features = false }
-openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/legacy-support", default-features = false }
-openvm-instructions ={ git = "https://github.com/openvm-org/openvm.git", branch = "feat/legacy-support", default-features = false }
-openvm-native-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/legacy-support", default-features = false }
-openvm-native-compiler = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/legacy-support", default-features = false }
-openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/legacy-support", default-features = false }
-openvm-native-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/legacy-support", default-features = false }
-openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/legacy-support", default-features = false }
-openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/legacy-support", default-features = false, features = ["parallel", "evm-prove","legacy"] }
-openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/legacy-support", default-features = false }
+openvm-benchmarks-prove = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-benchmarks-utils = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-build = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-instructions ={ git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-native-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-native-compiler = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-native-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false, features = ["parallel", "evm-prove","legacy-v1-3"] }
+openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
 
 # more openvm related libs
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.0-rc.7" }
