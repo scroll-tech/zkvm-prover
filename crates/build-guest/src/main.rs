@@ -53,7 +53,6 @@ use openvm_sdk::{
     fs::{write_object_to_file, write_to_file_json},
     prover::{AppProver, StarkProver},
 };
-use openvm_stark_sdk::p3_bn254_fr::Bn254Fr;
 use openvm_stark_sdk::{
     config::baby_bear_poseidon2::BabyBearPoseidon2Engine,
     openvm_stark_backend::p3_field::PrimeField32, p3_bn254_fr::Bn254Fr,

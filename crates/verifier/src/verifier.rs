@@ -4,7 +4,7 @@ use openvm_sdk::keygen::AggProvingKey;
 use openvm_sdk::{Sdk, commit::CommitBytes};
 use scroll_zkvm_types::proof::OpenVmEvmProof;
 use scroll_zkvm_types::{proof::StarkProof, utils::serialize_vk};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 /// Proving key for STARK aggregation. Primarily used to aggregate
 /// [continuation proofs][openvm_sdk::prover::vm::ContinuationVmProof].
@@ -12,25 +12,14 @@ pub static AGG_STARK_PROVING_KEY: Lazy<AggProvingKey> =
     Lazy::new(|| Sdk::riscv32().agg_pk().clone());
 
 pub struct UniversalVerifier {
-    pub evm_verifier: Option<Vec<u8>>,
-    pub agg_vk: AggVerifyingKey,
+    pub evm_verifier: Vec<u8>,
 }
 
 impl UniversalVerifier {
-    pub fn new() -> UniversalVerifier {
-        Self::setup(None::<PathBuf>).unwrap()
-    }
-    pub fn setup<P: AsRef<Path>>(path_verifier_code: Option<P>) -> eyre::Result<Self> {
-        tracing::info!("verifier setup");
-        let evm_verifier = path_verifier_code.map(|p| std::fs::read(p.as_ref()).unwrap());
+    pub fn setup<P: AsRef<Path>>(path_verifier_code: P) -> eyre::Result<Self> {
+        let evm_verifier = std::fs::read(path_verifier_code.as_ref())?;
 
-        let agg_vk = AGG_STARK_PROVING_KEY.get_agg_vk();
-
-        tracing::info!("verifier setup done");
-        Ok(Self {
-            evm_verifier,
-            agg_vk,
-        })
+        Ok(Self { evm_verifier })
     }
 
     pub fn verify_stark_proof(stark_proof: &StarkProof, vk: &[u8]) -> eyre::Result<()> {
@@ -55,7 +44,7 @@ impl UniversalVerifier {
             app_exe_commit: CommitBytes::from_u32_digest(&prog_commit.exe),
             app_vm_commit: CommitBytes::from_u32_digest(&prog_commit.vm),
         };
-        Sdk::verify_proof(&AGG_STARK_PROVING_KEY.get_agg_vk(), expected_app_commit)?;
+        Sdk::verify_proof(agg_stark_vk, expected_app_commit, &vm_stark_proof)?;
 
         Ok(())
     }
@@ -70,7 +59,7 @@ impl UniversalVerifier {
             eyre::bail!("evm: mismatch VM commitment");
         }
 
-        crate::evm::verify_evm_proof(&self.evm_verifier.as_ref().unwrap(), evm_proof)
+        crate::evm::verify_evm_proof(&self.evm_verifier, evm_proof)
             .map_err(|e| eyre::eyre!("evm execute fail {e}"))?;
 
         Ok(())
@@ -136,8 +125,7 @@ mod tests {
                 .join("bundle-proof-phase2.json"),
         )?;
 
-        let verifier =
-            UniversalVerifier::setup(Some(Path::new(PATH_TESTDATA).join("verifier.bin")))?;
+        let verifier = UniversalVerifier::setup(Path::new(PATH_TESTDATA).join("verifier.bin"))?;
 
         verifier.verify_evm_proof(
             &evm_proof.proof.into_evm_proof().unwrap().into(),
