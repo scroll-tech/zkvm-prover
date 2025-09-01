@@ -28,9 +28,12 @@ serde_stacker = "0.1"
 thiserror = "2.0"
 toml = "0.8"
 
+cudarc = { version = "0.9", optional = true }
+
 [dev-dependencies]
 
 [features]
 default = []
-cuda = ["openvm-sdk/cuda"]
+cuda = ["openvm-sdk/cuda", "dep:cudarc"]
+
 

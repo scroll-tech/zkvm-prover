@@ -24,13 +24,13 @@ pub struct DebugInput {
 
 pub fn execute_guest(
     vm_config: SdkVmConfig,
-    exe: Arc<VmExe<F>>,
+    exe: &VmExe<F>,
     stdin: &StdIn,
 ) -> Result<ExecutionResult, Error> {
-    let executor = VmExecutor::new(vm_config.clone()).unwrap();
-    let instance = executor.instance(&exe).unwrap();
-
-    let state = instance.execute(stdin.clone(), None).unwrap();
+    let executor = VmExecutor::new(vm_config.clone()).expect("invalid config");
+    let instance = executor.instance(exe).expect("invalid exe");
+    let state = instance
+        .execute(stdin.clone(), None)
     let final_memory = state.memory;
     let total_cycle = state.instret;
 

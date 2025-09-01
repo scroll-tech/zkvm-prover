@@ -42,4 +42,4 @@ for f in chunk-circuit/chunk_exe_commit.rs \
 done
 
 # copy release files from container to local
-docker cp ${container_id}:/app/releases/dev releases/dev
+docker cp ${container_id}:/app/releases/dev/. releases/dev/

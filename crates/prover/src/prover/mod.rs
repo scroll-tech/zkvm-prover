@@ -1,5 +1,5 @@
 use std::{
-    path::{Path, PathBuf},
+    path::PathBuf,
     str::FromStr,
     sync::{Arc, OnceLock},
 };
@@ -10,19 +10,13 @@ use openvm_native_circuit::NativeCpuBuilder as NativeBuilder;
 use openvm_native_circuit::NativeGpuBuilder as NativeBuilder;
 
 use openvm_circuit::arch::instructions::exe::VmExe;
-use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
 use openvm_sdk::{DefaultStarkEngine, config::SdkVmBuilder};
-use openvm_sdk::{
-    DefaultStaticVerifierPvHandler, F, GenericSdk, Sdk, StdIn,
-    commit::AppExecutionCommit,
-    config::{AppConfig, SdkVmConfig},
+use openvm_sdk::{F, Sdk, StdIn, prover::StarkProver};
     fs::read_object_from_file,
-    keygen::{AggProvingKey, AppProvingKey},
     prover::StarkProver,
 };
 use openvm_stark_sdk::config::baby_bear_poseidon2::{
     BabyBearPermutationEngine, BabyBearPoseidon2Engine,
-};
 use scroll_zkvm_types::{proof::OpenVmEvmProof, types_agg::ProgramCommitment, utils::serialize_vk};
 use scroll_zkvm_verifier::verifier::{AGG_STARK_PROVING_KEY, UniversalVerifier};
 use tracing::instrument;
@@ -34,29 +28,17 @@ use crate::setup::read_app_exe;
 use crate::{Error, setup::read_app_config, task::ProvingTask};
 
 use scroll_zkvm_types::proof::{EvmProof, ProofEnum, StarkProof, StarkProofStat};
-/// The default directory to locate openvm's halo2 SRS parameters.
-const DEFAULT_PARAMS_DIR: &str = concat!(env!("HOME"), "/.openvm/params/");
-
-/// The environment variable that needs to be set in order to configure the directory from where
-/// Prover can read HALO2 trusted setup parameters.
-const ENV_HALO2_PARAMS_DIR: &str = "ENV_HALO2_PARAMS_DIR";
-
 /// Generic prover.
 pub struct Prover {
     /// Prover name
     pub prover_name: String,
-    /// Commitment to app exe.
+    /// The program exe.
     pub app_exe: Arc<VmExe<F>>,
-    /// App specific proving key.
-    // pub app_pk: Arc<AppProvingKey<SdkVmConfig>>,
-    /// The commitments for the app execution.
-    //pub commits: AppExecutionCommit,
-    /// Optional data for the outermost layer, i.e. EVM-compatible.
-    //pub evm_prover: Option<EvmProver>,
-    /// Configuration for the prover.
+    /// Prover configuration.
     pub config: ProverConfig,
+    /// Lazily initialized SDK
     sdk: OnceLock<Sdk>,
-
+    /// Lazily initialized stark prover
     prover: OnceLock<StarkProver<DefaultStarkEngine, SdkVmBuilder, NativeBuilder>>,
 }
 
@@ -78,12 +60,9 @@ impl Prover {
     #[instrument("Prover::setup")]
     pub fn setup(config: ProverConfig, name: Option<&str>) -> Result<Self, Error> {
         tracing::info!("prover setup");
-        let app_exe: VmExe<F> = read_app_exe(&config.path_app_exe).unwrap();
-        let app_exe = Arc::new(app_exe);
-
         tracing::info!("prover setup done");
         Ok(Self {
-            app_exe,
+            app_exe: Arc::new(app_exe),
             config,
             prover_name: name.unwrap_or("universal").to_string(),
             sdk: OnceLock::new(),
@@ -91,6 +70,7 @@ impl Prover {
         })
     }
 
+    /// Release OpenVM SDK resources
     pub fn reset(&mut self) {
         self.sdk = OnceLock::new();
         self.prover = OnceLock::new();
@@ -105,14 +85,11 @@ impl Prover {
             let segmentation_limits =
                 &mut app_config.app_vm_config.system.config.segmentation_limits;
             segmentation_limits.max_trace_height = segment_len as u32;
-            segmentation_limits.max_cells = 700_000_000 as usize; // For 24G vram
+            segmentation_limits.max_cells = 700_000_000_usize; // For 24G vram
 
-            tracing::info!("setup1");
-            let sdk = Sdk::new(app_config).unwrap();
-            tracing::info!("setup2");
+            let sdk = Sdk::new(app_config).expect("sdk init failed");
             // 45s for first time
             let sdk = sdk.with_agg_pk(AGG_STARK_PROVING_KEY.clone());
-            tracing::info!("setup3");
             Ok(sdk)
         })
     }
@@ -130,6 +107,8 @@ impl Prover {
         }
         Ok(self.prover.get_mut().unwrap())
     }
+   
+
     /// Pick up loaded app commit, to distinguish from which circuit the proof comes
     pub fn get_app_commitment(&mut self) -> ProgramCommitment {
         let prover = self.get_prover_mut().expect("Failed to initialize prover");
@@ -186,13 +165,13 @@ impl Prover {
         stdin: &StdIn,
     ) -> Result<crate::utils::vm::ExecutionResult, Error> {
         let sdk = self.get_sdk()?;
-        let config = sdk.app_config(); // app_pk.app_vm_pk.vm_config.clone();
-        let exe = self.app_exe.clone();
+        let config = sdk.app_config();
         let t = std::time::Instant::now();
         let exec_result =
-            crate::utils::vm::execute_guest(config.app_vm_config.clone(), exe, stdin)?;
+            crate::utils::vm::execute_guest(config.app_vm_config.clone(), &self.app_exe, stdin)?;
         let execution_time_mills = t.elapsed().as_millis() as u64;
-        let execution_time_s = (execution_time_mills as f32 / 1000.0f32);
+        let execution_time_s = execution_time_mills as f32 / 1000.0f32;
+        let exec_speed = (exec_result.total_cycle as f32 / 1_000_000.0f32) / execution_time_s; // MHz
         let exec_speed = (exec_result.total_cycle as f32 / 1000_000.0f32) / execution_time_s; // MHz
         tracing::info!(
             "total cycle of {}: {}, exec speed: {:.2}MHz, exec time: {:2}s",
@@ -211,62 +190,8 @@ impl Prover {
     }
 
     /*
-    /// Setup the EVM prover-verifier.
-    fn setup_evm_prover() -> Result<EvmProver, Error> {
-        tracing::info!("Setting up EVM prover...");
 
-        // The HALO2 directory is set in the following order:
-        // 1. If the `ENV_HALO2_PARAMS_DIR` env variable is set: read it.
-        // 2. If the env var is not set: use the default directory.
-        let dir_halo2_params: PathBuf = std::env::var(ENV_HALO2_PARAMS_DIR)
-            .map(PathBuf::from)
-            .unwrap_or(Path::new(DEFAULT_PARAMS_DIR).to_path_buf());
-        tracing::info!(
-            "Using Halo2 params directory: {}",
-            dir_halo2_params.display()
-        );
-
-        let halo2_params_reader = CacheHalo2ParamsReader::new(&dir_halo2_params);
-
-        let pk_file = std::env::var("HOME").unwrap_or_default() + "/.openvm/agg_halo2.pk";
-        let agg_pk = if Path::new(&pk_file).exists() {
-            tracing::info!("Found existing aggregation proving key at {pk_file}, loading...");
-            // 1.5min
-            let agg_pk = AggProvingKey {
-                agg_stark_pk: AGG_STARK_PROVING_KEY.clone(),
-                halo2_pk: openvm_sdk::fs::read_agg_halo2_pk_from_file(&pk_file)
-                    .expect("loading pk err, delete it?"),
-            };
-            tracing::info!("Successfully loaded aggregation proving key.");
-            agg_pk
-        } else {
-            tracing::info!(
-                "No existing aggregation proving key found at {pk_file}. Generating a new one... (this may take a while)"
-            );
-            // 5min
-            let agg_pk = Sdk::new()
-                .agg_keygen(
-                    AggConfig::default(),
-                    &halo2_params_reader,
-                    &DefaultStaticVerifierPvHandler,
-                )
-                .map_err(|e| Error::Setup {
-                    path: dir_halo2_params,
-                    src: e.to_string(),
-                })?;
-            tracing::info!("Successfully generated new aggregation proving key.");
-            agg_pk
-        };
-
-        tracing::info!("EVM prover setup complete.");
-        Ok(EvmProver {
-            reader: halo2_params_reader,
-            agg_pk,
-        })
-
-    }
     */
-
     /// Generate a [root proof][root_proof].
     ///
     /// [root_proof][openvm_sdk::verifier::root::types::RootVmVerifierInput]
@@ -278,6 +203,8 @@ impl Prover {
         let execution_time_mills = t.elapsed().as_millis() as u64;
 
         let t = std::time::Instant::now();
+        let prover = self.get_prover_mut()?;
+        let proof = prover.prove(stdin);
         if true {
             // dump stdin to file
             let mut json: serde_json::Value = serde_json::from_str("{\"input\":[]}").unwrap();
@@ -335,8 +262,6 @@ impl Prover {
     pub fn gen_proof_snark(&mut self, stdin: StdIn) -> Result<OpenVmEvmProof, Error> {
         self.execute_and_check(&stdin)?;
 
-        //let sdk = Sdk::new();
-        //let evm_prover = self.evm_prover.as_ref().expect("evm prover not inited");
         let sdk = self.get_sdk()?;
         let evm_proof = sdk
             .prove_evm(self.app_exe.clone(), stdin)

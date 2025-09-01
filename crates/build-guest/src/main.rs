@@ -49,15 +49,16 @@ use openvm_native_compiler::ir::DIGEST_SIZE;
 use openvm_sdk::{
     F, Sdk,
     commit::CommitBytes,
-    config::{AggregationConfig, AppConfig, SdkVmConfig},
+    config::{AppConfig, SdkVmConfig},
     fs::{write_object_to_file, write_to_file_json},
-    keygen::AggProvingKey,
+    
     prover::{AppProver, StarkProver},
 };
 use openvm_stark_sdk::{
     config::baby_bear_poseidon2::BabyBearPoseidon2Engine,
     openvm_stark_backend::p3_field::PrimeField32, p3_bn254_fr::Bn254Fr,
 };
+use openvm_stark_sdk::p3_bn254_fr::Bn254Fr;
 use snark_verifier_sdk::snark_verifier::loader::evm::compile_solidity;
 
 mod verifier;
@@ -212,7 +213,7 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
         // 3. Compute and Write Executable Commitment
         let app_pk = sdk.app_pk();
         let app_prover: AppProver<openvm_sdk::DefaultStarkEngine, _> = AppProver::new(
-            sdk.app_vm_builder().clone(),
+            *sdk.app_vm_builder(),
             &app_pk.app_vm_pk,
             Arc::new(app_exe),
             app_pk.leaf_committed_exe.get_program_commit(),

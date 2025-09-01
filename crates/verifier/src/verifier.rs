@@ -1,6 +1,6 @@
 use once_cell::sync::Lazy;
 use openvm_sdk::commit::AppExecutionCommit;
-use openvm_sdk::keygen::{AggProvingKey, AggVerifyingKey};
+use openvm_sdk::keygen::AggProvingKey;
 use openvm_sdk::{Sdk, commit::CommitBytes};
 use scroll_zkvm_types::proof::OpenVmEvmProof;
 use scroll_zkvm_types::{proof::StarkProof, utils::serialize_vk};
@@ -45,6 +45,7 @@ impl UniversalVerifier {
         }
         */
 
+        let agg_stark_vk = &AGG_STARK_PROVING_KEY.get_agg_vk();
         use openvm_continuations::verifier::internal::types::VmStarkProof;
         let vm_stark_proof = VmStarkProof {
             inner: stark_proof.proofs[0].clone(),
@@ -57,8 +58,6 @@ impl UniversalVerifier {
         Sdk::verify_proof(
             &AGG_STARK_PROVING_KEY.get_agg_vk(),
             expected_app_commit,
-            &vm_stark_proof,
-        )?;
 
         Ok(())
     }
