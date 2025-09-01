@@ -118,12 +118,17 @@ impl ChunkTaskGenerator {
     }
 
     pub fn calculate_witness(&mut self) -> eyre::Result<ChunkWitness> {
+        let dir_name = if self.version.is_validium() {
+            "validium"
+        } else {
+            self.version.fork.as_str()
+        };
         let paths: Vec<PathBuf> = self
             .block_range
             .iter()
             .map(|block_n| {
                 Path::new(PATH_TESTDATA)
-                    .join(testdata_fork_directory())
+                    .join(dir_name)
                     .join("witnesses")
                     .join(format!("{}.json", block_n))
             })
