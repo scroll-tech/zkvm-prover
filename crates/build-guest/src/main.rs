@@ -50,13 +50,10 @@ use openvm_sdk::{
     F, Sdk,
     commit::CommitBytes,
     config::{AppConfig, SdkVmConfig},
-    fs::{write_object_to_file, write_to_file_json},
-    prover::{AppProver, StarkProver},
+    fs::write_object_to_file,
+    prover::AppProver,
 };
-use openvm_stark_sdk::{
-    config::baby_bear_poseidon2::BabyBearPoseidon2Engine,
-    openvm_stark_backend::p3_field::PrimeField32, p3_bn254_fr::Bn254Fr,
-};
+use openvm_stark_sdk::p3_bn254_fr::Bn254Fr;
 use snark_verifier_sdk::snark_verifier::loader::evm::compile_solidity;
 
 mod verifier;
@@ -374,7 +371,6 @@ pub fn main() -> Result<()> {
     println!("{LOG_PREFIX} Generating openvm assets");
     let force_overwrite = matches!(cli.mode, OutputMode::Force);
     generate_openvm_assets(&workspace_dir, &release_output_dir, force_overwrite)?;
-    panic!("x");
 
     println!("{LOG_PREFIX} Generating app assets (always overwrite)");
     generate_app_assets(&workspace_dir, &release_output_dir)?;
