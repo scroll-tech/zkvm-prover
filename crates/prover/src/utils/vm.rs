@@ -29,8 +29,10 @@ pub fn execute_guest(
 ) -> Result<ExecutionResult, Error> {
     let executor = VmExecutor::new(vm_config.clone()).expect("invalid config");
     let instance = executor.instance(exe).expect("invalid exe");
+
     let state = instance
         .execute(stdin.clone(), None)
+        .map_err(|e| Error::GenProof(e.to_string()))?;
     let final_memory = state.memory;
     let total_cycle = state.instret;
 

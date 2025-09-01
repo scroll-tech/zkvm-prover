@@ -12,11 +12,6 @@ use openvm_native_circuit::NativeGpuBuilder as NativeBuilder;
 use openvm_circuit::arch::instructions::exe::VmExe;
 use openvm_sdk::{DefaultStarkEngine, config::SdkVmBuilder};
 use openvm_sdk::{F, Sdk, StdIn, prover::StarkProver};
-    fs::read_object_from_file,
-    prover::StarkProver,
-};
-use openvm_stark_sdk::config::baby_bear_poseidon2::{
-    BabyBearPermutationEngine, BabyBearPoseidon2Engine,
 use scroll_zkvm_types::{proof::OpenVmEvmProof, types_agg::ProgramCommitment, utils::serialize_vk};
 use scroll_zkvm_verifier::verifier::{AGG_STARK_PROVING_KEY, UniversalVerifier};
 use tracing::instrument;
@@ -59,8 +54,7 @@ impl Prover {
     /// Setup the [`Prover`] given paths to the application's exe and proving key.
     #[instrument("Prover::setup")]
     pub fn setup(config: ProverConfig, name: Option<&str>) -> Result<Self, Error> {
-        tracing::info!("prover setup");
-        tracing::info!("prover setup done");
+        let app_exe = read_app_exe(&config.path_app_exe)?;
         Ok(Self {
             app_exe: Arc::new(app_exe),
             config,
@@ -107,7 +101,6 @@ impl Prover {
         }
         Ok(self.prover.get_mut().unwrap())
     }
-   
 
     /// Pick up loaded app commit, to distinguish from which circuit the proof comes
     pub fn get_app_commitment(&mut self) -> ProgramCommitment {
@@ -172,7 +165,6 @@ impl Prover {
         let execution_time_mills = t.elapsed().as_millis() as u64;
         let execution_time_s = execution_time_mills as f32 / 1000.0f32;
         let exec_speed = (exec_result.total_cycle as f32 / 1_000_000.0f32) / execution_time_s; // MHz
-        let exec_speed = (exec_result.total_cycle as f32 / 1000_000.0f32) / execution_time_s; // MHz
         tracing::info!(
             "total cycle of {}: {}, exec speed: {:.2}MHz, exec time: {:2}s",
             self.prover_name,
@@ -198,13 +190,6 @@ impl Prover {
     pub fn gen_proof_stark(&mut self, stdin: StdIn) -> Result<StarkProof, Error> {
         // Here we always do an execution of the guest program to get the cycle count.
         // and do precheck before proving like ensure PI != 0
-        let t = std::time::Instant::now();
-        let total_cycles = self.execute_and_check(&stdin)?;
-        let execution_time_mills = t.elapsed().as_millis() as u64;
-
-        let t = std::time::Instant::now();
-        let prover = self.get_prover_mut()?;
-        let proof = prover.prove(stdin);
         if true {
             // dump stdin to file
             let mut json: serde_json::Value = serde_json::from_str("{\"input\":[]}").unwrap();
@@ -230,6 +215,11 @@ impl Prover {
                 tracing::info!("Wrote stdin to {}", filename);
             }
         }
+        let t = std::time::Instant::now();
+        let total_cycles = self.execute_and_check(&stdin)?;
+        let execution_time_mills = t.elapsed().as_millis() as u64;
+
+        let t = std::time::Instant::now();
         let prover = self.get_prover_mut()?;
         let proof = prover.prove(stdin);
         let proving_time_mills = t.elapsed().as_millis() as u64;

@@ -55,9 +55,7 @@ impl UniversalVerifier {
             app_exe_commit: CommitBytes::from_u32_digest(&prog_commit.exe),
             app_vm_commit: CommitBytes::from_u32_digest(&prog_commit.vm),
         };
-        Sdk::verify_proof(
-            &AGG_STARK_PROVING_KEY.get_agg_vk(),
-            expected_app_commit,
+        Sdk::verify_proof(&AGG_STARK_PROVING_KEY.get_agg_vk(), expected_app_commit)?;
 
         Ok(())
     }
