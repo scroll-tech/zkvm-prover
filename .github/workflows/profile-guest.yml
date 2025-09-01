@@ -25,7 +25,7 @@ jobs:
       - name: Setup rust
         uses: dtolnay/rust-toolchain@56f84321dbccf38fb67ce29ab63e4754056677e0
         with:
-          toolchain: nightly-2025-08-18
+          toolchain: nightly-2025-08-19
 
       - name: Guest profiling to capture total_cycles
         id: guest-profiling
