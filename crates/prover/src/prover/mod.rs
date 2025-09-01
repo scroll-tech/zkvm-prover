@@ -18,8 +18,8 @@ use tracing::instrument;
 // Re-export from openvm_sdk.
 pub use openvm_sdk::{self};
 
+use crate::setup::read_app_exe;
 use crate::{Error, setup::read_app_config, task::ProvingTask};
-use crate::{setup::read_app_exe, utils::print_gpu_memory_usage};
 
 use scroll_zkvm_types::proof::{EvmProof, ProofEnum, StarkProof, StarkProofStat};
 
@@ -66,18 +66,8 @@ impl Prover {
 
     /// Release OpenVM SDK resources
     pub fn reset(&mut self) {
-        println!("before reset");
-        let _ = print_gpu_memory_usage();
-        //self.prover = OnceLock::new();
-        println!("after reset prover");
-        let _ = print_gpu_memory_usage();
-        //self.sdk = OnceLock::new();
-        println!("after reset sdk");
-        //for i in 1..=50 {
-          //  println!("GPU memory usage check #{}", i);
-            let _ = print_gpu_memory_usage();
-            //std::thread::sleep(std::time::Duration::from_millis(100));
-        //}
+        self.sdk = OnceLock::new();
+        self.prover = OnceLock::new();
     }
 
     /// Get or initialize the SDK lazily
@@ -103,11 +93,10 @@ impl Prover {
         &mut self,
     ) -> Result<&mut StarkProver<DefaultStarkEngine, SdkVmBuilder, NativeBuilder>, Error> {
         if self.prover.get().is_none() {
+            tracing::info!("Lazy initializing prover...");
             let sdk = self.get_sdk()?;
             // 5s
-            tracing::info!("Lazy initializing prover...");
             let prover = sdk.prover(self.app_exe.clone()).unwrap();
-            tracing::info!("Lazy initializing prover done");
             let _ = self.prover.set(prover);
         }
         Ok(self.prover.get_mut().unwrap())
@@ -203,14 +192,7 @@ impl Prover {
 
         let t = std::time::Instant::now();
         let prover = self.get_prover_mut()?;
-
-        println!("before prove");
-        let _ = print_gpu_memory_usage();
         let proof = prover.prove(stdin);
-
-        println!("after prove");
-        let _ = print_gpu_memory_usage();
-
         let proving_time_mills = t.elapsed().as_millis() as u64;
         let prove_speed =
             (total_cycles as f32 / 1_000_000.0f32) / (proving_time_mills as f32 / 1000.0f32); // MHz
