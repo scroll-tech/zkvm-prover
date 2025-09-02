@@ -153,7 +153,7 @@ impl ChunkTaskGenerator {
                 &block_witnesses,
                 self.prev_message_hash
                     .unwrap_or_else(|| B256::repeat_byte(1u8)),
-                testing_hardfork(),
+                self.version.fork,
                 validium_txs,
                 secret_key,
             )

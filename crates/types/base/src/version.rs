@@ -136,7 +136,8 @@ impl Version {
         Self {
             domain: Domain::Validium,
             stf_version: STFVersion::V1,
-            fork: ForkName::Feynman,
+            fork: ForkName::EuclidV2,
+            // TODO: update to feynman once latest testdata is obtained.
             codec: Codec::V9,
         }
     }

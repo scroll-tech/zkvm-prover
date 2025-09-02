@@ -386,13 +386,13 @@ pub fn build_batch_witnesses_validium(
     };
 
     // collect all data together for payload
-    let mut payload = if testing_hardfork() >= ForkName::EuclidV2 {
+    let version = testing_version_validium();
+    let mut payload = if version.fork >= ForkName::EuclidV2 {
         Vec::new()
     } else {
         meta_chunk_bytes.clone()
     };
 
-    let version = testing_version_validium();
     if version.fork >= ForkName::EuclidV2 {
         let num_blocks = chunks.iter().map(|w| w.blocks.len()).sum::<usize>() as u16;
         let prev_msg_queue_hash = chunks[0].prev_msg_queue_hash;

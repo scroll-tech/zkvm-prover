@@ -13,7 +13,7 @@ use scroll_zkvm_integration::{
 };
 use scroll_zkvm_prover::utils::{read_json, vm::ExecutionResult};
 use scroll_zkvm_types::chunk::{ChunkWitness, SecretKey};
-use scroll_zkvm_types::public_inputs::{ForkName, Version};
+use scroll_zkvm_types::public_inputs::Version;
 use std::env;
 use std::path::Path;
 
@@ -85,12 +85,12 @@ fn test_execute_validium() -> eyre::Result<()> {
         let validium_txs: Vec<TxL1Message> =
             read_json(base_dir.join(format!("{blk}_validium_txs.json")))?;
 
-        let version = Version::validium_v1().as_version_byte();
+        let version = Version::validium_v1();
         let witness = ChunkWitness::new_validium(
-            version,
+            version.as_version_byte(),
             &[block_witness],
             B256::ZERO,
-            ForkName::Feynman,
+            version.fork,
             vec![validium_txs],
             secret_key.clone(),
         );
