@@ -73,7 +73,7 @@ fn test_execute() -> eyre::Result<()> {
 
 #[test]
 fn test_execute_validium() -> eyre::Result<()> {
-    ChunkProverTester::setup()?;
+    ChunkProverTester::setup(true)?;
 
     let base_dir = Path::new(PATH_TESTDATA).join("validium");
 

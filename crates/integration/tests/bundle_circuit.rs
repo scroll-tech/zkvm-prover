@@ -168,7 +168,7 @@ fn e2e() -> eyre::Result<()> {
 
 #[test]
 fn test_execute_validium() -> eyre::Result<()> {
-    BundleProverTester::setup()?;
+    BundleProverTester::setup(true)?;
 
     let version = testing_version_validium();
 
