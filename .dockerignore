@@ -11,12 +11,11 @@ Dockerfile.backup
 
 docs
 
-releases
+#releases
 
 *.yml
 
 *.sh
-!build-guest-actions-entrypoint.sh
 
 *.log
 *.md

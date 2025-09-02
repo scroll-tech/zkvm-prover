@@ -13,7 +13,7 @@ use scroll_zkvm_types::public_inputs::Version;
 #[ignore = "need local stuff"]
 #[test]
 fn test_execute() -> eyre::Result<()> {
-    BatchProverTester::setup()?;
+    BatchProverTester::setup(true)?;
     let u_task = load_local_task("batch-task.json")?;
     let stdin = u_task.build_guest_input()?;
 
@@ -26,7 +26,7 @@ fn test_execute() -> eyre::Result<()> {
 #[ignore = "need local stuff"]
 #[test]
 fn setup_prove_verify_single() -> eyre::Result<()> {
-    BatchProverTester::setup()?;
+    BatchProverTester::setup(true)?;
     let u_task = load_local_task("batch-task.json")?;
 
     let mut prover = BatchProverTester::load_prover(false)?;
@@ -38,7 +38,7 @@ fn setup_prove_verify_single() -> eyre::Result<()> {
 
 #[test]
 fn test_e2e_execute() -> eyre::Result<()> {
-    BatchProverTester::setup()?;
+    BatchProverTester::setup(true)?;
 
     let prover = BatchProverTester::load_prover(false)?;
     let mut chunk_prover = ChunkProverTester::load_prover(false)?;
@@ -59,7 +59,7 @@ fn test_e2e_execute() -> eyre::Result<()> {
 
 #[test]
 fn e2e() -> eyre::Result<()> {
-    BatchProverTester::setup()?;
+    BatchProverTester::setup(true)?;
 
     let mut prover = BatchProverTester::load_prover(false)?;
     let mut chunk_prover = ChunkProverTester::load_prover(false)?;
@@ -72,7 +72,7 @@ fn e2e() -> eyre::Result<()> {
 #[test]
 fn verify_batch_hash_invariant() -> eyre::Result<()> {
     use scroll_zkvm_types::public_inputs::ForkName;
-    BatchProverTester::setup()?;
+    BatchProverTester::setup(true)?;
 
     let outcome_1 = preset_chunk_multiple();
     let (version, block_range) = match testing_version().fork {

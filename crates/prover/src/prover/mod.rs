@@ -1,15 +1,16 @@
 use std::{
-    path::{Path, PathBuf},
-    sync::Arc,
+    path::PathBuf,
+    sync::{Arc, OnceLock},
 };
 
-use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
-use openvm_sdk::{
-    DefaultStaticVerifierPvHandler, NonRootCommittedExe, Sdk, StdIn,
-    commit::AppExecutionCommit,
-    config::{AggConfig, SdkVmConfig},
-    keygen::{AggProvingKey, AppProvingKey},
-};
+#[cfg(not(feature = "cuda"))]
+use openvm_native_circuit::NativeCpuBuilder as NativeBuilder;
+#[cfg(feature = "cuda")]
+use openvm_native_circuit::NativeGpuBuilder as NativeBuilder;
+
+use openvm_circuit::arch::instructions::exe::VmExe;
+use openvm_sdk::{DefaultStarkEngine, config::SdkVmBuilder};
+use openvm_sdk::{F, Sdk, StdIn, prover::StarkProver};
 use scroll_zkvm_types::{proof::OpenVmEvmProof, types_agg::ProgramCommitment, utils::serialize_vk};
 use scroll_zkvm_verifier::verifier::{AGG_STARK_PROVING_KEY, UniversalVerifier};
 use tracing::instrument;
@@ -17,43 +18,23 @@ use tracing::instrument;
 // Re-export from openvm_sdk.
 pub use openvm_sdk::{self};
 
-use crate::{
-    Error,
-    setup::{read_app_config, read_app_exe},
-    task::ProvingTask,
-};
+use crate::setup::read_app_exe;
+use crate::{Error, setup::read_app_config, task::ProvingTask};
 
 use scroll_zkvm_types::proof::{EvmProof, ProofEnum, StarkProof, StarkProofStat};
-/// The default directory to locate openvm's halo2 SRS parameters.
-const DEFAULT_PARAMS_DIR: &str = concat!(env!("HOME"), "/.openvm/params/");
-
-/// The environment variable that needs to be set in order to configure the directory from where
-/// Prover can read HALO2 trusted setup parameters.
-const ENV_HALO2_PARAMS_DIR: &str = "ENV_HALO2_PARAMS_DIR";
-
-/// Types used in the outermost proof construction, i.e. the EVM-compatible layer.
-/// This is required only for [BundleProver].
-pub struct EvmProver {
-    /// The reader for the cached Halo2 parameters.
-    pub reader: CacheHalo2ParamsReader,
-    /// The aggregated proving key for the EVM verifier.
-    pub agg_pk: AggProvingKey,
-}
 
 /// Generic prover.
 pub struct Prover {
     /// Prover name
     pub prover_name: String,
-    /// Commitment to app exe.
-    pub app_committed_exe: Arc<NonRootCommittedExe>,
-    /// App specific proving key.
-    pub app_pk: Arc<AppProvingKey<SdkVmConfig>>,
-    /// The commitments for the app execution.
-    pub commits: AppExecutionCommit,
-    /// Optional data for the outermost layer, i.e. EVM-compatible.
-    pub evm_prover: Option<EvmProver>,
-    /// Configuration for the prover.
+    /// The program exe.
+    pub app_exe: Arc<VmExe<F>>,
+    /// Prover configuration.
     pub config: ProverConfig,
+    /// Lazily initialized SDK
+    sdk: OnceLock<Sdk>,
+    /// Lazily initialized stark prover
+    prover: OnceLock<StarkProver<DefaultStarkEngine, SdkVmBuilder, NativeBuilder>>,
 }
 
 /// Configure the [`Prover`].
@@ -67,67 +48,78 @@ pub struct ProverConfig {
     pub segment_len: Option<usize>,
 }
 
-const DEFAULT_SEGMENT_SIZE: usize = (1 << 22) - 100;
+const DEFAULT_SEGMENT_SIZE: usize = (1 << 22) - 1000;
 
 impl Prover {
     /// Setup the [`Prover`] given paths to the application's exe and proving key.
     #[instrument("Prover::setup")]
-    pub fn setup(config: ProverConfig, with_evm: bool, name: Option<&str>) -> Result<Self, Error> {
+    pub fn setup(config: ProverConfig, name: Option<&str>) -> Result<Self, Error> {
         let app_exe = read_app_exe(&config.path_app_exe)?;
-        let mut app_config = read_app_config(&config.path_app_config)?;
-        let segment_len = config.segment_len.unwrap_or(DEFAULT_SEGMENT_SIZE);
-        app_config.app_vm_config.system.config = app_config
-            .app_vm_config
-            .system
-            .config
-            .with_max_segment_len(segment_len);
-
-        let sdk = Sdk::new();
-        let app_pk = sdk
-            .app_keygen(app_config)
-            .map_err(|e| Error::Keygen(e.to_string()))?;
-        let app_committed_exe = sdk
-            .commit_app_exe(app_pk.app_fri_params(), app_exe)
-            .map_err(|e| Error::Commit(e.to_string()))?;
-        let commits = AppExecutionCommit::compute(
-            &app_pk.app_vm_pk.vm_config,
-            &app_committed_exe,
-            &app_pk.leaf_committed_exe,
-        );
-
         Ok(Self {
-            app_committed_exe,
-            app_pk: Arc::new(app_pk),
-            evm_prover: None,
-            commits,
+            app_exe: Arc::new(app_exe),
             config,
             prover_name: name.unwrap_or("universal").to_string(),
+            sdk: OnceLock::new(),
+            prover: OnceLock::new(),
         })
     }
 
+    /// Release OpenVM SDK resources
+    pub fn reset(&mut self) {
+        self.sdk = OnceLock::new();
+        self.prover = OnceLock::new();
+    }
+
+    /// Get or initialize the SDK lazily
+    fn get_sdk(&self) -> Result<&Sdk, Error> {
+        self.sdk.get_or_try_init(|| {
+            tracing::info!("Lazy initializing SDK...");
+            let mut app_config = read_app_config(&self.config.path_app_config)?;
+            let segment_len = self.config.segment_len.unwrap_or(DEFAULT_SEGMENT_SIZE);
+            let segmentation_limits =
+                &mut app_config.app_vm_config.system.config.segmentation_limits;
+            segmentation_limits.max_trace_height = segment_len as u32;
+            segmentation_limits.max_cells = 700_000_000_usize; // For 24G vram
+
+            let sdk = Sdk::new(app_config).expect("sdk init failed");
+            // 45s for first time
+            let sdk = sdk.with_agg_pk(AGG_STARK_PROVING_KEY.clone());
+            Ok(sdk)
+        })
+    }
+
+    /// Get or initialize the prover lazily
+    fn get_prover_mut(
+        &mut self,
+    ) -> Result<&mut StarkProver<DefaultStarkEngine, SdkVmBuilder, NativeBuilder>, Error> {
+        if self.prover.get().is_none() {
+            tracing::info!("Lazy initializing prover...");
+            let sdk = self.get_sdk()?;
+            // 5s
+            let prover = sdk.prover(self.app_exe.clone()).unwrap();
+            let _ = self.prover.set(prover);
+        }
+        Ok(self.prover.get_mut().unwrap())
+    }
     /// Pick up loaded app commit, to distinguish from which circuit the proof comes
-    pub fn get_app_commitment(&self) -> ProgramCommitment {
-        let exe = self.commits.app_exe_commit.to_u32_digest();
-        let leaf = self.commits.app_vm_commit.to_u32_digest();
-        ProgramCommitment { exe, vm: leaf }
+    pub fn get_app_commitment(&mut self) -> ProgramCommitment {
+        let prover = self.get_prover_mut().expect("Failed to initialize prover");
+        let commits = prover.app_commit();
+        let exe = commits.app_exe_commit.to_u32_digest();
+        let vm = commits.app_vm_commit.to_u32_digest();
+        ProgramCommitment { exe, vm }
     }
 
     /// Pick up loaded app commit as "vk" in proof, to distinguish from which circuit the proof comes
-    pub fn get_app_vk(&self) -> Vec<u8> {
+    pub fn get_app_vk(&mut self) -> Vec<u8> {
         serialize_vk::serialize(&self.get_app_commitment())
     }
 
     /// Pick up the actual vk (serialized) for evm proof, would be empty if prover
     /// do not contain evm prover
     pub fn get_evm_vk(&self) -> Vec<u8> {
-        self.evm_prover
-            .as_ref()
-            .map(|evm_prover| {
-                scroll_zkvm_verifier::evm::serialize_vk(
-                    evm_prover.agg_pk.halo2_pk.wrapper.pinning.pk.get_vk(),
-                )
-            })
-            .unwrap_or_default()
+        let sdk = self.get_sdk().expect("Failed to initialize SDK");
+        scroll_zkvm_verifier::evm::serialize_vk(sdk.halo2_pk().wrapper.pinning.pk.get_vk())
     }
 
     /// Simple wrapper of gen_proof_stark/snark, Early-return if a proof is found in disc,
@@ -164,13 +156,20 @@ impl Prover {
         &self,
         stdin: &StdIn,
     ) -> Result<crate::utils::vm::ExecutionResult, Error> {
-        let config = self.app_pk.app_vm_pk.vm_config.clone();
-        let exe = self.app_committed_exe.exe.clone();
-        let exec_result = crate::utils::vm::execute_guest(config, exe, stdin)?;
+        let sdk = self.get_sdk()?;
+        let config = sdk.app_config();
+        let t = std::time::Instant::now();
+        let exec_result =
+            crate::utils::vm::execute_guest(config.app_vm_config.clone(), &self.app_exe, stdin)?;
+        let execution_time_mills = t.elapsed().as_millis() as u64;
+        let execution_time_s = execution_time_mills as f32 / 1000.0f32;
+        let exec_speed = (exec_result.total_cycle as f32 / 1_000_000.0f32) / execution_time_s; // MHz
         tracing::info!(
-            "total cycle of {}: {}",
+            "total cycle of {}: {}, exec speed: {:.2}MHz, exec time: {:2}s",
             self.prover_name,
-            exec_result.total_cycle
+            exec_result.total_cycle,
+            exec_speed,
+            execution_time_s
         );
         Ok(exec_result)
     }
@@ -181,88 +180,31 @@ impl Prover {
             .map(|res| res.total_cycle)
     }
 
-    /// Setup the EVM prover-verifier.
-    fn setup_evm_prover() -> Result<EvmProver, Error> {
-        tracing::info!("Setting up EVM prover...");
-
-        // The HALO2 directory is set in the following order:
-        // 1. If the `ENV_HALO2_PARAMS_DIR` env variable is set: read it.
-        // 2. If the env var is not set: use the default directory.
-        let dir_halo2_params: PathBuf = std::env::var(ENV_HALO2_PARAMS_DIR)
-            .map(PathBuf::from)
-            .unwrap_or(Path::new(DEFAULT_PARAMS_DIR).to_path_buf());
-        tracing::info!(
-            "Using Halo2 params directory: {}",
-            dir_halo2_params.display()
-        );
-
-        let halo2_params_reader = CacheHalo2ParamsReader::new(&dir_halo2_params);
-
-        let pk_file = std::env::var("HOME").unwrap_or_default() + "/.openvm/agg_halo2.pk";
-        let agg_pk = if Path::new(&pk_file).exists() {
-            tracing::info!("Found existing aggregation proving key at {pk_file}, loading...");
-            // 1.5min
-            let agg_pk = AggProvingKey {
-                agg_stark_pk: AGG_STARK_PROVING_KEY.clone(),
-                halo2_pk: openvm_sdk::fs::read_agg_halo2_pk_from_file(&pk_file)
-                    .expect("loading pk err, delete it?"),
-            };
-            tracing::info!("Successfully loaded aggregation proving key.");
-            agg_pk
-        } else {
-            tracing::info!(
-                "No existing aggregation proving key found at {pk_file}. Generating a new one... (this may take a while)"
-            );
-            // 5min
-            let agg_pk = Sdk::new()
-                .agg_keygen(
-                    AggConfig::default(),
-                    &halo2_params_reader,
-                    &DefaultStaticVerifierPvHandler,
-                )
-                .map_err(|e| Error::Setup {
-                    path: dir_halo2_params,
-                    src: e.to_string(),
-                })?;
-            tracing::info!("Successfully generated new aggregation proving key.");
-            agg_pk
-        };
-
-        tracing::info!("EVM prover setup complete.");
-        Ok(EvmProver {
-            reader: halo2_params_reader,
-            agg_pk,
-        })
-    }
-
     /// Generate a [root proof][root_proof].
     ///
     /// [root_proof][openvm_sdk::verifier::root::types::RootVmVerifierInput]
-    pub fn gen_proof_stark(&self, stdin: StdIn) -> Result<StarkProof, Error> {
+    pub fn gen_proof_stark(&mut self, stdin: StdIn) -> Result<StarkProof, Error> {
         // Here we always do an execution of the guest program to get the cycle count.
         // and do precheck before proving like ensure PI != 0
         let t = std::time::Instant::now();
         let total_cycles = self.execute_and_check(&stdin)?;
         let execution_time_mills = t.elapsed().as_millis() as u64;
 
-        let sdk = Sdk::new();
         let t = std::time::Instant::now();
-        let proof = sdk
-            .generate_e2e_stark_proof(
-                self.app_pk.clone(),
-                self.app_committed_exe.clone(),
-                AGG_STARK_PROVING_KEY.clone(),
-                stdin,
-            )
-            .map_err(|e| Error::GenProof(e.to_string()))?;
+        let prover = self.get_prover_mut()?;
+        let proof = prover.prove(stdin);
         let proving_time_mills = t.elapsed().as_millis() as u64;
+        let prove_speed =
+            (total_cycles as f32 / 1_000_000.0f32) / (proving_time_mills as f32 / 1000.0f32); // MHz
+        tracing::info!("{} proving speed: {:.2}MHz", self.prover_name, prove_speed);
+        let proof = proof.map_err(|e| Error::GenProof(e.to_string()))?;
         let stat = StarkProofStat {
             total_cycles,
             proving_time_mills,
             execution_time_mills,
         };
         let proof = StarkProof {
-            proofs: vec![proof.proof],
+            proofs: vec![proof.inner],
             public_values: proof.user_public_values,
             //exe_commitment: comm.exe,
             //vm_commitment: comm.vm,
@@ -281,19 +223,9 @@ impl Prover {
     pub fn gen_proof_snark(&mut self, stdin: StdIn) -> Result<OpenVmEvmProof, Error> {
         self.execute_and_check(&stdin)?;
 
-        let sdk = Sdk::new();
-        if self.evm_prover.is_none() {
-            self.evm_prover = Some(Self::setup_evm_prover()?);
-        }
-        let evm_prover = self.evm_prover.as_ref().expect("evm prover not inited");
+        let sdk = self.get_sdk()?;
         let evm_proof = sdk
-            .generate_evm_proof(
-                &evm_prover.reader,
-                self.app_pk.clone(),
-                self.app_committed_exe.clone(),
-                evm_prover.agg_pk.clone(),
-                stdin,
-            )
+            .prove_evm(self.app_exe.clone(), stdin)
             .map_err(|e| Error::GenProof(format!("{}", e)))?;
 
         Ok(evm_proof)

@@ -107,3 +107,62 @@ pub mod as_base64 {
         bincode_v1::deserialize(&v_bytes).map_err(serde::de::Error::custom)
     }
 }
+
+/// Print GPU memory usage information including used, free, and total memory in GiB.
+pub fn print_gpu_memory_usage() -> Result<(), Error> {
+    #[cfg(feature = "cuda")]
+    {
+        match try_print_gpu_memory_cudarc() {
+            Ok(_) => return Ok(()),
+            Err(e) => {
+                println!("GPU memory monitoring failed: {}", e);
+                println!("Make sure CUDA is properly installed and cudarc dependency is added");
+            }
+        }
+    }
+
+    #[cfg(not(feature = "cuda"))]
+    {
+        println!("GPU memory monitoring not available (CUDA feature not enabled)");
+    }
+
+    Ok(())
+}
+
+#[cfg(feature = "cuda")]
+fn try_print_gpu_memory_cudarc() -> Result<(), Box<dyn std::error::Error>> {
+    use cudarc::driver::result::{device, mem_get_info};
+
+    // Get device count without creating new contexts
+    let device_count = device::get_count()? as usize;
+
+    if device_count == 0 {
+        println!("No CUDA devices found");
+        return Ok(());
+    }
+
+    println!("GPU Memory Usage:");
+    println!("{:-<50}", "");
+
+    // Try to get memory info from current context instead of creating new ones
+    match mem_get_info() {
+        Ok((free_bytes, total_bytes)) => {
+            let total_gib = total_bytes as f64 / (1024.0 * 1024.0 * 1024.0);
+            let free_gib = free_bytes as f64 / (1024.0 * 1024.0 * 1024.0);
+            let used_gib = total_gib - free_gib;
+            let usage_percent = (used_gib / total_gib) * 100.0;
+
+            println!(
+                "Current GPU: Used: {:.2} GiB, Free: {:.2} GiB, Total: {:.2} GiB ({:.1}% used)",
+                used_gib, free_gib, total_gib, usage_percent
+            );
+        }
+        Err(e) => {
+            println!("Could not get GPU memory info (no active context): {}", e);
+        }
+    }
+
+    println!("{:-<50}", "");
+
+    Ok(())
+}

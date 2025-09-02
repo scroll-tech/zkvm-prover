@@ -49,9 +49,9 @@ impl AggCircuit for BundleCircuit {
     fn verify_commitments(commitment: &ProgramCommitment) {
         assert_eq!(
             commitment.vm,
-            child_commitments::LEAF_COMMIT,
+            child_commitments::VM_COMMIT,
             "mismatch batch-proof leaf commitment: expected={:?}, got={:?}",
-            child_commitments::LEAF_COMMIT,
+            child_commitments::VM_COMMIT,
             commitment.vm,
         );
         assert_eq!(
