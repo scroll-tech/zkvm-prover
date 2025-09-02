@@ -35,7 +35,7 @@ pub struct EvmProof {
 }
 
 /// Stat for the insight of stark proofing
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Default)]
 pub struct StarkProofStat {
     /// total cycles
     pub total_cycles: u64,
@@ -57,6 +57,7 @@ pub struct StarkProof {
     pub public_values: Vec<BabyBear>,
     //pub exe_commitment: [u32; 8],
     //pub vm_commitment: [u32; 8],
+    #[serde(default)]
     pub stat: StarkProofStat,
 }
 
