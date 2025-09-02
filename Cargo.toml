@@ -42,20 +42,22 @@ openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev =
 openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "51d0aa69694fd33def3c433e48228a5675e4fd97", default-features = false }
 
 # openvm host libs
-openvm-build = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
-openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
-openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
-openvm-instructions ={ git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
-openvm-native-circuit = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
-openvm-native-compiler = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
-openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
-openvm-native-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
-openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
-openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false, features = ["parallel", "bench-metrics", "evm-prove"] }
-openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "c033e184cdb04a5bfdbd95ca5651c44f5a355c0c", default-features = false }
+openvm-benchmarks-prove = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-benchmarks-utils = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-build = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-instructions ={ git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-native-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-native-compiler = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-native-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false, features = ["parallel", "evm-prove","legacy-v1-3"] }
+openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
 
 # more openvm related libs
-openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.1.1" }
+openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.0" }
 
 sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = ["scroll", "rkyv"] }
 sbv-helpers = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
@@ -71,6 +73,7 @@ bitcode = { version = "0.6.5", default-features = false, features = ["serde", "d
 bincode_v1 = { version = "1.3", package = "bincode"}
 bincode = { version = "2.0", features = ["serde"] }
 cargo_metadata = "0.20"
+clap = "4.5"
 c-kzg = { version = "2.0" }
 derivative = "2.2.0"
 ecies = { git = "https://github.com/scroll-tech/ecies-rs" }
@@ -149,3 +152,13 @@ alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch =
 inherits = "release"
 lto = "fat"
 codegen-units = 1
+
+[profile.profiling]
+inherits = "release"
+debug = 2
+debug-assertions = false
+strip = false
+
+[profile.bench]
+inherits = "profiling"
+
