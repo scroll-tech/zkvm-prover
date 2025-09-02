@@ -1,16 +1,18 @@
 //! To get flamegraphs, following instructions are needed:
 //!
 //! 1. run in `crates/integration` dir:
+//!
 //!   `OPENVM_RUST_TOOLCHAIN=nightly-2025-08-18 cargo run --release --bin chunk-benchmark --features perf-metrics -- --profiling`
 //! 2. run in `.output/chunk-tests-*_*`:
+//!
 //!   `python <path to openvm repo>/ci/scripts/metric_unify/flamegraph.py metrics.json --guest-symbols guest.syms`
 //! 3. get flamegraphs in `.bench_metrics/flamegraphs`
 use clap::Parser;
 use openvm_benchmarks_prove::util::BenchmarkCli;
 use openvm_benchmarks_utils::build_elf;
 use openvm_circuit::openvm_stark_sdk::bench::run_with_metric_collection;
-use openvm_sdk::config::{SdkVmBuilder, SdkVmConfig};
-use openvm_sdk::{Sdk, StdIn};
+use openvm_sdk::StdIn;
+use openvm_sdk::config::{SdkVmConfig, SdkVmCpuBuilder};
 use scroll_zkvm_integration::testers::chunk::{
     ChunkProverTester, get_witness_from_env_or_builder, preset_chunk,
 };
@@ -54,6 +56,6 @@ fn main() -> eyre::Result<()> {
     wit.write_guest_input(&mut stdin)?;
 
     run_with_metric_collection("OUTPUT_PATH", || {
-        args.bench_from_exe::<SdkVmBuilder, _>("chunk-circuit", app_vm_config, elf, stdin)
+        args.bench_from_exe::<SdkVmCpuBuilder, _>("chunk-circuit", app_vm_config, elf, stdin)
     })
 }
