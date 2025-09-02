@@ -14,8 +14,11 @@ pub use payload::{
     v8::{EnvelopeV8, PayloadV8},
 };
 
-mod blob_consistency;
+pub mod blob_consistency;
 mod builder;
 
 mod witness;
-pub use witness::{ArchivedBatchWitness, BatchWitness, Bytes48, PointEvalWitness};
+pub use witness::{
+    ArchivedBatchWitness, BatchWitness, BatchWitnessLegacy, Bytes48, PointEvalWitness,
+    PointEvalWitnessHints,
+};

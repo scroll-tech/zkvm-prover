@@ -1,6 +1,6 @@
 use scroll_zkvm_prover::Prover;
 use scroll_zkvm_types::{
-    batch::{BatchHeader, BatchInfo, BatchWitness, ReferenceHeader},
+    batch::{BatchHeader, BatchInfo, BatchWitness, BatchWitnessLegacy, ReferenceHeader},
     chunk::ChunkInfo,
     proof::ProofEnum,
     public_inputs::ForkName,
@@ -24,7 +24,10 @@ impl PartialProvingTask for BatchWitness {
     }
 
     fn legacy_rkyv_archive(&self) -> eyre::Result<Vec<u8>> {
-        Ok(rkyv::to_bytes::<rkyv::rancor::Error>(self)?.to_vec())
+        Ok(
+            rkyv::to_bytes::<rkyv::rancor::Error>(&BatchWitnessLegacy::from(self.clone()))?
+                .to_vec(),
+        )
     }
 
     fn fork_name(&self) -> ForkName {
@@ -51,7 +54,7 @@ pub struct BatchTaskGenerator {
     witness: Option<BatchWitness>,
     chunk_generators: Vec<ChunkTaskGenerator>,
     last_witness: Option<BatchWitness>,
-    proof: Option<ProofEnum>,
+    pub proof: Option<ProofEnum>,
 }
 
 impl BatchTaskGenerator {
@@ -87,6 +90,7 @@ impl BatchTaskGenerator {
             let proof = chunk_gen.get_or_build_proof(child_prover)?;
             proofs.push(proof);
         }
+        child_prover.reset();
         Ok(proofs)
     }
 
