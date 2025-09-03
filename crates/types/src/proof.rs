@@ -62,7 +62,7 @@ pub struct StarkProof {
 }
 
 /// Helper proof type to be compatible with the old encoding dispatched from coordinator
-#[derive(Clone, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct VmInternalStarkProof {
     pub proofs: Vec<Proof<SC>>,
     pub public_values: Vec<BabyBear>,
