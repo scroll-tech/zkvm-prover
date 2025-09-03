@@ -72,6 +72,8 @@ pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
         prev_msg_queue_hash: witness.prev_msg_queue_hash,
         post_msg_queue_hash,
         block_ctxs: blocks.iter().map(block_to_context).collect(),
+        prev_blockhash: B256::default(),
+        post_blockhash: B256::default(),
     };
 
     // println!("chunk_info = {}", chunk_info);

@@ -4,17 +4,21 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use sbv_primitives::{B256, types::BlockWitness};
-use scroll_zkvm_prover::Prover;
+use sbv_primitives::{
+    B256,
+    types::{BlockWitness, consensus::TxL1Message},
+};
+use scroll_zkvm_prover::{Prover, utils::read_json};
 use scroll_zkvm_types::{
-    chunk::{ChunkInfo, ChunkWitness, LegacyChunkWitness},
+    chunk::{ChunkInfo, ChunkWitness, LegacyChunkWitness, SecretKey},
     proof::ProofEnum,
-    public_inputs::ForkName,
+    public_inputs::{ForkName, Version},
 };
 
 use crate::{
     PartialProvingTask, ProverTester, prove_verify, testdata_fork_directory,
-    testers::PATH_TESTDATA, testing_hardfork, utils::metadata_from_chunk_witnesses,
+    testers::PATH_TESTDATA, testing_hardfork, testing_version,
+    utils::metadata_from_chunk_witnesses,
 };
 
 /// Load a file <block_n>.json in the <PATH_BLOCK_WITNESS> directory.
@@ -85,6 +89,7 @@ impl ProverTester for ChunkProverTester {
 /// Generator collect a range of block witnesses from test data
 #[derive(Clone, Default)]
 pub struct ChunkTaskGenerator {
+    pub version: Version,
     pub block_range: Vec<u64>,
     pub prev_message_hash: Option<B256>,
     pub witness: Option<ChunkWitness>,
@@ -101,6 +106,7 @@ impl ChunkTaskGenerator {
         self.witness = Some(witness.clone());
         Ok(witness)
     }
+
     pub fn get_or_build_proof(&mut self, prover: &mut Prover) -> eyre::Result<ProofEnum> {
         if let Some(proof) = &self.proof {
             return Ok(proof.clone());
@@ -112,12 +118,17 @@ impl ChunkTaskGenerator {
     }
 
     pub fn calculate_witness(&mut self) -> eyre::Result<ChunkWitness> {
+        let dir_name = if self.version.is_validium() {
+            "validium"
+        } else {
+            self.version.fork.as_str()
+        };
         let paths: Vec<PathBuf> = self
             .block_range
             .iter()
             .map(|block_n| {
                 Path::new(PATH_TESTDATA)
-                    .join(testdata_fork_directory())
+                    .join(dir_name)
                     .join("witnesses")
                     .join(format!("{}.json", block_n))
             })
@@ -128,12 +139,33 @@ impl ChunkTaskGenerator {
             .map(read_block_witness)
             .collect::<eyre::Result<Vec<BlockWitness>>>()?;
 
-        let witness = ChunkWitness::new_scroll(
-            &block_witnesses,
-            self.prev_message_hash
-                .unwrap_or_else(|| B256::repeat_byte(1u8)),
-            testing_hardfork(),
-        );
+        let witness = if self.version.is_validium() {
+            let base_dir = Path::new(PATH_TESTDATA).join("validium");
+            let secret_key = hex::decode(std::env::var("VALIDIUM_KEY")?)?;
+            let secret_key = SecretKey::try_from_bytes(&secret_key)?;
+            let validium_txs = self
+                .block_range
+                .iter()
+                .map(|blk| read_json(base_dir.join(format!("{blk}_validium_txs.json"))))
+                .collect::<Result<Vec<Vec<TxL1Message>>, _>>()?;
+            ChunkWitness::new_validium(
+                self.version.as_version_byte(),
+                &block_witnesses,
+                self.prev_message_hash
+                    .unwrap_or_else(|| B256::repeat_byte(1u8)),
+                self.version.fork,
+                validium_txs,
+                secret_key,
+            )
+        } else {
+            ChunkWitness::new_scroll(
+                self.version.as_version_byte(),
+                &block_witnesses,
+                self.prev_message_hash
+                    .unwrap_or_else(|| B256::repeat_byte(1u8)),
+                testing_hardfork(),
+            )
+        };
 
         Ok(witness)
     }
@@ -152,7 +184,11 @@ pub fn get_witness_from_env_or_builder(
         .iter()
         .map(read_block_witness)
         .collect::<eyre::Result<Vec<BlockWitness>>>()?;
+
+    let version = testing_version().as_version_byte();
+
     Ok(ChunkWitness::new_scroll(
+        version,
         &block_witnesses,
         B256::repeat_byte(1u8),
         testing_hardfork(),
@@ -161,13 +197,14 @@ pub fn get_witness_from_env_or_builder(
 
 /// preset examples for single task
 pub fn preset_chunk() -> ChunkTaskGenerator {
-    let block_range = match testing_hardfork() {
-        ForkName::EuclidV1 => 12508460u64..=12508463u64,
-        ForkName::EuclidV2 => 1u64..=4u64,
-        ForkName::Feynman => 16525000u64..=16525003u64,
+    let (version, block_range) = match testing_hardfork() {
+        ForkName::EuclidV1 => (Version::euclid_v1(), 12508460u64..=12508463u64),
+        ForkName::EuclidV2 => (Version::euclid_v2(), 1u64..=4u64),
+        ForkName::Feynman => (Version::feynman(), 16525000u64..=16525003u64),
     };
 
     ChunkTaskGenerator {
+        version,
         block_range: block_range.collect(),
         ..Default::default()
     }
@@ -175,12 +212,14 @@ pub fn preset_chunk() -> ChunkTaskGenerator {
 
 /// create canonical tasks from a series of block range
 pub fn create_canonical_tasks(
+    version: Version,
     ranges: impl Iterator<Item = std::ops::RangeInclusive<u64>>,
 ) -> eyre::Result<Vec<ChunkTaskGenerator>> {
     let mut ret = Vec::new();
     let mut prev_message_hash = None;
     for r in ranges {
         let mut canonical_generator = ChunkTaskGenerator {
+            version,
             block_range: r.collect(),
             prev_message_hash,
             proof: Default::default(),
@@ -202,23 +241,40 @@ pub fn preset_chunk_multiple() -> Vec<ChunkTaskGenerator> {
 
     PRESET_RESULT
         .get_or_init(|| {
-            create_canonical_tasks(
-                match testing_hardfork() {
-                    ForkName::EuclidV1 => vec![
+            let (block_range, version) = match testing_hardfork() {
+                ForkName::EuclidV1 => (
+                    vec![
                         12508460u64..=12508460u64,
                         12508461u64..=12508461u64,
                         12508462u64..=12508463u64,
                     ],
-                    ForkName::EuclidV2 => vec![1u64..=1u64, 2u64..=2u64, 3u64..=4u64],
-                    ForkName::Feynman => vec![
+                    Version::euclid_v1(),
+                ),
+                ForkName::EuclidV2 => (
+                    vec![1u64..=1u64, 2u64..=2u64, 3u64..=4u64],
+                    Version::euclid_v2(),
+                ),
+                ForkName::Feynman => (
+                    vec![
                         16525000u64..=16525000u64,
                         16525001u64..=16525001u64,
                         16525002u64..=16525003u64,
                     ],
-                }
-                .into_iter(),
-            )
-            .expect("must success for preset collections")
+                    Version::feynman(),
+                ),
+            };
+            create_canonical_tasks(version, block_range.into_iter())
+                .expect("must success for preset collections")
         })
         .clone()
+}
+
+pub fn preset_chunk_validium() -> ChunkTaskGenerator {
+    let block_range = 1141071..=1141071;
+
+    ChunkTaskGenerator {
+        version: Version::validium_v1(),
+        block_range: block_range.collect(),
+        ..Default::default()
+    }
 }

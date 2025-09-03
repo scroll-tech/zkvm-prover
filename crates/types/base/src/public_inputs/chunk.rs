@@ -1,6 +1,7 @@
 use crate::{
     public_inputs::{ForkName, MultiVersionPublicInputs},
     utils::keccak256,
+    version::{Domain, STFVersion, Version},
 };
 use alloy_primitives::{B256, U256};
 
@@ -126,6 +127,12 @@ pub struct ChunkInfo {
     /// The block contexts of the blocks in the chunk.
     #[rkyv()]
     pub block_ctxs: Vec<BlockContextV2>,
+    /// The blockhash of the last block in the previous chunk.
+    #[rkyv()]
+    pub prev_blockhash: B256,
+    /// The blockhash of the last block in the current chunk.
+    #[rkyv()]
+    pub post_blockhash: B256,
 }
 
 impl ChunkInfo {
@@ -188,9 +195,49 @@ impl ChunkInfo {
                 .collect::<Vec<u8>>(),
         )
     }
+
+    /// Public input hash for a given chunk for L3 validium @ v1:
+    ///
+    /// keccak(
+    ///     chain id ||
+    ///     prev state root ||
+    ///     post state root ||
+    ///     withdraw root ||
+    ///     tx data digest ||
+    ///     prev msg queue hash ||
+    ///     post msg queue hash ||
+    ///     initial block number ||
+    ///     block_ctx for block_ctx in block_ctxs ||
+    ///     prev blockhash ||
+    ///     post blockhash
+    /// )
+    pub fn pi_hash_validium_v1(&self) -> B256 {
+        keccak256(
+            std::iter::empty()
+                .chain(&self.chain_id.to_be_bytes())
+                .chain(self.prev_state_root.as_slice())
+                .chain(self.post_state_root.as_slice())
+                .chain(self.withdraw_root.as_slice())
+                .chain(self.tx_data_digest.as_slice())
+                .chain(self.prev_msg_queue_hash.as_slice())
+                .chain(self.post_msg_queue_hash.as_slice())
+                .chain(&self.initial_block_number.to_be_bytes())
+                .chain(
+                    self.block_ctxs
+                        .iter()
+                        .flat_map(|block_ctx| block_ctx.to_bytes())
+                        .collect::<Vec<u8>>()
+                        .as_slice(),
+                )
+                .chain(self.prev_blockhash.as_slice())
+                .chain(self.post_blockhash.as_slice())
+                .cloned()
+                .collect::<Vec<u8>>(),
+        )
+    }
 }
 
-pub type VersionedChunkInfo = (ChunkInfo, ForkName);
+pub type VersionedChunkInfo = (ChunkInfo, Version);
 
 impl MultiVersionPublicInputs for ChunkInfo {
     /// Compute the public input hash for the chunk.
@@ -208,22 +255,48 @@ impl MultiVersionPublicInputs for ChunkInfo {
         }
     }
 
+    /// Compute the public input hash for the chunk given the version tuple.
+    fn pi_hash_by_version(&self, version: Version) -> B256 {
+        match (version.domain, version.stf_version) {
+            (Domain::Scroll, STFVersion::V6) => self.pi_hash_by_fork(ForkName::EuclidV1),
+            (Domain::Scroll, STFVersion::V7) => self.pi_hash_by_fork(ForkName::EuclidV2),
+            (Domain::Scroll, STFVersion::V8) => self.pi_hash_by_fork(ForkName::Feynman),
+            (Domain::Validium, STFVersion::V1) => self.pi_hash_validium_v1(),
+            (domain, stf_version) => {
+                unreachable!("unsupported version=({domain:?}, {stf_version:?})")
+            }
+        }
+    }
+
     /// Validate public inputs between 2 contiguous chunks.
     ///
     /// - chain id MUST match
     /// - state roots MUST be chained
     /// - L1 msg queue hash MUST be chained
-    fn validate(&self, prev_pi: &Self, fork_name: ForkName) {
+    ///
+    /// Furthermore, for validiums we must also chain the blockhashes.
+    fn validate(&self, prev_pi: &Self, version: Version) {
         assert_eq!(self.chain_id, prev_pi.chain_id);
         assert_eq!(self.prev_state_root, prev_pi.post_state_root);
         assert_eq!(self.prev_msg_queue_hash, prev_pi.post_msg_queue_hash);
 
         // message queue hash is used only after euclidv2 (da-codec@v7)
-        if fork_name == ForkName::EuclidV1 {
+        if version.fork == ForkName::EuclidV1 {
             assert_eq!(self.prev_msg_queue_hash, B256::ZERO);
             assert_eq!(prev_pi.prev_msg_queue_hash, B256::ZERO);
             assert_eq!(self.post_msg_queue_hash, B256::ZERO);
             assert_eq!(prev_pi.post_msg_queue_hash, B256::ZERO);
+        }
+
+        // blockhash is unused for scroll domain.
+        if version.domain == Domain::Scroll {
+            assert_eq!(self.prev_blockhash, B256::ZERO);
+            assert_eq!(self.post_blockhash, B256::ZERO);
+        }
+
+        // blockhash chaining must be validated for validiums.
+        if version.domain == Domain::Validium {
+            assert_eq!(self.prev_blockhash, prev_pi.post_blockhash);
         }
     }
 }

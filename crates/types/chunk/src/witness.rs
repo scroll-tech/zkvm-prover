@@ -4,11 +4,14 @@ use sbv_core::verifier::StateCommitMode;
 use sbv_primitives::types::consensus::TxL1Message;
 use sbv_primitives::{U256, types::BlockWitness};
 use std::collections::HashSet;
+use types_base::version::Version;
 use types_base::{fork_name::ForkName, public_inputs::chunk::ChunkInfo};
 
 /// The witness type accepted by the chunk-circuit.
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct ChunkWitness {
+    /// Version byte as per [version][types_base::version].
+    pub version: u8,
     /// The block witness for each block in the chunk.
     pub blocks: Vec<BlockWitness>,
     /// The on-chain rolling L1 message queue hash before enqueueing any L1 msg tx from the chunk.
@@ -65,14 +68,16 @@ pub struct ChunkDetails {
 
 impl ChunkWitness {
     pub fn new_scroll(
+        version: u8,
         blocks: &[BlockWitness],
         prev_msg_queue_hash: B256,
         fork_name: ForkName,
     ) -> Self {
-        Self::new(blocks, prev_msg_queue_hash, fork_name, None)
+        Self::new(version, blocks, prev_msg_queue_hash, fork_name, None)
     }
 
     pub fn new_validium(
+        version: u8,
         blocks: &[BlockWitness],
         prev_msg_queue_hash: B256,
         fork_name: ForkName,
@@ -80,6 +85,7 @@ impl ChunkWitness {
         secret_key: SecretKey,
     ) -> Self {
         Self::new(
+            version,
             blocks,
             prev_msg_queue_hash,
             fork_name,
@@ -91,6 +97,7 @@ impl ChunkWitness {
     }
 
     pub fn new(
+        version: u8,
         blocks: &[BlockWitness],
         prev_msg_queue_hash: B256,
         fork_name: ForkName,
@@ -129,6 +136,7 @@ impl ChunkWitness {
             .collect();
 
         Self {
+            version,
             blocks,
             prev_msg_queue_hash,
             fork_name,
@@ -152,6 +160,10 @@ impl ChunkWitness {
             num_txs,
             total_gas_used,
         }
+    }
+
+    pub fn version(&self) -> Version {
+        Version::from(self.version)
     }
 }
 

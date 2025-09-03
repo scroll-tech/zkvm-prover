@@ -11,9 +11,9 @@ use scroll_zkvm_integration::{
     },
     utils::metadata_from_chunk_witnesses,
 };
-use scroll_zkvm_prover::utils::vm::ExecutionResult;
+use scroll_zkvm_prover::utils::{read_json, vm::ExecutionResult};
 use scroll_zkvm_types::chunk::{ChunkWitness, SecretKey};
-use scroll_zkvm_types::public_inputs::ForkName;
+use scroll_zkvm_types::public_inputs::Version;
 use std::env;
 use std::path::Path;
 
@@ -73,8 +73,7 @@ fn test_execute() -> eyre::Result<()> {
 
 #[test]
 fn test_execute_validium() -> eyre::Result<()> {
-    ChunkProverTester::setup()?;
-    let prover = ChunkProverTester::load_prover(false)?;
+    ChunkProverTester::setup(true)?;
 
     let base_dir = Path::new(PATH_TESTDATA).join("validium");
 
@@ -86,15 +85,17 @@ fn test_execute_validium() -> eyre::Result<()> {
         let validium_txs: Vec<TxL1Message> =
             read_json(base_dir.join(format!("{blk}_validium_txs.json")))?;
 
+        let version = Version::validium_v1();
         let witness = ChunkWitness::new_validium(
+            version.as_version_byte(),
             &[block_witness],
             B256::ZERO,
-            ForkName::EuclidV2,
+            version.fork,
             vec![validium_txs],
             secret_key.clone(),
         );
 
-        exec_chunk(&prover, &witness)?;
+        exec_chunk(&witness)?;
     }
     Ok(())
 }
@@ -108,6 +109,7 @@ fn test_autofill_trie_nodes() -> eyre::Result<()> {
     let mut template_wit = get_witness_from_env_or_builder(&mut preset_chunk())?;
     template_wit.blocks.truncate(1);
     let wit = ChunkWitness::new_scroll(
+        template_wit.version,
         &template_wit.blocks,
         template_wit.prev_msg_queue_hash,
         template_wit.fork_name,

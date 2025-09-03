@@ -205,7 +205,7 @@ impl BlockExt for RecoveredBlock<Block> {
 
         if let Some((txs, secret_key)) = validium_txs {
             for (validium_tx, tx_in_block) in txs.iter().zip_eq(self.l1_txs_iter()) {
-                match validium::decrypt(&validium_tx, secret_key) {
+                match validium::decrypt(validium_tx, secret_key) {
                     Ok(decrypted) => {
                         assert_eq!(decrypted, *tx_in_block);
                     }
