@@ -61,6 +61,13 @@ pub struct StarkProof {
     pub stat: StarkProofStat,
 }
 
+/// Helper proof type to be compatible with the old encoding dispatched from coordinator
+#[derive(Clone, Deserialize)]
+pub struct VmInternalStarkProof {
+    pub proofs: Vec<Proof<SC>>,
+    pub public_values: Vec<BabyBear>,
+}
+
 pub use openvm_sdk::types::EvmProof as OpenVmEvmProof;
 use snark_verifier_sdk::snark_verifier::{
     halo2_base::halo2_proofs::halo2curves::bn256::Fr, util::arithmetic::PrimeField,
