@@ -17,6 +17,7 @@ vm-zstd = { workspace = true }
 
 types-base = { path = "../base", package = "scroll-zkvm-types-base" }
 openvm = { workspace = true, features = ["std"] }
+openvm-algebra-guest = { workspace = true }
 openvm-ecc-guest = { workspace = true, features = ["halo2curves"] }
 openvm-pairing-guest = { workspace = true, features = ["halo2curves"] }
 openvm-pairing = { workspace = true, features = ["bls12_381", "halo2curves"] }

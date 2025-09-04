@@ -1,4 +1,9 @@
-
+use halo2curves_axiom::bls12_381::{
+    Fq as Bls12_381_Fq, G1Affine as Bls12_381_G1, G2Affine as Bls12_381_G2,
+};
+use openvm_algebra_guest::IntMod;
+use openvm_ecc_guest::weierstrass::WeierstrassPoint;
+use openvm_pairing::bls12_381::{Fp, Fp2, G1Affine, G2Affine};
 
 /// Helper trait that provides functionality to convert the given type from native to the desired intrinsic type
 pub trait ToIntrinsic {
