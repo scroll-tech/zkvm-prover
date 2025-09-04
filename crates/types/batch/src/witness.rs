@@ -88,6 +88,36 @@ pub struct PointEvalWitness {
     pub kzg_proof: Bytes48,
 }
 
+pub fn build_point_eval_hints(witness: &PointEvalWitness) -> PointEvalWitnessHints {
+    use halo2curves_axiom::bls12_381;
+
+    let kzg_commitment: Bytes48 = witness.kzg_commitment;
+    let kzg_proof: Bytes48 = witness.kzg_proof;
+    let commitment_point = bls12_381::G1Affine::from_compressed_be(&kzg_commitment).unwrap();
+    let mut kzg_commitment_hint_x = [0u8; 48];
+    let mut kzg_commitment_hint_y = [0u8; 48];
+    kzg_commitment_hint_x.copy_from_slice(&commitment_point.x.to_bytes_be());
+    kzg_commitment_hint_y.copy_from_slice(&commitment_point.y.to_bytes_be());
+    //[commitment_point_i.x().to_be_bytes(), commitment_point_i.y().to_be_bytes()].concat().try_into().unwrap();
+    //let commitment_point_i: G1Affine = commitment_point.convert();
+    //assert_eq!(kzg_commitment_hint.to_vec(), [commitment_point_i.x().to_be_bytes(), commitment_point_i.y().to_be_bytes()].concat());
+    println!("commitment encoded {:?}", kzg_commitment);
+    println!("commitment raw x {:?}", commitment_point.x.to_bytes_be());
+
+    let proof_point = bls12_381::G1Affine::from_compressed_be(&kzg_proof).unwrap();
+    let mut kzg_proof_hint_x = [0u8; 48];
+    let mut kzg_proof_hint_y = [0u8; 48];
+    kzg_proof_hint_x.copy_from_slice(&proof_point.x.to_bytes_be());
+    kzg_proof_hint_y.copy_from_slice(&proof_point.y.to_bytes_be());
+
+    PointEvalWitnessHints {
+        kzg_commitment_hint_x,
+        kzg_commitment_hint_y,
+        kzg_proof_hint_x,
+        kzg_proof_hint_y,
+    }
+}
+
 /// Witness to the batch circuit.
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct BatchWitness {
@@ -104,6 +134,8 @@ pub struct BatchWitness {
     /// Optional field as some domains (for eg. Validium) may not utilise EIP-4844 for DA,
     /// in case of which there is no point-eval witness.
     pub point_eval_witness: Option<PointEvalWitness>,
+    /// Hints for point evaluation
+    pub point_eval_witness_hints: Option<PointEvalWitnessHints>,
     /// Header for reference.
     pub reference_header: ReferenceHeader,
     /// The code version specify the chain spec
@@ -132,39 +164,7 @@ pub struct LegacyBatchWitness {
     #[rkyv()]
     pub blob_bytes: Vec<u8>,
     /// Witness for point evaluation
-    pub point_eval_witness: PointEvalWitness,
-    /// Hints for point evaluation
-    pub point_eval_witness_hints: PointEvalWitnessHints,
-    /// Header for reference.
     #[rkyv()]
-    pub reference_header: ReferenceHeader,
-    /// The code version specify the chain spec
-    #[rkyv()]
-    pub fork_name: ForkName,
-}
-
-/// Witness to the batch circuit.
-#[derive(
-    Clone,
-    Debug,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    serde::Deserialize,
-    serde::Serialize,
-)]
-#[rkyv(derive(Debug))]
-pub struct BatchWitnessLegacy {
-    /// Flattened root proofs from all chunks in the batch.
-    #[rkyv()]
-    pub chunk_proofs: Vec<AggregationInput>,
-    /// Chunk infos.
-    #[rkyv()]
-    pub chunk_infos: Vec<ChunkInfo>,
-    /// Blob bytes.
-    #[rkyv()]
-    pub blob_bytes: Vec<u8>,
-    /// Witness for point evaluation
     pub point_eval_witness: PointEvalWitness,
     /// Header for reference.
     #[rkyv()]
@@ -217,20 +217,20 @@ impl From<&BatchWitness> for BatchInfo {
                     .point_eval_witness
                     .as_ref()
                     .expect("point_eval_witness missing for header::v7");
+                let point_eval_witness_hints = witness
+                    .point_eval_witness_hints
+                    .as_ref()
+                    .expect("point_eval_witness missing for header::v7");
                 let args = BuilderArgsV7 {
                     header: *header,
                     chunk_infos,
                     blob_bytes: witness.blob_bytes.to_vec(),
                     kzg_commitment: Some(point_eval_witness.kzg_commitment),
                     kzg_proof: Some(point_eval_witness.kzg_proof),
-                    kzg_commitment_hint_x: Some(
-                        witness.point_eval_witness_hints.kzg_commitment_hint_x,
-                    ),
-                    kzg_commitment_hint_y: Some(
-                        witness.point_eval_witness_hints.kzg_commitment_hint_y,
-                    ),
-                    kzg_proof_hint_x: Some(witness.point_eval_witness_hints.kzg_proof_hint_x),
-                    kzg_proof_hint_y: Some(witness.point_eval_witness_hints.kzg_proof_hint_y),
+                    kzg_commitment_hint_x: Some(point_eval_witness_hints.kzg_commitment_hint_x),
+                    kzg_commitment_hint_y: Some(point_eval_witness_hints.kzg_commitment_hint_y),
+                    kzg_proof_hint_x: Some(point_eval_witness_hints.kzg_proof_hint_x),
+                    kzg_proof_hint_y: Some(point_eval_witness_hints.kzg_proof_hint_y),
                 };
                 BatchInfoBuilderV7::build(args)
             }
@@ -239,20 +239,20 @@ impl From<&BatchWitness> for BatchInfo {
                     .point_eval_witness
                     .as_ref()
                     .expect("point_eval_witness missing for header::v8");
+                let point_eval_witness_hints = witness
+                    .point_eval_witness_hints
+                    .as_ref()
+                    .expect("point_eval_witness missing for header::v8");
                 let args = BuilderArgsV8 {
                     header: *header,
                     chunk_infos,
                     blob_bytes: witness.blob_bytes.to_vec(),
                     kzg_commitment: Some(point_eval_witness.kzg_commitment),
                     kzg_proof: Some(point_eval_witness.kzg_proof),
-                    kzg_commitment_hint_x: Some(
-                        witness.point_eval_witness_hints.kzg_commitment_hint_x,
-                    ),
-                    kzg_commitment_hint_y: Some(
-                        witness.point_eval_witness_hints.kzg_commitment_hint_y,
-                    ),
-                    kzg_proof_hint_x: Some(witness.point_eval_witness_hints.kzg_proof_hint_x),
-                    kzg_proof_hint_y: Some(witness.point_eval_witness_hints.kzg_proof_hint_y),
+                    kzg_commitment_hint_x: Some(point_eval_witness_hints.kzg_commitment_hint_x),
+                    kzg_commitment_hint_y: Some(point_eval_witness_hints.kzg_commitment_hint_y),
+                    kzg_proof_hint_x: Some(point_eval_witness_hints.kzg_proof_hint_x),
+                    kzg_proof_hint_y: Some(point_eval_witness_hints.kzg_proof_hint_y),
                 };
 
                 println!("6001");

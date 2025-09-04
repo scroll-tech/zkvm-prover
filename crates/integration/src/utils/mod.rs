@@ -4,6 +4,7 @@ use sbv_primitives::{
     B256,
     types::{BlockWitness, eips::Encodable2718},
 };
+use scroll_zkvm_types::batch::build_point_eval_hints;
 use scroll_zkvm_types::{
     batch::{
         BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchHeaderValidium, BatchHeaderValidiumV1,
@@ -326,19 +327,18 @@ pub fn build_batch_witnesses(
         })
         .collect::<Vec<_>>();
 
-    let (point_eval_witness, point_eval_witness_hints) = build_point_eval_witness(
-        *kzg_commitment.to_bytes().as_ref(),
-        *kzg_proof.to_bytes().as_ref(),
-    );
+    let point_eval_witness = PointEvalWitness {
+        kzg_commitment: *kzg_commitment.to_bytes().as_ref(),
+        kzg_proof: *kzg_proof.to_bytes().as_ref(),
+    };
     Ok(BatchWitness {
         version: version.as_version_byte(),
         chunk_proofs,
         chunk_infos,
         reference_header,
         blob_bytes,
-        point_eval_witness,
-        point_eval_witness_hints,
-        }),
+        point_eval_witness_hints: Some(build_point_eval_hints(&point_eval_witness)),
+        point_eval_witness: Some(point_eval_witness),
         fork_name: version.fork,
     })
 }
@@ -363,6 +363,7 @@ pub fn build_batch_witnesses_validium(
             chunk_digests.push(keccak256(&tx_bytes));
             payload_bytes.extend(tx_bytes);
             (meta_chunk_sizes, chunk_digests, payload_bytes)
+        },
     );
 
     // sanity check, verify the correction of execute
@@ -468,45 +469,9 @@ pub fn build_batch_witnesses_validium(
         reference_header,
         blob_bytes,
         point_eval_witness: None,
+        point_eval_witness_hints: None,
         fork_name: version.fork,
     })
-}
-
-// TODO: move it to some correct place
-
-fn build_point_eval_witness(
-    kzg_commitment: Bytes48,
-    kzg_proof: Bytes48,
-) -> (PointEvalWitness, PointEvalWitnessHints) {
-    use snark_verifier_sdk::snark_verifier::halo2_base::halo2_proofs::halo2curves::bls12_381;
-    let commitment_point = bls12_381::G1Affine::from_compressed_be(&kzg_commitment).unwrap();
-    let mut kzg_commitment_hint_x = [0u8; 48];
-    let mut kzg_commitment_hint_y = [0u8; 48];
-    kzg_commitment_hint_x.copy_from_slice(&commitment_point.x.to_bytes_be());
-    kzg_commitment_hint_y.copy_from_slice(&commitment_point.y.to_bytes_be());
-    //[commitment_point_i.x().to_be_bytes(), commitment_point_i.y().to_be_bytes()].concat().try_into().unwrap();
-    //let commitment_point_i: G1Affine = commitment_point.convert();
-    //assert_eq!(kzg_commitment_hint.to_vec(), [commitment_point_i.x().to_be_bytes(), commitment_point_i.y().to_be_bytes()].concat());
-    println!("commitment encoded {:?}", kzg_commitment);
-    println!("commitment raw x {:?}", commitment_point.x.to_bytes_be());
-
-    let proof_point = bls12_381::G1Affine::from_compressed_be(&kzg_proof).unwrap();
-    let mut kzg_proof_hint_x = [0u8; 48];
-    let mut kzg_proof_hint_y = [0u8; 48];
-    kzg_proof_hint_x.copy_from_slice(&proof_point.x.to_bytes_be());
-    kzg_proof_hint_y.copy_from_slice(&proof_point.y.to_bytes_be());
-    (
-        PointEvalWitness {
-            kzg_commitment,
-            kzg_proof,
-        },
-        PointEvalWitnessHints {
-            kzg_commitment_hint_x,
-            kzg_commitment_hint_y,
-            kzg_proof_hint_x,
-            kzg_proof_hint_y,
-        },
-    )
 }
 
 #[test]

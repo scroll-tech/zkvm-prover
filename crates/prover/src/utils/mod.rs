@@ -70,6 +70,29 @@ pub fn write<P: AsRef<Path>>(path: P, data: &[u8]) -> Result<(), Error> {
     Ok(std::fs::write(path, data)?)
 }
 
+pub fn save_stdin_as_json(stdin: &openvm_sdk::StdIn, filename: &str) {
+    // dump stdin to file
+    let mut json: serde_json::Value = serde_json::from_str("{\"input\":[]}").unwrap();
+    let json_input = json["input"].as_array_mut().unwrap();
+    for item in &stdin.buffer {
+        use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
+        let mut bytes: Vec<u8> = vec![0x02];
+        for f in item {
+            let u32_bytes = f.as_canonical_u32().to_le_bytes();
+            bytes.extend_from_slice(&u32_bytes);
+        }
+        json_input.push(serde_json::Value::String(format!(
+            "0x{}",
+            hex::encode(bytes)
+        )));
+    }
+    if let Err(e) = std::fs::write(&filename, serde_json::to_string_pretty(&json).unwrap()) {
+        tracing::warn!("Failed to write stdin to {}: {}", filename, e);
+    } else {
+        tracing::info!("Wrote stdin to {}", filename);
+    }
+}
+
 pub mod base64 {
     use base64::prelude::*;
     use serde::{Deserialize, Deserializer, Serialize, Serializer};

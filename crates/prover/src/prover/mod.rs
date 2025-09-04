@@ -1,6 +1,5 @@
 use std::{
     path::PathBuf,
-    str::FromStr,
     sync::{Arc, OnceLock},
 };
 

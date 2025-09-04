@@ -23,12 +23,23 @@ impl ToIntrinsic for Bls12_381_Fq {
     }
 }
 
+pub fn from_intrinsic_fp(x: Fp) -> Bls12_381_Fq {
+    Bls12_381_Fq::from_bytes(x.as_le_bytes().try_into().unwrap()).unwrap()
+}
+
 impl ToIntrinsic for Bls12_381_G1 {
     type IntrinsicType = G1Affine;
 
     fn to_intrinsic(&self) -> Self::IntrinsicType {
         G1Affine::from_xy_unchecked(self.x.to_intrinsic(), self.y.to_intrinsic())
     }
+}
+
+pub fn from_intrinsic_g1(p: G1Affine) -> Bls12_381_G1 {
+    let mut r = Bls12_381_G1::generator();
+    r.x = from_intrinsic_fp(p.x().clone());
+    r.y = from_intrinsic_fp(p.y().clone());
+    r
 }
 
 impl ToIntrinsic for Bls12_381_G2 {

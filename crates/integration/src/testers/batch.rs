@@ -28,7 +28,6 @@ impl PartialProvingTask for BatchWitness {
         let witness_legacy = LegacyBatchWitness::from(self.clone());
         let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(&witness_legacy)?;
         Ok(bytes.to_vec())
-        
     }
 
     fn fork_name(&self) -> ForkName {
