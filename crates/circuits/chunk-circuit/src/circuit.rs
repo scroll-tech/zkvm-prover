@@ -32,7 +32,7 @@ impl Circuit for ChunkCircuit {
     fn deserialize_witness(witness_bytes: &[u8]) -> Self::Witness {
         let config = bincode::config::standard();
         let (witness, _): (Self::Witness, _) =
-            bincode::serde::decode_from_slice(witness_bytes, config)
+            bincode::serde::borrow_decode_from_slice(witness_bytes, config)
                 .expect("ChunkCircuit: deserialisation of witness bytes failed");
         witness
     }

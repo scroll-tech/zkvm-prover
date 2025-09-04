@@ -1,8 +1,9 @@
+use sbv_core::BlockWitness;
 use crate::testing_hardfork;
 use sbv_primitives::types::consensus::ScrollTransaction;
 use sbv_primitives::{
     B256,
-    types::{BlockWitness, eips::Encodable2718},
+    types::{eips::Encodable2718},
 };
 use scroll_zkvm_types::{
     batch::{

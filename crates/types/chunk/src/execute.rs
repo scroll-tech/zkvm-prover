@@ -28,9 +28,6 @@ pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
         },
     );
 
-    let state_commit_mode = witness.state_commit_mode.clone();
-    println!("state_commit_mode: {:?}", state_commit_mode);
-
     let VerifyResult {
         blocks,
         pre_state_root,
@@ -38,10 +35,10 @@ pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
         withdraw_root,
         ..
     } = verifier::run(
-        witness.blocks,
-        chain_spec.clone(),
-        state_commit_mode,
-        Some(witness.compression_ratios.clone()),
+        &witness.blocks,
+        chain_spec,
+        witness.compression_ratios,
+        witness.cached_trie,
     )
     .map_err(|e| format!("verify error: {e}"))?;
 
