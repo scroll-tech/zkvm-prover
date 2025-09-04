@@ -76,7 +76,7 @@ pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
         post_blockhash: B256::default(),
     };
 
-    // println!("chunk_info = {}", chunk_info);
+    println!("chunk_info = {}", chunk_info);
 
     Ok(chunk_info)
 }
