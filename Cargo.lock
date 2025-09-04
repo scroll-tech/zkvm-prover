@@ -6910,14 +6910,11 @@ name = "scroll-zkvm-types-circuit"
 version = "0.6.0"
 dependencies = [
  "alloy-primitives",
- "getrandom 0.2.16",
  "itertools 0.14.0",
  "openvm",
  "openvm-custom-insn",
  "openvm-rv32im-guest",
- "rkyv",
  "scroll-zkvm-types-base",
- "serde",
 ]
 
 [[package]]
