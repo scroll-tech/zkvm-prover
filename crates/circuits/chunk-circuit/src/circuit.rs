@@ -3,7 +3,10 @@ use scroll_zkvm_types_chunk::ChunkWitness;
 use scroll_zkvm_types_circuit::{
     Circuit,
     io::read_witnesses,
-    public_inputs::chunk::{ChunkInfo, VersionedChunkInfo},
+    public_inputs::{
+        Version,
+        chunk::{ChunkInfo, VersionedChunkInfo},
+    },
 };
 
 #[allow(unused_imports, clippy::single_component_path_imports)]
@@ -38,8 +41,10 @@ impl Circuit for ChunkCircuit {
     }
 
     fn validate(witness: Self::Witness) -> Self::PublicInputs {
-        let fork_name = witness.fork_name;
+        let version = Version::from(witness.version);
+        assert_eq!(version.fork, witness.fork_name);
+
         let chunk_info = ChunkInfo::try_from(witness).expect("failed to execute chunk");
-        (chunk_info, fork_name)
+        (chunk_info, version)
     }
 }

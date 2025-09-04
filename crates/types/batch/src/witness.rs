@@ -1,12 +1,17 @@
 use types_base::{
     aggregation::{AggregationInput, ProofCarryingWitness},
-    public_inputs::{ForkName, batch::BatchInfo, chunk::ChunkInfo},
+    public_inputs::{
+        ForkName,
+        batch::BatchInfo,
+        chunk::{ChunkInfo, LegacyChunkInfo},
+    },
 };
 //use snark_verifier_sdk::snark_verifier::halo2_base::halo2_proofs::halo2curves::bls12_381;
 use crate::{
     builder::{
         BatchInfoBuilder, BatchInfoBuilderV6, BatchInfoBuilderV7, BatchInfoBuilderV8,
         BuilderArgsV6, BuilderArgsV7, BuilderArgsV8,
+        validium::{ValidiumBatchInfoBuilder, ValidiumBuilderArgs},
     },
     header::ReferenceHeader,
 };
@@ -84,6 +89,28 @@ pub struct PointEvalWitness {
 }
 
 /// Witness to the batch circuit.
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+pub struct BatchWitness {
+    /// The version byte as per [version][types_base::version].
+    pub version: u8,
+    /// Flattened root proofs from all chunks in the batch.
+    pub chunk_proofs: Vec<AggregationInput>,
+    /// Chunk infos.
+    pub chunk_infos: Vec<ChunkInfo>,
+    /// Blob bytes.
+    pub blob_bytes: Vec<u8>,
+    /// Witness for point evaluation.
+    ///
+    /// Optional field as some domains (for eg. Validium) may not utilise EIP-4844 for DA,
+    /// in case of which there is no point-eval witness.
+    pub point_eval_witness: Option<PointEvalWitness>,
+    /// Header for reference.
+    pub reference_header: ReferenceHeader,
+    /// The code version specify the chain spec
+    pub fork_name: ForkName,
+}
+
+/// Witness to the batch circuit.
 #[derive(
     Clone,
     Debug,
@@ -94,13 +121,13 @@ pub struct PointEvalWitness {
     serde::Serialize,
 )]
 #[rkyv(derive(Debug))]
-pub struct BatchWitness {
+pub struct LegacyBatchWitness {
     /// Flattened root proofs from all chunks in the batch.
     #[rkyv()]
     pub chunk_proofs: Vec<AggregationInput>,
     /// Chunk infos.
     #[rkyv()]
-    pub chunk_infos: Vec<ChunkInfo>,
+    pub chunk_infos: Vec<LegacyChunkInfo>,
     /// Blob bytes.
     #[rkyv()]
     pub blob_bytes: Vec<u8>,
@@ -147,13 +174,13 @@ pub struct BatchWitnessLegacy {
     pub fork_name: ForkName,
 }
 
-impl From<BatchWitness> for BatchWitnessLegacy {
+impl From<BatchWitness> for LegacyBatchWitness {
     fn from(value: BatchWitness) -> Self {
         Self {
             chunk_proofs: value.chunk_proofs,
-            chunk_infos: value.chunk_infos,
+            chunk_infos: value.chunk_infos.into_iter().map(|c| c.into()).collect(),
             blob_bytes: value.blob_bytes,
-            point_eval_witness: value.point_eval_witness,
+            point_eval_witness: value.point_eval_witness.expect("should not be none"),
             reference_header: value.reference_header,
             fork_name: value.fork_name,
         }
@@ -168,7 +195,7 @@ impl ProofCarryingWitness for BatchWitness {
 
 impl From<&BatchWitness> for BatchInfo {
     fn from(witness: &BatchWitness) -> Self {
-        let chunk_infos: Vec<ChunkInfo> = witness.chunk_infos.to_vec();
+        let chunk_infos = witness.chunk_infos.to_vec();
 
         match &witness.reference_header {
             ReferenceHeader::V6(header) => {
@@ -186,12 +213,16 @@ impl From<&BatchWitness> for BatchInfo {
                 BatchInfoBuilderV6::build(args)
             }
             ReferenceHeader::V7(header) => {
+                let point_eval_witness = witness
+                    .point_eval_witness
+                    .as_ref()
+                    .expect("point_eval_witness missing for header::v7");
                 let args = BuilderArgsV7 {
                     header: *header,
                     chunk_infos,
                     blob_bytes: witness.blob_bytes.to_vec(),
-                    kzg_commitment: Some(witness.point_eval_witness.kzg_commitment),
-                    kzg_proof: Some(witness.point_eval_witness.kzg_proof),
+                    kzg_commitment: Some(point_eval_witness.kzg_commitment),
+                    kzg_proof: Some(point_eval_witness.kzg_proof),
                     kzg_commitment_hint_x: Some(
                         witness.point_eval_witness_hints.kzg_commitment_hint_x,
                     ),
@@ -204,12 +235,16 @@ impl From<&BatchWitness> for BatchInfo {
                 BatchInfoBuilderV7::build(args)
             }
             ReferenceHeader::V8(header) => {
+                let point_eval_witness = witness
+                    .point_eval_witness
+                    .as_ref()
+                    .expect("point_eval_witness missing for header::v8");
                 let args = BuilderArgsV8 {
                     header: *header,
                     chunk_infos,
                     blob_bytes: witness.blob_bytes.to_vec(),
-                    kzg_commitment: Some(witness.point_eval_witness.kzg_commitment),
-                    kzg_proof: Some(witness.point_eval_witness.kzg_proof),
+                    kzg_commitment: Some(point_eval_witness.kzg_commitment),
+                    kzg_proof: Some(point_eval_witness.kzg_proof),
                     kzg_commitment_hint_x: Some(
                         witness.point_eval_witness_hints.kzg_commitment_hint_x,
                     ),
@@ -223,6 +258,9 @@ impl From<&BatchWitness> for BatchInfo {
                 println!("6001");
                 BatchInfoBuilderV8::build(args)
             }
+            ReferenceHeader::Validium(header) => ValidiumBatchInfoBuilder::build(
+                ValidiumBuilderArgs::new(*header, chunk_infos, witness.blob_bytes.to_vec()),
+            ),
         }
     }
 }

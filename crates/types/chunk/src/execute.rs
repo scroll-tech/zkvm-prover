@@ -52,13 +52,12 @@ pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
     let data_hash = if witness.fork_name < ForkName::EuclidV2 {
         blocks.legacy_data_hash()
     } else {
-        B256::ZERO
+        B256::default()
     };
-
     let post_msg_queue_hash = if witness.fork_name >= ForkName::EuclidV2 {
-        blocks.rolling_msg_queue_hash(witness.prev_msg_queue_hash)
+        blocks.rolling_msg_queue_hash(witness.prev_msg_queue_hash, witness.validium.as_ref())
     } else {
-        B256::ZERO
+        B256::default()
     };
 
     let chunk_info = ChunkInfo {
@@ -73,6 +72,8 @@ pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
         prev_msg_queue_hash: witness.prev_msg_queue_hash,
         post_msg_queue_hash,
         block_ctxs: blocks.iter().map(block_to_context).collect(),
+        prev_blockhash: B256::default(),
+        post_blockhash: B256::default(),
     };
 
     println!("chunk_info = {}", chunk_info);

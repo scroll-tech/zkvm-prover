@@ -4,6 +4,7 @@ pub use header::{
     v6::{ArchivedBatchHeaderV6, BatchHeaderV6},
     v7::{ArchivedBatchHeaderV7, BatchHeaderV7},
     v8::{ArchivedBatchHeaderV8, BatchHeaderV8},
+    validium::{BatchHeaderValidium, BatchHeaderValidiumV1},
 };
 
 mod payload;
@@ -19,6 +20,5 @@ mod builder;
 
 mod witness;
 pub use witness::{
-    ArchivedBatchWitness, BatchWitness, BatchWitnessLegacy, Bytes48, PointEvalWitness,
-    PointEvalWitnessHints,
+    ArchivedLegacyBatchWitness, BatchWitness, Bytes48, LegacyBatchWitness, PointEvalWitness,
 };

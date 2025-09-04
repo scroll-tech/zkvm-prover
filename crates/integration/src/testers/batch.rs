@@ -1,16 +1,16 @@
 use scroll_zkvm_prover::Prover;
 use scroll_zkvm_types::{
-    batch::{BatchHeader, BatchInfo, BatchWitness, BatchWitnessLegacy, ReferenceHeader},
+    batch::{BatchHeader, BatchInfo, BatchWitness, LegacyBatchWitness, ReferenceHeader},
     chunk::ChunkInfo,
     proof::ProofEnum,
-    public_inputs::ForkName,
+    public_inputs::{ForkName, Version},
     utils::serialize_vk,
 };
 
 use crate::{
     PartialProvingTask, ProverTester, load_program_commitments, prove_verify,
-    testers::chunk::{ChunkTaskGenerator, preset_chunk_multiple},
-    utils::build_batch_witnesses,
+    testers::chunk::{ChunkTaskGenerator, preset_chunk_multiple, preset_chunk_validium},
+    utils::{build_batch_witnesses, build_batch_witnesses_validium},
 };
 
 impl PartialProvingTask for BatchWitness {
@@ -19,15 +19,16 @@ impl PartialProvingTask for BatchWitness {
             ReferenceHeader::V6(h) => h.batch_hash(),
             ReferenceHeader::V7(h) => h.batch_hash(),
             ReferenceHeader::V8(h) => h.batch_hash(),
+            ReferenceHeader::Validium(h) => h.batch_hash(),
         };
         header_hash.to_string()
     }
 
     fn legacy_rkyv_archive(&self) -> eyre::Result<Vec<u8>> {
-        Ok(
-            rkyv::to_bytes::<rkyv::rancor::Error>(&BatchWitnessLegacy::from(self.clone()))?
-                .to_vec(),
-        )
+        let witness_legacy = LegacyBatchWitness::from(self.clone());
+        let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(&witness_legacy)?;
+        Ok(bytes.to_vec())
+        
     }
 
     fn fork_name(&self) -> ForkName {
@@ -58,6 +59,16 @@ pub struct BatchTaskGenerator {
 }
 
 impl BatchTaskGenerator {
+    pub fn version(&self) -> Version {
+        if let Some(wit) = self.witness.as_ref() {
+            return Version::from(wit.version);
+        }
+        self.chunk_generators
+            .first()
+            .expect("at least 1 chunk in a batch")
+            .version
+    }
+
     pub fn get_or_build_witness(&mut self) -> eyre::Result<BatchWitness> {
         if self.witness.is_some() {
             return Ok(self.witness.clone().unwrap());
@@ -66,6 +77,7 @@ impl BatchTaskGenerator {
         self.witness.replace(witness.clone());
         Ok(witness)
     }
+
     pub fn get_or_build_proof(
         &mut self,
         prover: &mut Prover,
@@ -107,14 +119,31 @@ impl BatchTaskGenerator {
             .collect::<eyre::Result<Vec<_>>>()?;
 
         let commitment = load_program_commitments("chunk")?;
-        let ret_wit = build_batch_witnesses(
-            &chunks,
-            &serialize_vk::serialize(&commitment),
-            self.last_witness
-                .as_ref()
-                .map(|wit| (&wit.reference_header).into())
-                .unwrap_or_default(),
-        )?;
+
+        let ret_wit = if chunks
+            .first()
+            .expect("at least 1 chunk in batch")
+            .version()
+            .is_validium()
+        {
+            build_batch_witnesses_validium(
+                &chunks,
+                &serialize_vk::serialize(&commitment),
+                self.last_witness
+                    .as_ref()
+                    .map(|wit| (&wit.reference_header).into())
+                    .unwrap_or_default(),
+            )?
+        } else {
+            build_batch_witnesses(
+                &chunks,
+                &serialize_vk::serialize(&commitment),
+                self.last_witness
+                    .as_ref()
+                    .map(|wit| (&wit.reference_header).into())
+                    .unwrap_or_default(),
+            )?
+        };
 
         // sanity check
         for info in &ret_wit.chunk_infos {
@@ -175,6 +204,10 @@ pub fn create_canonical_tasks<'a>(
 /// preset examples for single task
 pub fn preset_batch() -> BatchTaskGenerator {
     BatchTaskGenerator::from_chunk_tasks(&preset_chunk_multiple(), None)
+}
+
+pub fn preset_batch_validium() -> BatchTaskGenerator {
+    BatchTaskGenerator::from_chunk_tasks(&[preset_chunk_validium()], None)
 }
 
 /// preset examples for multiple task

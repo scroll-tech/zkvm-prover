@@ -6,6 +6,13 @@ use circuit::ChunkCircuit as C;
 openvm::entry!(main);
 
 fn main() {
+    ecies::sha256::set_digest_provider(|| {
+        Box::new(ecies::sha256::ext::ExtSha256Core::new(
+            openvm_sha2::set_sha256,
+        ))
+    })
+    .unwrap();
+
     let witness_bytes = C::read_witness_bytes();
 
     let witness = C::deserialize_witness(&witness_bytes);
