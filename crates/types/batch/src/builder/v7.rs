@@ -2,13 +2,9 @@ use std::marker::PhantomData;
 
 use types_base::public_inputs::batch::BatchInfo;
 
-use openvm_pairing::bls12_381::{Fp, G1Affine};
-
 use crate::{
     BatchHeader, PayloadV7,
-    blob_consistency::{
-        BlobPolynomial, N_BLOB_BYTES, from_intrinsic_g1, kzg_to_versioned_hash, verify_kzg_proof,
-    },
+    blob_consistency::{BlobPolynomial, N_BLOB_BYTES, kzg_to_versioned_hash, verify_kzg_proof},
     payload::{Envelope, Payload},
     witness::decode_point,
 };
