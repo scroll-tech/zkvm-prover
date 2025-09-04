@@ -10,6 +10,7 @@ use crate::{
         BlobPolynomial, N_BLOB_BYTES, from_intrinsic_g1, kzg_to_versioned_hash, verify_kzg_proof,
     },
     payload::{Envelope, Payload},
+    witness::decode_point,
 };
 
 pub type BatchInfoBuilderV7 = GenericBatchInfoBuilderV7<PayloadV7>;
@@ -75,20 +76,20 @@ impl<P: Payload> super::BatchInfoBuilder for GenericBatchInfoBuilderV7<P> {
         println!("6008");
         // Verify KZG proof.
         let proof_ok = {
-            use openvm_algebra_guest::IntMod;
-            use openvm_ecc_guest::weierstrass::WeierstrassPoint;
-
-            let x = Fp::from_be_bytes(&args.kzg_commitment_hint_x.unwrap()).unwrap();
-            let y = Fp::from_be_bytes(&args.kzg_commitment_hint_y.unwrap()).unwrap();
-            let commitment = G1Affine::from_xy(x, y).unwrap();
-            let tt = from_intrinsic_g1(commitment.clone());
-            assert_eq!(tt.to_compressed_be(), kzg_commitment);
-
-            let x = Fp::from_be_bytes(&args.kzg_proof_hint_x.unwrap()).unwrap();
-            let y = Fp::from_be_bytes(&args.kzg_proof_hint_y.unwrap()).unwrap();
-            let proof = G1Affine::from_xy(x, y).unwrap();
-            let pp = from_intrinsic_g1(proof.clone());
-            assert_eq!(pp.to_compressed_be(), kzg_proof);
+            let commitment = decode_point(
+                kzg_commitment,
+                Some((
+                    args.kzg_commitment_hint_x.unwrap(),
+                    args.kzg_commitment_hint_y.unwrap(),
+                )),
+            );
+            let proof = decode_point(
+                kzg_proof,
+                Some((
+                    args.kzg_proof_hint_x.unwrap(),
+                    args.kzg_proof_hint_y.unwrap(),
+                )),
+            );
 
             verify_kzg_proof(challenge, evaluation, commitment, proof)
         };

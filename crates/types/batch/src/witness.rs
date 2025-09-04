@@ -1,4 +1,6 @@
+use crate::blob_consistency::ToIntrinsic;
 use crate::{
+    blob_consistency::from_intrinsic_g1,
     builder::{
         BatchInfoBuilder, BatchInfoBuilderV6, BatchInfoBuilderV7, BatchInfoBuilderV8,
         BuilderArgsV6, BuilderArgsV7, BuilderArgsV8,
@@ -99,6 +101,28 @@ pub fn build_point_eval_hints(witness: &PointEvalWitness) -> PointEvalWitnessHin
     }
 }
 
+pub fn decode_point(
+    encoded: Bytes48,
+    hints: Option<(Bytes48, Bytes48)>,
+) -> openvm_pairing::bls12_381::G1Affine {
+    match hints {
+        None => {
+            // expensive
+            halo2curves_axiom::bls12_381::G1Affine::from_compressed_be(&encoded)
+                .expect("invalid point")
+                .to_intrinsic()
+        }
+        Some((x, y)) => {
+            use openvm_algebra_guest::IntMod;
+            use openvm_ecc_guest::weierstrass::WeierstrassPoint;
+            let x = openvm_pairing::bls12_381::Fp::from_be_bytes(&x).unwrap();
+            let y = openvm_pairing::bls12_381::Fp::from_be_bytes(&y).unwrap();
+            let point = openvm_pairing::bls12_381::G1Affine::from_xy(x, y).unwrap();
+            assert_eq!(from_intrinsic_g1(point.clone()).to_compressed_be(), encoded);
+            point
+        }
+    }
+}
 /// Witness to the batch circuit.
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct BatchWitness {
