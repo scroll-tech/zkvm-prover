@@ -73,24 +73,20 @@ impl<P: Payload> super::BatchInfoBuilder for GenericBatchInfoBuilderV7<P> {
         println!("6008");
         // Verify KZG proof.
         let proof_ok = {
-            let commitment = decode_point(
-                kzg_commitment,
-                Some((
-                    args.kzg_commitment_hint_x.unwrap(),
-                    args.kzg_commitment_hint_y.unwrap(),
-                )),
-            )
-            .expect("kzg commitment")
-            .to_intrinsic();
-            let proof = decode_point(
-                kzg_proof,
-                Some((
-                    args.kzg_proof_hint_x.unwrap(),
-                    args.kzg_proof_hint_y.unwrap(),
-                )),
-            )
-            .expect("kzg proof")
-            .to_intrinsic();
+            let commitment_hint = (
+                args.kzg_commitment_hint_x.unwrap(),
+                args.kzg_commitment_hint_y.unwrap(),
+            );
+            let commitment = decode_point(kzg_commitment, Some(commitment_hint))
+                .expect("kzg commitment")
+                .to_intrinsic();
+            let proof_hint = (
+                args.kzg_proof_hint_x.unwrap(),
+                args.kzg_proof_hint_y.unwrap(),
+            );
+            let proof = decode_point(kzg_proof, Some(proof_hint))
+                .expect("kzg proof")
+                .to_intrinsic();
 
             verify_kzg_proof(challenge, evaluation, commitment, proof)
         };
