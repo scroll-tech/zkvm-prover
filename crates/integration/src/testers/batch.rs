@@ -54,7 +54,7 @@ pub struct BatchTaskGenerator {
     witness: Option<BatchWitness>,
     chunk_generators: Vec<ChunkTaskGenerator>,
     last_witness: Option<BatchWitness>,
-    pub proof: Option<ProofEnum>,
+    proof: Option<ProofEnum>,
 }
 
 impl BatchTaskGenerator {
@@ -101,7 +101,6 @@ impl BatchTaskGenerator {
             let proof = chunk_gen.get_or_build_proof(child_prover)?;
             proofs.push(proof);
         }
-        child_prover.reset();
         Ok(proofs)
     }
 

@@ -22,6 +22,7 @@ use crate::setup::read_app_exe;
 use crate::{Error, setup::read_app_config, task::ProvingTask};
 
 use scroll_zkvm_types::proof::{EvmProof, ProofEnum, StarkProof, StarkProofStat};
+
 /// Generic prover.
 pub struct Prover {
     /// Prover name
@@ -100,7 +101,6 @@ impl Prover {
         }
         Ok(self.prover.get_mut().unwrap())
     }
-
     /// Pick up loaded app commit, to distinguish from which circuit the proof comes
     pub fn get_app_commitment(&mut self) -> ProgramCommitment {
         let prover = self.get_prover_mut().expect("Failed to initialize prover");
@@ -180,9 +180,6 @@ impl Prover {
             .map(|res| res.total_cycle)
     }
 
-    /*
-
-    */
     /// Generate a [root proof][root_proof].
     ///
     /// [root_proof][openvm_sdk::verifier::root::types::RootVmVerifierInput]
