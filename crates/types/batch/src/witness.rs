@@ -88,25 +88,14 @@ pub struct PointEvalWitness {
 }
 
 pub fn build_point_eval_hints(witness: &PointEvalWitness) -> PointEvalWitnessHints {
-    use halo2curves_axiom::bls12_381;
-
-    let unpack = |compressed| -> ([u8; 48], [u8; 48]) {
-        let point = bls12_381::G1Affine::from_compressed_be(compressed).expect("invalid point");
-        let mut x = [0u8; 48];
-        let mut y = [0u8; 48];
-        x.copy_from_slice(&point.x.to_bytes_be());
-        y.copy_from_slice(&point.y.to_bytes_be());
-        (x, y)
-    };
-
-    let (kzg_commitment_hint_x, kzg_commitment_hint_y) = unpack(&witness.kzg_commitment);
-    let (kzg_proof_hint_x, kzg_proof_hint_y) = unpack(&witness.kzg_proof);
-
+    use halo2curves_axiom::bls12_381::G1Affine;
+    let kzg_commitment = G1Affine::from_compressed_be(&witness.kzg_commitment).expect("invalid");
+    let kzg_proof = G1Affine::from_compressed_be(&witness.kzg_proof).expect("invalid");
     PointEvalWitnessHints {
-        kzg_commitment_hint_x,
-        kzg_commitment_hint_y,
-        kzg_proof_hint_x,
-        kzg_proof_hint_y,
+        kzg_commitment_hint_x: kzg_commitment.x.to_bytes_be(),
+        kzg_commitment_hint_y: kzg_commitment.y.to_bytes_be(),
+        kzg_proof_hint_x: kzg_proof.x.to_bytes_be(),
+        kzg_proof_hint_y: kzg_proof.y.to_bytes_be(),
     }
 }
 
