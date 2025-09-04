@@ -21,5 +21,5 @@ mod builder;
 mod witness;
 pub use witness::{
     ArchivedLegacyBatchWitness, BatchWitness, Bytes48, LegacyBatchWitness, PointEvalWitness,
-    build_point_eval_hints,
+    build_point_eval_witness,
 };

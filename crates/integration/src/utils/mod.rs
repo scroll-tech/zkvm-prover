@@ -4,11 +4,11 @@ use sbv_primitives::{
     B256,
     types::{BlockWitness, eips::Encodable2718},
 };
-use scroll_zkvm_types::batch::build_point_eval_hints;
+use scroll_zkvm_types::batch::build_point_eval_witness;
 use scroll_zkvm_types::{
     batch::{
         BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchHeaderValidium, BatchHeaderValidiumV1,
-        BatchInfo, BatchWitness, PointEvalWitness, ReferenceHeader,
+        BatchInfo, BatchWitness, ReferenceHeader,
     },
     bundle::{BundleInfo, BundleWitness},
     chunk::{ChunkInfo, ChunkWitness},
@@ -327,17 +327,16 @@ pub fn build_batch_witnesses(
         })
         .collect::<Vec<_>>();
 
-    let point_eval_witness = PointEvalWitness {
-        kzg_commitment: *kzg_commitment.to_bytes().as_ref(),
-        kzg_proof: *kzg_proof.to_bytes().as_ref(),
-    };
+    let point_eval_witness = build_point_eval_witness(
+        *kzg_commitment.to_bytes().as_ref(),
+        *kzg_proof.to_bytes().as_ref(),
+    );
     Ok(BatchWitness {
         version: version.as_version_byte(),
         chunk_proofs,
         chunk_infos,
         reference_header,
         blob_bytes,
-        point_eval_witness_hints: Some(build_point_eval_hints(&point_eval_witness)),
         point_eval_witness: Some(point_eval_witness),
         fork_name: version.fork,
     })
@@ -469,7 +468,6 @@ pub fn build_batch_witnesses_validium(
         reference_header,
         blob_bytes,
         point_eval_witness: None,
-        point_eval_witness_hints: None,
         fork_name: version.fork,
     })
 }

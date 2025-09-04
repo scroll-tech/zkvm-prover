@@ -51,7 +51,7 @@ mod array48 {
     serde::Serialize,
 )]
 #[rkyv(derive(Debug))]
-pub struct PointEvalWitnessHints {
+pub struct PointEvalWitness {
     #[rkyv()]
     #[serde(with = "array48")]
     pub kzg_commitment_hint_x: Bytes48,
@@ -77,7 +77,7 @@ pub struct PointEvalWitnessHints {
     serde::Serialize,
 )]
 #[rkyv(derive(Debug))]
-pub struct PointEvalWitness {
+pub struct LegacyPointEvalWitness {
     /// kzg commitment
     #[rkyv()]
     #[serde(with = "array48")]
@@ -88,11 +88,24 @@ pub struct PointEvalWitness {
     pub kzg_proof: Bytes48,
 }
 
-pub fn build_point_eval_hints(witness: &PointEvalWitness) -> PointEvalWitnessHints {
+impl From<PointEvalWitness> for LegacyPointEvalWitness {
+    fn from(value: PointEvalWitness) -> Self {
+        Self {
+            kzg_commitment: build_point(value.kzg_commitment_hint_x, value.kzg_commitment_hint_y)
+                .unwrap()
+                .to_compressed_be(),
+            kzg_proof: build_point(value.kzg_proof_hint_x, value.kzg_proof_hint_y)
+                .unwrap()
+                .to_compressed_be(),
+        }
+    }
+}
+
+pub fn build_point_eval_witness(kzg_commitment: Bytes48, kzg_proof: Bytes48) -> PointEvalWitness {
     use halo2curves_axiom::bls12_381::G1Affine;
-    let kzg_commitment = G1Affine::from_compressed_be(&witness.kzg_commitment).expect("invalid");
-    let kzg_proof = G1Affine::from_compressed_be(&witness.kzg_proof).expect("invalid");
-    PointEvalWitnessHints {
+    let kzg_commitment = G1Affine::from_compressed_be(&kzg_commitment).expect("invalid");
+    let kzg_proof = G1Affine::from_compressed_be(&kzg_proof).expect("invalid");
+    PointEvalWitness {
         kzg_commitment_hint_x: kzg_commitment.x.to_bytes_be(),
         kzg_commitment_hint_y: kzg_commitment.y.to_bytes_be(),
         kzg_proof_hint_x: kzg_proof.x.to_bytes_be(),
@@ -100,26 +113,15 @@ pub fn build_point_eval_hints(witness: &PointEvalWitness) -> PointEvalWitnessHin
     }
 }
 
-pub fn decode_point(
-    encoded: Bytes48,
-    hints: Option<(Bytes48, Bytes48)>,
-) -> Option<halo2curves_axiom::bls12_381::G1Affine> {
-    match hints {
-        None => {
-            // expensive
-            halo2curves_axiom::bls12_381::G1Affine::from_compressed_be(&encoded).into()
-        }
-        Some((x, y)) => {
-            use openvm_algebra_guest::IntMod;
-            use openvm_ecc_guest::weierstrass::WeierstrassPoint;
-            let x = openvm_pairing::bls12_381::Fp::from_be_bytes(&x)?;
-            let y = openvm_pairing::bls12_381::Fp::from_be_bytes(&y)?;
-            let point = from_intrinsic_g1(openvm_pairing::bls12_381::G1Affine::from_xy(x, y)?);
-            assert_eq!(point.to_compressed_be(), encoded);
-            Some(point)
-        }
-    }
+pub fn build_point(x: Bytes48, y: Bytes48) -> Option<halo2curves_axiom::bls12_381::G1Affine> {
+    use openvm_algebra_guest::IntMod;
+    use openvm_ecc_guest::weierstrass::WeierstrassPoint;
+    let x = openvm_pairing::bls12_381::Fp::from_be_bytes(&x)?;
+    let y = openvm_pairing::bls12_381::Fp::from_be_bytes(&y)?;
+    let point = from_intrinsic_g1(openvm_pairing::bls12_381::G1Affine::from_xy(x, y)?);
+    Some(point)
 }
+
 /// Witness to the batch circuit.
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct BatchWitness {
@@ -136,8 +138,6 @@ pub struct BatchWitness {
     /// Optional field as some domains (for eg. Validium) may not utilise EIP-4844 for DA,
     /// in case of which there is no point-eval witness.
     pub point_eval_witness: Option<PointEvalWitness>,
-    /// Hints for point evaluation
-    pub point_eval_witness_hints: Option<PointEvalWitnessHints>,
     /// Header for reference.
     pub reference_header: ReferenceHeader,
     /// The code version specify the chain spec
@@ -167,7 +167,7 @@ pub struct LegacyBatchWitness {
     pub blob_bytes: Vec<u8>,
     /// Witness for point evaluation
     #[rkyv()]
-    pub point_eval_witness: PointEvalWitness,
+    pub point_eval_witness: LegacyPointEvalWitness,
     /// Header for reference.
     #[rkyv()]
     pub reference_header: ReferenceHeader,
@@ -178,11 +178,12 @@ pub struct LegacyBatchWitness {
 
 impl From<BatchWitness> for LegacyBatchWitness {
     fn from(value: BatchWitness) -> Self {
+        let point_eval_witness = value.point_eval_witness.as_ref().unwrap();
         Self {
             chunk_proofs: value.chunk_proofs,
             chunk_infos: value.chunk_infos.into_iter().map(|c| c.into()).collect(),
             blob_bytes: value.blob_bytes,
-            point_eval_witness: value.point_eval_witness.expect("should not be none"),
+            point_eval_witness: point_eval_witness.clone().into(),
             reference_header: value.reference_header,
             fork_name: value.fork_name,
         }
@@ -205,12 +206,7 @@ impl From<&BatchWitness> for BatchInfo {
                     header: *header,
                     chunk_infos,
                     blob_bytes: witness.blob_bytes.to_vec(),
-                    kzg_commitment: None,
-                    kzg_proof: None,
-                    kzg_commitment_hint_x: None,
-                    kzg_commitment_hint_y: None,
-                    kzg_proof_hint_x: None,
-                    kzg_proof_hint_y: None,
+                    point_eval_witness: None,
                 };
                 BatchInfoBuilderV6::build(args)
             }
@@ -219,20 +215,11 @@ impl From<&BatchWitness> for BatchInfo {
                     .point_eval_witness
                     .as_ref()
                     .expect("point_eval_witness missing for header::v7");
-                let point_eval_witness_hints = witness
-                    .point_eval_witness_hints
-                    .as_ref()
-                    .expect("point_eval_witness missing for header::v7");
                 let args = BuilderArgsV7 {
                     header: *header,
                     chunk_infos,
                     blob_bytes: witness.blob_bytes.to_vec(),
-                    kzg_commitment: Some(point_eval_witness.kzg_commitment),
-                    kzg_proof: Some(point_eval_witness.kzg_proof),
-                    kzg_commitment_hint_x: Some(point_eval_witness_hints.kzg_commitment_hint_x),
-                    kzg_commitment_hint_y: Some(point_eval_witness_hints.kzg_commitment_hint_y),
-                    kzg_proof_hint_x: Some(point_eval_witness_hints.kzg_proof_hint_x),
-                    kzg_proof_hint_y: Some(point_eval_witness_hints.kzg_proof_hint_y),
+                    point_eval_witness: Some(point_eval_witness.clone()),
                 };
                 BatchInfoBuilderV7::build(args)
             }
@@ -241,23 +228,12 @@ impl From<&BatchWitness> for BatchInfo {
                     .point_eval_witness
                     .as_ref()
                     .expect("point_eval_witness missing for header::v8");
-                let point_eval_witness_hints = witness
-                    .point_eval_witness_hints
-                    .as_ref()
-                    .expect("point_eval_witness missing for header::v8");
                 let args = BuilderArgsV8 {
                     header: *header,
                     chunk_infos,
                     blob_bytes: witness.blob_bytes.to_vec(),
-                    kzg_commitment: Some(point_eval_witness.kzg_commitment),
-                    kzg_proof: Some(point_eval_witness.kzg_proof),
-                    kzg_commitment_hint_x: Some(point_eval_witness_hints.kzg_commitment_hint_x),
-                    kzg_commitment_hint_y: Some(point_eval_witness_hints.kzg_commitment_hint_y),
-                    kzg_proof_hint_x: Some(point_eval_witness_hints.kzg_proof_hint_x),
-                    kzg_proof_hint_y: Some(point_eval_witness_hints.kzg_proof_hint_y),
+                    point_eval_witness: Some(point_eval_witness.clone()),
                 };
-
-                println!("6001");
                 BatchInfoBuilderV8::build(args)
             }
             ReferenceHeader::Validium(header) => ValidiumBatchInfoBuilder::build(

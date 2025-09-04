@@ -11,18 +11,15 @@ pub mod validium;
 
 use types_base::public_inputs::{batch::BatchInfo, chunk::ChunkInfo};
 
-use crate::{BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchHeaderV8, Bytes48, payload::Payload};
+use crate::{
+    BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchHeaderV8, PointEvalWitness, payload::Payload,
+};
 
 pub struct BuilderArgs<Header: BatchHeader> {
     pub header: Header,
     pub chunk_infos: Vec<ChunkInfo>,
     pub blob_bytes: Vec<u8>,
-    pub kzg_commitment: Option<Bytes48>,
-    pub kzg_proof: Option<Bytes48>,
-    pub kzg_commitment_hint_x: Option<Bytes48>,
-    pub kzg_commitment_hint_y: Option<Bytes48>,
-    pub kzg_proof_hint_x: Option<Bytes48>,
-    pub kzg_proof_hint_y: Option<Bytes48>,
+    pub point_eval_witness: Option<PointEvalWitness>,
 }
 
 pub type BuilderArgsV6 = BuilderArgs<BatchHeaderV6>;
