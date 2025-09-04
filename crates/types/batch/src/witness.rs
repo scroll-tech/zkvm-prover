@@ -59,6 +59,28 @@ pub struct PointEvalWitness {
 }
 
 /// Witness to the batch circuit.
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+pub struct BatchWitness {
+    /// The version byte as per [version][types_base::version].
+    pub version: u8,
+    /// Flattened root proofs from all chunks in the batch.
+    pub chunk_proofs: Vec<AggregationInput>,
+    /// Chunk infos.
+    pub chunk_infos: Vec<ChunkInfo>,
+    /// Blob bytes.
+    pub blob_bytes: Vec<u8>,
+    /// Witness for point evaluation.
+    ///
+    /// Optional field as some domains (for eg. Validium) may not utilise EIP-4844 for DA,
+    /// in case of which there is no point-eval witness.
+    pub point_eval_witness: Option<PointEvalWitness>,
+    /// Header for reference.
+    pub reference_header: ReferenceHeader,
+    /// The code version specify the chain spec
+    pub fork_name: ForkName,
+}
+
+/// Witness to the batch circuit.
 #[derive(
     Clone,
     Debug,
@@ -69,10 +91,7 @@ pub struct PointEvalWitness {
     serde::Serialize,
 )]
 #[rkyv(derive(Debug))]
-pub struct BatchWitness {
-    /// The version byte as per [version][types_base::version].
-    #[rkyv()]
-    pub version: u8,
+pub struct LegacyBatchWitness {
     /// Flattened root proofs from all chunks in the batch.
     #[rkyv()]
     pub chunk_proofs: Vec<AggregationInput>,
@@ -82,17 +101,27 @@ pub struct BatchWitness {
     /// Blob bytes.
     #[rkyv()]
     pub blob_bytes: Vec<u8>,
-    /// Witness for point evaluation.
-    ///
-    /// Optional field as some domains (for eg. Validium) may not utilise EIP-4844 for DA,
-    /// in case of which there is no point-eval witness.
-    pub point_eval_witness: Option<PointEvalWitness>,
+    /// Witness for point evaluation
+    pub point_eval_witness: PointEvalWitness,
     /// Header for reference.
     #[rkyv()]
     pub reference_header: ReferenceHeader,
     /// The code version specify the chain spec
     #[rkyv()]
     pub fork_name: ForkName,
+}
+
+impl From<BatchWitness> for LegacyBatchWitness {
+    fn from(value: BatchWitness) -> Self {
+        Self {
+            chunk_proofs: value.chunk_proofs,
+            chunk_infos: value.chunk_infos,
+            blob_bytes: value.blob_bytes,
+            point_eval_witness: value.point_eval_witness.expect("should not be none"),
+            reference_header: value.reference_header,
+            fork_name: value.fork_name,
+        }
+    }
 }
 
 impl ProofCarryingWitness for BatchWitness {
