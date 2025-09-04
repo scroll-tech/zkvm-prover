@@ -1,6 +1,10 @@
 use types_base::{
     aggregation::{AggregationInput, ProofCarryingWitness},
-    public_inputs::{ForkName, batch::BatchInfo, chunk::ChunkInfo},
+    public_inputs::{
+        ForkName,
+        batch::BatchInfo,
+        chunk::{ChunkInfo, LegacyChunkInfo},
+    },
 };
 
 use crate::{
@@ -97,7 +101,7 @@ pub struct LegacyBatchWitness {
     pub chunk_proofs: Vec<AggregationInput>,
     /// Chunk infos.
     #[rkyv()]
-    pub chunk_infos: Vec<ChunkInfo>,
+    pub chunk_infos: Vec<LegacyChunkInfo>,
     /// Blob bytes.
     #[rkyv()]
     pub blob_bytes: Vec<u8>,
@@ -115,7 +119,7 @@ impl From<BatchWitness> for LegacyBatchWitness {
     fn from(value: BatchWitness) -> Self {
         Self {
             chunk_proofs: value.chunk_proofs,
-            chunk_infos: value.chunk_infos,
+            chunk_infos: value.chunk_infos.into_iter().map(|c| c.into()).collect(),
             blob_bytes: value.blob_bytes,
             point_eval_witness: value.point_eval_witness.expect("should not be none"),
             reference_header: value.reference_header,
