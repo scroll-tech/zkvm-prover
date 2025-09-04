@@ -27,4 +27,4 @@ openvm-rv32im-guest= {  workspace = true }
 
 [features]
 default = ["openvm"]
-openvm = ["scroll-zkvm-types-chunk/openvm"]
+openvm = ["scroll-zkvm-types-chunk/openvm", "sbv-precompile/scroll-openvm"]

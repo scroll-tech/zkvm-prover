@@ -189,31 +189,6 @@ impl Prover {
     pub fn gen_proof_stark(&mut self, stdin: StdIn) -> Result<StarkProof, Error> {
         // Here we always do an execution of the guest program to get the cycle count.
         // and do precheck before proving like ensure PI != 0
-        if true {
-            // dump stdin to file
-            let mut json: serde_json::Value = serde_json::from_str("{\"input\":[]}").unwrap();
-            let json_input = json["input"].as_array_mut().unwrap();
-            for item in &stdin.buffer {
-                use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
-                let mut bytes: Vec<u8> = vec![0x02];
-                for f in item {
-                    let u32_bytes = f.as_canonical_u32().to_le_bytes();
-                    bytes.extend_from_slice(&u32_bytes);
-                }
-                json_input.push(serde_json::Value::String(format!(
-                    "0x{}",
-                    hex::encode(bytes)
-                )));
-            }
-            // write the `json` to ${self.name}.json
-            let filename = format!("{}.json", self.prover_name);
-            if let Err(e) = std::fs::write(&filename, serde_json::to_string_pretty(&json).unwrap())
-            {
-                tracing::warn!("Failed to write stdin to {}: {}", filename, e);
-            } else {
-                tracing::info!("Wrote stdin to {}", filename);
-            }
-        }
         let t = std::time::Instant::now();
         let total_cycles = self.execute_and_check(&stdin)?;
         let execution_time_mills = t.elapsed().as_millis() as u64;
