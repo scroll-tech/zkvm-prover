@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 
 use types_base::public_inputs::batch::BatchInfo;
 
+use crate::blob_consistency::ToIntrinsic;
 use crate::{
     BatchHeader, PayloadV7,
     blob_consistency::{BlobPolynomial, N_BLOB_BYTES, kzg_to_versioned_hash, verify_kzg_proof},
@@ -78,14 +79,18 @@ impl<P: Payload> super::BatchInfoBuilder for GenericBatchInfoBuilderV7<P> {
                     args.kzg_commitment_hint_x.unwrap(),
                     args.kzg_commitment_hint_y.unwrap(),
                 )),
-            );
+            )
+            .expect("kzg commitment")
+            .to_intrinsic();
             let proof = decode_point(
                 kzg_proof,
                 Some((
                     args.kzg_proof_hint_x.unwrap(),
                     args.kzg_proof_hint_y.unwrap(),
                 )),
-            );
+            )
+            .expect("kzg proof")
+            .to_intrinsic();
 
             verify_kzg_proof(challenge, evaluation, commitment, proof)
         };
