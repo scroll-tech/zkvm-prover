@@ -23,22 +23,20 @@ impl super::BatchInfoBuilder for BatchInfoBuilderV6 {
         );
         let payload = Self::Payload::from_envelope(&envelope);
 
-        let challenge_digest = {
-            // Verify consistency of the EIP-4844 blob.
-            //
-            // - The challenge (z) MUST match.
-            // - The evaluation (y) MUST match.
-            payload.get_challenge_digest(args.header.blob_versioned_hash)
-        };
-        let blob_poly = BlobPolynomial::new(args.blob_bytes.as_slice());
-        let (challenge, evaluation) = blob_poly.evaluate(challenge_digest);
+        // Verify consistency of the EIP-4844 blob.
+        //
+        // - The challenge (z) MUST match.
+        // - The evaluation (y) MUST match.
+        let blob_consistency = BlobPolynomial::new(args.blob_bytes.as_slice());
+        let challenge_digest = payload.get_challenge_digest(args.header.blob_versioned_hash);
+        let blob_data_proof = blob_consistency.evaluate(challenge_digest);
         use openvm_pairing_guest::algebra::IntMod;
         assert_eq!(
-            B256::new(challenge.to_be_bytes()),
+            B256::new(blob_data_proof.0.to_be_bytes()),
             args.header.blob_data_proof[0]
         );
         assert_eq!(
-            B256::new(evaluation.to_be_bytes()),
+            B256::new(blob_data_proof.1.to_be_bytes()),
             args.header.blob_data_proof[1]
         );
 

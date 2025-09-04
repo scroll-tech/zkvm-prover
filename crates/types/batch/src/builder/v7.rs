@@ -40,9 +40,9 @@ fn verify_blob_versioned_hash(
 
     // Verify KZG proof.
 
-    let commitment = build_point(witness.kzg_commitment_hint_x, witness.kzg_commitment_hint_y)
+    let commitment = build_point(witness.kzg_commitment_x, witness.kzg_commitment_y)
         .expect("kzg commitment");
-    let proof = build_point(witness.kzg_proof_hint_x, witness.kzg_proof_hint_y).expect("kzg proof");
+    let proof = build_point(witness.kzg_proof_x, witness.kzg_proof_y).expect("kzg proof");
 
     let proof_ok = verify_kzg_proof(
         challenge,
@@ -84,13 +84,10 @@ impl<P: Payload> super::BatchInfoBuilder for GenericBatchInfoBuilderV7<P> {
         let envelope = <<Self::Payload as Payload>::Envelope as Envelope>::from_slice(
             envelope_bytes.as_slice(),
         );
-
         let payload = Self::Payload::from_envelope(&envelope);
 
-        let challenge_digest = {
-            let challenge_digest = envelope.challenge_digest(blob_versioned_hash);
-            challenge_digest
-        };
+        // Barycentric evaluation of blob polynomial.
+        let challenge_digest = envelope.challenge_digest(blob_versioned_hash);
 
         verify_blob_versioned_hash(
             &args.blob_bytes,

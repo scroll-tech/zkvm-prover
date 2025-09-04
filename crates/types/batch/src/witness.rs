@@ -1,3 +1,12 @@
+use types_base::{
+    aggregation::{AggregationInput, ProofCarryingWitness},
+    public_inputs::{
+        ForkName,
+        batch::BatchInfo,
+        chunk::{ChunkInfo, LegacyChunkInfo},
+    },
+};
+
 use crate::{
     blob_consistency::from_intrinsic_g1,
     builder::{
@@ -6,14 +15,6 @@ use crate::{
         validium::{ValidiumBatchInfoBuilder, ValidiumBuilderArgs},
     },
     header::ReferenceHeader,
-};
-use types_base::{
-    aggregation::{AggregationInput, ProofCarryingWitness},
-    public_inputs::{
-        ForkName,
-        batch::BatchInfo,
-        chunk::{ChunkInfo, LegacyChunkInfo},
-    },
 };
 
 /// Simply rewrap byte48 to avoid unnecessary dep
@@ -44,26 +45,18 @@ mod array48 {
 #[derive(
     Clone,
     Debug,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
     serde::Deserialize,
     serde::Serialize,
 )]
-#[rkyv(derive(Debug))]
 pub struct PointEvalWitness {
-    #[rkyv()]
     #[serde(with = "array48")]
-    pub kzg_commitment_hint_x: Bytes48,
-    #[rkyv()]
+    pub kzg_commitment_x: Bytes48,
     #[serde(with = "array48")]
-    pub kzg_commitment_hint_y: Bytes48,
-    #[rkyv()]
+    pub kzg_commitment_y: Bytes48,
     #[serde(with = "array48")]
-    pub kzg_proof_hint_x: Bytes48,
-    #[rkyv()]
+    pub kzg_proof_x: Bytes48,
     #[serde(with = "array48")]
-    pub kzg_proof_hint_y: Bytes48,
+    pub kzg_proof_y: Bytes48,
 }
 
 /// Witness required by applying point evaluation
@@ -91,10 +84,10 @@ pub struct LegacyPointEvalWitness {
 impl From<PointEvalWitness> for LegacyPointEvalWitness {
     fn from(value: PointEvalWitness) -> Self {
         Self {
-            kzg_commitment: build_point(value.kzg_commitment_hint_x, value.kzg_commitment_hint_y)
+            kzg_commitment: build_point(value.kzg_commitment_x, value.kzg_commitment_y)
                 .unwrap()
                 .to_compressed_be(),
-            kzg_proof: build_point(value.kzg_proof_hint_x, value.kzg_proof_hint_y)
+            kzg_proof: build_point(value.kzg_proof_x, value.kzg_proof_y)
                 .unwrap()
                 .to_compressed_be(),
         }
@@ -106,10 +99,10 @@ pub fn build_point_eval_witness(kzg_commitment: Bytes48, kzg_proof: Bytes48) -> 
     let kzg_commitment = G1Affine::from_compressed_be(&kzg_commitment).expect("invalid");
     let kzg_proof = G1Affine::from_compressed_be(&kzg_proof).expect("invalid");
     PointEvalWitness {
-        kzg_commitment_hint_x: kzg_commitment.x.to_bytes_be(),
-        kzg_commitment_hint_y: kzg_commitment.y.to_bytes_be(),
-        kzg_proof_hint_x: kzg_proof.x.to_bytes_be(),
-        kzg_proof_hint_y: kzg_proof.y.to_bytes_be(),
+        kzg_commitment_x: kzg_commitment.x.to_bytes_be(),
+        kzg_commitment_y: kzg_commitment.y.to_bytes_be(),
+        kzg_proof_x: kzg_proof.x.to_bytes_be(),
+        kzg_proof_y: kzg_proof.y.to_bytes_be(),
     }
 }
 
