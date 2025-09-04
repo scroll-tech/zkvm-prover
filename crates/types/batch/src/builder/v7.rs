@@ -40,8 +40,8 @@ fn verify_blob_versioned_hash(
 
     // Verify KZG proof.
 
-    let commitment = build_point(witness.kzg_commitment_x, witness.kzg_commitment_y)
-        .expect("kzg commitment");
+    let commitment =
+        build_point(witness.kzg_commitment_x, witness.kzg_commitment_y).expect("kzg commitment");
     let proof = build_point(witness.kzg_proof_x, witness.kzg_proof_y).expect("kzg proof");
 
     let proof_ok = verify_kzg_proof(

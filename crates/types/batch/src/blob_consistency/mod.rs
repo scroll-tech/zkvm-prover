@@ -8,7 +8,7 @@ mod types;
 
 pub use openvm::point_evaluation;
 pub use openvm::{kzg_to_versioned_hash, verify_kzg_proof};
-pub use types::{ToIntrinsic, from_intrinsic_g1};
+pub use types::ToIntrinsic;
 
 // Number of bytes in a u256.
 pub const N_BYTES_U256: usize = 32;

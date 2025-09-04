@@ -1,3 +1,4 @@
+use halo2curves_axiom::CurveAffine;
 use types_base::{
     aggregation::{AggregationInput, ProofCarryingWitness},
     public_inputs::{
@@ -8,7 +9,6 @@ use types_base::{
 };
 
 use crate::{
-    blob_consistency::from_intrinsic_g1,
     builder::{
         BatchInfoBuilder, BatchInfoBuilderV6, BatchInfoBuilderV7, BatchInfoBuilderV8,
         BuilderArgsV6, BuilderArgsV7, BuilderArgsV8,
@@ -42,12 +42,7 @@ mod array48 {
 }
 
 /// Witness required by applying point evaluation
-#[derive(
-    Clone,
-    Debug,
-    serde::Deserialize,
-    serde::Serialize,
-)]
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct PointEvalWitness {
     #[serde(with = "array48")]
     pub kzg_commitment_x: Bytes48,
@@ -107,12 +102,24 @@ pub fn build_point_eval_witness(kzg_commitment: Bytes48, kzg_proof: Bytes48) -> 
 }
 
 pub fn build_point(x: Bytes48, y: Bytes48) -> Option<halo2curves_axiom::bls12_381::G1Affine> {
-    use openvm_algebra_guest::IntMod;
-    use openvm_ecc_guest::weierstrass::WeierstrassPoint;
-    let x = openvm_pairing::bls12_381::Fp::from_be_bytes(&x)?;
-    let y = openvm_pairing::bls12_381::Fp::from_be_bytes(&y)?;
-    let point = from_intrinsic_g1(openvm_pairing::bls12_381::G1Affine::from_xy(x, y)?);
-    Some(point)
+    // is this needed?
+    {
+        // check x, y
+        use openvm_algebra_guest::IntMod;
+        use openvm_ecc_guest::weierstrass::WeierstrassPoint;
+        let x = openvm_pairing::bls12_381::Fp::from_be_bytes(&x)?;
+        let y = openvm_pairing::bls12_381::Fp::from_be_bytes(&y)?;
+        openvm_pairing::bls12_381::G1Affine::from_xy(x, y)?;
+    }
+    use halo2curves_axiom::bls12_381::{Fq, G1Affine};
+    let x = Fq::from_bytes_be(&x).into_option()?;
+    let y = Fq::from_bytes_be(&y).into_option()?;
+    /*
+    let mut point = G1Affine::generator();
+    point.x = x;
+    point.y = y;
+     */
+    G1Affine::from_xy(x, y).into_option()
 }
 
 /// Witness to the batch circuit.
