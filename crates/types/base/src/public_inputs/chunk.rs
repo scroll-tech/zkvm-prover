@@ -81,6 +81,39 @@ impl BlockContextV2 {
 }
 
 /// Represents header-like information for the chunk.
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+pub struct ChunkInfo {
+    /// The EIP-155 chain ID for all txs in the chunk.
+    pub chain_id: u64,
+    /// The state root before applying the chunk.
+    pub prev_state_root: B256,
+    /// The state root after applying the chunk.
+    pub post_state_root: B256,
+    /// The withdrawals root after applying the chunk.
+    pub withdraw_root: B256,
+    /// Digest of L1 message txs force included in the chunk.
+    /// It is a legacy field and can be omitted in new defination
+    #[serde(default)]
+    pub data_hash: B256,
+    /// Digest of L2 tx data flattened over all L2 txs in the chunk.
+    pub tx_data_digest: B256,
+    /// The L1 msg queue hash at the end of the previous chunk.
+    pub prev_msg_queue_hash: B256,
+    /// The L1 msg queue hash at the end of the current chunk.
+    pub post_msg_queue_hash: B256,
+    /// The length of rlp encoded L2 tx bytes flattened over all L2 txs in the chunk.
+    pub tx_data_length: u64,
+    /// The block number of the first block in the chunk.
+    pub initial_block_number: u64,
+    /// The block contexts of the blocks in the chunk.
+    pub block_ctxs: Vec<BlockContextV2>,
+    /// The blockhash of the last block in the previous chunk.
+    pub prev_blockhash: B256,
+    /// The blockhash of the last block in the current chunk.
+    pub post_blockhash: B256,
+}
+
+/// Represents header-like information for the chunk.
 #[derive(
     Debug,
     Clone,
@@ -91,7 +124,7 @@ impl BlockContextV2 {
     serde::Serialize,
 )]
 #[rkyv(derive(Debug))]
-pub struct ChunkInfo {
+pub struct LegacyChunkInfo {
     /// The EIP-155 chain ID for all txs in the chunk.
     #[rkyv()]
     pub chain_id: u64,
@@ -127,12 +160,24 @@ pub struct ChunkInfo {
     /// The block contexts of the blocks in the chunk.
     #[rkyv()]
     pub block_ctxs: Vec<BlockContextV2>,
-    /// The blockhash of the last block in the previous chunk.
-    #[rkyv()]
-    pub prev_blockhash: B256,
-    /// The blockhash of the last block in the current chunk.
-    #[rkyv()]
-    pub post_blockhash: B256,
+}
+
+impl From<ChunkInfo> for LegacyChunkInfo {
+    fn from(value: ChunkInfo) -> Self {
+        Self {
+            chain_id: value.chain_id,
+            prev_state_root: value.prev_state_root,
+            post_state_root: value.post_state_root,
+            withdraw_root: value.withdraw_root,
+            data_hash: value.data_hash,
+            tx_data_digest: value.tx_data_digest,
+            prev_msg_queue_hash: value.prev_msg_queue_hash,
+            post_msg_queue_hash: value.post_msg_queue_hash,
+            tx_data_length: value.tx_data_length,
+            initial_block_number: value.initial_block_number,
+            block_ctxs: value.block_ctxs,
+        }
+    }
 }
 
 impl ChunkInfo {
