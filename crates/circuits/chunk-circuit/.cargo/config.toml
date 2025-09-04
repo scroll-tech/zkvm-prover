@@ -1,3 +1,3 @@
 [patch.crates-io]
-k256 = { git = "https://github.com/openvm-org/openvm.git", rev = "51d0aa69694fd33def3c433e48228a5675e4fd97" }
-p256 = { git = "https://github.com/openvm-org/openvm.git", rev = "51d0aa69694fd33def3c433e48228a5675e4fd97" }
+k256 = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0" }
+p256 = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0" }
