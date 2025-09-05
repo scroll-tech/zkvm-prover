@@ -31,7 +31,6 @@ clap.workspace = true
 eyre.workspace = true
 rayon.workspace = true
 serde.workspace = true
-toml.workspace = true
 vm-zstd = { workspace = true, features = ["zstd"] }
 
 hex.workspace = true
