@@ -1,3 +1,4 @@
+use halo2curves_axiom::CurveAffine;
 use types_base::{
     aggregation::{AggregationInput, ProofCarryingWitness},
     public_inputs::{
@@ -41,6 +42,19 @@ mod array48 {
 }
 
 /// Witness required by applying point evaluation
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+pub struct PointEvalWitness {
+    #[serde(with = "array48")]
+    pub kzg_commitment_x: Bytes48,
+    #[serde(with = "array48")]
+    pub kzg_commitment_y: Bytes48,
+    #[serde(with = "array48")]
+    pub kzg_proof_x: Bytes48,
+    #[serde(with = "array48")]
+    pub kzg_proof_y: Bytes48,
+}
+
+/// Witness required by applying point evaluation
 #[derive(
     Clone,
     Debug,
@@ -51,7 +65,7 @@ mod array48 {
     serde::Serialize,
 )]
 #[rkyv(derive(Debug))]
-pub struct PointEvalWitness {
+pub struct LegacyPointEvalWitness {
     /// kzg commitment
     #[rkyv()]
     #[serde(with = "array48")]
@@ -74,6 +88,42 @@ pub fn build_point_eval_witness(kzg_commitment: Bytes48, kzg_proof: Bytes48) -> 
 pub struct BatchWitness {
     /// The version byte as per [version][types_base::version].
     pub version: u8,
+    /// Flattened root proofs from all chunks in the batch.
+    pub chunk_proofs: Vec<AggregationInput>,
+    /// Chunk infos.
+    pub chunk_infos: Vec<ChunkInfo>,
+    /// Blob bytes.
+    pub blob_bytes: Vec<u8>,
+    /// Witness for point evaluation.
+    ///
+    /// Optional field as some domains (for eg. Validium) may not utilise EIP-4844 for DA,
+    /// in case of which there is no point-eval witness.
+    pub point_eval_witness: Option<PointEvalWitness>,
+    /// Header for reference.
+    pub reference_header: ReferenceHeader,
+    /// The code version specify the chain spec
+    pub fork_name: ForkName,
+}
+
+) -> Option<openvm_pairing::bls12_381::G1Affine> {
+    use openvm_algebra_guest::IntMod;
+    use openvm_ecc_guest::weierstrass::WeierstrassPoint;
+    use openvm_pairing::bls12_381::{Fp, G1Affine};
+    let x = Fp::from_be_bytes(&x)?;
+    let y = Fp::from_be_bytes(&y)?;
+    G1Affine::from_xy(x, y)
+}
+
+pub fn build_point(x: Bytes48, y: Bytes48) -> Option<halo2curves_axiom::bls12_381::G1Affine> {
+    use halo2curves_axiom::bls12_381::{Fq, G1Affine};
+    let x = Fq::from_bytes_be(&x).into_option()?;
+    let y = Fq::from_bytes_be(&y).into_option()?;
+    G1Affine::from_xy(x, y).into_option()
+}
+
+/// Witness to the batch circuit.
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+pub struct BatchWitness {
     /// Flattened root proofs from all chunks in the batch.
     pub chunk_proofs: Vec<AggregationInput>,
     /// Chunk infos.
@@ -114,7 +164,7 @@ pub struct LegacyBatchWitness {
     pub blob_bytes: Vec<u8>,
     /// Witness for point evaluation
     #[rkyv()]
-    pub point_eval_witness: PointEvalWitness,
+    pub point_eval_witness: LegacyPointEvalWitness,
     /// Header for reference.
     #[rkyv()]
     pub reference_header: ReferenceHeader,
@@ -130,7 +180,7 @@ impl From<BatchWitness> for LegacyBatchWitness {
             chunk_proofs: value.chunk_proofs,
             chunk_infos: value.chunk_infos.into_iter().map(|c| c.into()).collect(),
             blob_bytes: value.blob_bytes,
-            point_eval_witness,
+            point_eval_witness: point_eval_witness.clone().into(),
             reference_header: value.reference_header,
             fork_name: value.fork_name,
         }

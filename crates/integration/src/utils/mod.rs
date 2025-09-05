@@ -6,10 +6,9 @@ use sbv_primitives::{
 };
 use scroll_zkvm_types::batch::build_point_eval_witness;
 use scroll_zkvm_types::{
-    batch::{
+    batch::{BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchInfo, BatchWitness, ReferenceHeader},
         BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchHeaderValidium, BatchHeaderValidiumV1,
         BatchInfo, BatchWitness, ReferenceHeader,
-    },
     bundle::{BundleInfo, BundleWitness},
     chunk::{ChunkInfo, ChunkWitness},
     public_inputs::{ForkName, MultiVersionPublicInputs},
@@ -362,7 +361,6 @@ pub fn build_batch_witnesses_validium(
             chunk_digests.push(keccak256(&tx_bytes));
             payload_bytes.extend(tx_bytes);
             (meta_chunk_sizes, chunk_digests, payload_bytes)
-        },
     );
 
     // sanity check, verify the correction of execute
