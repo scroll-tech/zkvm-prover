@@ -108,9 +108,10 @@ pub fn build_intrinsic_point(
 ) -> Option<openvm_pairing::bls12_381::G1Affine> {
     use openvm_algebra_guest::IntMod;
     use openvm_ecc_guest::weierstrass::WeierstrassPoint;
-    let x = openvm_pairing::bls12_381::Fp::from_be_bytes(&x)?;
-    let y = openvm_pairing::bls12_381::Fp::from_be_bytes(&y)?;
-    openvm_pairing::bls12_381::G1Affine::from_xy(x, y)
+    use openvm_pairing::bls12_381::{Fp, G1Affine};
+    let x = Fp::from_be_bytes(&x)?;
+    let y = Fp::from_be_bytes(&y)?;
+    G1Affine::from_xy(x, y)
 }
 
 pub fn build_point(x: Bytes48, y: Bytes48) -> Option<halo2curves_axiom::bls12_381::G1Affine> {
