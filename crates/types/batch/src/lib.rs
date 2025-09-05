@@ -15,10 +15,13 @@ pub use payload::{
     v8::{EnvelopeV8, PayloadV8},
 };
 
-mod blob_consistency;
+pub mod blob_consistency;
 mod builder;
 
 mod witness;
 pub use witness::{
     ArchivedLegacyBatchWitness, BatchWitness, Bytes48, LegacyBatchWitness, PointEvalWitness,
+    build_point_eval_witness,
 };
+
+pub mod utils;

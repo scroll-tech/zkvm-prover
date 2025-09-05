@@ -4,10 +4,11 @@ use sbv_primitives::{
     B256,
     types::{BlockWitness, eips::Encodable2718},
 };
+use scroll_zkvm_types::batch::build_point_eval_witness;
 use scroll_zkvm_types::{
     batch::{
         BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchHeaderValidium, BatchHeaderValidiumV1,
-        BatchInfo, BatchWitness, PointEvalWitness, ReferenceHeader,
+        BatchInfo, BatchWitness, ReferenceHeader,
     },
     bundle::{BundleInfo, BundleWitness},
     chunk::{ChunkInfo, ChunkWitness},
@@ -219,7 +220,7 @@ pub fn build_batch_witnesses(
     let kzg_commitment = point_eval::blob_to_kzg_commitment(&kzg_blob);
     let blob_versioned_hash = point_eval::get_versioned_hash(&kzg_commitment);
 
-    // primage = keccak(payload) + blob_versioned_hash
+    // preimage = keccak(payload) + blob_versioned_hash
     let challenge_preimage = if testing_hardfork() >= ForkName::EuclidV2 {
         let mut challenge_preimage = keccak256(&blob_bytes).to_vec();
         challenge_preimage.extend(blob_versioned_hash.0);
@@ -326,16 +327,17 @@ pub fn build_batch_witnesses(
         })
         .collect::<Vec<_>>();
 
+    let point_eval_witness = build_point_eval_witness(
+        *kzg_commitment.to_bytes().as_ref(),
+        *kzg_proof.to_bytes().as_ref(),
+    );
     Ok(BatchWitness {
         version: version.as_version_byte(),
         chunk_proofs,
         chunk_infos,
         reference_header,
         blob_bytes,
-        point_eval_witness: Some(PointEvalWitness {
-            kzg_commitment: *kzg_commitment.to_bytes().as_ref(),
-            kzg_proof: *kzg_proof.to_bytes().as_ref(),
-        }),
+        point_eval_witness: Some(point_eval_witness),
         fork_name: version.fork,
     })
 }

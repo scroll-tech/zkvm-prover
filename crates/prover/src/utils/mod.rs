@@ -70,6 +70,7 @@ pub fn write<P: AsRef<Path>>(path: P, data: &[u8]) -> Result<(), Error> {
     Ok(std::fs::write(path, data)?)
 }
 
+/// Dump stdin using same json format as `cargo openvm` cli.
 pub fn save_stdin_as_json(stdin: &openvm_sdk::StdIn, filename: &str) {
     // dump stdin to file
     let mut json: serde_json::Value = serde_json::from_str("{\"input\":[]}").unwrap();
@@ -86,7 +87,7 @@ pub fn save_stdin_as_json(stdin: &openvm_sdk::StdIn, filename: &str) {
             hex::encode(bytes)
         )));
     }
-    if let Err(e) = std::fs::write(&filename, serde_json::to_string_pretty(&json).unwrap()) {
+    if let Err(e) = std::fs::write(filename, serde_json::to_string_pretty(&json).unwrap()) {
         tracing::warn!("Failed to write stdin to {}: {}", filename, e);
     } else {
         tracing::info!("Wrote stdin to {}", filename);

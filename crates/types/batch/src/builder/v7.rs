@@ -47,12 +47,11 @@ impl<P: Payload> super::BatchInfoBuilder for GenericBatchInfoBuilderV7<P> {
         let (challenge, evaluation) = blob_poly.evaluate(challenge_digest);
 
         // Verify that the KZG commitment does in fact match the on-chain versioned hash.
-        let kzg_commitment = args
-            .kzg_commitment
-            .expect("batch v7 onwards must have kzg commitment");
-        let kzg_proof = args
-            .kzg_proof
-            .expect("batch v7 onwards must have kzg proof");
+        let point_eval_witness = args
+            .point_eval_witness
+            .expect("batch v7 onwards must have kzg witness");
+        let kzg_commitment = point_eval_witness.kzg_commitment;
+        let kzg_proof = point_eval_witness.kzg_proof;
         assert_eq!(
             kzg_to_versioned_hash(&kzg_commitment),
             args.header.blob_versioned_hash(),

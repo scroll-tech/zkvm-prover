@@ -62,6 +62,13 @@ pub struct PointEvalWitness {
     pub kzg_proof: Bytes48,
 }
 
+pub fn build_point_eval_witness(kzg_commitment: Bytes48, kzg_proof: Bytes48) -> PointEvalWitness {
+    PointEvalWitness {
+        kzg_commitment,
+        kzg_proof,
+    }
+}
+
 /// Witness to the batch circuit.
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct BatchWitness {
@@ -106,6 +113,7 @@ pub struct LegacyBatchWitness {
     #[rkyv()]
     pub blob_bytes: Vec<u8>,
     /// Witness for point evaluation
+    #[rkyv()]
     pub point_eval_witness: PointEvalWitness,
     /// Header for reference.
     #[rkyv()]
@@ -117,11 +125,12 @@ pub struct LegacyBatchWitness {
 
 impl From<BatchWitness> for LegacyBatchWitness {
     fn from(value: BatchWitness) -> Self {
+        let point_eval_witness = value.point_eval_witness.expect("should not be none");
         Self {
             chunk_proofs: value.chunk_proofs,
             chunk_infos: value.chunk_infos.into_iter().map(|c| c.into()).collect(),
             blob_bytes: value.blob_bytes,
-            point_eval_witness: value.point_eval_witness.expect("should not be none"),
+            point_eval_witness,
             reference_header: value.reference_header,
             fork_name: value.fork_name,
         }
@@ -144,8 +153,7 @@ impl From<&BatchWitness> for BatchInfo {
                     header: *header,
                     chunk_infos,
                     blob_bytes: witness.blob_bytes.to_vec(),
-                    kzg_commitment: None,
-                    kzg_proof: None,
+                    point_eval_witness: None,
                 };
                 BatchInfoBuilderV6::build(args)
             }
@@ -158,8 +166,7 @@ impl From<&BatchWitness> for BatchInfo {
                     header: *header,
                     chunk_infos,
                     blob_bytes: witness.blob_bytes.to_vec(),
-                    kzg_commitment: Some(point_eval_witness.kzg_commitment),
-                    kzg_proof: Some(point_eval_witness.kzg_proof),
+                    point_eval_witness: Some(point_eval_witness.clone()),
                 };
                 BatchInfoBuilderV7::build(args)
             }
@@ -172,8 +179,7 @@ impl From<&BatchWitness> for BatchInfo {
                     header: *header,
                     chunk_infos,
                     blob_bytes: witness.blob_bytes.to_vec(),
-                    kzg_commitment: Some(point_eval_witness.kzg_commitment),
-                    kzg_proof: Some(point_eval_witness.kzg_proof),
+                    point_eval_witness: Some(point_eval_witness.clone()),
                 };
                 BatchInfoBuilderV8::build(args)
             }
