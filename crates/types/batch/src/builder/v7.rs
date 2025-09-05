@@ -1,8 +1,10 @@
 use std::marker::PhantomData;
 
-use halo2curves_axiom::bls12_381::G1Affine as Bls12_381_G1;
+use alloy_primitives::B256;
 use types_base::public_inputs::batch::BatchInfo;
 
+use crate::PointEvalWitness;
+use crate::witness::build_point;
 use crate::{
     BatchHeader, PayloadV7,
     blob_consistency::{
@@ -17,6 +19,40 @@ pub type BatchInfoBuilderV7 = GenericBatchInfoBuilderV7<PayloadV7>;
 /// values [`BatchInfo`] for the batch-circuit.
 pub struct GenericBatchInfoBuilderV7<P> {
     _payload: PhantomData<P>,
+}
+
+/// Verify the `blob_bytes` is consistent with the `blob_versioned_hash` by
+/// evaluating the blob polynomial at the challenge derived from `challenge_digest`.
+fn verify_blob_versioned_hash(
+    blob_bytes: &[u8],
+    blob_versioned_hash: B256,
+    challenge_digest: B256,
+    witness: PointEvalWitness,
+) {
+    let blob_poly = BlobPolynomial::new(blob_bytes);
+    // Barycentric evaluation of blob polynomial.
+    let (challenge, evaluation) = blob_poly.evaluate(challenge_digest);
+
+    let commitment = build_point(witness.kzg_commitment_x, witness.kzg_commitment_y)
+        .expect("fail to build a bls12-381 G1 point from x,y");
+    let proof = build_point(witness.kzg_proof_x, witness.kzg_proof_y)
+        .expect("fail to build a bls12-381 G1 point from x,y");
+
+    // Verify KZG proof.
+    let proof_ok = verify_kzg_proof(
+        challenge,
+        evaluation,
+        commitment.to_intrinsic(),
+        proof.to_intrinsic(),
+    );
+    assert!(proof_ok, "verify_kzg_proof fail!");
+
+    // Verify that the KZG commitment does in fact match the on-chain versioned hash.
+    assert_eq!(
+        kzg_to_versioned_hash(&commitment.to_compressed_be()),
+        blob_versioned_hash,
+        "kzg_to_versioned_hash"
+    );
 }
 
 impl<P: Payload> super::BatchInfoBuilder for GenericBatchInfoBuilderV7<P> {
@@ -41,35 +77,15 @@ impl<P: Payload> super::BatchInfoBuilder for GenericBatchInfoBuilderV7<P> {
         );
         let payload = Self::Payload::from_envelope(&envelope);
 
-        // Barycentric evaluation of blob polynomial.
-        let challenge_digest = envelope.challenge_digest(args.header.blob_versioned_hash());
-        let blob_poly = BlobPolynomial::new(args.blob_bytes.as_slice());
-        let (challenge, evaluation) = blob_poly.evaluate(challenge_digest);
+        let blob_versioned_hash = args.header.blob_versioned_hash();
+        let challenge_digest = envelope.challenge_digest(blob_versioned_hash);
 
-        // Verify that the KZG commitment does in fact match the on-chain versioned hash.
-        let kzg_commitment = args
-            .kzg_commitment
-            .expect("batch v7 onwards must have kzg commitment");
-        let kzg_proof = args
-            .kzg_proof
-            .expect("batch v7 onwards must have kzg proof");
-        assert_eq!(
-            kzg_to_versioned_hash(&kzg_commitment),
-            args.header.blob_versioned_hash(),
-            "kzg_to_versioned_hash"
+        verify_blob_versioned_hash(
+            &args.blob_bytes,
+            blob_versioned_hash,
+            challenge_digest,
+            args.point_eval_witness.expect("should exist"),
         );
-
-        // Verify KZG proof.
-        let proof_ok = {
-            let commitment = Bls12_381_G1::from_compressed_be(&kzg_commitment)
-                .expect("kzg commitment")
-                .to_intrinsic();
-            let proof = Bls12_381_G1::from_compressed_be(&kzg_proof)
-                .expect("kzg proof")
-                .to_intrinsic();
-            verify_kzg_proof(challenge, evaluation, commitment, proof)
-        };
-        assert!(proof_ok, "pairing fail!");
 
         // Validate payload (batch data).
         let (first_chunk, last_chunk) = payload.validate(&args.header, args.chunk_infos.as_slice());
