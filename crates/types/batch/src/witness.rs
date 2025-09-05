@@ -173,7 +173,7 @@ impl From<BatchWitness> for LegacyBatchWitness {
         let point_eval_witness = value.point_eval_witness.as_ref().unwrap();
         Self {
             chunk_proofs: value.chunk_proofs,
-            chunk_infos: value.chunk_infos.into_iter().map(|c| c.into()).collect(),
+            chunk_infos: value.chunk_infos,
             blob_bytes: value.blob_bytes,
             point_eval_witness: point_eval_witness.clone().into(),
             reference_header: value.reference_header,
