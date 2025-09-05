@@ -4,6 +4,7 @@ pub use header::{
     v6::{ArchivedBatchHeaderV6, BatchHeaderV6},
     v7::{ArchivedBatchHeaderV7, BatchHeaderV7},
     v8::{ArchivedBatchHeaderV8, BatchHeaderV8},
+    validium::{BatchHeaderValidium, BatchHeaderValidiumV1},
 };
 
 mod payload;
@@ -14,7 +15,7 @@ pub use payload::{
     v8::{EnvelopeV8, PayloadV8},
 };
 
-mod blob_consistency;
+pub mod blob_consistency;
 mod builder;
 
 mod witness;
@@ -22,3 +23,5 @@ pub use witness::{
     ArchivedLegacyBatchWitness, BatchWitness, Bytes48, LegacyBatchWitness, PointEvalWitness,
     build_point_eval_witness,
 };
+
+pub mod utils;

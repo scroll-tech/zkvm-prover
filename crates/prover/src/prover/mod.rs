@@ -194,9 +194,14 @@ impl Prover {
         let prover = self.get_prover_mut()?;
         let proof = prover.prove(stdin);
         let proving_time_mills = t.elapsed().as_millis() as u64;
-        let prove_speed =
-            (total_cycles as f32 / 1_000_000.0f32) / (proving_time_mills as f32 / 1000.0f32); // MHz
-        tracing::info!("{} proving speed: {:.2}MHz", self.prover_name, prove_speed);
+        let proving_time_s = proving_time_mills as f32 / 1000.0f32;
+        let prove_speed = (total_cycles as f32 / 1_000_000.0f32) / proving_time_s; // MHz
+        tracing::info!(
+            "{} proving speed: {:.2}MHz, cycles: {total_cycles}, time: {:.2}s",
+            self.prover_name,
+            prove_speed,
+            proving_time_s
+        );
         let proof = proof.map_err(|e| Error::GenProof(e.to_string()))?;
         let stat = StarkProofStat {
             total_cycles,

@@ -7,6 +7,8 @@ pub use v7::BatchInfoBuilderV7;
 pub mod v8;
 pub use v8::BatchInfoBuilderV8;
 
+pub mod validium;
+
 use types_base::public_inputs::{batch::BatchInfo, chunk::ChunkInfo};
 
 use crate::{

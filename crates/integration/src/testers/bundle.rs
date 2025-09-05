@@ -1,6 +1,6 @@
 use scroll_zkvm_types::{
     batch::BatchInfo,
-    bundle::{BundleInfo, BundleWitness},
+    bundle::{BundleInfo, BundleWitness, LegacyBundleWitness},
     proof::ProofEnum,
     public_inputs::ForkName,
 };
@@ -10,7 +10,7 @@ use scroll_zkvm_prover::Prover;
 
 use crate::{
     PartialProvingTask, ProverTester, load_program_commitments, prove_verify_single_evm,
-    testers::batch::BatchTaskGenerator, testing_hardfork, utils::metadata_from_batch_witnesses,
+    testers::batch::BatchTaskGenerator, utils::metadata_from_batch_witnesses,
 };
 
 impl PartialProvingTask for BundleWitness {
@@ -24,7 +24,9 @@ impl PartialProvingTask for BundleWitness {
     }
 
     fn legacy_rkyv_archive(&self) -> eyre::Result<Vec<u8>> {
-        Ok(rkyv::to_bytes::<rkyv::rancor::Error>(self)?.to_vec())
+        let witness_legacy = LegacyBundleWitness::from(self.clone());
+        let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(&witness_legacy)?;
+        Ok(bytes.to_vec())
     }
 
     fn fork_name(&self) -> ForkName {
@@ -77,6 +79,7 @@ impl BundleTaskGenerator {
         self.proof.replace(proof.clone());
         Ok(proof)
     }
+
     fn get_or_build_child_proofs(
         &mut self,
         batch_prover: &mut Prover,
@@ -104,7 +107,12 @@ impl BundleTaskGenerator {
             public_inputs::MultiVersionPublicInputs, types_agg::AggregationInput,
         };
 
-        let fork_name = testing_hardfork();
+        let version = self
+            .batch_generators
+            .first()
+            .expect("at least 1 batch in a bundle")
+            .version();
+        let fork_name = version.fork;
 
         let commitment = load_program_commitments("batch")?;
         let mut batch_proofs = Vec::new();
@@ -120,7 +128,7 @@ impl BundleTaskGenerator {
                 assert_eq!(info.parent_batch_hash, last_info.batch_hash, "batch hash",);
             }
 
-            let pi_hash = info.pi_hash_by_fork(fork_name);
+            let pi_hash = info.pi_hash_by_version(version);
             let proof = AggregationInput {
                 public_values: pi_hash
                     .as_slice()
@@ -134,6 +142,7 @@ impl BundleTaskGenerator {
         }
 
         Ok(BundleWitness {
+            version: version.as_version_byte(),
             batch_infos,
             batch_proofs,
             fork_name,
