@@ -4,11 +4,9 @@ use sbv_primitives::{
     B256,
     types::{BlockWitness, eips::Encodable2718},
 };
+use scroll_zkvm_types::batch::build_point_eval_witness;
 use scroll_zkvm_types::{
-    batch::{
-        BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchInfo, BatchWitness, PointEvalWitness,
-        ReferenceHeader,
-    },
+    batch::{BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchInfo, BatchWitness, ReferenceHeader},
     bundle::{BundleInfo, BundleWitness},
     chunk::{ChunkInfo, ChunkWitness},
     public_inputs::{ForkName, MultiVersionPublicInputs},
@@ -314,15 +312,16 @@ pub fn build_batch_witnesses(
         })
         .collect::<Vec<_>>();
 
+    let point_eval_witness = build_point_eval_witness(
+        *kzg_commitment.to_bytes().as_ref(),
+        *kzg_proof.to_bytes().as_ref(),
+    );
     Ok(BatchWitness {
         chunk_proofs,
         chunk_infos,
         reference_header,
         blob_bytes,
-        point_eval_witness: PointEvalWitness {
-            kzg_commitment: *kzg_commitment.to_bytes().as_ref(),
-            kzg_proof: *kzg_proof.to_bytes().as_ref(),
-        },
+        point_eval_witness: Some(point_eval_witness),
         fork_name,
     })
 }
