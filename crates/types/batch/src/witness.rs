@@ -76,35 +76,35 @@ pub struct LegacyPointEvalWitness {
     pub kzg_proof: Bytes48,
 }
 
-pub fn build_point_eval_witness(kzg_commitment: Bytes48, kzg_proof: Bytes48) -> PointEvalWitness {
-    PointEvalWitness {
-        kzg_commitment,
-        kzg_proof,
+impl From<PointEvalWitness> for LegacyPointEvalWitness {
+    fn from(value: PointEvalWitness) -> Self {
+        Self {
+            kzg_commitment: build_point(value.kzg_commitment_x, value.kzg_commitment_y)
+                .unwrap()
+                .to_compressed_be(),
+            kzg_proof: build_point(value.kzg_proof_x, value.kzg_proof_y)
+                .unwrap()
+                .to_compressed_be(),
+        }
     }
 }
 
-/// Witness to the batch circuit.
-#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
-pub struct BatchWitness {
-    /// The version byte as per [version][types_base::version].
-    pub version: u8,
-    /// Flattened root proofs from all chunks in the batch.
-    pub chunk_proofs: Vec<AggregationInput>,
-    /// Chunk infos.
-    pub chunk_infos: Vec<ChunkInfo>,
-    /// Blob bytes.
-    pub blob_bytes: Vec<u8>,
-    /// Witness for point evaluation.
-    ///
-    /// Optional field as some domains (for eg. Validium) may not utilise EIP-4844 for DA,
-    /// in case of which there is no point-eval witness.
-    pub point_eval_witness: Option<PointEvalWitness>,
-    /// Header for reference.
-    pub reference_header: ReferenceHeader,
-    /// The code version specify the chain spec
-    pub fork_name: ForkName,
+pub fn build_point_eval_witness(kzg_commitment: Bytes48, kzg_proof: Bytes48) -> PointEvalWitness {
+    use halo2curves_axiom::bls12_381::G1Affine;
+    let kzg_commitment = G1Affine::from_compressed_be(&kzg_commitment).expect("invalid");
+    let kzg_proof = G1Affine::from_compressed_be(&kzg_proof).expect("invalid");
+    PointEvalWitness {
+        kzg_commitment_x: kzg_commitment.x.to_bytes_be(),
+        kzg_commitment_y: kzg_commitment.y.to_bytes_be(),
+        kzg_proof_x: kzg_proof.x.to_bytes_be(),
+        kzg_proof_y: kzg_proof.y.to_bytes_be(),
+    }
 }
 
+#[allow(dead_code)]
+pub fn build_intrinsic_point(
+    x: Bytes48,
+    y: Bytes48,
 ) -> Option<openvm_pairing::bls12_381::G1Affine> {
     use openvm_algebra_guest::IntMod;
     use openvm_ecc_guest::weierstrass::WeierstrassPoint;
@@ -124,6 +124,8 @@ pub fn build_point(x: Bytes48, y: Bytes48) -> Option<halo2curves_axiom::bls12_38
 /// Witness to the batch circuit.
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct BatchWitness {
+    /// The version byte as per [version][types_base::version].
+    pub version: u8,
     /// Flattened root proofs from all chunks in the batch.
     pub chunk_proofs: Vec<AggregationInput>,
     /// Chunk infos.
