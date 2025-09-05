@@ -23,8 +23,12 @@ openvm-pairing = { workspace = true, features = ["bls12_381", "halo2curves"] }
 openvm-sha2.workspace = true
 halo2curves-axiom = "0.7.0"
 
+sbv-primitives = { workspace = true, optional = true }
+c-kzg = { workspace = true, optional = true }
+
 [features]
 default = []
+host = ["dep:sbv-primitives", "dep:c-kzg"]
 
 [dev-dependencies]
 c-kzg = { workspace = true }

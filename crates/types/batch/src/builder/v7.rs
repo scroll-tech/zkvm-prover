@@ -26,31 +26,32 @@ fn verify_blob_versioned_hash(
     challenge_digest: B256,
     witness: PointEvalWitness,
 ) {
-    /*
-    same as: (of course we cannot use this in guest, too expensive):
-        use scroll_zkvm_types::utils::point_eval;
+    #[cfg(feature = "host")]
+    {
+        use crate::utils::point_eval;
         let kzg_blob = point_eval::to_blob(&blob_bytes);
         let kzg_commitment = point_eval::blob_to_kzg_commitment(&kzg_blob);
-        assert_eq!(point_eval::get_versioned_hash(&kzg_commitment), blob_versioned_hash)
-     */
+        assert_eq!(
+            point_eval::get_versioned_hash(&kzg_commitment),
+            blob_versioned_hash
+        );
+    }
 
     let blob_poly = BlobPolynomial::new(blob_bytes);
-
     let (challenge, evaluation) = blob_poly.evaluate(challenge_digest);
 
+    let commitment = build_point(witness.kzg_commitment_x, witness.kzg_commitment_y)
+        .expect("fail to build a bls12-381 G1 point from x,y");
+    let proof = build_point(witness.kzg_proof_x, witness.kzg_proof_y)
+        .expect("fail to build a bls12-381 G1 point from x,y");
+
     // Verify KZG proof.
-
-    let commitment =
-        build_point(witness.kzg_commitment_x, witness.kzg_commitment_y).expect("kzg commitment");
-    let proof = build_point(witness.kzg_proof_x, witness.kzg_proof_y).expect("kzg proof");
-
     let proof_ok = verify_kzg_proof(
         challenge,
         evaluation,
         commitment.to_intrinsic(),
         proof.to_intrinsic(),
     );
-
     assert!(proof_ok, "verify_kzg_proof fail!");
 
     // Verify that the KZG commitment does in fact match the on-chain versioned hash.
