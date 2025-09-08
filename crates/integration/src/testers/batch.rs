@@ -204,8 +204,18 @@ pub fn preset_batch() -> BatchTaskGenerator {
     BatchTaskGenerator::from_chunk_tasks(&preset_chunk_multiple(), None)
 }
 
-pub fn preset_batch_validium() -> BatchTaskGenerator {
-    BatchTaskGenerator::from_chunk_tasks(&[preset_chunk_validium()], None)
+pub fn preset_batch_validium() -> Vec<BatchTaskGenerator> {
+    let validium_chunks = preset_chunk_validium();
+    assert_eq!(validium_chunks.len(), 5);
+    create_canonical_tasks(
+        [
+            &validium_chunks[0..=1],
+            &validium_chunks[2..=3],
+            &validium_chunks[4..=4],
+        ]
+        .into_iter(),
+    )
+    .expect("must succeed for preset collection")
 }
 
 /// preset examples for multiple task

@@ -32,7 +32,7 @@ fn verify_blob_versioned_hash(
     #[cfg(feature = "host")]
     {
         use crate::utils::point_eval;
-        let kzg_blob = point_eval::to_blob(&blob_bytes);
+        let kzg_blob = point_eval::to_blob(blob_bytes);
         let kzg_commitment = point_eval::blob_to_kzg_commitment(&kzg_blob);
         assert_eq!(
             point_eval::get_versioned_hash(&kzg_commitment),

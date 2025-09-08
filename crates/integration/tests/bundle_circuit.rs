@@ -22,7 +22,7 @@ fn preset_bundle() -> BundleTaskGenerator {
 }
 
 fn preset_bundle_validium() -> BundleTaskGenerator {
-    BundleTaskGenerator::from_batch_tasks(&[preset_batch_validium()])
+    BundleTaskGenerator::from_batch_tasks(&preset_batch_validium())
 }
 
 #[test]

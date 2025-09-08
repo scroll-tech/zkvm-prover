@@ -268,12 +268,8 @@ pub fn preset_chunk_multiple() -> Vec<ChunkTaskGenerator> {
         .clone()
 }
 
-pub fn preset_chunk_validium() -> ChunkTaskGenerator {
-    let block_range = 1141071..=1141071;
-
-    ChunkTaskGenerator {
-        version: Version::validium_v1(),
-        block_range: block_range.collect(),
-        ..Default::default()
-    }
+pub fn preset_chunk_validium() -> Vec<ChunkTaskGenerator> {
+    let block_range = vec![347..=355, 356..=360, 361..=370, 371..=375, 376..=397];
+    create_canonical_tasks(Version::validium_v1(), block_range.into_iter())
+        .expect("must succeed for preset collection")
 }
