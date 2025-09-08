@@ -158,7 +158,7 @@ struct ChunkWitnessSerde {
 impl serde::Serialize for ChunkWitness {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: serde::Serializer
+        S: serde::Serializer,
     {
         let mut this = ChunkWitnessSerde {
             blocks: self.blocks.clone(),
