@@ -18,4 +18,7 @@ mod blob_consistency;
 mod builder;
 
 mod witness;
-pub use witness::{ArchivedBatchWitness, BatchWitness, Bytes48, PointEvalWitness};
+pub use witness::{
+    ArchivedLegacyBatchWitness, BatchWitness, Bytes48, LegacyBatchWitness, PointEvalWitness,
+    build_point_eval_witness,
+};
