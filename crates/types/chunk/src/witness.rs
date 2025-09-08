@@ -54,7 +54,7 @@ pub struct ChunkDetails {
 }
 
 impl ChunkWitness {
-    pub fn new(blocks: &[BlockWitness], prev_msg_queue_hash: B256, fork_name: ForkName) -> ChunkWitness {
+    pub fn new(blocks: &[BlockWitness], prev_msg_queue_hash: B256, fork_name: ForkName) -> Self {
         let num_codes = blocks.iter().map(|w| w.codes.len()).sum();
         let mut codes = HashSet::with_capacity(num_codes);
 
@@ -89,7 +89,7 @@ impl ChunkWitness {
             .map(|block| block.compression_ratios())
             .collect();
 
-        ChunkWitness {
+        Self {
             blocks,
             prev_msg_queue_hash,
             fork_name,
