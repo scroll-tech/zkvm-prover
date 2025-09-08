@@ -1,9 +1,7 @@
 use crate::{testing_hardfork, testing_version, testing_version_validium};
+use sbv_core::BlockWitness;
 use sbv_primitives::types::consensus::ScrollTransaction;
-use sbv_primitives::{
-    B256,
-    types::{BlockWitness, eips::Encodable2718},
-};
+use sbv_primitives::{B256, types::eips::Encodable2718};
 use scroll_zkvm_types::batch::build_point_eval_witness;
 use scroll_zkvm_types::{
     batch::{

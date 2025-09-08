@@ -4,10 +4,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use sbv_primitives::{
-    B256,
-    types::{BlockWitness, consensus::TxL1Message},
-};
+use sbv_core::BlockWitness;
+use sbv_primitives::{B256, types::consensus::TxL1Message};
 use scroll_zkvm_prover::{Prover, utils::read_json};
 use scroll_zkvm_types::{
     chunk::{ChunkInfo, ChunkWitness, LegacyChunkWitness, SecretKey},
@@ -45,10 +43,10 @@ where
         Ok(witness)
     } else {
         witness.seek(SeekFrom::Start(0))?;
-        Ok(
-            serde_json::from_reader::<_, sbv_primitives::legacy_types::BlockWitness>(&mut witness)?
-                .into_current(),
-        )
+        Ok(BlockWitness::from(serde_json::from_reader::<
+            _,
+            sbv_primitives::legacy_types::BlockWitness,
+        >(witness)?))
     }
 }
 
