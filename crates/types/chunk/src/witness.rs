@@ -1,8 +1,8 @@
 use alloy_primitives::B256;
 use sbv_core::{verifier::StateCommitMode, witness::BlockWitness};
-use sbv_primitives::{U256};
-use std::collections::HashSet;
+use sbv_primitives::U256;
 use sbv_trie::PartialStateTrie;
+use std::collections::HashSet;
 use types_base::{fork_name::ForkName, public_inputs::chunk::ChunkInfo};
 
 /// The witness type accepted by the chunk-circuit.
@@ -58,14 +58,10 @@ impl ChunkWitness {
         let num_codes = blocks.iter().map(|w| w.codes.len()).sum();
         let mut codes = HashSet::with_capacity(num_codes);
 
-        let pre_state_root = blocks
-            .first()
-            .expect("at least one block")
-            .prev_state_root;
-        let cached_trie = PartialStateTrie::new(
-            pre_state_root,
-            blocks.iter().flat_map(|w| w.states.iter()),
-        ).expect("trie from witness");
+        let pre_state_root = blocks.first().expect("at least one block").prev_state_root;
+        let cached_trie =
+            PartialStateTrie::new(pre_state_root, blocks.iter().flat_map(|w| w.states.iter()))
+                .expect("trie from witness");
 
         let blocks: Vec<BlockWitness> = blocks
             .iter()
@@ -95,7 +91,7 @@ impl ChunkWitness {
             fork_name,
             compression_ratios,
             state_commit_mode: StateCommitMode::Auto,
-            cached_trie
+            cached_trie,
         }
     }
 
