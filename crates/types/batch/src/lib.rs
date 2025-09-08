@@ -22,3 +22,5 @@ pub use witness::{
     ArchivedLegacyBatchWitness, BatchWitness, Bytes48, LegacyBatchWitness, PointEvalWitness,
     build_point_eval_witness,
 };
+
+pub mod utils;

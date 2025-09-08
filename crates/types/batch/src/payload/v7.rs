@@ -94,11 +94,11 @@ impl<const CODEC_VERSION: u8> super::Envelope for GenericEnvelopeV7<CODEC_VERSIO
     }
 }
 
-const INDEX_PREV_MSG_QUEUE_HASH: usize = 0;
-const INDEX_POST_MSG_QUEUE_HASH: usize = INDEX_PREV_MSG_QUEUE_HASH + 32;
-const INDEX_L2_BLOCK_NUM: usize = INDEX_POST_MSG_QUEUE_HASH + 32;
-const INDEX_NUM_BLOCKS: usize = INDEX_L2_BLOCK_NUM + 8;
-const INDEX_BLOCK_CTX: usize = INDEX_NUM_BLOCKS + 2;
+pub const INDEX_PREV_MSG_QUEUE_HASH: usize = 0;
+pub const INDEX_POST_MSG_QUEUE_HASH: usize = INDEX_PREV_MSG_QUEUE_HASH + 32;
+pub const INDEX_L2_BLOCK_NUM: usize = INDEX_POST_MSG_QUEUE_HASH + 32;
+pub const INDEX_NUM_BLOCKS: usize = INDEX_L2_BLOCK_NUM + 8;
+pub const INDEX_BLOCK_CTX: usize = INDEX_NUM_BLOCKS + 2;
 
 /// Represents the batch data, eventually encoded into an [`GenericEnvelopeV7`].
 ///
