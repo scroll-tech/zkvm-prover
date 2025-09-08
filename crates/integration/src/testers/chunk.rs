@@ -139,7 +139,7 @@ impl ChunkTaskGenerator {
             .collect::<eyre::Result<Vec<BlockWitness>>>()?;
 
         let witness = if self.version.is_validium() {
-            let base_dir = Path::new(PATH_TESTDATA).join("validium");
+            let base_dir = Path::new(PATH_TESTDATA).join("validium").join("witnesses");
             let secret_key = hex::decode(std::env::var("VALIDIUM_KEY")?)?;
             let secret_key = SecretKey::try_from_bytes(&secret_key)?;
             let validium_txs = self
