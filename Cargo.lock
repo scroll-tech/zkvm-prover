@@ -6708,7 +6708,6 @@ dependencies = [
  "alloy-primitives",
  "base64",
  "bincode 1.3.3",
- "c-kzg",
  "openvm-native-recursion",
  "openvm-sdk",
  "openvm-stark-sdk",
@@ -6738,7 +6737,6 @@ name = "scroll-zkvm-types-batch"
 version = "0.6.0"
 dependencies = [
  "alloy-primitives",
- "bincode 2.0.1",
  "c-kzg",
  "halo2curves-axiom",
  "itertools 0.14.0",
@@ -6748,8 +6746,8 @@ dependencies = [
  "openvm-pairing",
  "openvm-pairing-guest",
  "openvm-sha2",
- "openvm-sha256-guest",
  "rkyv",
+ "sbv-primitives",
  "scroll-zkvm-types-base",
  "serde",
  "vm-zstd",
@@ -6783,14 +6781,11 @@ name = "scroll-zkvm-types-circuit"
 version = "0.6.0"
 dependencies = [
  "alloy-primitives",
- "getrandom 0.2.16",
  "itertools 0.14.0",
  "openvm",
  "openvm-custom-insn",
  "openvm-rv32im-guest",
- "rkyv",
  "scroll-zkvm-types-base",
- "serde",
 ]
 
 [[package]]

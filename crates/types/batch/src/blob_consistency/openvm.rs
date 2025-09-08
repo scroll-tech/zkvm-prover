@@ -3,14 +3,13 @@ use std::sync::LazyLock;
 
 use algebra::{Field, IntMod};
 use alloy_primitives::U256;
-use halo2curves_axiom::bls12_381::{
-    Fq as Bls12_381_Fq, G1Affine as Bls12_381_G1, G2Affine as Bls12_381_G2,
-};
+use halo2curves_axiom::bls12_381::G2Affine as Bls12_381_G2;
 use itertools::Itertools;
 use openvm_ecc_guest::{AffinePoint, CyclicGroup, msm, weierstrass::WeierstrassPoint};
-use openvm_pairing::bls12_381::{Bls12_381, Fp, Fp2, G1Affine, G2Affine, Scalar};
+use openvm_pairing::bls12_381::{Bls12_381, G1Affine, G2Affine, Scalar};
 use openvm_pairing_guest::{algebra, pairing::PairingCheck};
 
+use super::types::ToIntrinsic;
 use crate::blob_consistency::constants::KZG_G2_SETUP_BYTES;
 
 use super::{BLOB_WIDTH, LOG_BLOB_WIDTH};
@@ -54,43 +53,6 @@ static KZG_G2_SETUP: LazyLock<G2Affine> = LazyLock::new(|| {
 
 /// The version for KZG as per EIP-4844.
 const VERSIONED_HASH_VERSION_KZG: u8 = 1;
-
-/// Helper trait that provides functionality to convert the given type from native to the desired intrinsic type
-pub trait ToIntrinsic {
-    /// The desired intrinsic type
-    type IntrinsicType;
-
-    /// Convert the given type from native to the desired intrinsic type
-    fn to_intrinsic(&self) -> Self::IntrinsicType;
-}
-
-impl ToIntrinsic for Bls12_381_Fq {
-    type IntrinsicType = Fp;
-
-    fn to_intrinsic(&self) -> Self::IntrinsicType {
-        let bytes = self.to_bytes();
-        Fp::from_le_bytes_unchecked(&bytes)
-    }
-}
-
-impl ToIntrinsic for Bls12_381_G1 {
-    type IntrinsicType = G1Affine;
-
-    fn to_intrinsic(&self) -> Self::IntrinsicType {
-        G1Affine::from_xy_unchecked(self.x.to_intrinsic(), self.y.to_intrinsic())
-    }
-}
-
-impl ToIntrinsic for Bls12_381_G2 {
-    type IntrinsicType = G2Affine;
-
-    fn to_intrinsic(&self) -> Self::IntrinsicType {
-        G2Affine::from_xy_unchecked(
-            Fp2::new(self.x.c0.to_intrinsic(), self.x.c1.to_intrinsic()),
-            Fp2::new(self.y.c0.to_intrinsic(), self.y.c1.to_intrinsic()),
-        )
-    }
-}
 
 /// Verify KZG `proof` that `P(z) == y` where `P` is the EIP-4844 blob polynomial in its evaluation
 /// form, and `commitment` is the KZG commitment to the polynomial `P`.
@@ -183,6 +145,8 @@ fn interpolate(z: &Scalar, coefficients: &[Scalar; BLOB_WIDTH]) -> Scalar {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    use halo2curves_axiom::bls12_381::G1Affine as Bls12_381_G1;
 
     #[test]
     fn test_kzg_compute_proof_verify() {
