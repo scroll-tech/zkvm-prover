@@ -65,7 +65,7 @@ impl ChunkWitness {
         let cached_trie = PartialStateTrie::new(
             pre_state_root,
             blocks.iter().flat_map(|w| w.states.iter()),
-        );
+        ).expect("trie from witness");
 
         let blocks: Vec<BlockWitness> = blocks
             .iter()
