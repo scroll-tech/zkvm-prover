@@ -12,6 +12,7 @@ alloy-primitives = { workspace = true, features = ["native-keccak"] }
 rkyv.workspace = true
 sbv-helpers.workspace = true
 sbv-core = { workspace = true }
+sbv-trie = { workspace = true }
 sbv-primitives = { workspace = true, features = ["hardforks", "scroll-hardforks", "scroll-revm-types"] }
 serde.workspace = true
 
@@ -20,5 +21,5 @@ types-base = { path = "../base", package = "scroll-zkvm-types-base"}
 [features]
 default = []
 # should be enabled at host
-scroll-compress-ratio = ["sbv-primitives/scroll-compress-ratio"]
+scroll-compress-ratio = ["sbv-core/scroll-compress-ratio"]
 openvm = ["sbv-core/scroll-openvm"]

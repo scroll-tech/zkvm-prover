@@ -3,7 +3,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use sbv_primitives::{B256, types::BlockWitness};
+use sbv_core::BlockWitness;
+use sbv_primitives::B256;
 use scroll_zkvm_prover::Prover;
 use scroll_zkvm_types::{
     chunk::{ChunkInfo, ChunkWitness, LegacyChunkWitness},
@@ -36,10 +37,10 @@ where
         return Err(eyre::eyre!("File not found: {:?}", path_witness.as_ref()));
     }
     let witness = File::open(path_witness)?;
-    Ok(
-        serde_json::from_reader::<_, sbv_primitives::legacy_types::BlockWitness>(witness)?
-            .into_current(),
-    )
+    Ok(BlockWitness::from(serde_json::from_reader::<
+        _,
+        sbv_primitives::legacy_types::BlockWitness,
+    >(witness)?))
 }
 
 pub struct ChunkProverTester;
