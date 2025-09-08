@@ -56,6 +56,7 @@ impl ChunkWitness {
         let num_codes = blocks.iter().map(|w| w.codes.len()).sum();
         let mut codes = HashSet::with_capacity(num_codes);
 
+        // FIXME: remove this when [`LegacyBlockWitness`] is removed.
         let num_states = blocks.iter().map(|w| w.states.len()).sum();
         let mut states = HashSet::with_capacity(num_states);
 
@@ -72,6 +73,7 @@ impl ChunkWitness {
                 prev_state_root: block.prev_state_root,
                 transactions: block.transactions.clone(),
                 withdrawals: block.withdrawals.clone(),
+                // FIXME: replace this by `vec![]` when [`LegacyBlockWitness`] is removed.
                 states: block
                     .states
                     .iter()
@@ -141,6 +143,9 @@ impl From<ChunkWitness> for LegacyChunkWitness {
     }
 }
 
+/// Serde bridge for current version, we don't need states in block witness, but it's required for
+/// the legacy rkyv version.
+/// FIXME: remove this when the legacy rkyv version is removed.
 #[derive(serde::Serialize, serde::Deserialize)]
 struct ChunkWitnessSerde {
     blocks: Vec<BlockWitness>,
