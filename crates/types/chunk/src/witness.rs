@@ -16,8 +16,6 @@ pub struct ChunkWitness {
     pub fork_name: ForkName,
     /// The compression ratios for each block in the chunk.
     pub compression_ratios: Vec<Vec<U256>>,
-    /// The mode of state commitment for the chunk.
-    pub state_commit_mode: StateCommitMode,
     /// The cached partial state trie for the chunk.
     pub cached_trie: PartialStateTrie,
 }
@@ -90,7 +88,6 @@ impl ChunkWitness {
             prev_msg_queue_hash,
             fork_name,
             compression_ratios,
-            state_commit_mode: StateCommitMode::Auto,
             cached_trie,
         }
     }
@@ -131,7 +128,7 @@ impl From<ChunkWitness> for LegacyChunkWitness {
             prev_msg_queue_hash: value.prev_msg_queue_hash,
             fork_name: value.fork_name,
             compression_ratios: value.compression_ratios,
-            state_commit_mode: value.state_commit_mode,
+            state_commit_mode: StateCommitMode::Auto,
         }
     }
 }
