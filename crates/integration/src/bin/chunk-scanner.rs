@@ -83,8 +83,8 @@ async fn main() -> eyre::Result<()> {
 
     let cli = Cli::parse();
 
-    info!("RPC URL = {}", cli.rpc_url);
-    info!("out_path = {}", cli.out_path.display());
+    println!("RPC URL = {}", cli.rpc_url);
+    println!("out_path = {}", cli.out_path.display());
     let client = ClientBuilder::default()
         .layer(RetryBackoffLayer::new(
             cli.max_rate_limit_retries,
@@ -109,7 +109,7 @@ async fn main() -> eyre::Result<()> {
     let start_block = latest_block
         .checked_sub(cli.chunk_size * cli.n_chunks)
         .context("Not enough blocks to fetch. Please decrease N_CHUNKS or CHUNK_SIZE.")?;
-    info!(
+    println!(
         "blocks = {start_block}..={latest_block}; {chunk_size} blocks chunk, {n_chunks} chunks",
         chunk_size = cli.chunk_size,
         n_chunks = cli.n_chunks,
@@ -147,7 +147,7 @@ async fn main() -> eyre::Result<()> {
                     gas,
                     cycle_per_gas: exec_result.total_cycle as f64 / gas as f64,
                 };
-                info!(
+                println!(
                     "Blocks {}..={} | Tx: {} | Cycle: {} | Gas: {} | Cycle/Gas: {:.2}",
                     stats.start_block,
                     stats.end_block,
