@@ -7,6 +7,10 @@ edition.workspace = true
 name = "chunk-benchmark"
 path = "src/bin/chunk-benchmark.rs"
 
+[[bin]]
+name = "chunk-scanner"
+path = "src/bin/chunk-scanner.rs"
+
 [dependencies]
 scroll-zkvm-types.workspace = true
 scroll-zkvm-prover.workspace = true
@@ -14,6 +18,7 @@ scroll-zkvm-verifier.workspace = true
 
 rkyv.workspace = true
 sbv-primitives = { workspace = true }
+sbv-utils = { workspace = true }
 sbv-core = { workspace = true, features = ["scroll"] }
 tracing.workspace = true
 tracing-subscriber.workspace = true
@@ -24,15 +29,21 @@ openvm-circuit.workspace = true
 openvm-sdk = { workspace = true, default-features = false }
 openvm-native-recursion = { workspace = true, default-features = false }
 
+alloy-provider = { workspace = true }
+alloy-rpc-client.workspace = true
+alloy-transport = { workspace = true, features = ["throttle"] }
 alloy-primitives.workspace = true
 base64.workspace = true
 bincode.workspace = true
 cargo_metadata.workspace = true
 clap.workspace = true
+csv.workspace = true
 eyre.workspace = true
 rayon.workspace = true
 serde.workspace = true
+futures.workspace = true
 vm-zstd = { workspace = true, features = ["zstd"] }
+tokio = { workspace = true, features = ["full"] }
 
 hex.workspace = true
 chrono = "0.4"
@@ -41,11 +52,14 @@ once_cell = "1.20"
 revm = { workspace = true }
 serde_json = "1.0"
 snark-verifier-sdk = { workspace = true, default-features = false, features = [
-    "loader_halo2",
-    "halo2-axiom",
-    "display",
+  "loader_halo2",
+  "halo2-axiom",
+  "display",
 ] }
 regex = "1.11.1"
+sysinfo = { workspace = true, features = ["system"] }
+bytesize.workspace = true
+url.workspace = true
 
 [dev-dependencies]
 glob = "0.3"
