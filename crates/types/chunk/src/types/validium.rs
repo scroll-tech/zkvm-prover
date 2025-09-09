@@ -1,10 +1,10 @@
 #![allow(non_snake_case)]
 
-use alloy_primitives::{Address, Bytes};
+use alloy_primitives::Bytes;
 use alloy_sol_types::{SolCall, sol};
 use sbv_primitives::types::consensus::TxL1Message;
 
-pub use ecies::SecretKey;
+pub use ecies::{PublicKey, SecretKey};
 
 sol! {
     #[derive(Debug)]
@@ -33,9 +33,9 @@ sol! {
         address from,
         bytes to,
         uint256 amount,
-        bytes l2Data
+        bytes l2Data,
+        bytes encryptionKey
     );
-
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -44,6 +44,10 @@ pub enum ValidiumError {
     Decode(#[from] alloy_sol_types::Error),
     #[error(transparent)]
     Decrypt(#[from] ecies::DecryptError),
+    #[error(transparent)]
+    Key(#[from] ecies::KeyError),
+    #[error("Invalid encryption key")]
+    InvalidEncryptionKey,
     #[error("Invalid target address")]
     InvalidTarget,
 }
@@ -82,9 +86,22 @@ fn decrypt_message(message: &Bytes, secret_key: &SecretKey) -> Result<Bytes, Val
             to,
             amount,
             l2Data,
+            encryptionKey,
         } = finalizeDepositERC20EncryptedCall::abi_decode(message.as_ref())?;
-        let to = secret_key.try_decrypt(to.as_ref())?;
-        let to = Address::try_from(to.as_slice()).map_err(|_| ValidiumError::InvalidTarget)?;
+
+        // Check that the encryption key specified in the message represents the pubkey for the
+        // sequencer's decryption key.
+        if PublicKey::try_from_bytes(encryptionKey.as_ref())?.ne(&secret_key.public_key()) {
+            return Err(ValidiumError::InvalidEncryptionKey);
+        }
+
+        // Decrypt the encrypted `to` address.
+        let to = secret_key
+            .try_decrypt(to.as_ref())?
+            .as_slice()
+            .try_into()
+            .map_err(|_| ValidiumError::InvalidTarget)?;
+
         return Ok(Bytes::from(
             finalizeDepositERC20Call {
                 token,
