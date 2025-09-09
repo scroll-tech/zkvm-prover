@@ -15,7 +15,6 @@ use scroll_zkvm_types::chunk::ChunkWitness;
 use scroll_zkvm_types::public_inputs::ForkName;
 use std::fs::File;
 use std::path::PathBuf;
-use tracing::info;
 use url::Url;
 
 #[derive(Parser)]
@@ -119,7 +118,7 @@ async fn main() -> eyre::Result<()> {
         let provider = provider.clone();
         async move {
             provider
-                .dump_block_witness(block.into())
+                .dump_block_witness(block)
                 .send()
                 .await
                 .map(|w| w.unwrap())
