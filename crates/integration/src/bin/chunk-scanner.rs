@@ -1,9 +1,6 @@
 use alloy_provider::{Provider, ProviderBuilder};
 use alloy_rpc_client::ClientBuilder;
-use alloy_transport::{
-    TransportResult,
-    layers::{RetryBackoffLayer, ThrottleLayer},
-};
+use alloy_transport::layers::{RetryBackoffLayer, ThrottleLayer};
 use clap::Parser;
 use eyre::{Context, ContextCompat};
 use sbv_core::BlockWitness;
@@ -138,7 +135,7 @@ async fn main() -> eyre::Result<()> {
 
     let mut blocks = vec![];
     let mut gas_used = 0u64;
-    while let Some(Ok(block)) = rx.recv().await {
+    while let Some(block) = rx.recv().await {
         let (_, gas) = exec_chunk(&ChunkWitness::new(
             slice::from_ref(&block),
             B256::ZERO,
@@ -181,23 +178,25 @@ async fn main() -> eyre::Result<()> {
 }
 
 async fn fetcher(
-    tx: tokio::sync::mpsc::Sender<TransportResult<BlockWitness>>,
+    tx: tokio::sync::mpsc::Sender<BlockWitness>,
     provider: impl Provider<Network> + Clone,
     start_block: u64,
-) {
-    let mut block = start_block;
+) -> eyre::Result<()> {
+    let mut block_number = start_block;
+    let prev_state_root: Option<B256> = None;
     loop {
-        if let Some(block) = provider.dump_block_witness(block).send().await.transpose() {
-            let is_err = block.is_err();
-            // stop if channel closed
-            if tx.send(block).await.is_err() {
-                return;
-            }
-            // stop if error
-            if is_err {
-                return;
-            }
-        }
-        block += 1;
+        let req = provider.dump_block_witness(block_number);
+        let req = if let Some(prev_state_root) = prev_state_root {
+            req.with_prev_state_root(prev_state_root)
+        } else {
+            req
+        };
+        let Some(block) = req.send().await.transpose() else {
+            tokio::time::sleep(std::time::Duration::from_secs(1)).await; // wait for new block
+            continue;
+        };
+        let block = block?;
+        tx.send(block).await?;
+        block_number += 1;
     }
 }
