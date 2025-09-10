@@ -145,9 +145,9 @@ async fn main() -> eyre::Result<()> {
             ForkName::Feynman,
         ))?;
 
-        if gas + gas_used > cli.chunk_gas_target {
+        if gas + gas_used > cli.chunk_gas_target * 1_000_000 {
             let wit = ChunkWitness::new(&blocks, B256::ZERO, ForkName::Feynman);
-            let (exec_result, gas) = exec_chunk(&wit).unwrap();
+            let (exec_result, gas) = exec_chunk(&wit)?;
             let stats = Stats {
                 start_block: blocks[0].header.number,
                 end_block: blocks.last().unwrap().header.number,
