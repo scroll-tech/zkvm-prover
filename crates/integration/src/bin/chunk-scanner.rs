@@ -11,6 +11,7 @@ use scroll_zkvm_integration::{
     testers::chunk::{ChunkProverTester, exec_chunk},
 };
 use scroll_zkvm_types::{chunk::ChunkWitness, public_inputs::ForkName};
+use std::collections::HashMap;
 use std::{fs::File, path::PathBuf, slice};
 use url::Url;
 
@@ -57,6 +58,13 @@ struct Cli {
 
     #[arg(
         long,
+        env = "COMPARE_WITH",
+        help = "Compare the results with an existing CSV file"
+    )]
+    compare_with: Option<PathBuf>,
+
+    #[arg(
+        long,
         env = "REQUESTS_PER_SECOND",
         default_value_t = 10,
         help = "Max requests per second"
@@ -78,7 +86,7 @@ struct Cli {
     retries_initial_backoff: u64,
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 struct Stats {
     start_block: u64,
     end_block: u64,
@@ -86,6 +94,8 @@ struct Stats {
     cycle: u64,
     gas: u64,
     cycle_per_gas: f64,
+    diff_percentage: Option<f64>,
+    diff_absolute: Option<i64>,
 }
 
 #[tokio::main]
@@ -107,6 +117,13 @@ async fn main() -> eyre::Result<()> {
     let provider = ProviderBuilder::<_, _, Network>::default()
         .with_recommended_fillers()
         .connect_client(client);
+
+    let compare_with: Option<HashMap<(u64, u64), Stats>> = cli.compare_with.map(|compare_with| {
+        csv::Reader::from_path(compare_with)?
+            .into_deserialize::<Stats>()
+            .map(|r| r.map(|stats| ((stats.start_block, stats.end_block), stats)))
+            .collect::<Result<_, _>>()
+    }).transpose()?;
 
     let out = File::create(&cli.out_path)?;
     let mut writer = csv::Writer::from_writer(out);
@@ -145,14 +162,29 @@ async fn main() -> eyre::Result<()> {
         if gas + gas_used > cli.chunk_gas_target * 1_000_000 {
             let wit = ChunkWitness::new(&blocks, B256::ZERO, ForkName::Feynman);
             let (exec_result, gas) = exec_chunk(&wit)?;
+
+            let start_block = blocks[0].header.number;
+            let end_block = blocks.last().unwrap().header.number;
+            let cycle = exec_result.total_cycle;
+
+            let old_cycle = compare_with
+                .as_ref()
+                .and_then(|m| m.get(&(start_block, end_block)))
+                .map(|old_stats| old_stats.cycle);
+            let diff_absolute = old_cycle.map(|old| cycle as i64 - old as i64);
+            let diff_percentage = old_cycle.zip(diff_absolute).map(|(old, diff)| (diff as f64) / (old as f64) * 100.0);
+
             let stats = Stats {
-                start_block: blocks[0].header.number,
-                end_block: blocks.last().unwrap().header.number,
+                start_block,
+                end_block,
                 tx_num: blocks.iter().map(|b| b.transactions.len()).sum::<usize>(),
-                cycle: exec_result.total_cycle,
+                cycle,
                 gas,
                 cycle_per_gas: exec_result.total_cycle as f64 / gas as f64,
+                diff_percentage,
+                diff_absolute,
             };
+
             println!(
                 "Blocks {}..={} | Tx: {} | Cycle: {} | Gas: {} | Cycle/Gas: {:.2}",
                 stats.start_block,
