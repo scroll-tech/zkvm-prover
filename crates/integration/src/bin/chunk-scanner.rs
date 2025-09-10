@@ -152,6 +152,7 @@ async fn main() -> eyre::Result<()> {
 
     let mut blocks = vec![];
     let mut gas_used = 0u64;
+    let mut n_chunks = 0;
     while let Some(block) = rx.recv().await {
         let (_, gas) = exec_chunk(&ChunkWitness::new(
             slice::from_ref(&block),
@@ -200,6 +201,10 @@ async fn main() -> eyre::Result<()> {
             writer.flush().context("Failed to flush CSV")?;
             blocks = vec![block];
             gas_used = gas;
+            n_chunks += 1;
+            if n_chunks >= cli.n_chunks {
+                break;
+            }
         } else {
             blocks.push(block);
             gas_used += gas;
