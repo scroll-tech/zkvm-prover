@@ -31,8 +31,12 @@ openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.gi
 openvm-custom-insn = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
 openvm-sha2 = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0" }
 openvm-sha256-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
-openvm-p256 = { git = "https://github.com/openvm-org/openvm.git", package = "p256", tag = "v1.4.0", features = ["std"] }
-openvm-k256 = { git = "https://github.com/openvm-org/openvm.git", package = "k256", tag = "v1.4.0", features = ["std"] }
+openvm-p256 = { git = "https://github.com/openvm-org/openvm.git", package = "p256", tag = "v1.4.0", features = [
+  "std",
+] }
+openvm-k256 = { git = "https://github.com/openvm-org/openvm.git", package = "k256", tag = "v1.4.0", features = [
+  "std",
+] }
 openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0" }
 openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
 openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
@@ -47,35 +51,61 @@ openvm-benchmarks-utils = { git = "https://github.com/openvm-org/openvm.git", ta
 openvm-build = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
 openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
 openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
-openvm-instructions ={ git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
+openvm-instructions = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
 openvm-native-circuit = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
 openvm-native-compiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
 openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
 openvm-native-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
 openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
-openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false, features = ["parallel", "evm-prove","legacy-v1-3"] }
+openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false, features = [
+  "parallel",
+  "evm-prove",
+  "legacy-v1-3",
+] }
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
 
 # more openvm related libs
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.0" }
 
-sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = ["scroll", "rkyv"] }
+sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = [
+  "scroll",
+  "rkyv",
+] }
 sbv-helpers = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
-sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = ["scroll", "rkyv"] }
+sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = [
+  "scroll",
+  "rkyv",
+] }
 sbv-kv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
+sbv-utils = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = [
+  "scroll",
+] }
 sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
 sbv-precompile = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
 
-alloy-primitives = { version = "1.3", default-features = false, features = ["std", "map-hashbrown", "map-fxhash", "rkyv"] }
+alloy-provider = "1.0"
+alloy-rpc-client = "1.0"
+alloy-transport = "1.0"
+alloy-primitives = { version = "1.3", default-features = false, features = [
+  "std",
+  "map-hashbrown",
+  "map-fxhash",
+  "rkyv",
+] }
 alloy-serde = { version = "1.0.13", default-features = false }
-bitcode = { version = "0.6.5", default-features = false, features = ["serde", "derive"] }
-bincode_v1 = { version = "1.3", package = "bincode"}
+bitcode = { version = "0.6.5", default-features = false, features = [
+  "serde",
+  "derive",
+] }
+bincode_v1 = { version = "1.3", package = "bincode" }
 bincode = { version = "2.0", features = ["serde"] }
 cargo_metadata = "0.20"
 clap = "4.5"
 c-kzg = { version = "2.0" }
+csv = "1.3.1"
 derivative = "2.2.0"
 eyre = "0.6"
+futures = "0.3"
 halo2curves-axiom = { version = "0.5.3" }
 itertools = "0.14"
 hex-literal = { version = "0.4.1", default-features = false }
@@ -91,10 +121,10 @@ serde_json = { version = "1.0" }
 serde_with = "3.11.0"
 base64 = "0.22"
 snark-verifier-sdk = { version = "=0.2.1", default-features = false, features = [
-    "loader_halo2",
-    "halo2-axiom",
-    "display",
-    "revm",
+  "loader_halo2",
+  "halo2-axiom",
+  "display",
+  "revm",
 ] }
 tiny-keccak = "2.0"
 thiserror = "2"
@@ -102,6 +132,10 @@ tracing = "0.1"
 vm-zstd = { git = "https://github.com/scroll-tech/rust-zstd-decompressor.git", branch = "master" }
 toml = "0.8.14"
 tracing-subscriber = "0.3"
+sysinfo = { version = "0.35", default-features = false }
+bytesize = "2.0.1"
+url = "2.5.4"
+tokio = "1"
 
 scroll-zkvm-types = { path = "crates/types" }
 scroll-zkvm-types-base = { path = "crates/types/base" }
@@ -142,4 +176,3 @@ strip = false
 
 [profile.bench]
 inherits = "profiling"
-

@@ -1,4 +1,5 @@
 use crate::testing_hardfork;
+use bytesize::ByteSize;
 use sbv_core::BlockWitness;
 use sbv_primitives::types::consensus::ScrollTransaction;
 use sbv_primitives::{B256, types::eips::Encodable2718};
@@ -11,6 +12,7 @@ use scroll_zkvm_types::{
     types_agg::AggregationInput,
     utils::{keccak256, point_eval, serialize_vk},
 };
+use std::env;
 use vm_zstd::zstd_encode;
 
 #[allow(dead_code)]
@@ -371,4 +373,38 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
     }
 
     Ok(())
+}
+
+pub fn get_rayon_threads() -> usize {
+    const MEMORY_PRESERVED_EACH_THREAD: u64 = 10 * 1024 * 1024 * 1024; // 10GB
+
+    if let Some(threads) = env::var("RAYON_NUM_THREADS")
+        .ok()
+        .and_then(|s| s.parse().ok())
+    {
+        eprintln!("RAYON_NUM_THREADS set, using {} threads", threads);
+        return threads;
+    }
+
+    let memory_preserved_each_thread = env::var("MEMORY_PRESERVED_EACH_THREAD")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(MEMORY_PRESERVED_EACH_THREAD);
+    eprintln!(
+        "preserving {} bytes for each thread",
+        ByteSize::b(memory_preserved_each_thread).display().iec()
+    );
+
+    let mut system = sysinfo::System::new();
+    system.refresh_cpu_list(sysinfo::CpuRefreshKind::nothing().with_frequency());
+    system.refresh_memory_specifics(sysinfo::MemoryRefreshKind::nothing().with_ram());
+    let free_memory = system.free_memory();
+    let max_threads = (free_memory / MEMORY_PRESERVED_EACH_THREAD) as usize;
+    let n_cpus = system.cpus().len();
+    let threads = max_threads.clamp(1, n_cpus);
+    eprintln!(
+        "RAYON_NUM_THREADS not set, using {} threads ({} CPUs, {} free memory)",
+        threads, n_cpus, free_memory
+    );
+    threads
 }

@@ -1,19 +1,20 @@
-use std::{
-    fs::File,
-    path::{Path, PathBuf},
-};
-
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use sbv_core::BlockWitness;
 use sbv_primitives::B256;
 use scroll_zkvm_prover::Prover;
+use scroll_zkvm_prover::utils::vm::ExecutionResult;
 use scroll_zkvm_types::{
     chunk::{ChunkInfo, ChunkWitness, LegacyChunkWitness},
     proof::ProofEnum,
     public_inputs::ForkName,
 };
+use std::{
+    fs::File,
+    path::{Path, PathBuf},
+};
 
 use crate::{
-    PartialProvingTask, ProverTester, prove_verify, testdata_fork_directory,
+    PartialProvingTask, ProverTester, prove_verify, testdata_fork_directory, tester_execute,
     testers::PATH_TESTDATA, testing_hardfork, utils::metadata_from_chunk_witnesses,
 };
 
@@ -216,4 +217,42 @@ pub fn preset_chunk_multiple() -> Vec<ChunkTaskGenerator> {
             .expect("must success for preset collections")
         })
         .clone()
+}
+
+pub fn exec_chunk(wit: &ChunkWitness) -> eyre::Result<(ExecutionResult, u64)> {
+    let blk = wit.blocks[0].header.number;
+    println!(
+        "task block num: {}, block[0] idx: {}",
+        wit.blocks.len(),
+        blk
+    );
+    let stats = wit.stats();
+    println!("chunk stats {:#?}", stats);
+    let exec_result = tester_execute::<ChunkProverTester>(wit, &[])?;
+    let cycle_count = exec_result.total_cycle as u64;
+    let cycle_per_gas = cycle_count / stats.total_gas_used;
+    println!(
+        "blk {blk}->{}, cycle {cycle_count}, gas {}, cycle-per-gas {cycle_per_gas}",
+        wit.blocks.last().unwrap().header.number,
+        stats.total_gas_used,
+    );
+    eyre::Ok((exec_result, stats.total_gas_used))
+}
+
+pub fn execute_multi(
+    wits: Vec<ChunkWitness>,
+) -> impl FnOnce() -> (u64, u64) + Send + Sync + 'static {
+    || {
+        wits.into_par_iter()
+            .map(|wit| -> (u64, u64) {
+                let (exec_result, gas) = exec_chunk(&wit).unwrap();
+                (gas, exec_result.total_cycle)
+            })
+            .reduce(
+                || (0u64, 0u64),
+                |(gas1, cycle1): (u64, u64), (gas2, cycle2): (u64, u64)| {
+                    (gas1 + gas2, cycle1 + cycle2)
+                },
+            )
+    }
 }
