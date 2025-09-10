@@ -1,20 +1,20 @@
 use alloy_provider::{Provider, ProviderBuilder};
 use alloy_rpc_client::ClientBuilder;
-use alloy_transport::layers::{RetryBackoffLayer, ThrottleLayer};
+use alloy_transport::{
+    TransportResult,
+    layers::{RetryBackoffLayer, ThrottleLayer},
+};
 use clap::Parser;
-use eyre::Context;
-use eyre::ContextCompat;
-use rayon::iter::ParallelBridge;
-use rayon::iter::ParallelIterator;
+use eyre::{Context, ContextCompat};
+use sbv_core::BlockWitness;
 use sbv_primitives::{B256, types::Network};
 use sbv_utils::rpc::ProviderExt;
-use scroll_zkvm_integration::ProverTester;
-use scroll_zkvm_integration::testers::chunk::{ChunkProverTester, exec_chunk};
-use scroll_zkvm_integration::utils::get_rayon_threads;
-use scroll_zkvm_types::chunk::ChunkWitness;
-use scroll_zkvm_types::public_inputs::ForkName;
-use std::fs::File;
-use std::path::PathBuf;
+use scroll_zkvm_integration::{
+    ProverTester,
+    testers::chunk::{ChunkProverTester, exec_chunk},
+};
+use scroll_zkvm_types::{chunk::ChunkWitness, public_inputs::ForkName};
+use std::{fs::File, path::PathBuf, slice};
 use url::Url;
 
 #[derive(Parser)]
@@ -28,12 +28,14 @@ struct Cli {
         help = "The output CSV file path"
     )]
     out_path: PathBuf,
+
     #[arg(
         long,
-        env = "END_BLOCK",
-        help = "The end block number (inclusive). If not set, use latest"
+        env = "CHUNK_GAS_TARGET",
+        default_value_t = 24,
+        help = "Target gas per chunk (in millions of gas)"
     )]
-    end_block: Option<u64>,
+    chunk_gas_target: u64,
     #[arg(
         long,
         env = "N_CHUNKS",
@@ -41,13 +43,20 @@ struct Cli {
         help = "Number of chunks to process"
     )]
     n_chunks: u64,
+
     #[arg(
         long,
-        env = "CHUNK_SIZE",
-        default_value_t = 20,
-        help = "Number of blocks per chunk"
+        env = "BLOCK_GAS_ESTIMATED",
+        default_value_t = 1,
+        help = "Block gas estimated (in millions of gas), used when start_block is not set"
     )]
-    chunk_size: u64,
+    block_gas_estimated: u64,
+    #[arg(
+        long,
+        env = "START_BLOCK",
+        help = "The start block number (inclusive). If not set, use latest - N_CHUNKS * (CHUNK_GAS_TARGET / BLOCK_GAS_ESTIMATED)"
+    )]
+    start_block: Option<u64>,
 
     #[arg(
         long,
@@ -105,77 +114,90 @@ async fn main() -> eyre::Result<()> {
     let out = File::create(&cli.out_path)?;
     let mut writer = csv::Writer::from_writer(out);
 
-    let end_block = if let Some(b) = cli.end_block {
+    let start_block = if let Some(b) = cli.start_block {
         b
     } else {
-        provider
+        let latest_block = provider
             .get_block_number()
             .await
-            .context("Failed to get the latest block number")?
+            .context("Failed to fetch latest block number")?;
+        let estimated_blocks_required = cli.chunk_gas_target / cli.block_gas_estimated;
+        latest_block
+            .checked_sub(estimated_blocks_required)
+            .context("estimated start block overflowed; please adjust args")?
     };
 
-    // fetch latest 1000 blocks
-    let start_block = end_block
-        .checked_sub(cli.chunk_size * cli.n_chunks)
-        .context("Not enough blocks to fetch. Please decrease N_CHUNKS or CHUNK_SIZE.")?;
     println!(
-        "blocks = {start_block}..={latest_block}; {chunk_size} blocks chunk, {n_chunks} chunks",
-        chunk_size = cli.chunk_size,
+        "scan blocks from {start_block}; {chunk_gas_target}M Gas chunk, {n_chunks} chunks",
+        chunk_gas_target = cli.chunk_gas_target,
         n_chunks = cli.n_chunks,
     );
 
-    let blocks = futures::future::try_join_all((start_block..=end_block).map(|block| {
-        let provider = provider.clone();
-        async move {
-            provider
-                .dump_block_witness(block)
-                .send()
-                .await
-                .map(|w| w.unwrap())
+    let (tx, mut rx) = tokio::sync::mpsc::channel(100);
+    tokio::spawn(fetcher(tx, provider.clone(), start_block));
+
+    let mut blocks = vec![];
+    let mut gas_used = 0u64;
+    while let Some(Ok(block)) = rx.recv().await {
+        let (_, gas) = exec_chunk(&ChunkWitness::new(
+            slice::from_ref(&block),
+            B256::ZERO,
+            ForkName::Feynman,
+        ))?;
+
+        if gas + gas_used > cli.chunk_gas_target {
+            let wit = ChunkWitness::new(&blocks, B256::ZERO, ForkName::Feynman);
+            let (exec_result, gas) = exec_chunk(&wit).unwrap();
+            let stats = Stats {
+                start_block: blocks[0].header.number,
+                end_block: blocks.last().unwrap().header.number,
+                tx_num: blocks.iter().map(|b| b.transactions.len()).sum::<usize>(),
+                cycle: exec_result.total_cycle,
+                gas,
+                cycle_per_gas: exec_result.total_cycle as f64 / gas as f64,
+            };
+            println!(
+                "Blocks {}..={} | Tx: {} | Cycle: {} | Gas: {} | Cycle/Gas: {:.2}",
+                stats.start_block,
+                stats.end_block,
+                stats.tx_num,
+                stats.cycle,
+                stats.gas,
+                stats.cycle_per_gas
+            );
+            writer
+                .serialize(stats)
+                .context("Failed to write stats to CSV")?;
+            writer.flush().context("Failed to flush CSV")?;
+            blocks = vec![block];
+            gas_used = gas;
+        } else {
+            blocks.push(block);
+            gas_used += gas;
         }
-    }))
-    .await?;
-
-    let pool = rayon::ThreadPoolBuilder::new()
-        .num_threads(get_rayon_threads())
-        .build()?;
-
-    let stats = pool.install(move || {
-        blocks
-            .chunks_exact(cli.chunk_size as usize)
-            .par_bridge()
-            .map(|blocks| {
-                let wit = ChunkWitness::new(blocks, B256::ZERO, ForkName::Feynman);
-                let (exec_result, gas) = exec_chunk(&wit).unwrap();
-                // Block range, tx num, cycle, gas, cycle-per_gas
-                let stats = Stats {
-                    start_block: blocks[0].header.number,
-                    end_block: blocks.last().unwrap().header.number,
-                    tx_num: blocks.iter().map(|b| b.transactions.len()).sum::<usize>(),
-                    cycle: exec_result.total_cycle,
-                    gas,
-                    cycle_per_gas: exec_result.total_cycle as f64 / gas as f64,
-                };
-                println!(
-                    "Blocks {}..={} | Tx: {} | Cycle: {} | Gas: {} | Cycle/Gas: {:.2}",
-                    stats.start_block,
-                    stats.end_block,
-                    stats.tx_num,
-                    stats.cycle,
-                    stats.gas,
-                    stats.cycle_per_gas
-                );
-                stats
-            })
-            .collect::<Vec<Stats>>()
-    });
-
-    for stat in stats {
-        writer
-            .serialize(stat)
-            .context("Failed to write stats to CSV")?;
     }
-    writer.flush().context("Failed to flush CSV")?;
 
     Ok(())
+}
+
+async fn fetcher(
+    tx: tokio::sync::mpsc::Sender<TransportResult<BlockWitness>>,
+    provider: impl Provider<Network> + Clone,
+    start_block: u64,
+) {
+    let mut block = start_block;
+    loop {
+        if let Some(block) = provider.dump_block_witness(block).send().await.transpose() {
+            let is_err = block.is_err();
+            // stop if channel closed
+            if tx.send(block).await.is_err() {
+                return;
+            }
+            // stop if error
+            if is_err {
+                return;
+            }
+        }
+        block += 1;
+    }
 }
