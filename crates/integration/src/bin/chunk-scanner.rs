@@ -118,12 +118,15 @@ async fn main() -> eyre::Result<()> {
         .with_recommended_fillers()
         .connect_client(client);
 
-    let compare_with: Option<HashMap<(u64, u64), Stats>> = cli.compare_with.map(|compare_with| {
-        csv::Reader::from_path(compare_with)?
-            .into_deserialize::<Stats>()
-            .map(|r| r.map(|stats| ((stats.start_block, stats.end_block), stats)))
-            .collect::<Result<_, _>>()
-    }).transpose()?;
+    let compare_with: Option<HashMap<(u64, u64), Stats>> = cli
+        .compare_with
+        .map(|compare_with| {
+            csv::Reader::from_path(compare_with)?
+                .into_deserialize::<Stats>()
+                .map(|r| r.map(|stats| ((stats.start_block, stats.end_block), stats)))
+                .collect::<Result<_, _>>()
+        })
+        .transpose()?;
 
     let out = File::create(&cli.out_path)?;
     let mut writer = csv::Writer::from_writer(out);
@@ -173,7 +176,9 @@ async fn main() -> eyre::Result<()> {
                 .and_then(|m| m.get(&(start_block, end_block)))
                 .map(|old_stats| old_stats.cycle);
             let diff_absolute = old_cycle.map(|old| cycle as i64 - old as i64);
-            let diff_percentage = old_cycle.zip(diff_absolute).map(|(old, diff)| (diff as f64) / (old as f64) * 100.0);
+            let diff_percentage = old_cycle
+                .zip(diff_absolute)
+                .map(|(old, diff)| (diff as f64) / (old as f64) * 100.0);
 
             let stats = Stats {
                 start_block,
