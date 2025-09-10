@@ -30,6 +30,12 @@ struct Cli {
     out_path: PathBuf,
     #[arg(
         long,
+        env = "END_BLOCK",
+        help = "The end block number (inclusive). If not set, use latest"
+    )]
+    end_block: Option<u64>,
+    #[arg(
+        long,
         env = "N_CHUNKS",
         default_value_t = 50,
         help = "Number of chunks to process"
@@ -99,13 +105,17 @@ async fn main() -> eyre::Result<()> {
     let out = File::create(&cli.out_path)?;
     let mut writer = csv::Writer::from_writer(out);
 
-    let latest_block = provider
-        .get_block_number()
-        .await
-        .context("Failed to get the latest block number")?;
+    let end_block = if let Some(b) = cli.end_block {
+        b
+    } else {
+        provider
+            .get_block_number()
+            .await
+            .context("Failed to get the latest block number")?
+    };
 
     // fetch latest 1000 blocks
-    let start_block = latest_block
+    let start_block = end_block
         .checked_sub(cli.chunk_size * cli.n_chunks)
         .context("Not enough blocks to fetch. Please decrease N_CHUNKS or CHUNK_SIZE.")?;
     println!(
@@ -114,7 +124,7 @@ async fn main() -> eyre::Result<()> {
         n_chunks = cli.n_chunks,
     );
 
-    let blocks = futures::future::try_join_all((start_block..=latest_block).map(|block| {
+    let blocks = futures::future::try_join_all((start_block..=end_block).map(|block| {
         let provider = provider.clone();
         async move {
             provider
