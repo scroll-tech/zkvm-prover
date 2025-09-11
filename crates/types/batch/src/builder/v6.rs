@@ -52,6 +52,7 @@ impl super::BatchInfoBuilder for BatchInfoBuilderV6 {
             withdraw_root: last.withdraw_root,
             prev_msg_queue_hash: Default::default(),
             post_msg_queue_hash: Default::default(),
+            encryption_key: Default::default(),
         }
     }
 }

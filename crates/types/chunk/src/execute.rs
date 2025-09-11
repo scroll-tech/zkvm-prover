@@ -1,4 +1,5 @@
 use crate::{ChunkWitness, types::ChunkExt};
+use ecies::SecretKey;
 use sbv_core::verifier::{self, VerifyResult};
 use sbv_helpers::manually_drop_on_zkvm;
 use sbv_primitives::{
@@ -71,6 +72,12 @@ pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
         block_ctxs: blocks.iter().map(block_to_context).collect(),
         prev_blockhash: B256::default(),
         post_blockhash: B256::default(),
+        encryption_key: witness.validium.map(|input| {
+            SecretKey::try_from_bytes(input.secret_key)
+                .expect("validium key")
+                .public_key()
+                .to_bytes(true)
+        }),
     };
 
     println!("chunk_info = {}", chunk_info);

@@ -47,6 +47,7 @@ impl ValidiumBatchInfoBuilder {
             withdraw_root: last_chunk.withdraw_root,
             prev_msg_queue_hash: first_chunk.prev_msg_queue_hash,
             post_msg_queue_hash: last_chunk.post_msg_queue_hash,
+            encryption_key: first_chunk.encryption_key.clone(),
         }
     }
 }

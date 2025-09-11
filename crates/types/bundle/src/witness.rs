@@ -92,6 +92,7 @@ impl From<&BundleWitness> for BundleInfo {
             batch_hash,
             withdraw_root,
             msg_queue_hash,
+            encryption_key: first_batch.encryption_key.clone(),
         }
     }
 }

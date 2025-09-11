@@ -111,6 +111,8 @@ pub struct ChunkInfo {
     pub prev_blockhash: B256,
     /// The blockhash of the last block in the current chunk.
     pub post_blockhash: B256,
+    /// Optional encryption key for encrypted L1 msgs, which is used in case of domain=Validium.
+    pub encryption_key: Option<Box<[u8]>>,
 }
 
 /// Represents header-like information for the chunk.
@@ -281,7 +283,8 @@ impl ChunkInfo {
     ///     initial block number ||
     ///     block_ctx for block_ctx in block_ctxs ||
     ///     prev blockhash ||
-    ///     post blockhash
+    ///     post blockhash ||
+    ///     encryption key
     /// )
     pub fn pi_hash_validium_v1(&self) -> B256 {
         keccak256(
@@ -303,6 +306,7 @@ impl ChunkInfo {
                 )
                 .chain(self.prev_blockhash.as_slice())
                 .chain(self.post_blockhash.as_slice())
+                .chain(self.encryption_key.as_ref().expect("domain=Validium"))
                 .cloned()
                 .collect::<Vec<u8>>(),
         )
@@ -366,9 +370,12 @@ impl MultiVersionPublicInputs for ChunkInfo {
             assert_eq!(self.post_blockhash, B256::ZERO);
         }
 
-        // blockhash chaining must be validated for validiums.
+        // - blockhash chaining must be validated for validiums.
+        // - encryption key must be the same between contiguous chunks in a batch.
         if version.domain == Domain::Validium {
             assert_eq!(self.prev_blockhash, prev_pi.post_blockhash);
+            assert!(self.encryption_key.is_some());
+            assert_eq!(self.encryption_key, prev_pi.encryption_key);
         }
     }
 }

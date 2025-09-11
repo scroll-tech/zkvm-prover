@@ -33,6 +33,8 @@ pub struct BundleInfo {
     pub batch_hash: B256,
     /// The withdrawals root at the last block in the last chunk in the last batch in the bundle.
     pub withdraw_root: B256,
+    /// Optional encryption key, used in the case of domain=Validium.
+    pub encryption_key: Option<Box<[u8]>>,
 }
 
 impl BundleInfo {
@@ -115,8 +117,11 @@ impl BundleInfo {
     }
 
     pub fn pi_validium_v1(&self) -> Vec<u8> {
-        // TODO: PI for Validium is TBD.
-        self.pi_euclidv2()
+        std::iter::empty()
+            .chain(self.pi_euclidv2().as_slice())
+            .chain(self.encryption_key.as_ref().expect("domain=Validium"))
+            .cloned()
+            .collect()
     }
 
     pub fn pi_hash(&self, fork_name: ForkName) -> B256 {

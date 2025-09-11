@@ -110,6 +110,7 @@ fn verify_bundle_info_pi() {
             "0x97f9728ad48ff896b4272abcecd9a6a46577c24fbf2504f5ed2c3178c857263a",
         )
         .unwrap(),
+        encryption_key: None,
     };
 
     assert_eq!(

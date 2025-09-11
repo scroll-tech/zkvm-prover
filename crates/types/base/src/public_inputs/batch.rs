@@ -42,6 +42,9 @@ pub struct BatchInfo {
     /// The L1 msg queue hash at the end of the current batch.
     #[rkyv()]
     pub post_msg_queue_hash: B256,
+    /// Optional encryption key, used in case of domain=Validium.
+    #[rkyv()]
+    pub encryption_key: Option<Box<[u8]>>,
 }
 
 impl BatchInfo {
@@ -105,10 +108,21 @@ impl BatchInfo {
     }
 
     /// Public input hash for a L3 validium @ v1.
-    ///
-    /// Unchanged from Scroll feynman.
     fn pi_hash_validium_v1(&self) -> B256 {
-        self.pi_hash_feynman()
+        keccak256(
+            std::iter::empty()
+                .chain(self.parent_state_root.as_slice())
+                .chain(self.parent_batch_hash.as_slice())
+                .chain(self.state_root.as_slice())
+                .chain(self.batch_hash.as_slice())
+                .chain(self.chain_id.to_be_bytes().as_slice())
+                .chain(self.withdraw_root.as_slice())
+                .chain(self.prev_msg_queue_hash.as_slice())
+                .chain(self.post_msg_queue_hash.as_slice())
+                .chain(self.encryption_key.as_ref().expect("domain=Validium"))
+                .cloned()
+                .collect::<Vec<u8>>(),
+        )
     }
 }
 
@@ -152,6 +166,11 @@ impl MultiVersionPublicInputs for BatchInfo {
             assert_eq!(prev_pi.prev_msg_queue_hash, B256::ZERO);
             assert_eq!(self.post_msg_queue_hash, B256::ZERO);
             assert_eq!(prev_pi.post_msg_queue_hash, B256::ZERO);
+        }
+
+        if version.domain == Domain::Validium {
+            assert!(self.encryption_key.is_some());
+            assert_eq!(self.encryption_key, prev_pi.encryption_key);
         }
     }
 }
