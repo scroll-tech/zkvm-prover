@@ -8,7 +8,7 @@ use scroll_zkvm_prover::{
 };
 use scroll_zkvm_types::{
     proof::{EvmProof, ProofEnum, StarkProof},
-    public_inputs::ForkName,
+    public_inputs::{ForkName, Version},
     types_agg::ProgramCommitment,
     utils::serialize_vk,
 };
@@ -40,6 +40,15 @@ const ENV_OUTPUT_DIR: &str = "OUTPUT_DIR";
 /// Enviroment settings for test: fork
 pub fn testing_hardfork() -> ForkName {
     ForkName::Feynman
+}
+
+/// Test settings (version).
+pub fn testing_version() -> Version {
+    Version::feynman()
+}
+
+pub fn testing_version_validium() -> Version {
+    Version::validium_v1()
 }
 
 /// Read the 'GUEST_VERSION' from the environment variable.

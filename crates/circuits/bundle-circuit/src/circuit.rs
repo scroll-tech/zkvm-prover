@@ -4,6 +4,7 @@ use scroll_zkvm_types_circuit::{
     AggCircuit, AggregationInput, Circuit, ProgramCommitment,
     io::read_witnesses,
     public_inputs::{
+        Version,
         batch::VersionedBatchInfo,
         bundle::{BundleInfo, VersionedBundleInfo},
     },
@@ -35,8 +36,10 @@ impl Circuit for BundleCircuit {
     }
 
     fn validate(witness: Self::Witness) -> Self::PublicInputs {
-        let fork_name = witness.fork_name;
-        (BundleInfo::from(&witness), fork_name)
+        let version = Version::from(witness.version);
+        assert_eq!(version.fork, witness.fork_name);
+
+        (BundleInfo::from(&witness), version)
     }
 }
 
@@ -61,11 +64,12 @@ impl AggCircuit for BundleCircuit {
     }
 
     fn aggregated_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs> {
-        let fork_name = witness.fork_name;
+        let version = Version::from(witness.version);
         witness
             .batch_infos
             .iter()
-            .map(|batch_info| (batch_info.clone(), fork_name))
+            .cloned()
+            .map(|batch_info| (batch_info, version))
             .collect()
     }
 

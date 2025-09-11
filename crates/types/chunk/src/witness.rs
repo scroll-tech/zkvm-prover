@@ -1,13 +1,18 @@
+use crate::types::validium::SecretKey;
 use alloy_primitives::B256;
 use sbv_core::{verifier::StateCommitMode, witness::BlockWitness};
 use sbv_primitives::U256;
+use sbv_primitives::types::consensus::TxL1Message;
 use sbv_trie::PartialStateTrie;
 use std::collections::HashSet;
+use types_base::version::Version;
 use types_base::{fork_name::ForkName, public_inputs::chunk::ChunkInfo};
 
 /// The witness type accepted by the chunk-circuit.
 #[derive(Clone, Debug)]
 pub struct ChunkWitness {
+    /// Version byte as per [version][types_base::version].
+    pub version: u8,
     /// The block witness for each block in the chunk.
     pub blocks: Vec<BlockWitness>,
     /// The on-chain rolling L1 message queue hash before enqueueing any L1 msg tx from the chunk.
@@ -18,6 +23,17 @@ pub struct ChunkWitness {
     pub compression_ratios: Vec<Vec<U256>>,
     /// The cached partial state trie for the chunk.
     pub cached_trie: PartialStateTrie,
+    /// Validium encrypted txs and secret key if this is a validium chain.
+    pub validium: Option<ValidiumInputs>,
+}
+
+/// The validium inputs for the chunk witness.
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+pub struct ValidiumInputs {
+    /// The validium transactions for each block in the chunk.
+    pub validium_txs: Vec<Vec<TxL1Message>>,
+    /// The secret key used for decrypting validium transactions.
+    pub secret_key: Box<[u8]>,
 }
 
 /// The witness type accepted by the chunk-circuit.
@@ -52,7 +68,42 @@ pub struct ChunkDetails {
 }
 
 impl ChunkWitness {
-    pub fn new(blocks: &[BlockWitness], prev_msg_queue_hash: B256, fork_name: ForkName) -> Self {
+    pub fn new_scroll(
+        version: u8,
+        blocks: &[BlockWitness],
+        prev_msg_queue_hash: B256,
+        fork_name: ForkName,
+    ) -> Self {
+        Self::new(version, blocks, prev_msg_queue_hash, fork_name, None)
+    }
+
+    pub fn new_validium(
+        version: u8,
+        blocks: &[BlockWitness],
+        prev_msg_queue_hash: B256,
+        fork_name: ForkName,
+        validium_txs: Vec<Vec<TxL1Message>>,
+        secret_key: SecretKey,
+    ) -> Self {
+        Self::new(
+            version,
+            blocks,
+            prev_msg_queue_hash,
+            fork_name,
+            Some(ValidiumInputs {
+                validium_txs,
+                secret_key: secret_key.to_bytes(),
+            }),
+        )
+    }
+
+    pub fn new(
+        version: u8,
+        blocks: &[BlockWitness],
+        prev_msg_queue_hash: B256,
+        fork_name: ForkName,
+        validium: Option<ValidiumInputs>,
+    ) -> Self {
         let num_codes = blocks.iter().map(|w| w.codes.len()).sum();
         let mut codes = HashSet::with_capacity(num_codes);
 
@@ -94,11 +145,13 @@ impl ChunkWitness {
             .collect();
 
         Self {
+            version,
             blocks,
             prev_msg_queue_hash,
             fork_name,
             compression_ratios,
             cached_trie,
+            validium,
         }
     }
 
@@ -116,6 +169,10 @@ impl ChunkWitness {
             num_txs,
             total_gas_used,
         }
+    }
+
+    pub fn version(&self) -> Version {
+        Version::from(self.version)
     }
 }
 
@@ -148,11 +205,13 @@ impl From<ChunkWitness> for LegacyChunkWitness {
 /// FIXME: remove this when the legacy rkyv version is removed.
 #[derive(serde::Serialize, serde::Deserialize)]
 struct ChunkWitnessSerde {
+    version: u8,
     blocks: Vec<BlockWitness>,
     prev_msg_queue_hash: B256,
     fork_name: ForkName,
     compression_ratios: Vec<Vec<U256>>,
     cached_trie: PartialStateTrie,
+    validium: Option<ValidiumInputs>,
 }
 
 impl serde::Serialize for ChunkWitness {
@@ -161,11 +220,13 @@ impl serde::Serialize for ChunkWitness {
         S: serde::Serializer,
     {
         let mut this = ChunkWitnessSerde {
+            version: self.version,
             blocks: self.blocks.clone(),
             prev_msg_queue_hash: self.prev_msg_queue_hash,
             fork_name: self.fork_name,
             compression_ratios: self.compression_ratios.clone(),
             cached_trie: self.cached_trie.clone(),
+            validium: self.validium.clone(),
         };
         for block in this.blocks.iter_mut() {
             block.states.clear();
@@ -181,11 +242,13 @@ impl<'de> serde::Deserialize<'de> for ChunkWitness {
     {
         let this = ChunkWitnessSerde::deserialize(deserializer)?;
         Ok(ChunkWitness {
+            version: this.version,
             blocks: this.blocks,
             prev_msg_queue_hash: this.prev_msg_queue_hash,
             fork_name: this.fork_name,
             compression_ratios: this.compression_ratios,
             cached_trie: this.cached_trie,
+            validium: this.validium,
         })
     }
 }
