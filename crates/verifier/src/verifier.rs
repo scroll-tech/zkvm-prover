@@ -1,6 +1,6 @@
 use once_cell::sync::Lazy;
 use openvm_sdk::commit::AppExecutionCommit;
-use openvm_sdk::keygen::AggProvingKey;
+use openvm_sdk::keygen::{AggProvingKey, AggVerifyingKey};
 use openvm_sdk::{Sdk, commit::CommitBytes};
 use scroll_zkvm_types::proof::OpenVmEvmProof;
 use scroll_zkvm_types::{proof::StarkProof, utils::serialize_vk};
@@ -13,16 +13,37 @@ pub static AGG_STARK_PROVING_KEY: Lazy<AggProvingKey> =
 
 pub struct UniversalVerifier {
     pub evm_verifier: Vec<u8>,
+    pub loaded_agg_vk: Option<AggVerifyingKey>,
 }
 
 impl UniversalVerifier {
-    pub fn setup<P: AsRef<Path>>(path_verifier_code: P) -> eyre::Result<Self> {
-        let evm_verifier = std::fs::read(path_verifier_code.as_ref())?;
-
-        Ok(Self { evm_verifier })
+    /// if vk is not loaded, initialize the global proving key since the
+    /// calculation is time-consuming
+    pub fn prepare(&self) {
+        if self.loaded_agg_vk.is_none() {
+            let _ = AGG_STARK_PROVING_KEY.get_agg_vk();
+        }
     }
 
-    pub fn verify_stark_proof(stark_proof: &StarkProof, vk: &[u8]) -> eyre::Result<()> {
+    pub fn setup<P: AsRef<Path>>(path_verifier_code: P) -> eyre::Result<Self> {
+        let evm_verifier = std::fs::read(path_verifier_code.as_ref())?;
+        let path_agg_vk = match path_verifier_code.as_ref().parent() {
+            Some(dir) => dir.join("root_verifier_vk"),
+            None => Path::new("root_verifier_vk").to_path_buf(),
+        };
+        let loaded_agg_vk = openvm_sdk::fs::read_object_from_file(path_agg_vk).ok();
+
+        Ok(Self {
+            evm_verifier,
+            loaded_agg_vk,
+        })
+    }
+
+    pub fn verify_stark_proof_with_vk(
+        agg_stark_vk: &AggVerifyingKey,
+        stark_proof: &StarkProof,
+        vk: &[u8],
+    ) -> eyre::Result<()> {
         let prog_commit = serialize_vk::deserialize(vk);
 
         /*
@@ -34,7 +55,6 @@ impl UniversalVerifier {
         }
         */
 
-        let agg_stark_vk = &AGG_STARK_PROVING_KEY.get_agg_vk();
         use openvm_continuations::verifier::internal::types::VmStarkProof;
         let vm_stark_proof = VmStarkProof {
             inner: stark_proof.proofs[0].clone(),
@@ -47,6 +67,22 @@ impl UniversalVerifier {
         Sdk::verify_proof(agg_stark_vk, expected_app_commit, &vm_stark_proof)?;
 
         Ok(())
+    }
+
+    pub fn verify_stark_proof_from_verifier(
+        &self,
+        stark_proof: &StarkProof,
+        vk: &[u8],
+    ) -> eyre::Result<()> {
+        if let Some(agg_vk) = &self.loaded_agg_vk {
+            Self::verify_stark_proof_with_vk(agg_vk, stark_proof, vk)
+        } else {
+            Self::verify_stark_proof(stark_proof, vk)
+        }
+    }
+
+    pub fn verify_stark_proof(stark_proof: &StarkProof, vk: &[u8]) -> eyre::Result<()> {
+        Self::verify_stark_proof_with_vk(&AGG_STARK_PROVING_KEY.get_agg_vk(), stark_proof, vk)
     }
 
     pub fn verify_evm_proof(&self, evm_proof: &OpenVmEvmProof, vk: &[u8]) -> eyre::Result<()> {
@@ -92,11 +128,12 @@ mod tests {
         let chunk_proof = WrappedProof::from_json(
             Path::new(PATH_TESTDATA)
                 .join("proofs")
-                .join("chunk-proof-phase2.json"),
+                .join("chunk-proof-feynman.json"),
         )?;
+        let verifier = UniversalVerifier::setup(Path::new(PATH_TESTDATA).join("verifier.bin"))?;
 
         let stark_proof = chunk_proof.proof.as_stark_proof().unwrap();
-        UniversalVerifier::verify_stark_proof(stark_proof, &chunk_proof.vk)?;
+        verifier.verify_stark_proof_from_verifier(stark_proof, &chunk_proof.vk)?;
 
         Ok(())
     }
@@ -107,11 +144,12 @@ mod tests {
         let batch_proof = WrappedProof::from_json(
             Path::new(PATH_TESTDATA)
                 .join("proofs")
-                .join("batch-proof-phase2.json"),
+                .join("batch-proof-feynman.json"),
         )?;
+        let verifier = UniversalVerifier::setup(Path::new(PATH_TESTDATA).join("verifier.bin"))?;
 
         let stark_proof = batch_proof.proof.as_stark_proof().unwrap();
-        UniversalVerifier::verify_stark_proof(stark_proof, &batch_proof.vk)?;
+        verifier.verify_stark_proof_from_verifier(stark_proof, &batch_proof.vk)?;
 
         Ok(())
     }
