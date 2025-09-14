@@ -13,32 +13,10 @@ pub static AGG_STARK_PROVING_KEY: Lazy<AggProvingKey> =
 
 pub struct UniversalVerifier {
     pub evm_verifier: Vec<u8>,
-    pub loaded_agg_vk: Option<AggVerifyingKey>,
+    pub loaded_agg_vk: AggVerifyingKey,
 }
 
 impl UniversalVerifier {
-    /// if vk is not loaded, initialize the global proving key since the
-    /// calculation is time-consuming
-    pub fn prepare(&self) {
-        if self.loaded_agg_vk.is_none() {
-            let _ = AGG_STARK_PROVING_KEY.get_agg_vk();
-        }
-    }
-
-    pub fn setup<P: AsRef<Path>>(path_verifier_code: P) -> eyre::Result<Self> {
-        let evm_verifier = std::fs::read(path_verifier_code.as_ref())?;
-        let path_agg_vk = match path_verifier_code.as_ref().parent() {
-            Some(dir) => dir.join("root_verifier_vk"),
-            None => Path::new("root_verifier_vk").to_path_buf(),
-        };
-        let loaded_agg_vk = openvm_sdk::fs::read_object_from_file(path_agg_vk).ok();
-
-        Ok(Self {
-            evm_verifier,
-            loaded_agg_vk,
-        })
-    }
-
     pub fn verify_stark_proof_with_vk(
         agg_stark_vk: &AggVerifyingKey,
         stark_proof: &StarkProof,
@@ -69,20 +47,25 @@ impl UniversalVerifier {
         Ok(())
     }
 
-    pub fn verify_stark_proof_from_verifier(
-        &self,
-        stark_proof: &StarkProof,
-        vk: &[u8],
-    ) -> eyre::Result<()> {
-        if let Some(agg_vk) = &self.loaded_agg_vk {
-            Self::verify_stark_proof_with_vk(agg_vk, stark_proof, vk)
-        } else {
-            Self::verify_stark_proof(stark_proof, vk)
-        }
+    pub fn setup<P: AsRef<Path>>(path_verifier: P) -> eyre::Result<Self> {
+        let path_verifier_code = path_verifier.as_ref().join("verifier.bin");
+        let path_agg_vk = path_verifier.as_ref().join("root_verifier_vk");
+        let evm_verifier = std::fs::read(path_verifier_code)?;
+        let loaded_agg_vk = openvm_sdk::fs::read_object_from_file(path_agg_vk).unwrap_or_else(
+            |_|{
+                tracing::warn!("root_Verifier_vk is not avaliable in disk, try to calculate it on-the-fly, which may be time consuming ...");
+                AGG_STARK_PROVING_KEY.get_agg_vk()
+            }
+        );
+
+        Ok(Self {
+            evm_verifier,
+            loaded_agg_vk,
+        })
     }
 
-    pub fn verify_stark_proof(stark_proof: &StarkProof, vk: &[u8]) -> eyre::Result<()> {
-        Self::verify_stark_proof_with_vk(&AGG_STARK_PROVING_KEY.get_agg_vk(), stark_proof, vk)
+    pub fn verify_stark_proof(&self, stark_proof: &StarkProof, vk: &[u8]) -> eyre::Result<()> {
+        Self::verify_stark_proof_with_vk(&self.loaded_agg_vk, stark_proof, vk)
     }
 
     pub fn verify_evm_proof(&self, evm_proof: &OpenVmEvmProof, vk: &[u8]) -> eyre::Result<()> {
@@ -117,7 +100,7 @@ mod tests {
         pub fn verify_wrapped_proof(&self, proof: &WrappedProof) -> eyre::Result<()> {
             match &proof.proof {
                 ProofEnum::Evm(p) => self.verify_evm_proof(&p.clone().into(), &proof.vk),
-                ProofEnum::Stark(p) => Self::verify_stark_proof(p, &proof.vk),
+                ProofEnum::Stark(p) => self.verify_stark_proof(p, &proof.vk),
             }
         }
     }
@@ -130,10 +113,10 @@ mod tests {
                 .join("proofs")
                 .join("chunk-proof-feynman.json"),
         )?;
-        let verifier = UniversalVerifier::setup(Path::new(PATH_TESTDATA).join("verifier.bin"))?;
+        let verifier = UniversalVerifier::setup(Path::new(PATH_TESTDATA))?;
 
         let stark_proof = chunk_proof.proof.as_stark_proof().unwrap();
-        verifier.verify_stark_proof_from_verifier(stark_proof, &chunk_proof.vk)?;
+        verifier.verify_stark_proof(stark_proof, &chunk_proof.vk)?;
 
         Ok(())
     }
@@ -146,10 +129,10 @@ mod tests {
                 .join("proofs")
                 .join("batch-proof-feynman.json"),
         )?;
-        let verifier = UniversalVerifier::setup(Path::new(PATH_TESTDATA).join("verifier.bin"))?;
+        let verifier = UniversalVerifier::setup(Path::new(PATH_TESTDATA))?;
 
         let stark_proof = batch_proof.proof.as_stark_proof().unwrap();
-        verifier.verify_stark_proof_from_verifier(stark_proof, &batch_proof.vk)?;
+        verifier.verify_stark_proof(stark_proof, &batch_proof.vk)?;
 
         Ok(())
     }
@@ -163,7 +146,7 @@ mod tests {
                 .join("bundle-proof-phase2.json"),
         )?;
 
-        let verifier = UniversalVerifier::setup(Path::new(PATH_TESTDATA).join("verifier.bin"))?;
+        let verifier = UniversalVerifier::setup(Path::new(PATH_TESTDATA))?;
 
         verifier.verify_evm_proof(
             &evm_proof.proof.into_evm_proof().unwrap().into(),

@@ -12,7 +12,7 @@ use scroll_zkvm_types::{
     types_agg::ProgramCommitment,
     utils::serialize_vk,
 };
-use scroll_zkvm_verifier::verifier::UniversalVerifier;
+use scroll_zkvm_verifier::verifier::{AGG_STARK_PROVING_KEY, UniversalVerifier};
 use std::{
     path::{Path, PathBuf},
     process,
@@ -325,7 +325,8 @@ pub fn prove_verify<T: ProverTester>(
     };
 
     // Verify proof.
-    UniversalVerifier::verify_stark_proof(
+    UniversalVerifier::verify_stark_proof_with_vk(
+        &AGG_STARK_PROVING_KEY.get_agg_vk(),
         proof.as_stark_proof().expect("should be stark proof"),
         &vk,
     )?;
