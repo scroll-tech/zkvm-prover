@@ -10,6 +10,7 @@ root_verifier.asm
 
 root-verifier-vm-config
 root-verifier-committed-exe
+root_verifier_vk
 verifier.bin
 
 .vscode/

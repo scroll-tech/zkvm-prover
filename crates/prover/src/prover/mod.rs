@@ -216,8 +216,12 @@ impl Prover {
             stat,
         };
         tracing::info!("verifing stark proof");
-        UniversalVerifier::verify_stark_proof(&proof, &self.get_app_vk())
-            .map_err(|e| Error::VerifyProof(e.to_string()))?;
+        UniversalVerifier::verify_stark_proof_with_vk(
+            &AGG_STARK_PROVING_KEY.get_agg_vk(),
+            &proof,
+            &self.get_app_vk(),
+        )
+        .map_err(|e| Error::VerifyProof(e.to_string()))?;
         tracing::info!("verifing stark proof done");
         Ok(proof)
     }

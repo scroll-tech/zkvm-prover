@@ -301,6 +301,15 @@ fn generate_evm_verifier(
     println!("{LOG_PREFIX} === Dumping EVM VERIFIER ===");
     let path_verifier_sol = verifier_output_dir.join("verifier.sol");
     let path_verifier_bin = verifier_output_dir.join("verifier.bin");
+    let path_root_agg_pk = verifier_output_dir.join("root_verifier_vk");
+
+    if force_overwrite || !path_root_agg_pk.exists() {
+        openvm_sdk::fs::write_object_to_file(
+            &path_root_agg_pk,
+            openvm_sdk::Sdk::riscv32().agg_pk().get_agg_vk(),
+        )
+        .expect("fail to write");
+    }
 
     // Check if files exist and skip if in auto mode
     if !force_overwrite && path_verifier_sol.exists() && path_verifier_bin.exists() {
