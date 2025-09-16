@@ -9,6 +9,8 @@ pub mod v7;
 
 pub mod v8;
 
+pub mod validium;
+
 /// The number data bytes we pack each BLS12-381 scalar into. The most-significant byte is 0.
 pub const N_DATA_BYTES_PER_COEFFICIENT: usize = 31;
 
@@ -29,9 +31,9 @@ pub const DA_CODEC_VERSION_V7: u8 = 7;
 pub const DA_CODEC_VERSION_V8: u8 = 8;
 
 pub trait Envelope {
-    fn from_slice(blob_bytes: &[u8]) -> Self;
+    fn from_slice(bytes: &[u8]) -> Self;
 
-    fn challenge_digest(&self, blob_versioned_hash: B256) -> B256;
+    fn challenge_digest(&self, versioned_hash: B256) -> B256;
 }
 
 pub trait Payload {

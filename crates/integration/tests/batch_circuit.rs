@@ -5,9 +5,10 @@ use scroll_zkvm_integration::{
         chunk::{ChunkProverTester, create_canonical_tasks, preset_chunk_multiple},
         load_local_task,
     },
-    testing_hardfork,
+    testing_version,
 };
 use scroll_zkvm_prover::task::ProvingTask;
+use scroll_zkvm_types::public_inputs::Version;
 
 #[ignore = "need local stuff"]
 #[test]
@@ -74,22 +75,29 @@ fn verify_batch_hash_invariant() -> eyre::Result<()> {
     BatchProverTester::setup(true)?;
 
     let outcome_1 = preset_chunk_multiple();
-    let outcome_2 = create_canonical_tasks(
-        match testing_hardfork() {
-            ForkName::EuclidV1 => vec![
+    let (version, block_range) = match testing_version().fork {
+        ForkName::EuclidV1 => (
+            Version::euclid_v1(),
+            vec![
                 12508460u64..=12508461u64,
                 12508462u64..=12508462u64,
                 12508463u64..=12508463u64,
             ],
-            ForkName::EuclidV2 => vec![1u64..=2u64, 3u64..=3u64, 4u64..=4u64],
-            ForkName::Feynman => vec![
+        ),
+        ForkName::EuclidV2 => (
+            Version::euclid_v2(),
+            vec![1u64..=2u64, 3u64..=3u64, 4u64..=4u64],
+        ),
+        ForkName::Feynman => (
+            Version::feynman(),
+            vec![
                 16525000u64..=16525001u64,
                 16525002u64..=16525002u64,
                 16525003u64..=16525003u64,
             ],
-        }
-        .into_iter(),
-    )?;
+        ),
+    };
+    let outcome_2 = create_canonical_tasks(version, block_range.into_iter())?;
 
     let mut task_1 = BatchTaskGenerator::from_chunk_tasks(&outcome_1, None);
     let mut task_2 = BatchTaskGenerator::from_chunk_tasks(&outcome_2, None);
