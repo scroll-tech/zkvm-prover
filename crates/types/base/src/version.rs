@@ -25,7 +25,7 @@ use crate::public_inputs::ForkName;
 ///
 /// Domain is represented using 2 bits, i.e. we can support at the most 4 domains as per the latest
 /// codec.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
 pub enum Domain {
     /// Domain used for Scroll.
     Scroll = 0,
@@ -44,7 +44,7 @@ impl From<u8> for Domain {
 }
 
 /// The state-transition-function's incremental version.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, serde::Deserialize, serde::Serialize)]
 pub enum STFVersion {
     /// Validium@v1.
     V1 = 1,
@@ -69,7 +69,7 @@ impl From<u8> for STFVersion {
 }
 
 /// The codec version.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, serde::Deserialize, serde::Serialize)]
 pub enum Codec {
     /// da-codec@v6.
     V6,
@@ -88,7 +88,7 @@ const N_BITS_STF_VERSION: u8 = 6;
 const MASK_STF_VERSION: u8 = 0b00111111;
 
 /// A fully parsed version that includes all necessary identifiers.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, serde::Deserialize, serde::Serialize)]
 pub struct Version {
     /// Domain.
     pub domain: Domain,
