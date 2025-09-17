@@ -21,7 +21,7 @@ cleanup() {
 trap cleanup EXIT
 
 # run docker image
-docker run --cidfile ./build-guest.cid --platform linux/amd64 -v "$HOME/.openvm/params:/root/.openvm/params" build-guest:local make build-guest-local
+docker run --cidfile ./build-guest.cid --platform linux/amd64 build-guest:local make build-guest-local
 container_id=$(cat ./build-guest.cid)
 
 # copy vm commitments from container to local
