@@ -17,6 +17,18 @@ else
 CARGO_CONFIG_FLAG =
 endif
 
+SRS_PARAMS_DIR := $(HOME)/.openvm/params
+SRS_PARAMS_URL := https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/params
+SRS_PARAMS := $(PARAMS_DIR)/kzg_bn254_22.srs $(PARAMS_DIR)/kzg_bn254_24.srs
+
+# Download params if missing
+$(SRS_PARAMS_DIR)/%.srs:
+    @mkdir -p $(PARAMS_DIR)
+    @if [ ! -f "$@" ]; then \
+        echo "Fetching $(@F) from $(PARAMS_URL)"; \
+        wget -q -O "$@" "$(PARAMS_URL)/$(@F)"; \
+    fi
+
 download-release:
 	sh download-release.sh
 
@@ -34,10 +46,10 @@ clippy:
 clean-guest:
 	docker rmi build-guest:local
 
-build-guest:
+build-guest: $(SRS_PARAMS)
 	sh build-guest.sh
 
-build-guest-local:
+build-guest-local: $(SRS_PARAMS)
 	cargo run --release -p scroll-zkvm-build-guest
 
 clean-build-guest: clean-guest build-guest
