@@ -15,7 +15,7 @@ find $DEV_DIR -type f ! -name sha256sums.txt -exec sha256sum {} \; >$DEV_DIR/sha
 # Read FORKNAME from release-fork file
 FORKNAME=$(head -n 1 release-fork)
 
-function release_new() {
+release_new() {
   VK_JSON="$DEV_DIR/verifier/openVmVk.json"
   RELEASES_DIR="releases/$FORKNAME"
 
@@ -52,7 +52,7 @@ function release_new() {
   #aws --profile default s3 cp releases s3://circuit-release/scroll-zkvm --recursive
 }
 
-function release_old() {
+release_old() {
   aws --profile default s3 cp $DEV_DIR s3://circuit-release/scroll-zkvm/$VERIFIER_RELEASES_DIR --recursive
 }
 
