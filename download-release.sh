@@ -1,4 +1,5 @@
 #!/bin/bash
+set -xeu
 
 # release version
 SCROLL_ZKVM_VERSION=0.5.2
@@ -7,19 +8,25 @@ if [ -z "${SCROLL_ZKVM_VERSION}" ]; then
   exit 1
 fi
 
-# chunk-circuit exe
-wget https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/releases/$SCROLL_ZKVM_VERSION/chunk/app.vmexe -O crates/circuits/chunk-circuit/openvm/app.vmexe
+function download_by_s3() {
+  aws --profile default s3 cp s3://circuit-release/scroll-zkvm/releases/$SCROLL_ZKVM_VERSION releases/$SCROLL_ZKVM_VERSION --recursive
+}
 
-# batch-circuit exe
-wget https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/releases/$SCROLL_ZKVM_VERSION/batch/app.vmexe -O crates/circuits/batch-circuit/openvm/app.vmexe
+function download_by_http() {
+  for f in chunk/app.vmexe \
+    chunk/openvm.toml \
+    verifier/openVmVk.json \
+    verifier/verifier.bin \
+    bundle/digest_1.hex \
+    bundle/app.vmexe \
+    bundle/digest_2.hex \
+    bundle/openvm.toml \
+    batch/app.vmexe \
+    batch/openvm.toml; do
+    output_path="releases/$SCROLL_ZKVM_VERSION/$f"
+    mkdir -p "$(dirname "$output_path")"
+    wget https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/releases/$SCROLL_ZKVM_VERSION/$f -O "$output_path"
+  done
+}
 
-# bundle-circuit exe
-wget https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/releases/$SCROLL_ZKVM_VERSION/bundle/app.vmexe -O crates/circuits/bundle-circuit/openvm/app.vmexe
-
-# bundle-circuit exe, legacy version, may not exist
-wget https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/releases/$SCROLL_ZKVM_VERSION/bundle/app_euclidv1.vmexe -O crates/circuits/bundle-circuit/openvm/app_euclidv1.vmexe || echo "legacy app not exist for $SCROLL_ZKVM_VERSION"
-
-# assets for verifier-only mode
-wget https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/releases/$SCROLL_ZKVM_VERSION/verifier/root-verifier-vm-config -O crates/verifier/testdata/root-verifier-vm-config
-wget https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/releases/$SCROLL_ZKVM_VERSION/verifier/root-verifier-committed-exe -O crates/verifier/testdata/root-verifier-committed-exe
-wget https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/releases/$SCROLL_ZKVM_VERSION/verifier/verifier.bin -O crates/verifier/testdata/verifier.bin
+download_by_http $SCROLL_ZKVM_VERSION
