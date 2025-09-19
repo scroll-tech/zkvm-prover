@@ -12,8 +12,8 @@ openvm-sdk = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch =
 openvm-transpiler = { git = "ssh://git@github.com/scroll-tech/openvm-gpu.git", branch = "patch-v1.4.0-c033e18-pipe", default-features = false }
 
 [patch."https://github.com/openvm-org/stark-backend.git"]
-openvm-stark-backend = { git = "ssh://git@github.com/scroll-tech/openvm-stark-gpu.git", branch = "update-p3-gpu-v0.2.2", features = ["gpu"] }
-openvm-stark-sdk = { git = "ssh://git@github.com/scroll-tech/openvm-stark-gpu.git", branch = "update-p3-gpu-v0.2.2", features = ["gpu"] }
+openvm-stark-backend = { git = "ssh://git@github.com/scroll-tech/openvm-stark-gpu.git", branch = "main", features = ["gpu"] }
+openvm-stark-sdk = { git = "ssh://git@github.com/scroll-tech/openvm-stark-gpu.git", branch = "main", features = ["gpu"] }
 
 [patch."https://github.com/Plonky3/Plonky3.git"]
 p3-air = { git = "ssh://git@github.com/scroll-tech/plonky3-gpu.git", tag = "v0.2.2" }
