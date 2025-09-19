@@ -7,10 +7,15 @@ export RUST_BACKTRACE
 RUST_LOG ?= off,scroll_zkvm_integration=debug,scroll_zkvm_verifier=debug,scroll_zkvm_prover=debug,openvm_circuit=debug
 export RUST_LOG
 
-TESTDATA_PATH := crates/integration/testdata/phase2
-CHUNK_PROOF := 1-4
+OPENVM_RUST_TOOLCHAIN ?= nightly-2025-08-18
+export OPENVM_RUST_TOOLCHAIN
 
-$(info TESTDATA_PATH set to: $(TESTDATA_PATH))
+# Set GPU config if GPU=1 is set
+ifeq ($(GPU),1)
+CARGO_CONFIG_FLAG = --config Cargo.toml.gpu
+else
+CARGO_CONFIG_FLAG =
+endif
 
 download-release:
 	sh download-release.sh
@@ -32,56 +37,52 @@ clean-guest:
 build-guest:
 	sh build-guest.sh
 
+build-guest-local:
+	cargo run --release -p scroll-zkvm-build-guest
+
 clean-build-guest: clean-guest build-guest
 
-clean-test-cache:
-	@rm -f $(TESTDATA_PATH)/proofs/*.json
-
-$(TESTDATA_PATH)/proofs/chunk-%.json:
-	@OUTPUT_DIR=$(realpath $(TESTDATA_PATH)/proofs) $(MAKE) test-single-chunk
-	cp -f $(TESTDATA_PATH)/proofs/chunk/proofs/*.json $(TESTDATA_PATH)/proofs
-
 profile-chunk:
-	@GUEST_PROFILING=true cargo test --release -p scroll-zkvm-integration --test chunk_circuit guest_profiling -- --exact --nocapture
+	@GUEST_PROFILING=true cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test chunk_circuit guest_profiling -- --exact --nocapture
 
 export-onchain-verifier:
-	@cargo test --release -p scroll-zkvm-integration --test onchain_verifier export_onchain_verifier -- --exact --nocapture
+	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test onchain_verifier export_onchain_verifier -- --exact --nocapture
 
 test-execute-chunk:
-	@cargo test --release -p scroll-zkvm-integration --test chunk_circuit test_execute -- --exact --nocapture
+	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test chunk_circuit test_execute -- --exact --nocapture
 
 test-execute-chunk-multi:
-	@cargo test --release -p scroll-zkvm-integration --test chunk_circuit test_execute_multi -- --exact --nocapture
+	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test chunk_circuit test_execute_multi -- --exact --nocapture
 
 test-cycle:
-	@cargo test --release -p scroll-zkvm-integration --test chunk_circuit test_cycle -- --exact --nocapture
+	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test chunk_circuit test_cycle -- --exact --nocapture
 
-test-execute-batch: $(TESTDATA_PATH)/proofs/chunk-$(CHUNK_PROOF).json
-	@cargo test --release -p scroll-zkvm-integration --test batch_circuit test_e2e_execute -- --exact --nocapture
+test-execute-batch:
+	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test batch_circuit test_e2e_execute -- --exact --nocapture
 
-test-execute-batch-fast: $(TESTDATA_PATH)/tasks/batch-task.json
-	@cargo test --release -p scroll-zkvm-integration --test batch_circuit test_execute -- --exact --nocapture
+test-execute-batch-fast:
+	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test batch_circuit test_execute -- --exact --nocapture
 
 test-execute-bundle:
-	@cargo test --release -p scroll-zkvm-integration --test bundle_circuit test_execute -- --exact --nocapture
+	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test bundle_circuit test_execute -- --exact --nocapture
 
 test-single-chunk:
-	@cargo test --release -p scroll-zkvm-integration --test chunk_circuit setup_prove_verify_single -- --exact --nocapture
+	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test chunk_circuit setup_prove_verify_single -- --exact --nocapture
 
 test-multi-chunk:
-	@cargo test --release -p scroll-zkvm-integration --test chunk_circuit setup_prove_verify_multi -- --exact --nocapture
+	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test chunk_circuit setup_prove_verify_multi -- --exact --nocapture
 
-test-single-batch: $(TESTDATA_PATH)/tasks/batch-task.json
-	@cargo test --release -p scroll-zkvm-integration --test batch_circuit setup_prove_verify_single -- --exact --nocapture
+test-single-batch:
+	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test batch_circuit setup_prove_verify_single -- --exact --nocapture
 
 test-e2e-batch:
-	@cargo test --release -p scroll-zkvm-integration --test batch_circuit e2e -- --exact --nocapture
+	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test batch_circuit e2e -- --exact --nocapture
 
 test-bundle:
-	@cargo test --release -p scroll-zkvm-integration --test bundle_circuit setup_prove_verify -- --exact --nocapture
+	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test bundle_circuit setup_prove_verify -- --exact --nocapture
 
 test-bundle-local:
-	@cargo test --release -p scroll-zkvm-integration --test bundle_circuit setup_prove_verify_local_task -- --exact --nocapture
+	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test bundle_circuit setup_prove_verify_local_task -- --exact --nocapture
 
 test-e2e-bundle:
-	@cargo test --release -p scroll-zkvm-integration --test bundle_circuit e2e -- --exact --nocapture
+	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test bundle_circuit e2e -- --exact --nocapture

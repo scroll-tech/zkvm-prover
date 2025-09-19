@@ -242,9 +242,12 @@ impl Prover {
     pub fn gen_proof_stark(&self, stdin: StdIn) -> Result<StarkProof, Error> {
         // Here we always do an execution of the guest program to get the cycle count.
         // and do precheck before proving like ensure PI != 0
-        self.execute_and_check(&stdin)?;
+        let t = std::time::Instant::now();
+        let total_cycles = self.execute_and_check(&stdin)?;
+        let execution_time_mills = t.elapsed().as_millis() as u64;
 
         let sdk = Sdk::new();
+        let t = std::time::Instant::now();
         let proof = sdk
             .generate_e2e_stark_proof(
                 self.app_pk.clone(),
@@ -253,7 +256,14 @@ impl Prover {
                 stdin,
             )
             .map_err(|e| Error::GenProof(e.to_string()))?;
-        let comm = self.get_app_commitment();
+        let proving_time_mills = t.elapsed().as_millis() as u64;
+        let time_s = proving_time_mills as f32 / 1000.0f32;
+        let prove_speed = (total_cycles as f32 / 1_000_000.0f32) / (time_s); // MHz
+        tracing::info!(
+            "{} proving speed: {:.2}MHz, time {time_s:.2}s, cycles {total_cycles}",
+            self.prover_name,
+            prove_speed
+        );
         let proof = StarkProof {
             proofs: vec![proof.proof],
             public_values: proof.user_public_values,
@@ -261,7 +271,7 @@ impl Prover {
             //vm_commitment: comm.vm,
         };
         tracing::info!("verifing stark proof");
-        UniversalVerifier::verify_stark_proof(&proof, &comm.serialize())
+        UniversalVerifier::verify_stark_proof(&proof, &self.get_app_vk())
             .map_err(|e| Error::VerifyProof(e.to_string()))?;
         tracing::info!("verifing stark proof done");
         Ok(proof)
