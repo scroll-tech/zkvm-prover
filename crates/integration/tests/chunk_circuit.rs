@@ -17,6 +17,11 @@ fn exec_chunk(wit: &ChunkWitness) -> eyre::Result<(ExecutionResult, u64)> {
         wit.blocks.len(),
         blk
     );
+    // check block numbers in wit are sequantial
+    for i in 1..wit.blocks.len() {
+        assert_eq!(wit.blocks[i].header.number, blk + i as u64);
+    }
+
     let stats = wit.stats();
     println!("chunk stats {:#?}", stats);
     let _chunk_info = execute(wit.clone()).unwrap();
