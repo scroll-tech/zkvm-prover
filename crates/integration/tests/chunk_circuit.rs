@@ -8,7 +8,7 @@ use scroll_zkvm_integration::{
     utils::metadata_from_chunk_witnesses,
 };
 use scroll_zkvm_prover::utils::vm::ExecutionResult;
-use scroll_zkvm_types::chunk::ChunkWitness;
+use scroll_zkvm_types::chunk::{execute, ChunkWitness};
 
 fn exec_chunk(wit: &ChunkWitness) -> eyre::Result<(ExecutionResult, u64)> {
     let blk = wit.blocks[0].header.number;
@@ -19,6 +19,8 @@ fn exec_chunk(wit: &ChunkWitness) -> eyre::Result<(ExecutionResult, u64)> {
     );
     let stats = wit.stats();
     println!("chunk stats {:#?}", stats);
+    let _chunk_info = execute(wit.clone()).unwrap();
+    println!("precheck done");
     let exec_result = tester_execute::<ChunkProverTester>(wit, &[])?;
     let cycle_count = exec_result.total_cycle as u64;
     let cycle_per_gas = cycle_count / stats.total_gas_used;
