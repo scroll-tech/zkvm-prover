@@ -25,11 +25,12 @@ pub fn read_block_witness_from_testdata(block_n: usize) -> eyre::Result<BlockWit
             .join(testdata_fork_directory())
             .join("witnesses")
             .join(format!("{}.json", block_n)),
+        true,
     )
 }
 
 /// Utility function to read and deserialize block witness given the block number.
-pub fn read_block_witness<P>(path_witness: P) -> eyre::Result<BlockWitness>
+pub fn read_block_witness<P>(path_witness: P, use_legacy: bool) -> eyre::Result<BlockWitness>
 where
     P: AsRef<Path>,
 {
@@ -38,10 +39,15 @@ where
         return Err(eyre::eyre!("File not found: {:?}", path_witness.as_ref()));
     }
     let witness = File::open(path_witness)?;
-    Ok(BlockWitness::from(serde_json::from_reader::<
-        _,
-        sbv_primitives::legacy_types::BlockWitness,
-    >(witness)?))
+
+    Ok(if use_legacy {
+        BlockWitness::from(serde_json::from_reader::<
+            _,
+            sbv_primitives::legacy_types::BlockWitness,
+        >(witness)?)
+    } else {
+        serde_json::from_reader::<_, BlockWitness>(witness)?
+    })
 }
 
 pub struct ChunkProverTester;
@@ -121,7 +127,8 @@ impl ChunkTaskGenerator {
 
         let block_witnesses = paths
             .iter()
-            .map(read_block_witness)
+            // TODO: update the use_legacy flag when we have updated the testdata
+            .map(|p| read_block_witness(p, true))
             .collect::<eyre::Result<Vec<BlockWitness>>>()?;
 
         let witness = ChunkWitness::new(
@@ -144,9 +151,13 @@ pub fn get_witness_from_env_or_builder(
         Err(_) => return fallback_generator.get_or_build_witness(),
     };
 
+    let use_legacy = std::env::var("USE_LEGACY_WITNESS")
+        .map(|s| s.to_lowercase().as_str() == "true")
+        .unwrap_or_default();
+
     let block_witnesses = paths
         .iter()
-        .map(read_block_witness)
+        .map(|p| read_block_witness(p, use_legacy))
         .collect::<eyre::Result<Vec<BlockWitness>>>()?;
     Ok(ChunkWitness::new(
         &block_witnesses,
@@ -255,4 +266,20 @@ pub fn execute_multi(
                 },
             )
     }
+}
+
+#[test]
+fn print_ommers_hash_from_witness() -> Result<(), Box<dyn std::error::Error>> {
+    use sbv_core::BlockWitness;
+    use std::{fs::File, io::BufReader};
+
+    // Open and parse local JSON file "witness.json"
+    let file = File::open("witness.json")?;
+    let reader = BufReader::new(file);
+
+    let witness: BlockWitness = serde_json::from_reader(reader)?;
+
+    // Print the ommers_hash field from the header
+    println!("header.ommers_hash = {:?}", witness.header.ommers_hash);
+    Ok(())
 }
