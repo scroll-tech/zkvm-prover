@@ -60,7 +60,9 @@ openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", t
 openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false, features = [
   "parallel",
   "evm-prove",
-  "legacy-v1-3",
+  "legacy-v1-3-evm-verifier",
+  "tco",
+  "unprotected"
 ] }
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
 
@@ -115,7 +117,7 @@ metrics-util = "0.17"
 metrics-tracing-context = "0.16.0"
 rayon = "1.10"
 rkyv = "0.8"
-revm = "27"
+revm = "29"
 serde = { version = "1", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0" }
 serde_with = "3.11.0"
