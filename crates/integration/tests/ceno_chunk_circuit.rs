@@ -1,10 +1,12 @@
+use std::io::Write;
 use ceno_emul::{Platform, Program};
 use ceno_host::CenoStdin;
-use ceno_zkvm::e2e::{run_e2e_with_checkpoint, setup_platform, Checkpoint, Preset};
+use ceno_zkvm::e2e::{run_e2e_with_checkpoint, setup_platform, setup_platform_debug, Checkpoint, Preset};
 use ceno_zkvm::scheme::{create_backend, create_prover};
 use ff_ext::BabyBearExt4;
 use gkr_iop::cpu::default_backend_config;
 use mpcs::BasefoldDefault;
+use rkyv::util::AlignedVec;
 use scroll_zkvm_integration::{setup_logger, PartialProvingTask, ProverTester, WORKSPACE_ROOT};
 use scroll_zkvm_integration::testers::chunk::{get_witness_from_env_or_builder, preset_chunk, ChunkProverTester};
 
@@ -13,9 +15,10 @@ type E = BabyBearExt4;
 
 
 fn setup() -> (Program, Platform) {
-    let stack_size = 32768;
-    let heap_size = 2097152;
-    let pub_io_size = 16;
+    let stack_size = 128 * 1024 * 1024;
+    let heap_size = 128 * 1024 * 1024;
+    let pub_io_size = 128 * 1024 * 1024;
+    println!("stack_size: {stack_size:#x}, heap_size: {heap_size:#x}, pub_io_size: {pub_io_size:#x}");
 
     let elf_path = WORKSPACE_ROOT
         .join("target")
@@ -25,6 +28,7 @@ fn setup() -> (Program, Platform) {
     let elf = std::fs::read(elf_path).unwrap();
     let program = Program::load_elf(&elf, u32::MAX).unwrap();
     let platform = setup_platform(Preset::Ceno, &program, stack_size, heap_size, pub_io_size);
+    println!("{platform:#x?}");
     (program, platform)
 }
 
@@ -34,12 +38,14 @@ fn test_ceno_execute() -> eyre::Result<()> {
 
     let (program, platform) = setup();
 
-    let (max_num_variables, security_level) = default_backend_config();
+    let (_, security_level) = default_backend_config();
+    let max_num_variables = 26;
     let backend = create_backend::<E, Pcs>(max_num_variables, security_level);
 
     let mut hints = CenoStdin::default();
     let wit = get_witness_from_env_or_builder(&mut preset_chunk())?;
-    hints.write(&wit.build_guest_input()?)?;
+    let wit = wit.build_guest_input()?;
+    hints.write(&wit)?;
 
     let max_steps = usize::MAX;
     let result = run_e2e_with_checkpoint::<E, Pcs, _, _>(

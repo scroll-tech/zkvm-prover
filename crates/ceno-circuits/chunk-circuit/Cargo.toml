@@ -12,6 +12,7 @@ bincode = { workspace = true }
 scroll-zkvm-types-base = { workspace = true }
 scroll-zkvm-types-chunk = { workspace = true }
 #sbv-precompile = { workspace = true }
+rkyv = { workspace = true }
 
 [features]
 default = []
