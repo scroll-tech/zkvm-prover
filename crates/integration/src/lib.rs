@@ -82,7 +82,7 @@ pub trait PartialProvingTask: serde::Serialize {
 
     fn legacy_rkyv_archive(&self) -> eyre::Result<Vec<u8>>;
 
-    fn write_guest_input(&self, stdin: &mut StdIn) -> eyre::Result<()>
+    fn build_guest_input(&self) -> eyre::Result<Vec<u8>>
     where
         Self: Sized,
     {
@@ -93,8 +93,7 @@ pub trait PartialProvingTask: serde::Serialize {
                 bincode::serde::encode_to_vec(self, config)?
             }
         };
-        stdin.write_bytes(&bytes);
-        Ok(())
+        Ok(bytes)
     }
 }
 
@@ -192,7 +191,7 @@ pub trait ProverTester {
         use openvm_native_recursion::hints::Hintable;
 
         let mut stdin = StdIn::default();
-        witness.write_guest_input(&mut stdin)?;
+        stdin.write_bytes(&witness.build_guest_input()?);
 
         for proof in aggregated_proofs {
             let streams = proof.proofs[0].write();
@@ -234,7 +233,7 @@ impl<T: Clone, P: Clone> ProveVerifyOutcome<T, P> {
 }
 
 /// Setup test environment
-fn setup_logger() -> eyre::Result<()> {
+pub fn setup_logger() -> eyre::Result<()> {
     let fmt_layer = tracing_subscriber::fmt::layer()
         .pretty()
         .with_span_events(FmtSpan::CLOSE);

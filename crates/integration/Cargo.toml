@@ -29,6 +29,13 @@ openvm-circuit.workspace = true
 openvm-sdk = { workspace = true, default-features = false }
 openvm-native-recursion = { workspace = true, default-features = false }
 
+ceno_emul = { workspace = true }
+ceno_host = { workspace = true }
+ceno_zkvm = { workspace = true }
+gkr_iop = { workspace = true }
+ff_ext = { workspace = true }
+mpcs = { workspace = true }
+
 alloy-provider = { workspace = true }
 alloy-rpc-client.workspace = true
 alloy-transport = { workspace = true, features = ["throttle"] }

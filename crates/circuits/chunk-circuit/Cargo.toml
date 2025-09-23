@@ -6,10 +6,11 @@ repository.workspace = true
 version = "0.6.0"
 
 [dependencies]
+alloy-primitives = { workspace = true, features = ["native-keccak"] }
 bincode = { workspace = true }
 scroll-zkvm-types-circuit = { workspace = true }
 scroll-zkvm-types-chunk = { workspace = true }
-sbv-precompile = { workspace = true } 
+sbv-precompile = { workspace = true }
 
 openvm = { workspace = true, features = ["std", "getrandom-unsupported"] }
 openvm-k256 = { workspace = true }

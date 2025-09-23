@@ -53,7 +53,7 @@ fn main() -> eyre::Result<()> {
     let mut stdin = StdIn::default();
 
     let wit = get_witness_from_env_or_builder(&mut preset_chunk())?;
-    wit.write_guest_input(&mut stdin)?;
+    stdin.write_bytes(&wit.build_guest_input()?);
 
     run_with_metric_collection("OUTPUT_PATH", || {
         args.bench_from_exe::<SdkVmBuilder, _>("chunk-circuit", app_vm_config, elf, stdin)

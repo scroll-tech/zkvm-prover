@@ -1,0 +1,17 @@
+[package]
+name = "scroll-zkvm-ceno-chunk-circuit"
+edition.workspace = true
+readme.workspace = true
+repository.workspace = true
+version = "0.6.0"
+
+[dependencies]
+ceno_rt = { workspace = true }
+bincode = { workspace = true }
+#scroll-zkvm-types-circuit = { workspace = true }
+scroll-zkvm-types-base = { workspace = true }
+scroll-zkvm-types-chunk = { workspace = true }
+#sbv-precompile = { workspace = true }
+
+[features]
+default = []

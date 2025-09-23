@@ -6,6 +6,7 @@ members = [
   "crates/types/batch",
   "crates/types/bundle",
   "crates/types",
+  "crates/ceno-circuits/chunk-circuit",
   "crates/circuits/chunk-circuit",
   "crates/circuits/batch-circuit",
   "crates/circuits/bundle-circuit",
@@ -63,6 +64,17 @@ openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0",
   "legacy-v1-3",
 ] }
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
+
+# ceno guest lib
+ceno_rt = { git = "https://github.com/scroll-tech/ceno", branch = "chore/upgrade-toolchain" }
+
+# ceno host lib
+ceno_emul = { git = "https://github.com/scroll-tech/ceno", branch = "chore/upgrade-toolchain" }
+ceno_host = { git = "https://github.com/scroll-tech/ceno", branch = "chore/upgrade-toolchain" }
+ceno_zkvm = { git = "https://github.com/scroll-tech/ceno", branch = "chore/upgrade-toolchain" }
+gkr_iop = { git = "https://github.com/scroll-tech/ceno", branch = "chore/upgrade-toolchain" }
+ff_ext = { git = "https://github.com/scroll-tech/gkr-backend.git", package = "ff_ext", rev = "v1.0.0-alpha.6" }
+mpcs = { git = "https://github.com/scroll-tech/gkr-backend.git", package = "mpcs", rev = "v1.0.0-alpha.6" }
 
 # more openvm related libs
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.0" }
