@@ -69,7 +69,7 @@ test-execute-chunk:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test chunk_circuit test_execute -- --exact --nocapture
 
 test-ceno-chunk:
-	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test ceno_chunk_circuit test_ceno_execute -- --exact --nocapture
+	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test ceno_chunk_circuit test_ceno_execute --no-default-features -- --exact --nocapture
 
 test-execute-chunk-multi:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test chunk_circuit test_execute_multi -- --exact --nocapture
