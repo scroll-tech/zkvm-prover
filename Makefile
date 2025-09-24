@@ -1,3 +1,20 @@
+ifndef RUST_TARGET
+RUST_TARGET := $(if $(CARGO_BUILD_TARGET),$(CARGO_BUILD_TARGET),\
+                $(if $(TARGET),$(TARGET),\
+                  $(shell rustc -vV | sed -n 's/^host: //p')))
+endif
+RUST_TARGET_ARCH := $(firstword $(subst -, ,$(RUST_TARGET)))
+$(info Target: $(RUST_TARGET) ($(RUST_TARGET_ARCH)))
+
+ifeq ($(RUST_TARGET_ARCH),x86_64)
+  EXTRA_RUSTFLAGS := -C target-feature=+avx2
+  ifeq (,$(findstring $(EXTRA_RUSTFLAGS),$(RUSTFLAGS)))
+    RUSTFLAGS := $(strip $(RUSTFLAGS) $(EXTRA_RUSTFLAGS))
+  endif
+  export RUSTFLAGS
+endif
+$(info RUSTFLAGS: $(RUSTFLAGS))
+
 RUST_MIN_STACK ?= 16777216
 export RUST_MIN_STACK
 
