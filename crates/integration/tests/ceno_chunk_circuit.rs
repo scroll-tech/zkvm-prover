@@ -28,7 +28,6 @@ fn setup() -> (Program, Platform) {
     let elf = std::fs::read(elf_path).unwrap();
     let program = Program::load_elf(&elf, u32::MAX).unwrap();
     let platform = setup_platform(Preset::Ceno, &program, stack_size, heap_size, pub_io_size);
-    println!("{platform:#x?}");
     (program, platform)
 }
 
