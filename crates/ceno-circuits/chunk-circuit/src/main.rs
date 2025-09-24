@@ -15,6 +15,6 @@ fn main() {
     let fork_name = witness.fork_name;
     let chunk_info = execute(witness).expect("execution failed");
 
-    let _pi_hash = (chunk_info, fork_name).pi_hash();
-    // ceno_rt::commit(&pi_hash);
+    let pi_hash = (chunk_info, fork_name).pi_hash();
+    ceno_rt::commit(&pi_hash);
 }

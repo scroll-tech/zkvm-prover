@@ -8,7 +8,7 @@ use gkr_iop::cpu::default_backend_config;
 use mpcs::BasefoldDefault;
 use rkyv::util::AlignedVec;
 use scroll_zkvm_integration::{setup_logger, PartialProvingTask, ProverTester, WORKSPACE_ROOT};
-use scroll_zkvm_integration::testers::chunk::{get_witness_from_env_or_builder, preset_chunk, ChunkProverTester};
+use scroll_zkvm_integration::testers::chunk::{get_witness_from_env_or_builder, preset_chunk, ChunkProverTester, ChunkTaskGenerator};
 
 type Pcs = BasefoldDefault<E>;
 type E = BabyBearExt4;
@@ -43,7 +43,11 @@ fn test_ceno_execute() -> eyre::Result<()> {
     let backend = create_backend::<E, Pcs>(max_num_variables, security_level);
 
     let mut hints = CenoStdin::default();
-    let wit = get_witness_from_env_or_builder(&mut preset_chunk())?;
+    let mut chunk_generator = ChunkTaskGenerator {
+        block_range: vec![16525000],
+        ..Default::default()
+    };
+    let wit = get_witness_from_env_or_builder(&mut chunk_generator)?;
     let wit = wit.build_guest_input()?;
     hints.write(&wit)?;
 
