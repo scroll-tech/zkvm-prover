@@ -42,11 +42,7 @@ fn test_ceno_execute() -> eyre::Result<()> {
     let backend = create_backend::<E, Pcs>(max_num_variables, security_level);
 
     let mut hints = CenoStdin::default();
-    let mut chunk_generator = ChunkTaskGenerator {
-        block_range: vec![16525009],
-        ..Default::default()
-    };
-    let wit = get_witness_from_env_or_builder(&mut chunk_generator)?;
+    let wit = get_witness_from_env_or_builder(&mut preset_chunk())?;
     let wit = wit.build_guest_input()?;
     hints.write(&wit)?;
 
