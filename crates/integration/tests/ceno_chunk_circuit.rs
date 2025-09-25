@@ -43,7 +43,7 @@ fn test_ceno_execute() -> eyre::Result<()> {
 
     let mut hints = CenoStdin::default();
     let mut chunk_generator = ChunkTaskGenerator {
-        block_range: vec![16525000],
+        block_range: vec![16525009],
         ..Default::default()
     };
     let wit = get_witness_from_env_or_builder(&mut chunk_generator)?;
