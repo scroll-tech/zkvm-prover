@@ -1525,7 +1525,7 @@ dependencies = [
 [[package]]
 name = "ceno-examples"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=chore%2Fupgrade-toolchain#419e7e73769bad014ecfb9d1282ef43dce8d8414"
+source = "git+https://github.com/scroll-tech/ceno?branch=chore%2Fupgrade-toolchain#7ed41cbf3efe0bc99962a66053185b416207d74f"
 dependencies = [
  "glob",
 ]
@@ -1533,7 +1533,7 @@ dependencies = [
 [[package]]
 name = "ceno_emul"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=chore%2Fupgrade-toolchain#419e7e73769bad014ecfb9d1282ef43dce8d8414"
+source = "git+https://github.com/scroll-tech/ceno?branch=chore%2Fupgrade-toolchain#7ed41cbf3efe0bc99962a66053185b416207d74f"
 dependencies = [
  "anyhow",
  "ceno_rt",
@@ -1555,7 +1555,7 @@ dependencies = [
 [[package]]
 name = "ceno_host"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=chore%2Fupgrade-toolchain#419e7e73769bad014ecfb9d1282ef43dce8d8414"
+source = "git+https://github.com/scroll-tech/ceno?branch=chore%2Fupgrade-toolchain#7ed41cbf3efe0bc99962a66053185b416207d74f"
 dependencies = [
  "anyhow",
  "ceno_emul",
@@ -1567,7 +1567,7 @@ dependencies = [
 [[package]]
 name = "ceno_rt"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=chore%2Fupgrade-toolchain#419e7e73769bad014ecfb9d1282ef43dce8d8414"
+source = "git+https://github.com/scroll-tech/ceno?branch=chore%2Fupgrade-toolchain#7ed41cbf3efe0bc99962a66053185b416207d74f"
 dependencies = [
  "getrandom 0.2.16",
  "rkyv",
@@ -1576,7 +1576,7 @@ dependencies = [
 [[package]]
 name = "ceno_zkvm"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=chore%2Fupgrade-toolchain#419e7e73769bad014ecfb9d1282ef43dce8d8414"
+source = "git+https://github.com/scroll-tech/ceno?branch=chore%2Fupgrade-toolchain#7ed41cbf3efe0bc99962a66053185b416207d74f"
 dependencies = [
  "base64",
  "bincode 1.3.3",
@@ -2717,7 +2717,7 @@ dependencies = [
 [[package]]
 name = "gkr_iop"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=chore%2Fupgrade-toolchain#419e7e73769bad014ecfb9d1282ef43dce8d8414"
+source = "git+https://github.com/scroll-tech/ceno?branch=chore%2Fupgrade-toolchain#7ed41cbf3efe0bc99962a66053185b416207d74f"
 dependencies = [
  "bincode 1.3.3",
  "either",
@@ -3365,7 +3365,7 @@ checksum = "e04d7f318608d35d4b61ddd75cbdaee86b023ebe2bd5a66ee0915f0bf93095a9"
 dependencies = [
  "hermit-abi",
  "libc",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
