@@ -20,6 +20,13 @@ use types_base::{
 /// But in guest mode, it must be provided.
 pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
     let chain = Chain::from_id(witness.blocks[0].chain_id);
+    let prev_blockhash = witness.blocks[0].header.parent_hash();
+    let post_blockhash = witness
+        .blocks
+        .last()
+        .expect("witnesses can not be empty")
+        .header
+        .hash_slow();
     let chain_spec = build_chain_spec_force_hardfork(
         chain,
         match witness.fork_name {
@@ -70,8 +77,8 @@ pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
         prev_msg_queue_hash: witness.prev_msg_queue_hash,
         post_msg_queue_hash,
         block_ctxs: blocks.iter().map(block_to_context).collect(),
-        prev_blockhash: B256::default(),
-        post_blockhash: B256::default(),
+        prev_blockhash,
+        post_blockhash,
         encryption_key: witness.validium.map(|input| {
             SecretKey::try_from_bytes(input.secret_key)
                 .expect("validium key")

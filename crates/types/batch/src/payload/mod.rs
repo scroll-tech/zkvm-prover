@@ -9,8 +9,6 @@ pub mod v7;
 
 pub mod v8;
 
-pub mod validium;
-
 /// The number data bytes we pack each BLS12-381 scalar into. The most-significant byte is 0.
 pub const N_DATA_BYTES_PER_COEFFICIENT: usize = 31;
 

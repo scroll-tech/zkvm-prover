@@ -1,13 +1,11 @@
 use types_base::public_inputs::{batch::BatchInfo, chunk::ChunkInfo};
 
-use crate::{
-    header::{BatchHeader, ValidiumBatchHeader, validium::BatchHeaderValidium},
-    payload::validium::{ValidiumEnvelopeV1, ValidiumPayloadV1},
-};
+use crate::header::{BatchHeader, ValidiumBatchHeader, validium::BatchHeaderValidium};
 
 pub struct ValidiumBuilderArgs {
     pub header: BatchHeaderValidium,
     pub chunk_infos: Vec<ChunkInfo>,
+    #[allow(dead_code)]
     pub batch_bytes: Vec<u8>,
 }
 
@@ -29,11 +27,20 @@ pub struct ValidiumBatchInfoBuilder;
 
 impl ValidiumBatchInfoBuilder {
     pub fn build(args: ValidiumBuilderArgs) -> BatchInfo {
-        let envelope = ValidiumEnvelopeV1::from_bytes(args.batch_bytes.as_slice());
-        let payload = ValidiumPayloadV1::from_envelope(&envelope);
+        match &args.header {
+            BatchHeaderValidium::V1(_) => {
+                // nothing to do for v1 header since blob data is not included in validium
+            }
+        }
 
-        // Validate payload (batch data).
-        let (first_chunk, last_chunk) = payload.validate(&args.header, args.chunk_infos.as_slice());
+        let (first_chunk, last_chunk) = (
+            args.chunk_infos
+                .first()
+                .expect("at least one chunk in batch"),
+            args.chunk_infos
+                .last()
+                .expect("at least one chunk in batch"),
+        );
 
         // Additionally check that the batch's commitment field is set correctly.
         assert_eq!(last_chunk.post_blockhash.to_vec(), args.header.commitment());
