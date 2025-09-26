@@ -181,6 +181,8 @@ impl std::fmt::Display for ChunkInfo {
                     .field("post_msg_queue_hash", &self.0.post_msg_queue_hash)
                     .field("tx_data_length", &self.0.tx_data_length)
                     .field("initial_block_number", &self.0.initial_block_number)
+                    .field("prev_blockhash", &self.0.prev_blockhash)
+                    .field("post_blockhash", &self.0.post_blockhash)
                     .field("block_ctxs", &"<omitted>")
                     .finish()
             }
