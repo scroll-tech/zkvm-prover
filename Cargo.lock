@@ -7618,7 +7618,12 @@ dependencies = [
 name = "scroll-zkvm-types-chunk"
 version = "0.6.0"
 dependencies = [
+ "alloy-consensus",
  "alloy-primitives",
+ "k256 0.13.4 (git+https://github.com/openvm-org/openvm.git?tag=v1.4.0)",
+ "openvm-ecc-guest",
+ "openvm-pairing",
+ "openvm-sha2",
  "rkyv",
  "sbv-core",
  "sbv-helpers",
