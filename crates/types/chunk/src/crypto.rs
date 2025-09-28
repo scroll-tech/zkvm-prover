@@ -2,6 +2,7 @@ use alloy_consensus::crypto::RecoveryError;
 use alloy_primitives::Address;
 use sbv_primitives::types::revm::precompile;
 use sbv_primitives::types::revm::precompile::PrecompileError;
+use std::sync::Arc;
 
 mod bn254;
 mod secp256k1;
@@ -18,6 +19,8 @@ impl Crypto {
     /// Panics if a crypto provider has already been installed.
     pub fn install() {
         assert!(precompile::install_crypto(Self));
+        alloy_consensus::crypto::install_default_provider(Arc::new(Self))
+            .expect("crypto provider already set");
     }
 }
 
