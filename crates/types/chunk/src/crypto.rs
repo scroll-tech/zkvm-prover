@@ -3,10 +3,8 @@ use alloy_primitives::Address;
 use sbv_primitives::types::revm::precompile;
 use sbv_primitives::types::revm::precompile::PrecompileError;
 
-
-mod secp256k1;
 mod bn254;
-
+mod secp256k1;
 
 /// crypto operations provider
 #[derive(Debug)]
@@ -63,15 +61,14 @@ impl precompile::Crypto for Crypto {
     }
 }
 
-
 impl alloy_consensus::crypto::backend::CryptoProvider for Crypto {
     #[inline]
-    fn recover_signer_unchecked(&self, sig: &[u8; 65], msg: &[u8; 32]) -> Result<Address, RecoveryError> {
-        secp256k1::ecrecover(
-            (&sig[..64]).try_into().unwrap(),
-            sig[64],
-            msg
-        )
+    fn recover_signer_unchecked(
+        &self,
+        sig: &[u8; 65],
+        msg: &[u8; 32],
+    ) -> Result<Address, RecoveryError> {
+        secp256k1::ecrecover((&sig[..64]).try_into().unwrap(), sig[64], msg)
             .map(|res| Address::from_slice(&res[12..]))
             .map_err(RecoveryError::from_source)
     }
