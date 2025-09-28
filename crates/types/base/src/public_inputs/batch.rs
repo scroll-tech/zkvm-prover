@@ -83,7 +83,7 @@ impl BatchInfo {
     ///     withdraw root ||
     ///     prev msg queue hash ||
     ///     post msg queue hash
-    /// )    
+    /// )
     fn pi_hash_euclidv2(&self) -> B256 {
         keccak256(
             std::iter::empty()
@@ -108,9 +108,23 @@ impl BatchInfo {
     }
 
     /// Public input hash for a L3 validium @ v1.
-    fn pi_hash_validium_v1(&self) -> B256 {
+    ///
+    /// keccak(
+    ///     version ||
+    ///     parent state root ||
+    ///     parent batch hash ||
+    ///     state root ||
+    ///     batch hash ||
+    ///     chain id ||
+    ///     withdraw root ||
+    ///     prev msg queue hash ||
+    ///     post msg queue hash
+    ///     encryption key
+    /// )
+    fn pi_hash_validium_v1(&self, version: Version) -> B256 {
         keccak256(
             std::iter::empty()
+                .chain(&[version.as_version_byte()])
                 .chain(self.parent_state_root.as_slice())
                 .chain(self.parent_batch_hash.as_slice())
                 .chain(self.state_root.as_slice())
@@ -142,7 +156,7 @@ impl MultiVersionPublicInputs for BatchInfo {
             (Domain::Scroll, STFVersion::V6) => self.pi_hash_by_fork(ForkName::EuclidV1),
             (Domain::Scroll, STFVersion::V7) => self.pi_hash_by_fork(ForkName::EuclidV2),
             (Domain::Scroll, STFVersion::V8) => self.pi_hash_by_fork(ForkName::Feynman),
-            (Domain::Validium, STFVersion::V1) => self.pi_hash_validium_v1(),
+            (Domain::Validium, STFVersion::V1) => self.pi_hash_validium_v1(version),
             (domain, stf_version) => {
                 unreachable!("unsupported version=({domain:?}, {stf_version:?})")
             }
