@@ -83,6 +83,7 @@ sbv-utils = { git = "https://github.com/scroll-tech/stateless-block-verifier", b
 sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
 sbv-precompile = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
 
+alloy-consensus = "1.0"
 alloy-provider = "1.0"
 alloy-rpc-client = "1.0"
 alloy-transport = "1.0"
