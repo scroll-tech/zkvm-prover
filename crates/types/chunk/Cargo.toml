@@ -19,6 +19,7 @@ serde.workspace = true
 
 openvm-ecc-guest = { workspace = true }
 openvm-k256 = { workspace = true }
+openvm-p256 = { workspace = true }
 openvm-sha2 = { workspace = true }
 openvm-pairing = { workspace = true }
 

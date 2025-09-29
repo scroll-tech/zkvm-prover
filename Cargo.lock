@@ -7624,6 +7624,7 @@ dependencies = [
  "openvm-ecc-guest",
  "openvm-pairing",
  "openvm-sha2",
+ "p256 0.13.2 (git+https://github.com/openvm-org/openvm.git?tag=v1.4.0)",
  "rkyv",
  "sbv-core",
  "sbv-helpers",
