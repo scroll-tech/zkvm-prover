@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 mod bn254;
 mod secp256k1;
+mod secp256r1;
 
 /// crypto operations provider
 #[derive(Debug)]
@@ -61,6 +62,11 @@ impl precompile::Crypto for Crypto {
         secp256k1::ecrecover(sig, recid, msg)
             .ok()
             .ok_or_else(|| PrecompileError::other("ecrecover failed"))
+    }
+
+    #[inline]
+    fn secp256r1_verify_signature(&self, msg: &[u8; 32], sig: &[u8; 64], pk: &[u8; 64]) -> bool {
+        secp256r1::secp256r1_verify_signature(msg, sig, pk).is_some()
     }
 }
 
