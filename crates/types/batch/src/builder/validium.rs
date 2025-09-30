@@ -1,26 +1,22 @@
-use types_base::public_inputs::{batch::BatchInfo, chunk::ChunkInfo};
-
-use crate::{
-    header::{BatchHeader, ValidiumBatchHeader, validium::BatchHeaderValidium},
-    payload::validium::{ValidiumEnvelopeV1, ValidiumPayloadV1},
+use types_base::{
+    public_inputs::{batch::BatchInfo, chunk::ChunkInfo},
+    version::Version,
 };
 
+use crate::header::{BatchHeader, ValidiumBatchHeader, validium::BatchHeaderValidium};
+
 pub struct ValidiumBuilderArgs {
+    pub version: u8,
     pub header: BatchHeaderValidium,
     pub chunk_infos: Vec<ChunkInfo>,
-    pub batch_bytes: Vec<u8>,
 }
 
 impl ValidiumBuilderArgs {
-    pub fn new(
-        header: BatchHeaderValidium,
-        chunk_infos: Vec<ChunkInfo>,
-        batch_bytes: Vec<u8>,
-    ) -> Self {
+    pub fn new(version: u8, header: BatchHeaderValidium, chunk_infos: Vec<ChunkInfo>) -> Self {
         Self {
+            version,
             header,
             chunk_infos,
-            batch_bytes,
         }
     }
 }
@@ -29,14 +25,33 @@ pub struct ValidiumBatchInfoBuilder;
 
 impl ValidiumBatchInfoBuilder {
     pub fn build(args: ValidiumBuilderArgs) -> BatchInfo {
-        let envelope = ValidiumEnvelopeV1::from_bytes(args.batch_bytes.as_slice());
-        let payload = ValidiumPayloadV1::from_envelope(&envelope);
+        // Check that the batch's STF-version is correct.
+        let version = Version::from(args.version);
+        assert_eq!(version.stf_version as u8, args.header.version());
 
-        // Validate payload (batch data).
-        let (first_chunk, last_chunk) = payload.validate(&args.header, args.chunk_infos.as_slice());
+        match &args.header {
+            BatchHeaderValidium::V1(_) => {
+                // nothing to do for v1 header since blob data is not included in validium
+            }
+        }
 
-        // Additionally check that the batch's commitment field is set correctly.
+        let (first_chunk, last_chunk) = (
+            args.chunk_infos
+                .first()
+                .expect("at least one chunk in batch"),
+            args.chunk_infos
+                .last()
+                .expect("at least one chunk in batch"),
+        );
+
+        // Check that the batch's commitment field is set correctly.
         assert_eq!(last_chunk.post_blockhash.to_vec(), args.header.commitment());
+
+        // Check that the batch's state root is correct.
+        assert_eq!(last_chunk.post_state_root, args.header.post_state_root());
+
+        // Check that the batch's withdraw root is correct.
+        assert_eq!(last_chunk.withdraw_root, args.header.withdraw_root());
 
         BatchInfo {
             parent_state_root: first_chunk.prev_state_root,

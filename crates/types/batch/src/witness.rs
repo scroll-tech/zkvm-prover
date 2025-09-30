@@ -236,7 +236,7 @@ impl From<&BatchWitness> for BatchInfo {
                 BatchInfoBuilderV8::build(args)
             }
             ReferenceHeader::Validium(header) => ValidiumBatchInfoBuilder::build(
-                ValidiumBuilderArgs::new(*header, chunk_infos, witness.blob_bytes.to_vec()),
+                ValidiumBuilderArgs::new(witness.version, *header, chunk_infos),
             ),
         }
     }

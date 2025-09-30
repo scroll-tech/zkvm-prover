@@ -63,11 +63,27 @@ impl ValidiumBatchHeader for BatchHeaderValidium {
             Self::V1(header) => header.commitment(),
         }
     }
+    fn post_state_root(&self) -> B256 {
+        match self {
+            Self::V1(header) => header.post_state_root(),
+        }
+    }
+    fn withdraw_root(&self) -> B256 {
+        match self {
+            Self::V1(header) => header.withdraw_root(),
+        }
+    }
 }
 
 impl ValidiumBatchHeader for BatchHeaderValidiumV1 {
     fn commitment(&self) -> Vec<u8> {
         self.commitment.to_vec()
+    }
+    fn post_state_root(&self) -> B256 {
+        self.post_state_root
+    }
+    fn withdraw_root(&self) -> B256 {
+        self.withdraw_root
     }
 }
 
