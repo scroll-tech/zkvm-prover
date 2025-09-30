@@ -79,7 +79,7 @@ impl Prover {
             let segmentation_limits =
                 &mut app_config.app_vm_config.system.config.segmentation_limits;
             segmentation_limits.max_trace_height = segment_len as u32;
-            segmentation_limits.max_cells = 700_000_000_usize; // For 24G vram
+            segmentation_limits.max_cells = 1_200_000_000_usize; // For 24G vram
 
             let sdk = Sdk::new(app_config).expect("sdk init failed");
             // 45s for first time

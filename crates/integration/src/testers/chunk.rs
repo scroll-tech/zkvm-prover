@@ -37,11 +37,16 @@ where
         println!("File not found: {:?}", path_witness.as_ref());
         return Err(eyre::eyre!("File not found: {:?}", path_witness.as_ref()));
     }
-    let witness = File::open(path_witness)?;
-    Ok(BlockWitness::from(serde_json::from_reader::<
-        _,
-        sbv_primitives::legacy_types::BlockWitness,
-    >(witness)?))
+
+    if let Ok(ret) = serde_json::from_reader::<_, BlockWitness>(File::open(&path_witness)?) {
+        Ok(ret)
+    } else {
+        let witness = File::open(path_witness)?;
+        Ok(BlockWitness::from(serde_json::from_reader::<
+            _,
+            sbv_primitives::legacy_types::BlockWitness,
+        >(witness)?))
+    }
 }
 
 pub struct ChunkProverTester;
