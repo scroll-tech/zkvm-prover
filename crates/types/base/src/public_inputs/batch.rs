@@ -121,7 +121,7 @@ impl BatchInfo {
     ///     post msg queue hash
     ///     encryption key
     /// )
-    fn pi_hash_validium_v1(&self, version: Version) -> B256 {
+    fn pi_hash_validium(&self, version: Version) -> B256 {
         keccak256(
             std::iter::empty()
                 .chain(&[version.as_version_byte()])
@@ -156,7 +156,7 @@ impl MultiVersionPublicInputs for BatchInfo {
             (Domain::Scroll, STFVersion::V6) => self.pi_hash_by_fork(ForkName::EuclidV1),
             (Domain::Scroll, STFVersion::V7) => self.pi_hash_by_fork(ForkName::EuclidV2),
             (Domain::Scroll, STFVersion::V8) => self.pi_hash_by_fork(ForkName::Feynman),
-            (Domain::Validium, STFVersion::V1) => self.pi_hash_validium_v1(version),
+            (Domain::Validium, STFVersion::V1) => self.pi_hash_validium(version),
             (domain, stf_version) => {
                 unreachable!("unsupported version=({domain:?}, {stf_version:?})")
             }
