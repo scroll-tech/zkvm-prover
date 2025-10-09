@@ -3,39 +3,21 @@ use eyre::Ok;
 use sbv_primitives::types::consensus::TxL1Message;
 use scroll_zkvm_integration::testers::PATH_TESTDATA;
 use scroll_zkvm_integration::testers::chunk::read_block_witness;
+use scroll_zkvm_integration::testers::chunk::{exec_chunk, execute_multi};
+use scroll_zkvm_integration::utils::get_rayon_threads;
 use scroll_zkvm_integration::{
-    ProverTester, prove_verify, tester_execute,
+    ProverTester, prove_verify,
     testers::chunk::{
         ChunkProverTester, ChunkTaskGenerator, get_witness_from_env_or_builder, preset_chunk,
         preset_chunk_multiple,
     },
     utils::metadata_from_chunk_witnesses,
 };
-use scroll_zkvm_prover::utils::{read_json, vm::ExecutionResult};
+use scroll_zkvm_prover::utils::read_json;
 use scroll_zkvm_types::chunk::{ChunkWitness, SecretKey};
 use scroll_zkvm_types::public_inputs::Version;
 use std::env;
 use std::path::Path;
-
-fn exec_chunk(wit: &ChunkWitness) -> eyre::Result<(ExecutionResult, u64)> {
-    let blk = wit.blocks[0].header.number;
-    println!(
-        "task block num: {}, block[0] idx: {}",
-        wit.blocks.len(),
-        blk
-    );
-    let stats = wit.stats();
-    println!("chunk stats {:#?}", stats);
-    let exec_result = tester_execute::<ChunkProverTester>(wit, &[])?;
-    let cycle_count = exec_result.total_cycle as u64;
-    let cycle_per_gas = cycle_count / stats.total_gas_used;
-    println!(
-        "blk {blk}->{}, cycle {cycle_count}, gas {}, cycle-per-gas {cycle_per_gas}",
-        wit.blocks.last().unwrap().header.number,
-        stats.total_gas_used,
-    );
-    Ok((exec_result, stats.total_gas_used))
-}
 
 #[ignore = "can only run under eculidv2 hardfork"]
 #[test]
@@ -163,29 +145,18 @@ fn test_autofill_trie_nodes() -> eyre::Result<()> {
 
 #[test]
 fn test_execute_multi() -> eyre::Result<()> {
-    // use rayon::iter::{IntoParallelIterator, ParallelIterator};
-
     ChunkProverTester::setup(true)?;
 
-    // Initialize Rayon thread pool with 8 threads
-    let parallel = 8;
-    let pool = rayon::ThreadPoolBuilder::new()
-        .num_threads(parallel)
-        .build()
-        .unwrap();
+    let tasks = preset_chunk_multiple()
+        .into_iter()
+        .map(|mut task| task.get_or_build_witness().unwrap())
+        .collect::<Vec<_>>();
+
     // Execute tasks in parallel
-    let (total_gas, total_cycle) = pool.install(|| {
-        let init = (0u64, 0u64);
-        let adder =
-            |(gas1, cycle1): (u64, u64), (gas2, cycle2): (u64, u64)| (gas1 + gas2, cycle1 + cycle2);
-        preset_chunk_multiple()
-            .into_iter()
-            .map(|mut task| -> (u64, u64) {
-                let (exec_result, gas) = exec_chunk(&task.get_or_build_witness().unwrap()).unwrap();
-                (gas, exec_result.total_cycle)
-            })
-            .fold(init, adder)
-    });
+    let (total_gas, total_cycle) = rayon::ThreadPoolBuilder::new()
+        .num_threads(get_rayon_threads())
+        .build()?
+        .install(execute_multi(tasks));
 
     println!(
         "Total gas: {}, Total cycles: {}, Average cycle/gas: {}",
