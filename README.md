@@ -8,9 +8,9 @@ This repository contains the following member crates:
 
 - [scroll-zkvm-types](./crates/circuits/types): Primitive and Common types used in project and being exported. It is an aggregation of a series of crates:
   + [scroll-zkvm-types-base](./crates/circuits/types/base): Common types which is used project-wide and expected to be recognized beyond project
-  + [scroll-zkvm-types-base](./crates/circuits/types/chunk): Like the base crate, but in the project, these types are only related to chunk circuit
-  + [scroll-zkvm-types-base](./crates/circuits/types/batch): Like the base crate, but in the project, these types are only related to batch circuit
-  + [scroll-zkvm-types-base](./crates/circuits/types/bundle): Like the base crate, but in the project, these types are only related to bundle circuit
+  + [scroll-zkvm-types-chunk](./crates/circuits/types/chunk): Like the base crate, but in the project, these types are only related to chunk circuit
+  + [scroll-zkvm-types-batch](./crates/circuits/types/batch): Like the base crate, but in the project, these types are only related to batch circuit
+  + [scroll-zkvm-types-bundle](./crates/circuits/types/bundle): Like the base crate, but in the project, these types are only related to bundle circuit
 - [scroll-zkvm-chunk-circuit](./crates/circuits/chunk-circuit): Circuit for verification of a Scroll [chunk](TODO:doc)
 - [scroll-zkvm-batch-circuit](./crates/circuits/batch-circuit): Circuit for verification of a Scroll [batch](TODO:doc)
 - [scroll-zkvm-bundle-circuit](./crates/circuits/bundle-circuit): Circuit for verification of a Scroll [bundle](TODO:doc)
