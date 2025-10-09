@@ -28,6 +28,12 @@ pub trait BatchHeader {
 pub trait ValidiumBatchHeader: BatchHeader {
     /// The commitment attached to the batch header.
     fn commitment(&self) -> Vec<u8>;
+
+    /// The state root after applying batch.
+    fn post_state_root(&self) -> B256;
+
+    /// The withdraw root from the last block in the batch.
+    fn withdraw_root(&self) -> B256;
 }
 
 /// Reference header indicate the version of batch header base on which batch hash

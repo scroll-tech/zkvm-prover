@@ -352,7 +352,7 @@ pub fn build_batch_witnesses_validium(
         .collect::<eyre::Result<Vec<_>>>()?;
 
     // collect tx bytes from chunk tasks
-    let (meta_chunk_sizes, chunk_digests, chunk_tx_bytes) = chunks.iter().fold(
+    let (_, chunk_digests, _) = chunks.iter().fold(
         (Vec::new(), Vec::new(), Vec::new()),
         |(mut meta_chunk_sizes, mut chunk_digests, mut payload_bytes), chunk_wit| {
             let tx_bytes = blks_tx_bytes(chunk_wit.blocks.iter());
@@ -368,69 +368,8 @@ pub fn build_batch_witnesses_validium(
         assert_eq!(digest, &chunk_info.tx_data_digest);
     }
 
-    const LEGACY_MAX_CHUNKS: usize = 45;
-
-    let meta_chunk_bytes = {
-        let valid_chunk_size = chunks.len() as u16;
-        meta_chunk_sizes
-            .into_iter()
-            .chain(std::iter::repeat(0))
-            .take(LEGACY_MAX_CHUNKS)
-            .fold(
-                Vec::from(valid_chunk_size.to_be_bytes()),
-                |mut bytes, len| {
-                    bytes.extend_from_slice(&(len as u32).to_be_bytes());
-                    bytes
-                },
-            )
-    };
-
     // collect all data together for payload
     let version = testing_version_validium();
-    let mut payload = if version.fork >= ForkName::EuclidV2 {
-        Vec::new()
-    } else {
-        meta_chunk_bytes.clone()
-    };
-
-    if version.fork >= ForkName::EuclidV2 {
-        let num_blocks = chunks.iter().map(|w| w.blocks.len()).sum::<usize>() as u16;
-        let prev_msg_queue_hash = chunks[0].prev_msg_queue_hash;
-        let initial_block_number = chunks[0].blocks[0].header.number;
-        let post_msg_queue_hash = chunk_infos
-            .last()
-            .expect("at least one chunk")
-            .post_msg_queue_hash;
-
-        payload.extend_from_slice(prev_msg_queue_hash.as_slice());
-        payload.extend_from_slice(post_msg_queue_hash.as_slice());
-        payload.extend(initial_block_number.to_be_bytes());
-        payload.extend(num_blocks.to_be_bytes());
-        assert_eq!(payload.len(), 74);
-        for chunk_info in &chunk_infos {
-            for ctx in &chunk_info.block_ctxs {
-                payload.extend(ctx.to_bytes());
-            }
-        }
-        assert_eq!(payload.len(), 74 + 52 * num_blocks as usize);
-    }
-    payload.extend(chunk_tx_bytes);
-    // compress ...
-    let compressed_payload = zstd_encode(&payload);
-
-    let heading = compressed_payload.len() as u32 + ((version.as_version_byte() as u32) << 24);
-
-    let blob_bytes = if version.fork >= ForkName::EuclidV2 {
-        let mut blob_bytes = Vec::from(heading.to_be_bytes());
-        blob_bytes.push(1u8); // compressed flag
-        blob_bytes.extend(compressed_payload);
-        blob_bytes.resize(4096 * 31, 0);
-        blob_bytes
-    } else {
-        let mut blob_bytes = vec![1];
-        blob_bytes.extend(compressed_payload);
-        blob_bytes
-    };
 
     let last_chunk = chunk_infos.last().expect("at least 1 chunk in batch");
     let reference_header =
@@ -464,7 +403,7 @@ pub fn build_batch_witnesses_validium(
         chunk_proofs,
         chunk_infos,
         reference_header,
-        blob_bytes,
+        blob_bytes: Vec::default(),
         point_eval_witness: None,
         fork_name: version.fork,
     })
