@@ -9,7 +9,6 @@ version = "0.6.0"
 bincode = { workspace = true }
 scroll-zkvm-types-circuit = { workspace = true }
 scroll-zkvm-types-chunk = { workspace = true }
-sbv-precompile = { workspace = true } 
 
 openvm = { workspace = true, features = ["std", "getrandom-unsupported"] }
 openvm-k256 = { workspace = true }
@@ -23,6 +22,3 @@ openvm-keccak256-guest= { workspace = true }
 openvm-pairing-guest = { workspace = true, features = ["bn254"] }
 openvm-rv32im-guest= {  workspace = true }
 
-[features]
-default = ["openvm"]
-openvm = ["scroll-zkvm-types-chunk/openvm", "sbv-precompile/scroll-openvm"]
