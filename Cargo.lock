@@ -7179,7 +7179,7 @@ checksum = "28d3b2b1366ec20994f1fd18c3c594f05c5dd4bc44d8bb0c1c632c8d6829481f"
 [[package]]
 name = "sbv-core"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#d048f8d14a20ac35cf7b9fb5e00dac4c87159f08"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Fupgrade#59c7b1ca431b00c37d74e12f9e07c2851ff92ee0"
 dependencies = [
  "auto_impl",
  "cfg-if",
@@ -7188,7 +7188,6 @@ dependencies = [
  "rkyv",
  "sbv-helpers",
  "sbv-kv",
- "sbv-precompile",
  "sbv-primitives",
  "sbv-trie",
  "serde",
@@ -7199,7 +7198,7 @@ dependencies = [
 [[package]]
 name = "sbv-helpers"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#d048f8d14a20ac35cf7b9fb5e00dac4c87159f08"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Fupgrade#59c7b1ca431b00c37d74e12f9e07c2851ff92ee0"
 dependencies = [
  "tracing",
 ]
@@ -7207,7 +7206,7 @@ dependencies = [
 [[package]]
 name = "sbv-kv"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#d048f8d14a20ac35cf7b9fb5e00dac4c87159f08"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Fupgrade#59c7b1ca431b00c37d74e12f9e07c2851ff92ee0"
 dependencies = [
  "alloy-primitives",
  "auto_impl",
@@ -7215,20 +7214,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "sbv-precompile"
-version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#d048f8d14a20ac35cf7b9fb5e00dac4c87159f08"
-dependencies = [
- "openvm-ecc-guest",
- "openvm-pairing",
- "openvm-sha2",
- "sbv-primitives",
-]
-
-[[package]]
 name = "sbv-primitives"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#d048f8d14a20ac35cf7b9fb5e00dac4c87159f08"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Fupgrade#59c7b1ca431b00c37d74e12f9e07c2851ff92ee0"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.0.32",
@@ -7266,7 +7254,7 @@ dependencies = [
 [[package]]
 name = "sbv-trie"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#d048f8d14a20ac35cf7b9fb5e00dac4c87159f08"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Fupgrade#59c7b1ca431b00c37d74e12f9e07c2851ff92ee0"
 dependencies = [
  "alloy-rlp",
  "alloy-trie",
@@ -7282,7 +7270,7 @@ dependencies = [
 [[package]]
 name = "sbv-utils"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=master#d048f8d14a20ac35cf7b9fb5e00dac4c87159f08"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=chore%2Fupgrade#59c7b1ca431b00c37d74e12f9e07c2851ff92ee0"
 dependencies = [
  "alloy-provider",
  "alloy-rpc-client",
@@ -7475,7 +7463,6 @@ dependencies = [
  "openvm-pairing-guest",
  "openvm-rv32im-guest",
  "p256 0.13.2 (git+https://github.com/openvm-org/openvm.git?tag=v1.4.0)",
- "sbv-precompile",
  "scroll-zkvm-types-chunk",
  "scroll-zkvm-types-circuit",
 ]

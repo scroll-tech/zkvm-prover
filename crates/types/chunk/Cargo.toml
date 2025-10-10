@@ -29,4 +29,3 @@ types-base = { path = "../base", package = "scroll-zkvm-types-base"}
 default = []
 host = ["scroll-compress-ratio"]
 scroll-compress-ratio = ["sbv-core/scroll-compress-ratio"]
-openvm = ["sbv-core/scroll-openvm"]
