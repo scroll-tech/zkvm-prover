@@ -67,20 +67,19 @@ openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v
 # more openvm related libs
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.0" }
 
-sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/upgrade", features = [
+sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = [
   "scroll",
   "rkyv",
 ] }
-sbv-helpers = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/upgrade" }
-sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/upgrade", features = [
+sbv-helpers = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
+sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = [
   "scroll",
   "rkyv",
 ] }
-sbv-kv = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/upgrade" }
-sbv-utils = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/upgrade", features = [
+sbv-utils = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = [
   "scroll",
 ] }
-sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "chore/upgrade" }
+sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
 
 alloy-consensus = "1.0"
 alloy-provider = "1.0"
