@@ -11,6 +11,8 @@ ceno_crypto!(
 );
 
 fn main() {
+    CenoCrypto::install();
+
     let witness_bytes: &Archived<Vec<u8>> = ceno_rt::read();
 
     let config = bincode::config::standard();
