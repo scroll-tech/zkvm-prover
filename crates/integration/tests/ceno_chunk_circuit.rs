@@ -8,6 +8,7 @@ use mpcs::BasefoldDefault;
 use scroll_zkvm_integration::testers::chunk::{get_witness_from_env_or_builder, preset_chunk};
 use scroll_zkvm_integration::{PartialProvingTask, WORKSPACE_ROOT, setup_logger};
 use std::io::Write;
+use scroll_zkvm_types::chunk::execute;
 
 type Pcs = BasefoldDefault<E>;
 type E = BabyBearExt4;
@@ -44,6 +45,9 @@ fn test_ceno_execute() -> eyre::Result<()> {
 
     let mut hints = CenoStdin::default();
     let wit = get_witness_from_env_or_builder(&mut preset_chunk())?;
+    let chunk_info = execute(wit)?;
+    println!("chunk_info = {:#?}", chunk_info);
+
     let wit = wit.build_guest_input()?;
     hints.write(&wit)?;
 
