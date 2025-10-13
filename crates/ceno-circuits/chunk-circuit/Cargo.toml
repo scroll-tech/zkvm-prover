@@ -7,6 +7,7 @@ version = "0.6.0"
 
 [dependencies]
 ceno_rt = { workspace = true }
+ceno_crypto = { workspace = true }
 bincode = { workspace = true }
 #scroll-zkvm-types-circuit = { workspace = true }
 scroll-zkvm-types-base = { workspace = true }

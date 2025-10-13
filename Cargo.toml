@@ -66,15 +66,16 @@ openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0",
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
 
 # ceno guest lib
-ceno_rt = { git = "https://github.com/scroll-tech/ceno", branch = "chore/upgrade-toolchain" }
+ceno_rt = { git = "https://github.com/scroll-tech/ceno", branch = "feat/secp256k1-guest" }
+ceno_crypto = { git = "https://github.com/scroll-tech/ceno", branch = "feat/secp256k1-guest" }
 
 # ceno host lib
-ceno_emul = { git = "https://github.com/scroll-tech/ceno", branch = "chore/upgrade-toolchain" }
-ceno_host = { git = "https://github.com/scroll-tech/ceno", branch = "chore/upgrade-toolchain" }
-ceno_zkvm = { git = "https://github.com/scroll-tech/ceno", branch = "chore/upgrade-toolchain" }
-gkr_iop = { git = "https://github.com/scroll-tech/ceno", branch = "chore/upgrade-toolchain" }
-ff_ext = { git = "https://github.com/scroll-tech/gkr-backend.git", package = "ff_ext", rev = "v1.0.0-alpha.6" }
-mpcs = { git = "https://github.com/scroll-tech/gkr-backend.git", package = "mpcs", rev = "v1.0.0-alpha.6" }
+ceno_emul = { git = "https://github.com/scroll-tech/ceno", branch = "feat/secp256k1-guest" }
+ceno_host = { git = "https://github.com/scroll-tech/ceno", branch = "feat/secp256k1-guest" }
+ceno_zkvm = { git = "https://github.com/scroll-tech/ceno", branch = "feat/secp256k1-guest" }
+gkr_iop = { git = "https://github.com/scroll-tech/ceno", branch = "feat/secp256k1-guest" }
+ff_ext = { git = "https://github.com/scroll-tech/gkr-backend.git", rev = "v1.0.0-alpha.9" }
+mpcs = { git = "https://github.com/scroll-tech/gkr-backend.git", rev = "v1.0.0-alpha.9" }
 
 # more openvm related libs
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.0" }

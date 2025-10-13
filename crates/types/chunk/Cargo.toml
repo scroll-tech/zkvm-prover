@@ -17,11 +17,11 @@ sbv-trie = { workspace = true }
 sbv-primitives = { workspace = true, features = ["hardforks", "scroll-evm-types", "scroll-hardforks", "scroll-revm-types"] }
 serde.workspace = true
 
-openvm-ecc-guest = { workspace = true }
-openvm-k256 = { workspace = true }
-openvm-p256 = { workspace = true }
-openvm-sha2 = { workspace = true }
-openvm-pairing = { workspace = true, features = ["bn254"] }
+openvm-ecc-guest = { workspace = true, optional = true }
+openvm-k256 = { workspace = true, optional = true }
+openvm-p256 = { workspace = true, optional = true }
+openvm-sha2 = { workspace = true, optional = true }
+openvm-pairing = { workspace = true, features = ["bn254"], optional = true }
 
 types-base = { path = "../base", package = "scroll-zkvm-types-base"}
 
@@ -29,3 +29,4 @@ types-base = { path = "../base", package = "scroll-zkvm-types-base"}
 default = []
 host = ["scroll-compress-ratio"]
 scroll-compress-ratio = ["sbv-core/scroll-compress-ratio"]
+openvm = ["openvm-ecc-guest", "openvm-k256", "openvm-p256", "openvm-sha2", "openvm-pairing"]
