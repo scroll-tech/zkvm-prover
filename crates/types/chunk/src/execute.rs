@@ -38,7 +38,6 @@ pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
         &witness.blocks,
         chain_spec,
         witness.compression_ratios,
-        witness.cached_trie,
     )
     .map_err(|e| format!("verify error: {e}"))?;
 
