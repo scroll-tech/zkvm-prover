@@ -1,8 +1,8 @@
 use alloy_primitives::B256;
 use sbv_core::{verifier::StateCommitMode, witness::BlockWitness};
 use sbv_primitives::U256;
-use std::collections::HashSet;
 use sbv_trie::PartialStateTrie;
+use std::collections::HashSet;
 use types_base::{fork_name::ForkName, public_inputs::chunk::ChunkInfo};
 
 /// The witness type accepted by the chunk-circuit.
@@ -155,9 +155,11 @@ impl From<ChunkWitness> for ChunkWitnessWithRspTrie {
             .first()
             .expect("at least one block")
             .prev_state_root;
-        let cached_trie =
-            PartialStateTrie::new(pre_state_root, value.blocks.iter().flat_map(|w| w.states.iter()))
-                .expect("trie from witness");
+        let cached_trie = PartialStateTrie::new(
+            pre_state_root,
+            value.blocks.iter().flat_map(|w| w.states.iter()),
+        )
+        .expect("trie from witness");
 
         for block in value.blocks.iter_mut() {
             block.states.clear();
