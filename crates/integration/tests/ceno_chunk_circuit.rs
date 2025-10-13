@@ -12,7 +12,7 @@ use std::io::Write;
 type Pcs = BasefoldDefault<E>;
 type E = BabyBearExt4;
 
-fn setup() -> (Program, Platform) {
+fn setup() -> (Vec<u8>, Program, Platform) {
     let stack_size = 128 * 1024 * 1024;
     let heap_size = 128 * 1024 * 1024;
     let pub_io_size = 128 * 1024 * 1024;
@@ -28,23 +28,26 @@ fn setup() -> (Program, Platform) {
     let elf = std::fs::read(elf_path).unwrap();
     let program = Program::load_elf(&elf, u32::MAX).unwrap();
     let platform = setup_platform(Preset::Ceno, &program, stack_size, heap_size, pub_io_size);
-    (program, platform)
+    (elf, program, platform)
 }
 
 #[test]
 fn test_ceno_execute() -> eyre::Result<()> {
     setup_logger()?;
 
-    let (program, platform) = setup();
+    let (elf, program, platform) = setup();
 
     let (_, security_level) = default_backend_config();
     let max_num_variables = 26;
     let backend = create_backend::<E, Pcs>(max_num_variables, security_level);
 
+
     let mut hints = CenoStdin::default();
     let wit = get_witness_from_env_or_builder(&mut preset_chunk())?;
     let wit = wit.build_guest_input()?;
     hints.write(&wit)?;
+
+    ceno_host::run(platform.clone(), &elf, &hints, None);
 
     let max_steps = usize::MAX;
     let result = run_e2e_with_checkpoint::<E, Pcs, _, _>(
