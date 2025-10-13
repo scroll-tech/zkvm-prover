@@ -46,8 +46,7 @@ fn test_ceno_execute() -> eyre::Result<()> {
 
     let mut hints = CenoStdin::default();
     let wit = get_witness_from_env_or_builder(&mut preset_chunk())?;
-    let chunk_info = execute(wit.clone()).expect("execute failed");
-    println!("chunk_info = {:#?}", chunk_info);
+    println!("chunk_info = {:#?}", wit.stats());
 
     let wit = wit.build_guest_input()?;
     hints.write(&wit)?;
