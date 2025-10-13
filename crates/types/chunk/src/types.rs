@@ -1,14 +1,14 @@
-use std::ops::Deref;
-
+use alloy_consensus::transaction::TxHashRef;
 use alloy_primitives::keccak256;
 use sbv_helpers::manually_drop_on_zkvm;
 use sbv_primitives::{
     B256, U256,
     types::{
         eips::Encodable2718,
-        reth::primitives::{Block, RecoveredBlock, SignedTransaction, TransactionSigned},
+        reth::primitives::{Block, RecoveredBlock, TransactionSigned},
     },
 };
+use std::ops::Deref;
 
 const LEGACY_DA_HEADER_LEN: usize = size_of::<u64>() // block number
         + size_of::<u64>() // timestamp
