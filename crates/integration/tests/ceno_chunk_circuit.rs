@@ -8,6 +8,7 @@ use mpcs::BasefoldDefault;
 use scroll_zkvm_integration::testers::chunk::{get_witness_from_env_or_builder, preset_chunk};
 use scroll_zkvm_integration::{PartialProvingTask, WORKSPACE_ROOT, setup_logger};
 use std::io::Write;
+use std::time::Instant;
 use scroll_zkvm_types::chunk::execute;
 
 type Pcs = BasefoldDefault<E>;
@@ -54,6 +55,7 @@ fn test_ceno_execute() -> eyre::Result<()> {
     ceno_host::run(platform.clone(), &elf, &hints, None);
 
     let max_steps = usize::MAX;
+    let start = Instant::now();
     let result = run_e2e_with_checkpoint::<E, Pcs, _, _>(
         create_prover(backend.clone()),
         program.clone(),
@@ -63,6 +65,8 @@ fn test_ceno_execute() -> eyre::Result<()> {
         max_steps,
         Checkpoint::Complete,
     );
+    let duration = start.elapsed();
+    println!("run_e2e_with_checkpoint took: {:?}", duration);
     let _proof = result.proof.expect("PrepSanityCheck do not provide proof");
     let _vk = result.vk.expect("PrepSanityCheck do not provide verifier");
 
