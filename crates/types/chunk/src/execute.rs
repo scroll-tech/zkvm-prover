@@ -34,13 +34,8 @@ pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
         post_state_root,
         withdraw_root,
         ..
-    } = verifier::run(
-        &witness.blocks,
-        chain_spec,
-        witness.compression_ratios,
-        witness.cached_trie,
-    )
-    .map_err(|e| format!("verify error: {e}"))?;
+    } = verifier::run(&witness.blocks, chain_spec, witness.compression_ratios)
+        .map_err(|e| format!("verify error: {e}"))?;
 
     let blocks = manually_drop_on_zkvm!(blocks);
     let mut rlp_buffer = manually_drop_on_zkvm!(Vec::with_capacity(2048));
