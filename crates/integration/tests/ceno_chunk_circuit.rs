@@ -33,9 +33,34 @@ fn setup() -> (Vec<u8>, Program, Platform) {
     (elf, program, platform)
 }
 
+use once_cell::sync::OnceCell;
+use tracing_forest::ForestLayer;
+use tracing_subscriber::{Registry, fmt, layer::SubscriberExt, util::SubscriberInitExt, filter::filter_fn};
+
+static PROFILING_INIT: OnceCell<()> = OnceCell::new();
+
+fn setup_ceno_profiling_logger(level: u32) {
+    let _ = PROFILING_INIT.get_or_init(|| {
+        let profiling_level = level;
+        let filter_by_profiling_level = filter_fn(move |metadata| {
+            (1..=profiling_level)
+                .map(|i| format!("profiling_{i}"))
+                .any(|field| metadata.fields().field(&field).is_some())
+        });
+        let fmt_layer = fmt::layer().compact().with_thread_ids(false).with_thread_names(false).without_time();
+
+        Registry::default()
+            .with(ForestLayer::default())
+            .with(fmt_layer)
+            .with(filter_by_profiling_level)
+            .try_init()
+            .ok();
+    });
+}
+
 #[test]
 fn test_ceno_execute() -> eyre::Result<()> {
-    setup_logger()?;
+    setup_ceno_profiling_logger(2);
 
     let (elf, program, platform) = setup();
 
