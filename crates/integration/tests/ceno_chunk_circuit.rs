@@ -81,9 +81,9 @@ fn test_ceno_execute() -> eyre::Result<()> {
     let max_steps = usize::MAX;
     let start = Instant::now();
     let result = run_e2e_with_checkpoint::<E, Pcs, _, _>(
-        create_prover(backend.clone()),
-        program.clone(),
-        platform.clone(),
+        create_prover(backend),
+        program,
+        platform,
         &Vec::from(&hints),
         &[],
         max_steps,
