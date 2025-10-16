@@ -25,5 +25,5 @@ openvm-rv32im-guest= {  workspace = true }
 
 
 [features]
-default = ["scroll"]
+default = ["scroll", "scroll-zkvm-types-chunk/openvm"]
 scroll = ["scroll-zkvm-types-chunk/scroll"]

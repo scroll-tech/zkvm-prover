@@ -1,0 +1,29 @@
+[package]
+name = "ceno-integration-test"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+bincode.workspace = true
+eyre.workspace = true
+ceno_emul.workspace = true
+ceno_host.workspace = true
+ceno_zkvm.workspace = true
+gkr_iop.workspace = true
+ff_ext.workspace = true
+mpcs.workspace = true
+scroll-zkvm-types.workspace = true
+cargo_metadata.workspace = true
+serde_json.workspace = true
+sbv-core.workspace = true
+sbv-primitives.workspace = true
+scroll-zkvm-types-chunk.workspace = true
+
+[features]
+default = []
+scroll = ["scroll-zkvm-types-chunk/scroll", "scroll-zkvm-types-chunk/host"]
+
