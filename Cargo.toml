@@ -68,15 +68,15 @@ openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0",
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
 
 # ceno guest lib
-ceno_rt = { git = "https://github.com/scroll-tech/ceno" }
-ceno_crypto = { git = "https://github.com/scroll-tech/ceno" }
+ceno_rt = { git = "https://github.com/scroll-tech/ceno", branch = "feat/gpu-bb31-hal" }
+ceno_crypto = { git = "https://github.com/scroll-tech/ceno", branch = "feat/gpu-bb31-hal" }
 
 # ceno host lib
-ceno_emul = { git = "https://github.com/scroll-tech/ceno" }
-ceno_host = { git = "https://github.com/scroll-tech/ceno" }
-ceno_zkvm = { git = "https://github.com/scroll-tech/ceno" }
-ceno_sha2 = { git = "https://github.com/scroll-tech/ceno" }
-gkr_iop = { git = "https://github.com/scroll-tech/ceno" }
+ceno_emul = { git = "https://github.com/scroll-tech/ceno", branch = "feat/gpu-bb31-hal" }
+ceno_host = { git = "https://github.com/scroll-tech/ceno", branch = "feat/gpu-bb31-hal" }
+ceno_zkvm = { git = "https://github.com/scroll-tech/ceno", branch = "feat/gpu-bb31-hal" }
+ceno_sha2 = { git = "https://github.com/scroll-tech/ceno", branch = "feat/gpu-bb31-hal" }
+gkr_iop = { git = "https://github.com/scroll-tech/ceno", branch = "feat/gpu-bb31-hal" }
 ff_ext = { git = "https://github.com/scroll-tech/gkr-backend.git", rev = "v1.0.0-alpha.9" }
 mpcs = { git = "https://github.com/scroll-tech/gkr-backend.git", rev = "v1.0.0-alpha.9" }
 
@@ -138,6 +138,7 @@ thiserror = "2"
 tracing = "0.1"
 vm-zstd = { git = "https://github.com/scroll-tech/rust-zstd-decompressor.git", branch = "master" }
 toml = "0.8.14"
+tracing-forest = { version = "0.1.6" }
 tracing-subscriber = "0.3"
 sysinfo = { version = "0.35", default-features = false }
 bytesize = "2.0.1"
@@ -183,3 +184,15 @@ strip = false
 
 [profile.bench]
 inherits = "profiling"
+
+# [patch."https://github.com/scroll-tech/ceno"]
+# ceno_rt = { path = "../ceno/ceno_rt", package = "ceno_rt" }
+# ceno_crypto = { path = "../ceno/guest_libs/crypto", package = "ceno_crypto" }
+# ceno_emul = { path = "../ceno/ceno_emul", package = "ceno_emul" }
+# ceno_host = { path = "../ceno/ceno_host", package = "ceno_host" }
+# ceno_zkvm = { path = "../ceno/ceno_zkvm", package = "ceno_zkvm" }
+# ceno_sha2 = { path = "../ceno/guest_libs/sha2", package = "ceno_sha2" }
+# gkr_iop = { path = "../ceno/gkr_iop", package = "gkr_iop" }
+# 
+# [patch."ssh://git@github.com/scroll-tech/ceno-gpu.git"]
+# ceno_gpu = { path = "../ceno-gpu/cuda_hal", package = "cuda_hal" }

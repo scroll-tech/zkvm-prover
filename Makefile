@@ -34,6 +34,13 @@ else
 CARGO_CONFIG_FLAG =
 endif
 
+# Set CENO config if GPU=1 is set
+ifeq ($(GPU),1)
+CENO_CONFIG_FLAG = --features ceno-integration-test/cuda
+else
+CENO_CONFIG_FLAG =
+endif
+
 download-release:
 	sh download-release.sh
 
@@ -69,10 +76,10 @@ test-execute-chunk:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test chunk_circuit test_execute -- --exact --nocapture
 
 test-ceno-scroll-chunk:
-	@cargo run --release --features scroll -p ceno-integration-test -- --exact --nocapture
+	@cargo run $(CENO_CONFIG_FLAG) --release --features scroll -p ceno-integration-test -- --exact --nocapture
 
 test-ceno-ethereum-chunk:
-	@cargo run --release -p ceno-integration-test -- --exact --nocapture
+	@cargo run $(CENO_CONFIG_FLAG) --release -p ceno-integration-test -- --exact --nocapture
 
 test-execute-chunk-multi:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test chunk_circuit test_execute_multi -- --exact --nocapture

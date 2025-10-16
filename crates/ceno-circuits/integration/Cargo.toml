@@ -22,8 +22,12 @@ serde_json.workspace = true
 sbv-core.workspace = true
 sbv-primitives.workspace = true
 scroll-zkvm-types-chunk.workspace = true
+tracing-forest.workspace = true
+tracing-subscriber.workspace = true
+once_cell = "1.20"
 
 [features]
 default = []
+cuda = ["ceno_zkvm/gpu"]
 scroll = ["scroll-zkvm-types-chunk/scroll", "scroll-zkvm-types-chunk/host"]
 

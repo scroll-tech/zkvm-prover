@@ -16,6 +16,32 @@ use scroll_zkvm_types_chunk::ChunkWitness;
 type Pcs = BasefoldDefault<E>;
 type E = BabyBearExt4;
 
+
+use once_cell::sync::OnceCell;
+use tracing_forest::ForestLayer;
+use tracing_subscriber::{Registry, fmt, layer::SubscriberExt, util::SubscriberInitExt, filter::filter_fn};
+
+static PROFILING_INIT: OnceCell<()> = OnceCell::new();
+
+fn setup_ceno_profiling_logger(level: u32) {
+    let _ = PROFILING_INIT.get_or_init(|| {
+        let profiling_level = level;
+        let filter_by_profiling_level = filter_fn(move |metadata| {
+            (1..=profiling_level)
+                .map(|i| format!("profiling_{i}"))
+                .any(|field| metadata.fields().field(&field).is_some())
+        });
+        let fmt_layer = fmt::layer().compact().with_thread_ids(false).with_thread_names(false).without_time();
+
+        Registry::default()
+            .with(ForestLayer::default())
+            .with(fmt_layer)
+            .with(filter_by_profiling_level)
+            .try_init()
+            .ok();
+    });
+}
+
 static WORKSPACE_ROOT: LazyLock<&Path> = LazyLock::new(|| {
     let path = MetadataCommand::new()
         .no_deps()
@@ -52,7 +78,7 @@ fn load_witness() -> ChunkWitness {
     use scroll_zkvm_types::public_inputs::ForkName;
 
     let base = WORKSPACE_ROOT.join("crates/integration/testdata/feynman/witnesses");
-    let blocks = (16525000..=16525003)
+    let blocks = (16525001..=16525001) // temp: GPU test, use single block for now
         .map(|n| base.join(format!("{n}.json")))
         .map(|path| File::open(&path).unwrap())
         .map(|rdr| serde_json::from_reader::<_, sbv_primitives::legacy_types::BlockWitness>(rdr).unwrap())
@@ -73,6 +99,8 @@ fn load_witness() -> ChunkWitness {
 }
 
 fn main() -> eyre::Result<()> {
+    setup_ceno_profiling_logger(2);
+
     let (elf, program, platform) = setup();
 
     let (_, security_level) = default_backend_config();
@@ -92,9 +120,9 @@ fn main() -> eyre::Result<()> {
     let max_steps = usize::MAX;
     let start = Instant::now();
     let result = run_e2e_with_checkpoint::<E, Pcs, _, _>(
-        create_prover(backend.clone()),
-        program.clone(),
-        platform.clone(),
+        create_prover(backend),
+        program,
+        platform,
         &Vec::from(&hints),
         &[],
         max_steps,
