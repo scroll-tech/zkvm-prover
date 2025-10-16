@@ -12,9 +12,9 @@ alloy-primitives = { workspace = true, features = ["native-keccak"] }
 alloy-consensus = { workspace = true, features = ["crypto-backend"] }
 rkyv.workspace = true
 sbv-helpers.workspace = true
-sbv-core = { workspace = true }
+sbv-core = { workspace = true, features = ["rkyv"] }
 sbv-trie = { workspace = true }
-sbv-primitives = { workspace = true, features = ["hardforks", "scroll-evm-types", "scroll-hardforks", "scroll-revm-types"] }
+sbv-primitives = { workspace = true, features = ["hardforks", "evm-types", "revm-types", "reth-evm-types"] }
 serde.workspace = true
 
 openvm-ecc-guest = { workspace = true, optional = true }
@@ -28,5 +28,12 @@ types-base = { path = "../base", package = "scroll-zkvm-types-base"}
 [features]
 default = []
 host = ["scroll-compress-ratio"]
+scroll = [
+    "sbv-core/scroll",
+    "sbv-primitives/scroll-evm-types",
+    "sbv-primitives/scroll-hardforks",
+    "sbv-primitives/scroll-revm-types",
+    "sbv-primitives/scroll-reth-evm-types"
+]
 scroll-compress-ratio = ["sbv-core/scroll-compress-ratio"]
 openvm = ["openvm-ecc-guest", "openvm-k256", "openvm-p256", "openvm-sha2", "openvm-pairing"]

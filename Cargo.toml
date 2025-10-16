@@ -82,18 +82,10 @@ mpcs = { git = "https://github.com/scroll-tech/gkr-backend.git", rev = "v1.0.0-a
 # more openvm related libs
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.0" }
 
-sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = [
-  "scroll",
-  "rkyv",
-] }
+sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
 sbv-helpers = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
-sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = [
-  "scroll",
-  "rkyv",
-] }
-sbv-utils = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master", features = [
-  "scroll",
-] }
+sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
+sbv-utils = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
 sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
 
 alloy-consensus = "1.0"

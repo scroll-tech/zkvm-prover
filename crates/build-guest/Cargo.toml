@@ -23,4 +23,5 @@ dotenv = "0.15.0"
 clap = { version = "4.0", features = ["derive"] }
 
 [features]
-default = []
+default = ["scroll"]
+scroll = ["scroll-zkvm-types/scroll"]

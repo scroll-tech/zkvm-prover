@@ -23,3 +23,7 @@ openvm-keccak256-guest= { workspace = true }
 openvm-pairing-guest = { workspace = true, features = ["bn254"] }
 openvm-rv32im-guest= {  workspace = true }
 
+
+[features]
+default = ["scroll"]
+scroll = ["scroll-zkvm-types-chunk/scroll"]
