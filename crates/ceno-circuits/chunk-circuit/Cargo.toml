@@ -6,14 +6,13 @@ repository.workspace = true
 version = "0.6.0"
 
 [dependencies]
-ceno_rt = { workspace = true }
-ceno_crypto = { workspace = true }
-bincode = { workspace = true }
-#scroll-zkvm-types-circuit = { workspace = true }
-scroll-zkvm-types-base = { workspace = true }
-scroll-zkvm-types-chunk = { workspace = true }
-#sbv-precompile = { workspace = true }
-rkyv = { workspace = true }
+ceno_rt.workspace = true
+ceno_crypto.workspace = true
+ceno_sha2.workspace = true
+bincode.workspace = true
+scroll-zkvm-types-chunk.workspace = true
+rkyv.workspace = true
 
 [features]
 default = []
+scroll = ["scroll-zkvm-types-chunk/scroll"]

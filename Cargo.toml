@@ -13,7 +13,7 @@ members = [
   "crates/prover",
   "crates/verifier",
   "crates/integration",
-  "crates/build-guest",
+  "crates/build-guest", "crates/ceno-circuits/integration",
 ]
 resolver = "2"
 
@@ -68,14 +68,15 @@ openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0",
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
 
 # ceno guest lib
-ceno_rt = { git = "https://github.com/scroll-tech/ceno", branch = "feat/secp256k1-guest" }
-ceno_crypto = { git = "https://github.com/scroll-tech/ceno", branch = "feat/secp256k1-guest" }
+ceno_rt = { git = "https://github.com/scroll-tech/ceno" }
+ceno_crypto = { git = "https://github.com/scroll-tech/ceno" }
 
 # ceno host lib
-ceno_emul = { git = "https://github.com/scroll-tech/ceno", branch = "feat/secp256k1-guest" }
-ceno_host = { git = "https://github.com/scroll-tech/ceno", branch = "feat/secp256k1-guest" }
-ceno_zkvm = { git = "https://github.com/scroll-tech/ceno", branch = "feat/secp256k1-guest" }
-gkr_iop = { git = "https://github.com/scroll-tech/ceno", branch = "feat/secp256k1-guest" }
+ceno_emul = { git = "https://github.com/scroll-tech/ceno" }
+ceno_host = { git = "https://github.com/scroll-tech/ceno" }
+ceno_zkvm = { git = "https://github.com/scroll-tech/ceno" }
+ceno_sha2 = { git = "https://github.com/scroll-tech/ceno" }
+gkr_iop = { git = "https://github.com/scroll-tech/ceno" }
 ff_ext = { git = "https://github.com/scroll-tech/gkr-backend.git", rev = "v1.0.0-alpha.9" }
 mpcs = { git = "https://github.com/scroll-tech/gkr-backend.git", rev = "v1.0.0-alpha.9" }
 

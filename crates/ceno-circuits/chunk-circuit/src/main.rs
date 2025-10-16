@@ -19,7 +19,7 @@ fn main() {
     let (witness, _): (ChunkWitness, _) = bincode::serde::decode_from_slice(witness_bytes, config)
         .expect("ChunkCircuit: deserialisation of witness bytes failed");
 
-    let _fork_name = witness.fork_name;
+    // let _fork_name = witness.fork_name;
     let _chunk_info = execute(witness).expect("execution failed");
 
     // let pi_hash = (chunk_info, fork_name).pi_hash();

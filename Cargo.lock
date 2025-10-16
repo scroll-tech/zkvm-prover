@@ -1410,6 +1410,20 @@ name = "bytemuck"
 version = "1.23.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3995eaeebcdf32f91f980d360f78732ddc061097ab4e39991ae7a6ace9194677"
+dependencies = [
+ "bytemuck_derive",
+]
+
+[[package]]
+name = "bytemuck_derive"
+version = "1.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f9abbd1bc6865053c427f7198e6af43bfdedc55ab791faed4fbd361d789575ff"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.106",
+]
 
 [[package]]
 name = "byteorder"
@@ -1548,18 +1562,40 @@ dependencies = [
 [[package]]
 name = "ceno-examples"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fsecp256k1-guest#152bdda282091bded4c05f97e207761606adffc4"
+source = "git+https://github.com/scroll-tech/ceno#050108047aad24101fcb010da4e7d29e9d72678a"
 dependencies = [
  "glob",
 ]
 
 [[package]]
+name = "ceno-integration-test"
+version = "0.6.0"
+dependencies = [
+ "bincode 2.0.1",
+ "cargo_metadata 0.20.0",
+ "ceno_emul",
+ "ceno_host",
+ "ceno_zkvm",
+ "eyre",
+ "ff_ext",
+ "gkr_iop",
+ "mpcs",
+ "sbv-core",
+ "sbv-primitives",
+ "scroll-zkvm-types",
+ "scroll-zkvm-types-chunk",
+ "serde_json",
+]
+
+[[package]]
 name = "ceno_crypto"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fsecp256k1-guest#152bdda282091bded4c05f97e207761606adffc4"
+source = "git+https://github.com/scroll-tech/ceno#050108047aad24101fcb010da4e7d29e9d72678a"
 dependencies = [
  "ceno_keccak",
+ "ceno_sha2",
  "k256 0.13.4 (git+https://github.com/scroll-tech/elliptic-curves?branch=ceno%2Fk256-13.4)",
+ "substrate-bn 0.6.0 (git+https://github.com/scroll-tech/bn?branch=ceno)",
  "thiserror 2.0.16",
 ]
 
@@ -1568,18 +1604,18 @@ name = "ceno_crypto_primitives"
 version = "0.1.0"
 source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fsecp256k1-guest#152bdda282091bded4c05f97e207761606adffc4"
 dependencies = [
- "ceno_syscall",
+ "ceno_syscall 0.1.0 (git+https://github.com/scroll-tech/ceno?branch=feat%2Fsecp256k1-guest)",
  "elliptic-curve",
 ]
 
 [[package]]
 name = "ceno_emul"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fsecp256k1-guest#152bdda282091bded4c05f97e207761606adffc4"
+source = "git+https://github.com/scroll-tech/ceno#050108047aad24101fcb010da4e7d29e9d72678a"
 dependencies = [
  "anyhow",
  "ceno_rt",
- "ceno_syscall",
+ "ceno_syscall 0.1.0 (git+https://github.com/scroll-tech/ceno)",
  "elf",
  "ff_ext",
  "itertools 0.13.0",
@@ -1591,7 +1627,7 @@ dependencies = [
  "serde",
  "strum 0.26.3",
  "strum_macros 0.26.4",
- "substrate-bn",
+ "substrate-bn 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "tiny-keccak",
  "tracing",
 ]
@@ -1599,7 +1635,7 @@ dependencies = [
 [[package]]
 name = "ceno_host"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fsecp256k1-guest#152bdda282091bded4c05f97e207761606adffc4"
+source = "git+https://github.com/scroll-tech/ceno#050108047aad24101fcb010da4e7d29e9d72678a"
 dependencies = [
  "anyhow",
  "ceno_emul",
@@ -1611,20 +1647,29 @@ dependencies = [
 [[package]]
 name = "ceno_keccak"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fsecp256k1-guest#152bdda282091bded4c05f97e207761606adffc4"
+source = "git+https://github.com/scroll-tech/ceno#050108047aad24101fcb010da4e7d29e9d72678a"
 dependencies = [
- "ceno_syscall",
+ "ceno_syscall 0.1.0 (git+https://github.com/scroll-tech/ceno)",
  "tiny-keccak",
 ]
 
 [[package]]
 name = "ceno_rt"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fsecp256k1-guest#152bdda282091bded4c05f97e207761606adffc4"
+source = "git+https://github.com/scroll-tech/ceno#050108047aad24101fcb010da4e7d29e9d72678a"
 dependencies = [
  "getrandom 0.2.16",
  "getrandom 0.3.3",
  "rkyv",
+]
+
+[[package]]
+name = "ceno_sha2"
+version = "0.1.0"
+source = "git+https://github.com/scroll-tech/ceno#050108047aad24101fcb010da4e7d29e9d72678a"
+dependencies = [
+ "ceno_syscall 0.1.0 (git+https://github.com/scroll-tech/ceno)",
+ "digest 0.10.7",
 ]
 
 [[package]]
@@ -1633,9 +1678,14 @@ version = "0.1.0"
 source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fsecp256k1-guest#152bdda282091bded4c05f97e207761606adffc4"
 
 [[package]]
+name = "ceno_syscall"
+version = "0.1.0"
+source = "git+https://github.com/scroll-tech/ceno#050108047aad24101fcb010da4e7d29e9d72678a"
+
+[[package]]
 name = "ceno_zkvm"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fsecp256k1-guest#152bdda282091bded4c05f97e207761606adffc4"
+source = "git+https://github.com/scroll-tech/ceno#050108047aad24101fcb010da4e7d29e9d72678a"
 dependencies = [
  "base64",
  "bincode 1.3.3",
@@ -2187,7 +2237,7 @@ dependencies = [
 [[package]]
 name = "derive"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fsecp256k1-guest#152bdda282091bded4c05f97e207761606adffc4"
+source = "git+https://github.com/scroll-tech/ceno#050108047aad24101fcb010da4e7d29e9d72678a"
 dependencies = [
  "quote",
  "syn 1.0.109",
@@ -2947,7 +2997,7 @@ dependencies = [
 [[package]]
 name = "gkr_iop"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fsecp256k1-guest#152bdda282091bded4c05f97e207761606adffc4"
+source = "git+https://github.com/scroll-tech/ceno#050108047aad24101fcb010da4e7d29e9d72678a"
 dependencies = [
  "bincode 1.3.3",
  "either",
@@ -8139,8 +8189,8 @@ dependencies = [
  "bincode 2.0.1",
  "ceno_crypto",
  "ceno_rt",
+ "ceno_sha2",
  "rkyv",
- "scroll-zkvm-types-base",
  "scroll-zkvm-types-chunk",
 ]
 
@@ -8177,20 +8227,14 @@ dependencies = [
  "bincode 2.0.1",
  "bytesize",
  "cargo_metadata 0.20.0",
- "ceno_emul",
- "ceno_host",
- "ceno_zkvm",
  "chrono",
  "clap",
  "csv",
  "eyre",
- "ff_ext",
  "futures",
- "gkr_iop",
  "glob",
  "hex",
  "metrics-tracing-context",
- "mpcs",
  "once_cell",
  "openvm-benchmarks-prove",
  "openvm-benchmarks-utils",
@@ -8969,6 +9013,22 @@ dependencies = [
  "byteorder",
  "crunchy",
  "lazy_static",
+ "rand 0.8.5",
+ "rustc-hex",
+]
+
+[[package]]
+name = "substrate-bn"
+version = "0.6.0"
+source = "git+https://github.com/scroll-tech/bn?branch=ceno#58d807ae392d26ad94811a40e0b46e6e2d9a67ab"
+dependencies = [
+ "bytemuck",
+ "byteorder",
+ "ceno_syscall 0.1.0 (git+https://github.com/scroll-tech/ceno)",
+ "cfg-if",
+ "crunchy",
+ "lazy_static",
+ "num-bigint 0.4.6",
  "rand 0.8.5",
  "rustc-hex",
 ]
