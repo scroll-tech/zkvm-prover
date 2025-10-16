@@ -8,6 +8,13 @@ pub struct ChunkWitness {
     pub blocks: Vec<BlockWitness>,
 }
 
+#[derive(Clone, Debug)]
+pub struct ChunkDetails {
+    pub num_blocks: usize,
+    pub num_txs: usize,
+    pub total_gas_used: u64,
+}
+
 impl ChunkWitness {
     pub fn new(blocks: &[BlockWitness]) -> Self {
         let num_codes = blocks.iter().map(|w| w.codes.len()).sum();
@@ -41,5 +48,21 @@ impl ChunkWitness {
             .collect();
 
         Self { blocks }
+    }
+
+    pub fn stats(&self) -> ChunkDetails {
+        let num_blocks = self.blocks.len();
+        let num_txs = self
+            .blocks
+            .iter()
+            .map(|b| b.transactions.len())
+            .sum::<usize>();
+        let total_gas_used = self.blocks.iter().map(|b| b.header.gas_used).sum::<u64>();
+
+        ChunkDetails {
+            num_blocks,
+            num_txs,
+            total_gas_used,
+        }
     }
 }
