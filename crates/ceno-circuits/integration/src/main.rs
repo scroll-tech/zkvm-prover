@@ -49,7 +49,6 @@ fn setup() -> (Vec<u8>, Program, Platform) {
 #[cfg(feature = "scroll")]
 fn load_witness() -> ChunkWitness {
     use sbv_primitives::B256;
-    use scroll_zkvm_types::chunk::execute;
     use scroll_zkvm_types::public_inputs::ForkName;
 
     let base = WORKSPACE_ROOT.join("crates/integration/testdata/feynman/witnesses");
@@ -65,7 +64,7 @@ fn load_witness() -> ChunkWitness {
 #[cfg(not(feature = "scroll"))]
 fn load_witness() -> ChunkWitness {
     let base = WORKSPACE_ROOT.join("crates/integration/testdata/ethereum");
-    let blocks = (23587691..23587692)
+    let blocks = (23588347..=23588347)
         .map(|n| base.join(format!("{n}.json")))
         .map(|path| File::open(&path).unwrap())
         .map(|rdr| serde_json::from_reader::<_, BlockWitness>(rdr).unwrap())
