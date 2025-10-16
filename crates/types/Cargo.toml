@@ -9,7 +9,7 @@ version.workspace = true
 
 [dependencies]
 types-base = { path = "base", package = "scroll-zkvm-types-base" }
-types-chunk = { path = "chunk", package = "scroll-zkvm-types-chunk", features = ["host"] }
+types-chunk = { path = "chunk", package = "scroll-zkvm-types-chunk" }
 types-batch = { path = "batch", package = "scroll-zkvm-types-batch", features = ["host"] }
 types-bundle = { path = "bundle", package = "scroll-zkvm-types-bundle" }
 
@@ -25,4 +25,4 @@ base64.workspace = true
 bincode_v1.workspace = true
 
 [features]
-scroll = ["types-chunk/scroll"]
+scroll = ["types-chunk/scroll", "types-chunk/host"]
