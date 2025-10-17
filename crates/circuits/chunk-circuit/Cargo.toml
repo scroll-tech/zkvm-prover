@@ -24,6 +24,7 @@ openvm-pairing-guest = { workspace = true, features = ["bn254"] }
 openvm-sha2 = { workspace = true }
 openvm-rv32im-guest= {  workspace = true }
 
+
 [features]
-default = ["openvm"]
-openvm = ["scroll-zkvm-types-chunk/openvm"]
+default = ["scroll"]
+scroll = ["scroll-zkvm-types-chunk/scroll"]

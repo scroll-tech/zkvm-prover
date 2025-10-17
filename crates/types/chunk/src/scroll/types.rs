@@ -1,7 +1,5 @@
-use std::ops::Deref;
-
-use crate::types::validium::SecretKey;
-use crate::witness::ValidiumInputs;
+use super::types::validium::SecretKey;
+use super::witness::ValidiumInputs;
 use alloy_primitives::keccak256;
 use itertools::Itertools;
 use sbv_helpers::manually_drop_on_zkvm;
@@ -13,6 +11,7 @@ use sbv_primitives::{
         reth::primitives::{Block, RecoveredBlock, TransactionSigned},
     },
 };
+use std::ops::Deref;
 
 pub mod validium;
 

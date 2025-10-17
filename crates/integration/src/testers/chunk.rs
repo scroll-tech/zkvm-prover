@@ -10,7 +10,6 @@ use scroll_zkvm_types::{
 };
 use std::{
     fs::File,
-    io::{Seek, SeekFrom},
     path::{Path, PathBuf},
 };
 
@@ -39,11 +38,11 @@ where
         println!("File not found: {:?}", path_witness.as_ref());
         return Err(eyre::eyre!("File not found: {:?}", path_witness.as_ref()));
     }
-    let mut witness = File::open(path_witness)?;
-    if let Ok(witness) = serde_json::from_reader::<_, BlockWitness>(&mut witness) {
-        Ok(witness)
+
+    if let Ok(ret) = serde_json::from_reader::<_, BlockWitness>(File::open(&path_witness)?) {
+        Ok(ret)
     } else {
-        witness.seek(SeekFrom::Start(0))?;
+        let witness = File::open(path_witness)?;
         Ok(BlockWitness::from(serde_json::from_reader::<
             _,
             sbv_primitives::legacy_types::BlockWitness,

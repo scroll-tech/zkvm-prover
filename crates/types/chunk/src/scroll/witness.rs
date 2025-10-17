@@ -1,4 +1,4 @@
-use crate::types::validium::SecretKey;
+use super::types::validium::SecretKey;
 use alloy_primitives::B256;
 use sbv_core::{verifier::StateCommitMode, witness::BlockWitness};
 use sbv_primitives::U256;
@@ -9,8 +9,25 @@ use types_base::version::Version;
 use types_base::{fork_name::ForkName, public_inputs::chunk::ChunkInfo};
 
 /// The witness type accepted by the chunk-circuit.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct ChunkWitness {
+    /// Version byte as per [version][types_base::version].
+    pub version: u8,
+    /// The block witness for each block in the chunk.
+    pub blocks: Vec<BlockWitness>,
+    /// The on-chain rolling L1 message queue hash before enqueueing any L1 msg tx from the chunk.
+    pub prev_msg_queue_hash: B256,
+    /// The code version specify the chain spec
+    pub fork_name: ForkName,
+    /// The compression ratios for each block in the chunk.
+    pub compression_ratios: Vec<Vec<U256>>,
+    /// Validium encrypted txs and secret key if this is a validium chain.
+    pub validium: Option<ValidiumInputs>,
+}
+
+/// The witness type accepted by the chunk-circuit.
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct ChunkWitnessWithRspTrie {
     /// Version byte as per [version][types_base::version].
     pub version: u8,
     /// The block witness for each block in the chunk.
@@ -107,14 +124,8 @@ impl ChunkWitness {
         let num_codes = blocks.iter().map(|w| w.codes.len()).sum();
         let mut codes = HashSet::with_capacity(num_codes);
 
-        // FIXME: remove this when [`LegacyBlockWitness`] is removed.
         let num_states = blocks.iter().map(|w| w.states.len()).sum();
         let mut states = HashSet::with_capacity(num_states);
-
-        let pre_state_root = blocks.first().expect("at least one block").prev_state_root;
-        let cached_trie =
-            PartialStateTrie::new(pre_state_root, blocks.iter().flat_map(|w| w.states.iter()))
-                .expect("trie from witness");
 
         let blocks: Vec<BlockWitness> = blocks
             .iter()
@@ -124,7 +135,6 @@ impl ChunkWitness {
                 prev_state_root: block.prev_state_root,
                 transactions: block.transactions.clone(),
                 withdrawals: block.withdrawals.clone(),
-                // FIXME: replace this by `vec![]` when [`LegacyBlockWitness`] is removed.
                 states: block
                     .states
                     .iter()
@@ -150,7 +160,6 @@ impl ChunkWitness {
             prev_msg_queue_hash,
             fork_name,
             compression_ratios,
-            cached_trie,
             validium,
         }
     }
@@ -200,55 +209,31 @@ impl From<ChunkWitness> for LegacyChunkWitness {
     }
 }
 
-/// Serde bridge for current version, we don't need states in block witness, but it's required for
-/// the legacy rkyv version.
-/// FIXME: remove this when the legacy rkyv version is removed.
-#[derive(serde::Serialize, serde::Deserialize)]
-struct ChunkWitnessSerde {
-    version: u8,
-    blocks: Vec<BlockWitness>,
-    prev_msg_queue_hash: B256,
-    fork_name: ForkName,
-    compression_ratios: Vec<Vec<U256>>,
-    cached_trie: PartialStateTrie,
-    validium: Option<ValidiumInputs>,
-}
+impl From<ChunkWitness> for ChunkWitnessWithRspTrie {
+    fn from(mut value: ChunkWitness) -> Self {
+        let pre_state_root = value
+            .blocks
+            .first()
+            .expect("at least one block")
+            .prev_state_root;
+        let cached_trie = PartialStateTrie::new(
+            pre_state_root,
+            value.blocks.iter().flat_map(|w| w.states.iter()),
+        )
+        .expect("trie from witness");
 
-impl serde::Serialize for ChunkWitness {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let mut this = ChunkWitnessSerde {
-            version: self.version,
-            blocks: self.blocks.clone(),
-            prev_msg_queue_hash: self.prev_msg_queue_hash,
-            fork_name: self.fork_name,
-            compression_ratios: self.compression_ratios.clone(),
-            cached_trie: self.cached_trie.clone(),
-            validium: self.validium.clone(),
-        };
-        for block in this.blocks.iter_mut() {
+        for block in value.blocks.iter_mut() {
             block.states.clear();
         }
-        this.serialize(serializer)
-    }
-}
 
-impl<'de> serde::Deserialize<'de> for ChunkWitness {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let this = ChunkWitnessSerde::deserialize(deserializer)?;
-        Ok(ChunkWitness {
-            version: this.version,
-            blocks: this.blocks,
-            prev_msg_queue_hash: this.prev_msg_queue_hash,
-            fork_name: this.fork_name,
-            compression_ratios: this.compression_ratios,
-            cached_trie: this.cached_trie,
-            validium: this.validium,
-        })
+        ChunkWitnessWithRspTrie {
+            version: value.version,
+            blocks: value.blocks,
+            prev_msg_queue_hash: value.prev_msg_queue_hash,
+            fork_name: value.fork_name,
+            compression_ratios: value.compression_ratios,
+            cached_trie,
+            validium: value.validium,
+        }
     }
 }

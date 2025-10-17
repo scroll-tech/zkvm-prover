@@ -16,21 +16,27 @@ itertools.workspace = true
 #revm-precompile = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74", default-features=false, features = ["kzg-rs", "libsecp256k1"] }
 rkyv.workspace = true
 sbv-helpers.workspace = true
-sbv-core = { workspace = true }
+sbv-core = { workspace = true, features = ["rkyv"] }
 sbv-trie = { workspace = true }
-sbv-primitives = { workspace = true, features = ["hardforks", "scroll-hardforks", "scroll-revm-types"] }
+sbv-primitives = { workspace = true, features = ["hardforks", "evm-types", "revm-types", "reth-evm-types"] }
 serde.workspace = true
 thiserror.workspace = true
 openvm-ecc-guest = { workspace = true }
 openvm-k256 = { workspace = true }
 openvm-p256 = { workspace = true }
 openvm-sha2 = { workspace = true }
-openvm-pairing = { workspace = true }
+openvm-pairing = { workspace = true, features = ["bn254"] }
 
 types-base = { path = "../base", package = "scroll-zkvm-types-base"}
 
 [features]
 default = []
 host = ["scroll-compress-ratio"]
+scroll = [
+    "sbv-core/scroll",
+    "sbv-primitives/scroll-evm-types",
+    "sbv-primitives/scroll-hardforks",
+    "sbv-primitives/scroll-revm-types",
+    "sbv-primitives/scroll-reth-evm-types"
+]
 scroll-compress-ratio = ["sbv-core/scroll-compress-ratio"]
-openvm = []

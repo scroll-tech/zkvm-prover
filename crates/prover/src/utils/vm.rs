@@ -33,8 +33,8 @@ pub fn execute_guest(
     let state = instance
         .execute(stdin.clone(), None)
         .map_err(|e| Error::GenProof(e.to_string()))?;
-    let final_memory = state.memory;
     let total_cycle = state.instret;
+    let final_memory = state.memory;
 
     let public_values: Vec<u8> =
         extract_public_values(vm_config.as_ref().num_public_values, &final_memory.memory);
