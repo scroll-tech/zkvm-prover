@@ -56,7 +56,7 @@ static WORKSPACE_ROOT: LazyLock<&Path> = LazyLock::new(|| {
 fn setup() -> (Vec<u8>, Program, Platform) {
     let stack_size = 128 * 1024 * 1024;
     let heap_size = 128 * 1024 * 1024;
-    let pub_io_size = 128 * 1024 * 1024;
+    let pub_io_size = 8;
     println!(
         "stack_size: {stack_size:#x}, heap_size: {heap_size:#x}, pub_io_size: {pub_io_size:#x}"
     );
