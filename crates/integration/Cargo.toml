@@ -27,7 +27,6 @@ openvm-benchmarks-prove = { workspace = true, default-features = false }
 openvm-benchmarks-utils = { workspace = true, default-features = false }
 openvm-circuit.workspace = true
 openvm-sdk = { workspace = true, default-features = false }
-openvm-native-recursion = { workspace = true, default-features = false }
 
 alloy-provider = { workspace = true }
 alloy-rpc-client.workspace = true
@@ -60,6 +59,7 @@ regex = "1.11.1"
 sysinfo = { workspace = true, features = ["system"] }
 bytesize.workspace = true
 url.workspace = true
+axiom-sdk = { git = "https://github.com/axiom-crypto/axiom-api-cli.git", tag = "v1.0.0" }
 
 [dev-dependencies]
 glob = "0.3"

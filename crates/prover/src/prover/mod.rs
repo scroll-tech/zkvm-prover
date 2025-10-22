@@ -133,9 +133,7 @@ impl Prover {
         let task_id = task.identifier();
         tracing::debug!(name: "generate_root_verifier_input", task_id);
 
-        let stdin = task
-            .build_guest_input()
-            .map_err(|e| Error::GenProof(e.to_string()))?;
+        let stdin = task.build_guest_input();
 
         // Generate a new proof.
         let proof = if !with_snark {
