@@ -8,7 +8,7 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
-alloy-primitives = { workspace = true }
+alloy-primitives = { workspace = true, features = ["native-keccak"] }
 alloy-consensus = { workspace = true, features = ["crypto-backend"] }
 alloy-sol-types.workspace = true
 ecies.workspace = true
@@ -34,7 +34,7 @@ serde_json.workspace = true
 
 [features]
 default = []
-host = ["scroll-compress-ratio"]
+host = ["scroll-compress-ratio", "alloy-primitives/tiny-keccak"]
 scroll = [
     "sbv-core/scroll",
     "sbv-primitives/scroll-evm-types",
