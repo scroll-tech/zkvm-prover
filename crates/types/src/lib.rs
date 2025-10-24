@@ -17,7 +17,7 @@ pub mod chunk {
     pub use types_chunk::*;
 }
 
-pub use types_base::{aggregation as types_agg, public_inputs};
+pub use types_base::{aggregation as types_agg, public_inputs, version};
 
 pub mod proof;
 

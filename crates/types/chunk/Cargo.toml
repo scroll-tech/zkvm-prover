@@ -10,13 +10,17 @@ version.workspace = true
 [dependencies]
 alloy-primitives = { workspace = true, features = ["native-keccak"] }
 alloy-consensus = { workspace = true, features = ["crypto-backend"] }
+alloy-sol-types.workspace = true
+ecies.workspace = true
+itertools.workspace = true
+#revm-precompile = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74", default-features=false, features = ["kzg-rs", "libsecp256k1"] }
 rkyv.workspace = true
 sbv-helpers.workspace = true
 sbv-core = { workspace = true, features = ["rkyv"] }
 sbv-trie = { workspace = true }
 sbv-primitives = { workspace = true, features = ["hardforks", "evm-types", "revm-types", "reth-evm-types"] }
 serde.workspace = true
-
+thiserror.workspace = true
 openvm-ecc-guest = { workspace = true }
 openvm-k256 = { workspace = true }
 openvm-p256 = { workspace = true }
@@ -25,9 +29,12 @@ openvm-pairing = { workspace = true, features = ["bn254"] }
 
 types-base = { path = "../base", package = "scroll-zkvm-types-base"}
 
+[dev-dependencies]
+serde_json.workspace = true
+
 [features]
 default = []
-host = ["scroll-compress-ratio"]
+host = ["scroll-compress-ratio", "alloy-primitives/tiny-keccak"]
 scroll = [
     "sbv-core/scroll",
     "sbv-primitives/scroll-evm-types",

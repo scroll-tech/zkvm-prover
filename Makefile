@@ -17,6 +17,18 @@ else
 CARGO_CONFIG_FLAG =
 endif
 
+SRS_PARAMS_DIR := $(HOME)/.openvm/params
+SRS_PARAMS_URL := https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/params
+SRS_PARAMS := $(SRS_PARAMS_DIR)/kzg_bn254_22.srs $(SRS_PARAMS_DIR)/kzg_bn254_24.srs
+
+# Download params if missing
+$(SRS_PARAMS_DIR)/%.srs:
+	@mkdir -p $(SRS_PARAMS_DIR)
+	@if [ ! -f "$@" ]; then \
+		echo "Fetching $(@F) from $(SRS_PARAMS_URL)"; \
+		wget -q -O "$@" "$(SRS_PARAMS_URL)/$(@F)"; \
+	fi
+
 download-release:
 	sh download-release.sh
 
@@ -54,6 +66,9 @@ test-execute-chunk:
 test-execute-chunk-multi:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test chunk_circuit test_execute_multi -- --exact --nocapture
 
+test-execute-validium-chunk:
+	@cargo test --release -p scroll-zkvm-integration --test chunk_circuit test_execute_validium -- --exact --nocapture
+
 test-cycle:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test chunk_circuit test_cycle -- --exact --nocapture
 
@@ -65,6 +80,9 @@ test-execute-batch-fast:
 
 test-execute-bundle:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test bundle_circuit test_execute -- --exact --nocapture
+
+test-execute-validium-e2e:
+	@cargo test --release -p scroll-zkvm-integration --test bundle_circuit test_execute_validium -- --exact --nocapture
 
 test-single-chunk:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test chunk_circuit setup_prove_verify_single -- --exact --nocapture

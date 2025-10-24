@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 set -uex
 
-if [ -z "${SCROLL_ZKVM_VERSION}" ]; then
+if [ -z "${SCROLL_ZKVM_VERSION:-}" ]; then
   echo "SCROLL_ZKVM_VERSION not set"
   exit 1
 else
@@ -10,12 +10,12 @@ fi
 
 DEV_DIR="releases/dev"
 # Output sha256 checksums
-find $DEV_DIR -type f ! -name sha256sums.txt -exec sha256sum {} \; >$DEV_DIR/sha256sums.txt
+find "$DEV_DIR" -type f ! -name sha256sums.txt -exec sha256sum {} \; >"$DEV_DIR/sha256sums.txt"
 
 # Read FORKNAME from release-fork file
 FORKNAME=$(head -n 1 release-fork)
 
-function release_new() {
+release_new() {
   VK_JSON="$DEV_DIR/verifier/openVmVk.json"
   RELEASES_DIR="releases/$FORKNAME"
 
@@ -35,12 +35,12 @@ function release_new() {
   mkdir -p "$RELEASES_DIR/batch/$batch_vk"
   mkdir -p "$RELEASES_DIR/bundle/$bundle_vk"
 
-  # Copy files from releases/dev to the new directories
-  cp -r "$DEV_DIR/chunk"/* "$RELEASES_DIR/chunk/$chunk_vk/"
-  cp -r "$DEV_DIR/batch"/* "$RELEASES_DIR/batch/$batch_vk/"
-  cp -r "$DEV_DIR/bundle"/* "$RELEASES_DIR/bundle/$bundle_vk/"
-  mkdir -p $VERIFIER_RELEASES_DIR
-  mv $DEV_DIR/* $VERIFIER_RELEASES_DIR
+  # Copy contents (including hidden files) safely with POSIX cp -R
+  cp -R "$DEV_DIR/chunk/." "$RELEASES_DIR/chunk/$chunk_vk/"
+  cp -R "$DEV_DIR/batch/." "$RELEASES_DIR/batch/$batch_vk/"
+  cp -R "$DEV_DIR/bundle/." "$RELEASES_DIR/bundle/$bundle_vk/"
+  mkdir -p "$VERIFIER_RELEASES_DIR"
+  mv "$DEV_DIR"/* "$VERIFIER_RELEASES_DIR"
 
   echo "Files organized for release successfully:"
   echo "  chunk files -> $RELEASES_DIR/chunk/$chunk_vk"
@@ -52,8 +52,8 @@ function release_new() {
   #aws --profile default s3 cp releases s3://circuit-release/scroll-zkvm --recursive
 }
 
-function release_old() {
-  aws --profile default s3 cp $DEV_DIR s3://circuit-release/scroll-zkvm/$VERIFIER_RELEASES_DIR --recursive
+release_old() {
+  aws --profile default s3 cp "$DEV_DIR" "s3://circuit-release/scroll-zkvm/$VERIFIER_RELEASES_DIR" --recursive
 }
 
 release_new

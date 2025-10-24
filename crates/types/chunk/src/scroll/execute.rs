@@ -1,4 +1,5 @@
 use crate::{ChunkWitness, scroll::types::ChunkExt};
+use ecies::SecretKey;
 use sbv_core::verifier::{self, VerifyResult};
 use sbv_helpers::manually_drop_on_zkvm;
 use sbv_primitives::{
@@ -19,6 +20,13 @@ use types_base::{
 /// But in guest mode, it must be provided.
 pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
     let chain = Chain::from_id(witness.blocks[0].chain_id);
+    let prev_blockhash = witness.blocks[0].header.parent_hash();
+    let post_blockhash = witness
+        .blocks
+        .last()
+        .expect("witnesses can not be empty")
+        .header
+        .hash_slow();
     let chain_spec = build_chain_spec_force_hardfork(
         chain,
         match witness.fork_name {
@@ -44,13 +52,12 @@ pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
     let data_hash = if witness.fork_name < ForkName::EuclidV2 {
         blocks.legacy_data_hash()
     } else {
-        B256::ZERO
+        B256::default()
     };
-
     let post_msg_queue_hash = if witness.fork_name >= ForkName::EuclidV2 {
-        blocks.rolling_msg_queue_hash(witness.prev_msg_queue_hash)
+        blocks.rolling_msg_queue_hash(witness.prev_msg_queue_hash, witness.validium.as_ref())
     } else {
-        B256::ZERO
+        B256::default()
     };
 
     let chunk_info = ChunkInfo {
@@ -65,9 +72,17 @@ pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
         prev_msg_queue_hash: witness.prev_msg_queue_hash,
         post_msg_queue_hash,
         block_ctxs: blocks.iter().map(block_to_context).collect(),
+        prev_blockhash,
+        post_blockhash,
+        encryption_key: witness.validium.map(|input| {
+            SecretKey::try_from_bytes(input.secret_key)
+                .expect("validium key")
+                .public_key()
+                .to_bytes(true)
+        }),
     };
 
-    // println!("chunk_info = {}", chunk_info);
+    println!("chunk_info = {}", chunk_info);
 
     Ok(chunk_info)
 }
