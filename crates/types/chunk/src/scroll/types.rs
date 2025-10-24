@@ -208,8 +208,9 @@ impl BlockExt for RecoveredBlock<Block> {
                     Ok(decrypted) => {
                         assert_eq!(decrypted, *tx_in_block);
                     }
-                    Err(e) => {
-                        eprintln!("{}", e);
+                    Err(_) => {
+                        // when decryption has failed, the validium_tx is just used for execution with its encrypted bytes
+                        assert_eq!(*validium_tx, *tx_in_block);
                     }
                 }
 
