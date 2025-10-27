@@ -1562,7 +1562,7 @@ dependencies = [
 [[package]]
 name = "ceno-examples"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fgpu-bb31-hal#afa8a03d7c4359d49c2e2447a9b60a0784617345"
+source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fcudarc-sumcheck#f3a4afd073ae6516d508267659d68d8ba9a7889d"
 dependencies = [
  "glob",
 ]
@@ -1593,7 +1593,7 @@ dependencies = [
 [[package]]
 name = "ceno_crypto"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fgpu-bb31-hal#afa8a03d7c4359d49c2e2447a9b60a0784617345"
+source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fcudarc-sumcheck#f3a4afd073ae6516d508267659d68d8ba9a7889d"
 dependencies = [
  "ceno_keccak",
  "ceno_sha2",
@@ -1614,11 +1614,11 @@ dependencies = [
 [[package]]
 name = "ceno_emul"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fgpu-bb31-hal#afa8a03d7c4359d49c2e2447a9b60a0784617345"
+source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fcudarc-sumcheck#f3a4afd073ae6516d508267659d68d8ba9a7889d"
 dependencies = [
  "anyhow",
  "ceno_rt",
- "ceno_syscall 0.1.0 (git+https://github.com/scroll-tech/ceno?branch=feat%2Fgpu-bb31-hal)",
+ "ceno_syscall 0.1.0 (git+https://github.com/scroll-tech/ceno?branch=feat%2Fcudarc-sumcheck)",
  "elf",
  "ff_ext",
  "itertools 0.13.0",
@@ -1638,7 +1638,7 @@ dependencies = [
 [[package]]
 name = "ceno_host"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fgpu-bb31-hal#afa8a03d7c4359d49c2e2447a9b60a0784617345"
+source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fcudarc-sumcheck#f3a4afd073ae6516d508267659d68d8ba9a7889d"
 dependencies = [
  "anyhow",
  "ceno_emul",
@@ -1650,16 +1650,16 @@ dependencies = [
 [[package]]
 name = "ceno_keccak"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fgpu-bb31-hal#afa8a03d7c4359d49c2e2447a9b60a0784617345"
+source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fcudarc-sumcheck#f3a4afd073ae6516d508267659d68d8ba9a7889d"
 dependencies = [
- "ceno_syscall 0.1.0 (git+https://github.com/scroll-tech/ceno?branch=feat%2Fgpu-bb31-hal)",
+ "ceno_syscall 0.1.0 (git+https://github.com/scroll-tech/ceno?branch=feat%2Fcudarc-sumcheck)",
  "tiny-keccak",
 ]
 
 [[package]]
 name = "ceno_rt"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fgpu-bb31-hal#afa8a03d7c4359d49c2e2447a9b60a0784617345"
+source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fcudarc-sumcheck#f3a4afd073ae6516d508267659d68d8ba9a7889d"
 dependencies = [
  "getrandom 0.2.16",
  "getrandom 0.3.3",
@@ -1669,16 +1669,16 @@ dependencies = [
 [[package]]
 name = "ceno_sha2"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fgpu-bb31-hal#afa8a03d7c4359d49c2e2447a9b60a0784617345"
+source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fcudarc-sumcheck#f3a4afd073ae6516d508267659d68d8ba9a7889d"
 dependencies = [
- "ceno_syscall 0.1.0 (git+https://github.com/scroll-tech/ceno?branch=feat%2Fgpu-bb31-hal)",
+ "ceno_syscall 0.1.0 (git+https://github.com/scroll-tech/ceno?branch=feat%2Fcudarc-sumcheck)",
  "digest 0.10.7",
 ]
 
 [[package]]
 name = "ceno_syscall"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fgpu-bb31-hal#afa8a03d7c4359d49c2e2447a9b60a0784617345"
+source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fcudarc-sumcheck#f3a4afd073ae6516d508267659d68d8ba9a7889d"
 
 [[package]]
 name = "ceno_syscall"
@@ -1693,7 +1693,7 @@ source = "git+https://github.com/scroll-tech/ceno#050108047aad24101fcb010da4e7d2
 [[package]]
 name = "ceno_zkvm"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fgpu-bb31-hal#afa8a03d7c4359d49c2e2447a9b60a0784617345"
+source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fcudarc-sumcheck#f3a4afd073ae6516d508267659d68d8ba9a7889d"
 dependencies = [
  "base64",
  "bincode 1.3.3",
@@ -2044,7 +2044,7 @@ dependencies = [
 [[package]]
 name = "cuda_hal"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/ceno-gpu.git?branch=feat%2Fupgrade-cudarc-0.17.3#73b77c65be0cba3d071f8e28d962e604f0b547ad"
+source = "git+ssh://git@github.com/scroll-tech/ceno-gpu.git?branch=feat%2Fsumcheck-terms-parallel#79bcb85375125a9f115581ffbf9c2ccbd3d2158f"
 dependencies = [
  "anyhow",
  "cudarc 0.17.3",
@@ -2279,7 +2279,7 @@ dependencies = [
 [[package]]
 name = "derive"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fgpu-bb31-hal#afa8a03d7c4359d49c2e2447a9b60a0784617345"
+source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fcudarc-sumcheck#f3a4afd073ae6516d508267659d68d8ba9a7889d"
 dependencies = [
  "quote",
  "syn 1.0.109",
@@ -3039,7 +3039,7 @@ dependencies = [
 [[package]]
 name = "gkr_iop"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fgpu-bb31-hal#afa8a03d7c4359d49c2e2447a9b60a0784617345"
+source = "git+https://github.com/scroll-tech/ceno?branch=feat%2Fcudarc-sumcheck#f3a4afd073ae6516d508267659d68d8ba9a7889d"
 dependencies = [
  "bincode 1.3.3",
  "cuda_hal",
@@ -3387,11 +3387,11 @@ dependencies = [
 
 [[package]]
 name = "home"
-version = "0.5.11"
+version = "0.5.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "589533453244b0995c858700322199b2becb13b627df2851f64a2775d024abcf"
+checksum = "cc627f471c528ff0c4a49e1d5e60450c8f6461dd6d10ba9dcd3a61d3dff7728d"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.61.0",
 ]
 
 [[package]]
@@ -7932,7 +7932,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.4.15",
- "windows-sys 0.59.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -8990,7 +8990,7 @@ dependencies = [
 [[package]]
 name = "sppark"
 version = "0.1.11"
-source = "git+ssh://git@github.com/scroll-tech/ceno-gpu.git?branch=feat%2Fupgrade-cudarc-0.17.3#73b77c65be0cba3d071f8e28d962e604f0b547ad"
+source = "git+ssh://git@github.com/scroll-tech/ceno-gpu.git?branch=feat%2Fsumcheck-terms-parallel#79bcb85375125a9f115581ffbf9c2ccbd3d2158f"
 dependencies = [
  "cc",
  "which",
@@ -8999,7 +8999,7 @@ dependencies = [
 [[package]]
 name = "sppark_plug"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/ceno-gpu.git?branch=feat%2Fupgrade-cudarc-0.17.3#73b77c65be0cba3d071f8e28d962e604f0b547ad"
+source = "git+ssh://git@github.com/scroll-tech/ceno-gpu.git?branch=feat%2Fsumcheck-terms-parallel#79bcb85375125a9f115581ffbf9c2ccbd3d2158f"
 dependencies = [
  "cc",
  "ff_ext",

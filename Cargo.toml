@@ -68,15 +68,15 @@ openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0",
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
 
 # ceno guest lib
-ceno_rt = { git = "https://github.com/scroll-tech/ceno", branch = "feat/gpu-bb31-hal" }
-ceno_crypto = { git = "https://github.com/scroll-tech/ceno", branch = "feat/gpu-bb31-hal" }
+ceno_rt = { git = "https://github.com/scroll-tech/ceno", branch = "feat/cudarc-sumcheck" }
+ceno_crypto = { git = "https://github.com/scroll-tech/ceno", branch = "feat/cudarc-sumcheck" }
 
 # ceno host lib
-ceno_emul = { git = "https://github.com/scroll-tech/ceno", branch = "feat/gpu-bb31-hal" }
-ceno_host = { git = "https://github.com/scroll-tech/ceno", branch = "feat/gpu-bb31-hal" }
-ceno_zkvm = { git = "https://github.com/scroll-tech/ceno", branch = "feat/gpu-bb31-hal" }
-ceno_sha2 = { git = "https://github.com/scroll-tech/ceno", branch = "feat/gpu-bb31-hal" }
-gkr_iop = { git = "https://github.com/scroll-tech/ceno", branch = "feat/gpu-bb31-hal" }
+ceno_emul = { git = "https://github.com/scroll-tech/ceno", branch = "feat/cudarc-sumcheck" }
+ceno_host = { git = "https://github.com/scroll-tech/ceno", branch = "feat/cudarc-sumcheck" }
+ceno_zkvm = { git = "https://github.com/scroll-tech/ceno", branch = "feat/cudarc-sumcheck" }
+ceno_sha2 = { git = "https://github.com/scroll-tech/ceno", branch = "feat/cudarc-sumcheck" }
+gkr_iop = { git = "https://github.com/scroll-tech/ceno", branch = "feat/cudarc-sumcheck" }
 ff_ext = { git = "https://github.com/scroll-tech/gkr-backend.git", rev = "v1.0.0-alpha.9" }
 mpcs = { git = "https://github.com/scroll-tech/gkr-backend.git", rev = "v1.0.0-alpha.9" }
 
