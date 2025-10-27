@@ -353,12 +353,11 @@ where
     std::fs::create_dir_all(&cache_dir)?;
 
     // Dump verifier-only assets to disk.
-    let path_verifier_code = WORKSPACE_ROOT
+    let path_verifier_dir = WORKSPACE_ROOT
         .join("releases")
         .join(guest_version())
-        .join("verifier")
-        .join("verifier.bin");
-    let verifier = scroll_zkvm_verifier::verifier::UniversalVerifier::setup(&path_verifier_code)?;
+        .join("verifier");
+    let verifier = scroll_zkvm_verifier::verifier::UniversalVerifier::setup(&path_verifier_dir)?;
 
     // Try reading proof from cache if available, and early return in that case.
     let task_id = witness.identifier();
