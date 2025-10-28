@@ -1,9 +1,12 @@
 mod crypto;
-mod types;
-mod witness;
-
 pub use crypto::Crypto;
-pub use witness::{ChunkWitness, ChunkWitnessWithRspTrie, LegacyChunkWitness};
 
-mod execute;
-pub use execute::execute;
+#[cfg(feature = "scroll")]
+mod scroll;
+#[cfg(feature = "scroll")]
+pub use scroll::*;
+
+#[cfg(not(feature = "scroll"))]
+mod ethereum;
+#[cfg(not(feature = "scroll"))]
+pub use ethereum::*;
