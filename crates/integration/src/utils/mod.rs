@@ -376,7 +376,7 @@ pub fn build_batch_witnesses_validium(
     let last_chunk = chunk_infos.last().expect("at least 1 chunk in batch");
     let reference_header =
         ReferenceHeader::Validium(BatchHeaderValidium::V1(BatchHeaderValidiumV1 {
-            version: version.as_version_byte(),
+            version: version.stf_version as u8,
             batch_index: last_header.batch_index + 1,
             parent_batch_hash: last_header.batch_hash,
             post_state_root: last_chunk.post_state_root,
