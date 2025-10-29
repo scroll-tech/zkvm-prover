@@ -1,14 +1,19 @@
-use alloy_consensus::transaction::TxHashRef;
+use super::types::validium::SecretKey;
+use super::witness::ValidiumInputs;
 use alloy_primitives::keccak256;
+use itertools::Itertools;
 use sbv_helpers::manually_drop_on_zkvm;
 use sbv_primitives::{
     B256, U256,
     types::{
+        consensus::TxL1Message,
         eips::Encodable2718,
         reth::primitives::{Block, RecoveredBlock, TransactionSigned},
     },
 };
 use std::ops::Deref;
+
+pub mod validium;
 
 const LEGACY_DA_HEADER_LEN: usize = size_of::<u64>() // block number
         + size_of::<u64>() // timestamp
@@ -24,7 +29,11 @@ pub trait ChunkExt {
     /// Data hash before Euclid V2
     fn legacy_data_hash(&self) -> B256;
     /// Rolling message queue hash after Euclid V2
-    fn rolling_msg_queue_hash(&self, rolling_hash: B256) -> B256;
+    fn rolling_msg_queue_hash(
+        &self,
+        rolling_hash: B256,
+        validium_inputs: Option<&ValidiumInputs>,
+    ) -> B256;
 }
 
 impl<T: Deref<Target = [RecoveredBlock<Block>]>> ChunkExt for T {
@@ -66,10 +75,28 @@ impl<T: Deref<Target = [RecoveredBlock<Block>]>> ChunkExt for T {
     }
 
     #[inline]
-    fn rolling_msg_queue_hash(&self, mut rolling_hash: B256) -> B256 {
+    fn rolling_msg_queue_hash(
+        &self,
+        mut rolling_hash: B256,
+        validium_inputs: Option<&ValidiumInputs>,
+    ) -> B256 {
         let blocks = self.as_ref();
-        for block in blocks.iter() {
-            rolling_hash = block.hash_msg_queue(&rolling_hash);
+
+        if let Some(ValidiumInputs {
+            validium_txs,
+            secret_key,
+        }) = validium_inputs
+        {
+            let secret_key = SecretKey::try_from_bytes(secret_key).expect("valid secret key");
+
+            for (block, validium_txs) in blocks.iter().zip(validium_txs.iter()) {
+                rolling_hash = block
+                    .hash_msg_queue(&rolling_hash, Some((validium_txs.as_slice(), &secret_key)));
+            }
+        } else {
+            for block in blocks.iter() {
+                rolling_hash = block.hash_msg_queue(&rolling_hash, None);
+            }
         }
         rolling_hash
     }
@@ -99,16 +126,32 @@ impl<'a, I: Iterator<Item = &'a TransactionSigned>> TxBytesHashExt for I {
 }
 
 /// Chunk related extension methods for Block
-trait BlockChunkExt {
+trait BlockExt {
+    /// Get an iterator over L1 message transactions in the block.
+    fn l1_txs_iter(&self) -> impl Iterator<Item = &TxL1Message>;
+
     /// Hash the header of the block
     fn encode_legacy_da_header(&self, buffer: &mut Vec<u8>);
     /// Hash the l1 messages of the block
     fn encode_legacy_l1_msg(&self, buffer: &mut Vec<u8>);
     /// Hash the l1 messages of the block
-    fn hash_msg_queue(&self, initial_queue_hash: &B256) -> B256;
+    fn hash_msg_queue(
+        &self,
+        initial_queue_hash: &B256,
+        validium_txs: Option<(&[TxL1Message], &SecretKey)>,
+    ) -> B256;
 }
 
-impl BlockChunkExt for RecoveredBlock<Block> {
+impl BlockExt for RecoveredBlock<Block> {
+    #[inline]
+    fn l1_txs_iter(&self) -> impl Iterator<Item = &TxL1Message> {
+        self.body()
+            .transactions
+            .iter()
+            .filter_map(|tx| tx.as_l1_message())
+            .map(|tx| tx.inner())
+    }
+
     #[inline]
     fn encode_legacy_da_header(&self, buffer: &mut Vec<u8>) {
         buffer.extend_from_slice(&self.number.to_be_bytes());
@@ -135,20 +178,19 @@ impl BlockChunkExt for RecoveredBlock<Block> {
     }
 
     #[inline]
-    fn hash_msg_queue(&self, initial_queue_hash: &B256) -> B256 {
+    fn hash_msg_queue(
+        &self,
+        initial_queue_hash: &B256,
+        validium_txs: Option<(&[TxL1Message], &SecretKey)>,
+    ) -> B256 {
         let mut rolling_hash = *initial_queue_hash;
 
         let mut buffer = [0u8; { size_of::<B256>() * 2 }];
         buffer[..32].copy_from_slice(rolling_hash.as_ref());
 
-        for tx in self
-            .body()
-            .transactions
-            .iter()
-            .filter(|tx| tx.is_l1_message())
-        {
+        let mut hash_tx = |tx_hash: B256| {
             buffer[..size_of::<B256>()].copy_from_slice(rolling_hash.as_ref());
-            buffer[size_of::<B256>()..].copy_from_slice(tx.tx_hash().as_ref());
+            buffer[size_of::<B256>()..].copy_from_slice(tx_hash.as_ref());
 
             rolling_hash = keccak256(buffer);
             // clear last 32 bits, i.e. 4 bytes.
@@ -158,7 +200,27 @@ impl BlockChunkExt for RecoveredBlock<Block> {
             rolling_hash.0[29] = 0;
             rolling_hash.0[30] = 0;
             rolling_hash.0[31] = 0;
-        }
+        };
+
+        if let Some((txs, secret_key)) = validium_txs {
+            for (validium_tx, tx_in_block) in txs.iter().zip_eq(self.l1_txs_iter()) {
+                match validium::decrypt(validium_tx, secret_key) {
+                    Ok(decrypted) => {
+                        assert_eq!(decrypted, *tx_in_block);
+                    }
+                    Err(_) => {
+                        // when decryption has failed, the validium_tx is just used for execution with its encrypted bytes
+                        assert_eq!(*validium_tx, *tx_in_block);
+                    }
+                }
+
+                hash_tx(validium_tx.tx_hash());
+            }
+        } else {
+            for tx in self.l1_txs_iter() {
+                hash_tx(tx.tx_hash());
+            }
+        };
 
         rolling_hash
     }

@@ -1,13 +1,18 @@
 use halo2curves_axiom::CurveAffine;
 use types_base::{
     aggregation::{AggregationInput, ProofCarryingWitness},
-    public_inputs::{ForkName, batch::BatchInfo, chunk::ChunkInfo},
+    public_inputs::{
+        ForkName,
+        batch::BatchInfo,
+        chunk::{ChunkInfo, LegacyChunkInfo},
+    },
 };
 
 use crate::{
     builder::{
         BatchInfoBuilder, BatchInfoBuilderV6, BatchInfoBuilderV7, BatchInfoBuilderV8,
         BuilderArgsV6, BuilderArgsV7, BuilderArgsV8,
+        validium::{ValidiumBatchInfoBuilder, ValidiumBuilderArgs},
     },
     header::ReferenceHeader,
 };
@@ -119,6 +124,8 @@ pub fn build_point(x: Bytes48, y: Bytes48) -> Option<halo2curves_axiom::bls12_38
 /// Witness to the batch circuit.
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct BatchWitness {
+    /// The version byte as per [version][types_base::version].
+    pub version: u8,
     /// Flattened root proofs from all chunks in the batch.
     pub chunk_proofs: Vec<AggregationInput>,
     /// Chunk infos.
@@ -153,7 +160,7 @@ pub struct LegacyBatchWitness {
     pub chunk_proofs: Vec<AggregationInput>,
     /// Chunk infos.
     #[rkyv()]
-    pub chunk_infos: Vec<ChunkInfo>,
+    pub chunk_infos: Vec<LegacyChunkInfo>,
     /// Blob bytes.
     #[rkyv()]
     pub blob_bytes: Vec<u8>,
@@ -170,10 +177,10 @@ pub struct LegacyBatchWitness {
 
 impl From<BatchWitness> for LegacyBatchWitness {
     fn from(value: BatchWitness) -> Self {
-        let point_eval_witness = value.point_eval_witness.as_ref().unwrap();
+        let point_eval_witness = value.point_eval_witness.expect("should not be none");
         Self {
             chunk_proofs: value.chunk_proofs,
-            chunk_infos: value.chunk_infos,
+            chunk_infos: value.chunk_infos.into_iter().map(|c| c.into()).collect(),
             blob_bytes: value.blob_bytes,
             point_eval_witness: point_eval_witness.clone().into(),
             reference_header: value.reference_header,
@@ -228,6 +235,9 @@ impl From<&BatchWitness> for BatchInfo {
                 };
                 BatchInfoBuilderV8::build(args)
             }
+            ReferenceHeader::Validium(header) => ValidiumBatchInfoBuilder::build(
+                ValidiumBuilderArgs::new(witness.version, *header, chunk_infos),
+            ),
         }
     }
 }
