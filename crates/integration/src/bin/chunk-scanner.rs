@@ -10,7 +10,7 @@ use scroll_zkvm_integration::{
     ProverTester,
     testers::chunk::{ChunkProverTester, exec_chunk},
 };
-use scroll_zkvm_types::{chunk::ChunkWitness, public_inputs::ForkName};
+use scroll_zkvm_types::{chunk::ChunkWitness, version};
 use std::collections::HashMap;
 use std::{fs::File, path::PathBuf, slice};
 use url::Url;
@@ -157,14 +157,24 @@ async fn main() -> eyre::Result<()> {
     let mut gas_used = 0u64;
     let mut n_chunks = 0;
     while let Some(block) = rx.recv().await {
+        // FIXME: hhq
+        use scroll_zkvm_types::public_inputs::ForkName::Feynman;
         let (_, gas) = exec_chunk(&ChunkWitness::new(
+            version::Version::feynman().as_version_byte(),
             slice::from_ref(&block),
             B256::ZERO,
-            ForkName::Feynman,
+            Feynman,
+            None,
         ))?;
 
         if gas + gas_used > cli.chunk_gas_target * 1_000_000 {
-            let wit = ChunkWitness::new(&blocks, B256::ZERO, ForkName::Feynman);
+            let wit = ChunkWitness::new(
+                version::Version::feynman().as_version_byte(),
+                &blocks,
+                B256::ZERO,
+                Feynman,
+                None,
+            );
             let (exec_result, gas) = exec_chunk(&wit)?;
 
             let start_block = blocks[0].header.number;

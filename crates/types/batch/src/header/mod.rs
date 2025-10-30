@@ -6,6 +6,8 @@ pub mod v7;
 
 pub mod v8;
 
+pub mod validium;
+
 pub trait BatchHeader {
     /// The DA-codec version for the batch header.
     fn version(&self) -> u8;
@@ -21,6 +23,17 @@ pub trait BatchHeader {
 
     /// The blob-versioned hash as per EIP-4844 for the blob representing the batch.
     fn blob_versioned_hash(&self) -> B256;
+}
+
+pub trait ValidiumBatchHeader: BatchHeader {
+    /// The commitment attached to the batch header.
+    fn commitment(&self) -> Vec<u8>;
+
+    /// The state root after applying batch.
+    fn post_state_root(&self) -> B256;
+
+    /// The withdraw root from the last block in the batch.
+    fn withdraw_root(&self) -> B256;
 }
 
 /// Reference header indicate the version of batch header base on which batch hash
@@ -42,4 +55,6 @@ pub enum ReferenceHeader {
     V7(v7::BatchHeaderV7),
     /// Represents DA-codec v8.
     V8(v8::BatchHeaderV8),
+    /// Represents batch header utilised in L3 validium.
+    Validium(validium::BatchHeaderValidium),
 }

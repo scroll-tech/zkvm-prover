@@ -5,6 +5,19 @@ use types_base::{
 };
 
 /// The witness for the bundle circuit.
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+pub struct BundleWitness {
+    /// The version byte as per [version][types_base::version].
+    pub version: u8,
+    /// Batch proofs being aggregated in the bundle.
+    pub batch_proofs: Vec<AggregationInput>,
+    /// Public-input values for the corresponding batch proofs.
+    pub batch_infos: Vec<BatchInfo>,
+    /// The code version specify the chain spec
+    pub fork_name: ForkName,
+}
+
+/// The witness for the bundle circuit.
 #[derive(
     Clone,
     Debug,
@@ -15,7 +28,7 @@ use types_base::{
     serde::Serialize,
 )]
 #[rkyv(derive(Debug))]
-pub struct BundleWitness {
+pub struct LegacyBundleWitness {
     /// Batch proofs being aggregated in the bundle.
     #[rkyv()]
     pub batch_proofs: Vec<AggregationInput>,
@@ -25,6 +38,16 @@ pub struct BundleWitness {
     /// The code version specify the chain spec
     #[rkyv()]
     pub fork_name: ForkName,
+}
+
+impl From<BundleWitness> for LegacyBundleWitness {
+    fn from(value: BundleWitness) -> Self {
+        Self {
+            batch_proofs: value.batch_proofs,
+            batch_infos: value.batch_infos,
+            fork_name: value.fork_name,
+        }
+    }
 }
 
 impl ProofCarryingWitness for BundleWitness {
@@ -69,6 +92,7 @@ impl From<&BundleWitness> for BundleInfo {
             batch_hash,
             withdraw_root,
             msg_queue_hash,
+            encryption_key: first_batch.encryption_key.clone(),
         }
     }
 }
