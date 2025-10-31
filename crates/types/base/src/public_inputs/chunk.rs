@@ -368,12 +368,6 @@ impl MultiVersionPublicInputs for ChunkInfo {
             assert_eq!(prev_pi.post_msg_queue_hash, B256::ZERO);
         }
 
-        // blockhash is unused for scroll domain.
-        if version.domain == Domain::Scroll {
-            assert_eq!(self.prev_blockhash, B256::ZERO);
-            assert_eq!(self.post_blockhash, B256::ZERO);
-        }
-
         // - blockhash chaining must be validated for validiums.
         // - encryption key must be the same between contiguous chunks in a batch.
         if version.domain == Domain::Validium {

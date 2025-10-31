@@ -3,7 +3,6 @@ use alloy_primitives::B256;
 use sbv_core::{verifier::StateCommitMode, witness::BlockWitness};
 use sbv_primitives::U256;
 use sbv_primitives::types::consensus::TxL1Message;
-use sbv_trie::PartialStateTrie;
 use std::collections::HashSet;
 use types_base::version::Version;
 use types_base::{fork_name::ForkName, public_inputs::chunk::ChunkInfo};
@@ -21,25 +20,6 @@ pub struct ChunkWitness {
     pub fork_name: ForkName,
     /// The compression ratios for each block in the chunk.
     pub compression_ratios: Vec<Vec<U256>>,
-    /// Validium encrypted txs and secret key if this is a validium chain.
-    pub validium: Option<ValidiumInputs>,
-}
-
-/// The witness type accepted by the chunk-circuit.
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
-pub struct ChunkWitnessWithRspTrie {
-    /// Version byte as per [version][types_base::version].
-    pub version: u8,
-    /// The block witness for each block in the chunk.
-    pub blocks: Vec<BlockWitness>,
-    /// The on-chain rolling L1 message queue hash before enqueueing any L1 msg tx from the chunk.
-    pub prev_msg_queue_hash: B256,
-    /// The code version specify the chain spec
-    pub fork_name: ForkName,
-    /// The compression ratios for each block in the chunk.
-    pub compression_ratios: Vec<Vec<U256>>,
-    /// The cached partial state trie for the chunk.
-    pub cached_trie: PartialStateTrie,
     /// Validium encrypted txs and secret key if this is a validium chain.
     pub validium: Option<ValidiumInputs>,
 }
@@ -205,35 +185,6 @@ impl From<ChunkWitness> for LegacyChunkWitness {
             fork_name: value.fork_name,
             compression_ratios: value.compression_ratios,
             state_commit_mode: StateCommitMode::Auto,
-        }
-    }
-}
-
-impl From<ChunkWitness> for ChunkWitnessWithRspTrie {
-    fn from(mut value: ChunkWitness) -> Self {
-        let pre_state_root = value
-            .blocks
-            .first()
-            .expect("at least one block")
-            .prev_state_root;
-        let cached_trie = PartialStateTrie::new(
-            pre_state_root,
-            value.blocks.iter().flat_map(|w| w.states.iter()),
-        )
-        .expect("trie from witness");
-
-        for block in value.blocks.iter_mut() {
-            block.states.clear();
-        }
-
-        ChunkWitnessWithRspTrie {
-            version: value.version,
-            blocks: value.blocks,
-            prev_msg_queue_hash: value.prev_msg_queue_hash,
-            fork_name: value.fork_name,
-            compression_ratios: value.compression_ratios,
-            cached_trie,
-            validium: value.validium,
         }
     }
 }
