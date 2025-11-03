@@ -105,6 +105,20 @@ impl BundleInfo {
         keccak256(pi)
     }
 
+    pub fn pi_galileo(&self) -> Vec<u8> {
+        std::iter::empty()
+            .chain(self.chain_id.to_be_bytes().as_slice())
+            .chain(self.msg_queue_hash.as_slice())
+            .chain(self.num_batches.to_be_bytes().as_slice())
+            .chain(self.prev_state_root.as_slice())
+            .chain(self.prev_batch_hash.as_slice())
+            .chain(self.post_state_root.as_slice())
+            .chain(self.batch_hash.as_slice())
+            .chain(self.withdraw_root.as_slice())
+            .cloned()
+            .collect()
+    }
+
     pub fn pi_hash_versioned(&self, version: Version, pi: &[u8]) -> B256 {
         let version_byte = version.as_version_byte();
         keccak256(
@@ -129,6 +143,7 @@ impl BundleInfo {
             ForkName::EuclidV1 => self.pi_hash_euclidv1(),
             ForkName::EuclidV2 => self.pi_hash_euclidv2(),
             ForkName::Feynman => self.pi_hash_feynman(),
+            _ => unreachable!("Fork > Feynman should use `pi_hash_by_version`"),
         }
     }
 }
@@ -141,6 +156,7 @@ impl MultiVersionPublicInputs for BundleInfo {
             ForkName::EuclidV1 => self.pi_hash_euclidv1(),
             ForkName::EuclidV2 => self.pi_hash_euclidv2(),
             ForkName::Feynman => self.pi_hash_feynman(),
+            _ => unreachable!("Fork > Feynman should use `pi_hash_by_version`"),
         }
     }
 
@@ -149,6 +165,9 @@ impl MultiVersionPublicInputs for BundleInfo {
             (Domain::Scroll, STFVersion::V6) => self.pi_hash_euclidv1(),
             (Domain::Scroll, STFVersion::V7) => self.pi_hash_euclidv2(),
             (Domain::Scroll, STFVersion::V8) => self.pi_hash_feynman(),
+            (Domain::Scroll, STFVersion::V9) => {
+                self.pi_hash_versioned(version, self.pi_galileo().as_slice())
+            }
             (Domain::Validium, STFVersion::V1) => {
                 self.pi_hash_versioned(version, self.pi_validium_v1().as_slice())
             }

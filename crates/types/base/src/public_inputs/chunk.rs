@@ -272,6 +272,44 @@ impl ChunkInfo {
         )
     }
 
+    /// Public input hash for a given chunk (galileo or da-codec@v9) is defined as
+    ///
+    /// keccak(
+    ///     version ||
+    ///     chain id ||
+    ///     prev state root ||
+    ///     post state root ||
+    ///     withdraw root ||
+    ///     tx data digest ||
+    ///     prev msg queue hash ||
+    ///     post msg queue hash ||
+    ///     initial block number ||
+    ///     block_ctx for block_ctx in block_ctxs
+    /// )
+    pub fn pi_hash_galileo(&self, version: Version) -> B256 {
+        keccak256(
+            std::iter::empty()
+                .chain(&[version.as_version_byte()])
+                .chain(&self.chain_id.to_be_bytes())
+                .chain(self.prev_state_root.as_slice())
+                .chain(self.post_state_root.as_slice())
+                .chain(self.withdraw_root.as_slice())
+                .chain(self.tx_data_digest.as_slice())
+                .chain(self.prev_msg_queue_hash.as_slice())
+                .chain(self.post_msg_queue_hash.as_slice())
+                .chain(&self.initial_block_number.to_be_bytes())
+                .chain(
+                    self.block_ctxs
+                        .iter()
+                        .flat_map(|block_ctx| block_ctx.to_bytes())
+                        .collect::<Vec<u8>>()
+                        .as_slice(),
+                )
+                .cloned()
+                .collect::<Vec<u8>>(),
+        )
+    }
+
     /// Public input hash for a given chunk for L3 validium @ v1:
     ///
     /// keccak(
@@ -332,6 +370,7 @@ impl MultiVersionPublicInputs for ChunkInfo {
                 // Feynman fork uses the same hash as EuclidV2
                 self.pi_hash_euclidv2()
             }
+            _ => unreachable!("Fork > Feynman should use `pi_hash_by_version`"),
         }
     }
 
@@ -341,6 +380,7 @@ impl MultiVersionPublicInputs for ChunkInfo {
             (Domain::Scroll, STFVersion::V6) => self.pi_hash_by_fork(ForkName::EuclidV1),
             (Domain::Scroll, STFVersion::V7) => self.pi_hash_by_fork(ForkName::EuclidV2),
             (Domain::Scroll, STFVersion::V8) => self.pi_hash_by_fork(ForkName::Feynman),
+            (Domain::Scroll, STFVersion::V9) => self.pi_hash_galileo(version),
             (Domain::Validium, STFVersion::V1) => self.pi_hash_validium(version),
             (domain, stf_version) => {
                 unreachable!("unsupported version=({domain:?}, {stf_version:?})")
