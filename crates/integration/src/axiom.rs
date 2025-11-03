@@ -14,21 +14,13 @@ pub struct AxiomClient {
     program_id: String,
 }
 
-#[derive(thiserror::Error, Debug)]
-pub enum AxiomError {
-    #[error("http error: {0}")]
-    Http(String),
-    #[error(transparent)]
-    Reqwest(#[from] reqwest::Error),
-}
-
 impl TaskProver for AxiomClient {
     fn name(&self) -> &str { &self.program_id}
     fn get_vk(&mut self) -> Vec<u8> {
         unimplemented!();
     }
     fn prove_task(&mut self, t: &ProvingTask, gen_snark: bool) -> eyre::Result<ProofEnum> {
-        axiom_prove::ProveSdk::
+        //axiom_prove::ProveSdk::
         unimplemented!();
     }
 }
@@ -55,7 +47,7 @@ impl AxiomClient {
         proof_type: Option<&str>,
         witness: &[&[u8]],
         fields: &[&[u32]],
-    ) -> Result<String, AxiomError> {
+    ) -> eyre::Result<String> {
         let mut inputs: Vec<String> = Vec::with_capacity(witness.len() + fields.len());
 
         // Encode witness entries: 0x01 | bytes
@@ -70,28 +62,32 @@ impl AxiomClient {
 
         let body = ProofRequest { input: inputs };
 
+        //axiom_prove::ProveSdk::generate_new_proof(&self, args)
+
+        unimplemented!();
+
         let url = format!("{}/v1/proofs", self.base_url.trim_end_matches('/'));
-        let client = reqwest::blocking::Client::new();
+        // let client = reqwest::blocking::Client::new();
 
-        // Build query
-        let mut query: Vec<(&str, &str)> = vec![("program_id", program_id)];
-        if let Some(pt) = proof_type { query.push(("proof_type", pt)); }
+        // // Build query
+        // let mut query: Vec<(&str, &str)> = vec![("program_id", program_id)];
+        // if let Some(pt) = proof_type { query.push(("proof_type", pt)); }
 
-        let resp = client
-            .post(url)
-            .header("Axiom-API-Key", &self.api_key)
-            .query(&query)
-            .json(&body)
-            .send()?;
+        // let resp = client
+        //     .post(url)
+        //     .header("Axiom-API-Key", &self.api_key)
+        //     .query(&query)
+        //     .json(&body)
+        //     .send()?;
 
-        if resp.status().is_success() {
-            let pr: ProofResponse = resp.json()?;
-            Ok(pr.id)
-        } else {
-            let status = resp.status();
-            let text = resp.text().unwrap_or_default();
-            Err(AxiomError::Http(format!("status {}: {}", status, text)))
-        }
+        // if resp.status().is_success() {
+        //     let pr: ProofResponse = resp.json()?;
+        //     Ok(pr.id)
+        // } else {
+        //     let status = resp.status();
+        //     let text = resp.text().unwrap_or_default();
+        //     Err(AxiomError::Http(format!("status {}: {}", status, text)))
+        // }
     }
 }
 
