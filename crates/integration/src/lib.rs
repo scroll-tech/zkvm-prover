@@ -1,6 +1,6 @@
 use cargo_metadata::MetadataCommand;
 use once_cell::sync::OnceCell;
-use openvm_sdk::StdIn;
+use openvm_sdk::{StdIn, F};
 use scroll_zkvm_prover::{
     Prover,
     setup::{read_app_config, read_app_exe},
@@ -19,6 +19,8 @@ use std::{
     process,
     sync::LazyLock,
 };
+use openvm_circuit::arch::instructions::exe::VmExe;
+use openvm_sdk::config::{AppConfig, SdkVmConfig};
 use tracing::instrument;
 use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -33,6 +35,9 @@ const DIR_PROOFS: &str = "proofs";
 
 /// File descriptor for app openvm config.
 const FD_APP_CONFIG: &str = "openvm.toml";
+
+/// File descriptor for app elf.
+const FD_APP_ELF: &str = "app.elf";
 
 /// File descriptor for app exe.
 const FD_APP_EXE: &str = "app.vmexe";
@@ -79,6 +84,31 @@ static DIR_OUTPUT: LazyLock<&Path> = LazyLock::new(|| {
     eprintln!("DIR_OUTPUT = {}", path.display());
     Box::leak(path.into_boxed_path())
 });
+
+#[derive(Debug, Clone)]
+pub struct AssetPaths {
+    pub app_config: PathBuf,
+    pub app_elf: PathBuf,
+    pub app_exe: PathBuf,
+}
+
+impl AssetPaths {
+    pub fn read_app_config(&self) -> eyre::Result<AppConfig<SdkVmConfig>> {
+        Ok(read_app_config(self.app_config.as_path())?)
+    }
+
+    pub fn read_app_elf(&self) -> eyre::Result<Vec<u8>> {
+        Ok(std::fs::read(self.app_elf.as_path())?)
+    }
+
+    pub fn read_app_exe(&self) -> eyre::Result<VmExe<F>> {
+        Ok(read_app_exe(self.app_exe.as_path())?)
+    }
+
+    pub fn read_raw_app_exe(&self) -> eyre::Result<Vec<u8>> {
+        Ok(std::fs::read(self.app_exe.as_path())?)
+    }
+}
 
 /// Every test run will write assets to a new directory.
 ///
@@ -159,19 +189,24 @@ pub trait ProverTester {
         Ok(())
     }
 
-    /// Load the app config.
-    fn load() -> eyre::Result<(PathBuf, PathBuf)> {
+    /// Load the assets paths
+    fn get_asset_paths() -> eyre::Result<AssetPaths> {
         let assets_version = guest_version();
         let release_dir = WORKSPACE_ROOT.join("releases").join(assets_version);
-        let path_app_config = release_dir.join(Self::NAME).join(FD_APP_CONFIG);
-        let path_app_exe = release_dir.join(Self::NAME).join(FD_APP_EXE);
-        Ok((path_app_config, path_app_exe))
+        let app_config = release_dir.join(Self::NAME).join(FD_APP_CONFIG);
+        let app_elf = release_dir.join(Self::NAME).join(FD_APP_ELF);
+        let app_exe = release_dir.join(Self::NAME).join(FD_APP_EXE);
+        Ok(AssetPaths {
+            app_config,
+            app_elf,
+            app_exe,
+        })
     }
 
     /// Load the prover
     #[instrument("Prover::load_prover")]
     fn load_prover(with_evm: bool) -> eyre::Result<Prover> {
-        let (path_app_config, path_app_exe) = Self::load()?;
+        let paths = Self::get_asset_paths()?;
 
         let path_assets = DIR_TESTRUN
             .get()
@@ -180,11 +215,11 @@ pub trait ProverTester {
         std::fs::create_dir_all(&path_assets)?;
 
         let config = scroll_zkvm_prover::ProverConfig {
-            path_app_exe,
-            path_app_config,
+            path_app_exe: paths.app_exe,
+            path_app_config: paths.app_config,
             ..Default::default()
         };
-        let prover = scroll_zkvm_prover::Prover::setup(config, Some(Self::NAME))?;
+        let prover = Prover::setup(config, Some(Self::NAME))?;
 
         Ok(prover)
     }
@@ -308,9 +343,9 @@ pub fn tester_execute<T: ProverTester>(
     witness: &T::Witness,
     proofs: &[ProofEnum],
 ) -> eyre::Result<ExecutionResult> {
-    let (path_app_config, path_app_exe) = T::load()?;
-    let app_exe = read_app_exe(&path_app_exe)?;
-    let app_config = read_app_config(&path_app_config)?;
+    let assets = T::get_asset_paths()?;
+    let app_exe = assets.read_app_exe()?;
+    let app_config = assets.read_app_config()?;
     let stdin = T::build_guest_input(
         witness,
         proofs

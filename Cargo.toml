@@ -131,6 +131,7 @@ sysinfo = { version = "0.35", default-features = false }
 bytesize = "2.0.1"
 url = "2.5.4"
 tokio = "1"
+axiom-sdk = { git = "https://github.com/scroll/axiom-api-cli.git", branch = "feat/upload-exe-raw" }
 
 scroll-zkvm-types = { path = "crates/types" }
 scroll-zkvm-types-base = { path = "crates/types/base" }

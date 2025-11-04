@@ -59,7 +59,7 @@ regex = "1.11.1"
 sysinfo = { workspace = true, features = ["system"] }
 bytesize.workspace = true
 url.workspace = true
-axiom-sdk = { git = "https://github.com/axiom-crypto/axiom-api-cli.git", tag = "v1.0.6" }
+axiom-sdk.workspace = true
 
 [dev-dependencies]
 glob = "0.3"
