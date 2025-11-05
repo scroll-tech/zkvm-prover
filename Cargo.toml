@@ -68,15 +68,15 @@ openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0",
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
 
 # ceno guest lib
-ceno_rt = { git = "https://github.com/scroll-tech/ceno", branch = "feat/multi_shard_ceno_cli" }
-ceno_crypto = { git = "https://github.com/scroll-tech/ceno", branch = "feat/multi_shard_ceno_cli" }
+ceno_rt = { git = "https://github.com/scroll-tech/ceno", rev = "ead824e07f9c8e4fcd0d6d8823a2f894ead3da28" }
+ceno_crypto = { git = "https://github.com/scroll-tech/ceno", rev = "ead824e07f9c8e4fcd0d6d8823a2f894ead3da28" }
 
 # ceno host lib
-ceno_emul = { git = "https://github.com/scroll-tech/ceno", branch = "feat/multi_shard_ceno_cli" }
-ceno_host = { git = "https://github.com/scroll-tech/ceno", branch = "feat/multi_shard_ceno_cli" }
-ceno_zkvm = { git = "https://github.com/scroll-tech/ceno", branch = "feat/multi_shard_ceno_cli", features = ["jemalloc"]}
-ceno_sha2 = { git = "https://github.com/scroll-tech/ceno", branch = "feat/multi_shard_ceno_cli" }
-gkr_iop = { git = "https://github.com/scroll-tech/ceno", branch = "feat/multi_shard_ceno_cli" }
+ceno_emul = { git = "https://github.com/scroll-tech/ceno", rev = "ead824e07f9c8e4fcd0d6d8823a2f894ead3da28" }
+ceno_host = { git = "https://github.com/scroll-tech/ceno", rev = "ead824e07f9c8e4fcd0d6d8823a2f894ead3da28" }
+ceno_zkvm = { git = "https://github.com/scroll-tech/ceno", rev = "ead824e07f9c8e4fcd0d6d8823a2f894ead3da28", features = ["jemalloc"]}
+ceno_sha2 = { git = "https://github.com/scroll-tech/ceno", rev = "ead824e07f9c8e4fcd0d6d8823a2f894ead3da28" }
+gkr_iop = { git = "https://github.com/scroll-tech/ceno", rev = "ead824e07f9c8e4fcd0d6d8823a2f894ead3da28" }
 ff_ext = { git = "https://github.com/scroll-tech/gkr-backend.git", tag = "v1.0.0-alpha.13" }
 mpcs = { git = "https://github.com/scroll-tech/gkr-backend.git", tag = "v1.0.0-alpha.13" }
 
