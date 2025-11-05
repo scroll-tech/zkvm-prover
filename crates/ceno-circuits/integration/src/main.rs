@@ -83,19 +83,19 @@ fn load_witness() -> ChunkWitness {
     ChunkWitness::new(&blocks)
 }
 
+pub const MAX_CYCLE_PER_SHARD: u64 = 1 << 26;
+
 fn main() -> eyre::Result<()> {
-    let profiling_level = 2;
+    let profiling_level: usize = env::var("PROFILING")
+        .ok()
+        .and_then(|v| v.parse::<usize>().ok())
+        .unwrap_or_default();
+
     let filter_by_profiling_level = filter_fn(move |metadata| {
         (1..=profiling_level)
             .map(|i| format!("profiling_{i}"))
             .any(|field| metadata.fields().field(&field).is_some())
     });
-
-    // Check what the user set in RUST_LOG (if any)
-    let rust_log_raw = env::var("RUST_LOG").unwrap_or_default();
-
-    // Determine if user requested something *more verbose* than INFO
-    let is_verbose = rust_log_raw.contains("trace") || rust_log_raw.contains("debug");
 
     let fmt_layer = fmt::layer()
         .compact()
@@ -103,26 +103,20 @@ fn main() -> eyre::Result<()> {
         .with_thread_names(false)
         .without_time();
 
-    Registry::default()
-        .with(
-            EnvFilter::builder()
-                .with_default_directive(LevelFilter::DEBUG.into())
-                .from_env_lossy(),
-        )
-        .with(fmt_layer)
-        .with(if is_verbose {
-            Some(ForestLayer::default())
-        } else {
-            None
-        })
-        // if some profiling granularity is specified, use the profiling filter,
-        // otherwise use the default
-        .with(if is_verbose {
-            Some(filter_by_profiling_level)
-        } else {
-            None
-        })
-        .init();
+    if profiling_level > 0 {
+        Registry::default()
+            .with(fmt_layer)
+            .with(ForestLayer::default())
+            .with(filter_by_profiling_level).init()
+    } else {
+        Registry::default()
+            .with(
+                EnvFilter::builder()
+                    .with_default_directive(LevelFilter::DEBUG.into())
+                    .from_env_lossy(),
+            )
+            .init()
+    };
 
     let (elf, program, platform) = setup();
 
@@ -146,7 +140,7 @@ fn main() -> eyre::Result<()> {
     let ctx = setup_program::<E>(
         program,
         platform,
-        MultiProver::new(0, 1, DEFAULT_MIN_CYCLE_PER_SHARDS, 1 << 25),
+        MultiProver::new(0, 1, DEFAULT_MIN_CYCLE_PER_SHARDS, MAX_CYCLE_PER_SHARD),
     );
     println!("setup_program done in {:?}", start.elapsed());
 
