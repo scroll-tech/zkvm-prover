@@ -15,6 +15,8 @@ use std::fs::File;
 use std::path::Path;
 use std::sync::LazyLock;
 use std::time::Instant;
+use tracing::level_filters::LevelFilter;
+use tracing_subscriber::{EnvFilter, Registry, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
 type Pcs = BasefoldDefault<E>;
 type E = BabyBearExt4;
@@ -78,6 +80,23 @@ fn load_witness() -> ChunkWitness {
 }
 
 fn main() -> eyre::Result<()> {
+    let fmt_layer = fmt::layer()
+        .compact()
+        .with_thread_ids(false)
+        .with_thread_names(false)
+        .without_time();
+
+    Registry::default()
+        .with(fmt_layer)
+        // if some profiling granularity is specified, use the profiling filter,
+        // otherwise use the default
+        .with(
+            EnvFilter::builder()
+                .with_default_directive(LevelFilter::DEBUG.into())
+                .from_env_lossy(),
+        )
+        .init();
+
     let (elf, program, platform) = setup();
 
     let (_, security_level) = default_backend_config();
