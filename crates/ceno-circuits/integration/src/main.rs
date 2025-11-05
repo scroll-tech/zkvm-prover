@@ -104,7 +104,11 @@ fn main() -> eyre::Result<()> {
         .without_time();
 
     Registry::default()
-        .with(ForestLayer::default())
+        .with(if is_verbose {
+            Some(ForestLayer::default())
+        } else {
+            None
+        })
         .with(fmt_layer)
         // if some profiling granularity is specified, use the profiling filter,
         // otherwise use the default
