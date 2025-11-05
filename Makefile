@@ -27,7 +27,7 @@ export RUST_LOG
 OPENVM_RUST_TOOLCHAIN ?= nightly-2025-08-18
 export OPENVM_RUST_TOOLCHAIN
 
-JEMALLOC_SYS_WITH_MALLOC_CONF ?= retain:true,metadata_thp:always,thp:always,dirty_decay_ms:-1,muzzy_decay_ms:-1,abort_conf:true 
+JEMALLOC_SYS_WITH_MALLOC_CONF ?= retain:true,metadata_thp:always,thp:always,dirty_decay_ms:-1,muzzy_decay_ms:-1
 export JEMALLOC_SYS_WITH_MALLOC_CONF	
 
 # Set GPU config if GPU=1 is set
