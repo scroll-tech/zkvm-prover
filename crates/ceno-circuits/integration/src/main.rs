@@ -91,25 +91,30 @@ fn main() -> eyre::Result<()> {
         .and_then(|v| v.parse::<usize>().ok())
         .unwrap_or_default();
 
-    let filter_by_profiling_level = filter_fn(move |metadata| {
-        (1..=profiling_level)
-            .map(|i| format!("profiling_{i}"))
-            .any(|field| metadata.fields().field(&field).is_some())
-    });
-
-    let fmt_layer = fmt::layer()
-        .compact()
-        .with_thread_ids(false)
-        .with_thread_names(false)
-        .without_time();
-
     if profiling_level > 0 {
+        let fmt_layer = fmt::layer()
+            .compact()
+            .with_thread_ids(false)
+            .with_thread_names(false)
+            .without_time();
+        let filter_by_profiling_level = filter_fn(move |metadata| {
+            (1..=profiling_level)
+                .map(|i| format!("profiling_{i}"))
+                .any(|field| metadata.fields().field(&field).is_some())
+        });
         Registry::default()
             .with(fmt_layer)
             .with(ForestLayer::default())
-            .with(filter_by_profiling_level).init()
+            .with(filter_by_profiling_level)
+            .init()
     } else {
+        let fmt_layer = fmt::layer()
+            .compact()
+            .with_thread_ids(false)
+            .with_thread_names(false)
+            .without_time();
         Registry::default()
+            .with(fmt_layer)
             .with(
                 EnvFilter::builder()
                     .with_default_directive(LevelFilter::DEBUG.into())
