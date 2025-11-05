@@ -150,7 +150,7 @@ fn main() -> eyre::Result<()> {
     let ctx = setup_program::<E>(
         program,
         platform,
-        MultiProver::new(0, 1, DEFAULT_MIN_CYCLE_PER_SHARDS, 1 << 29),
+        MultiProver::new(0, 1, DEFAULT_MIN_CYCLE_PER_SHARDS, 1 << 25),
     );
     println!("setup_program done in {:?}", start.elapsed());
 
