@@ -1,17 +1,20 @@
-use std::fs::File;
-use ceno_emul::{Platform, Program};
+use cargo_metadata::MetadataCommand;
+use ceno_emul::{Cycle, Platform, Program};
 use ceno_host::CenoStdin;
-use ceno_zkvm::e2e::{Checkpoint, Preset, run_e2e_with_checkpoint, setup_platform};
+use ceno_zkvm::e2e::{
+    Checkpoint, DEFAULT_MIN_CYCLE_PER_SHARDS, MultiProver, Preset, run_e2e_with_checkpoint,
+    setup_platform,
+};
 use ceno_zkvm::scheme::{create_backend, create_prover};
 use ff_ext::BabyBearExt4;
 use gkr_iop::cpu::default_backend_config;
 use mpcs::BasefoldDefault;
+use sbv_core::BlockWitness;
+use scroll_zkvm_types_chunk::ChunkWitness;
+use std::fs::File;
 use std::path::Path;
 use std::sync::LazyLock;
 use std::time::Instant;
-use cargo_metadata::MetadataCommand;
-use sbv_core::BlockWitness;
-use scroll_zkvm_types_chunk::ChunkWitness;
 
 type Pcs = BasefoldDefault<E>;
 type E = BabyBearExt4;
@@ -55,7 +58,9 @@ fn load_witness() -> ChunkWitness {
     let blocks = (16525000..=16525003)
         .map(|n| base.join(format!("{n}.json")))
         .map(|path| File::open(&path).unwrap())
-        .map(|rdr| serde_json::from_reader::<_, sbv_primitives::legacy_types::BlockWitness>(rdr).unwrap())
+        .map(|rdr| {
+            serde_json::from_reader::<_, sbv_primitives::legacy_types::BlockWitness>(rdr).unwrap()
+        })
         .map(BlockWitness::from)
         .collect::<Vec<_>>();
     ChunkWitness::new(&blocks, B256::ZERO, ForkName::Feynman)
@@ -79,7 +84,6 @@ fn main() -> eyre::Result<()> {
     let max_num_variables = 26;
     let backend = create_backend::<E, Pcs>(max_num_variables, security_level);
 
-
     let mut hints = CenoStdin::default();
     let wit = load_witness();
     println!("chunk_info = {:#?}", wit.stats());
@@ -95,6 +99,7 @@ fn main() -> eyre::Result<()> {
         create_prover(backend.clone()),
         program.clone(),
         platform.clone(),
+        MultiProver::new(0, 1, DEFAULT_MIN_CYCLE_PER_SHARDS, 1 << 29),
         &Vec::from(&hints),
         &[],
         max_steps,
@@ -102,7 +107,7 @@ fn main() -> eyre::Result<()> {
     );
     let duration = start.elapsed();
     println!("run_e2e_with_checkpoint took: {:?}", duration);
-    let _proof = result.proof.expect("PrepSanityCheck do not provide proof");
+    let _proofs = result.proofs.expect("PrepSanityCheck do not provide proof");
     let _vk = result.vk.expect("PrepSanityCheck do not provide verifier");
 
     Ok(())
