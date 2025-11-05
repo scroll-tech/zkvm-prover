@@ -84,7 +84,7 @@ fn load_witness() -> ChunkWitness {
 }
 
 fn main() -> eyre::Result<()> {
-    let profiling_level = 1;
+    let profiling_level = 2;
     let filter_by_profiling_level = filter_fn(move |metadata| {
         (1..=profiling_level)
             .map(|i| format!("profiling_{i}"))
