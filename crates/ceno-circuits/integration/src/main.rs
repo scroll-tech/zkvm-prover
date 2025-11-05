@@ -95,7 +95,7 @@ fn main() -> eyre::Result<()> {
     let rust_log_raw = env::var("RUST_LOG").unwrap_or_default();
 
     // Determine if user requested something *more verbose* than INFO
-    let is_verbose = rust_log_raw.contains("debug") || rust_log_raw.contains("trace");
+    let is_verbose = rust_log_raw.contains("trace") || rust_log_raw.contains("debug");
 
     let fmt_layer = fmt::layer()
         .compact()
@@ -104,25 +104,21 @@ fn main() -> eyre::Result<()> {
         .without_time();
 
     Registry::default()
+        .with(
+            EnvFilter::builder()
+                .with_default_directive(LevelFilter::DEBUG.into())
+                .from_env_lossy(),
+        )
+        .with(fmt_layer)
         .with(if is_verbose {
             Some(ForestLayer::default())
         } else {
             None
         })
-        .with(fmt_layer)
         // if some profiling granularity is specified, use the profiling filter,
         // otherwise use the default
         .with(if is_verbose {
             Some(filter_by_profiling_level)
-        } else {
-            None
-        })
-        .with(if !is_verbose {
-            Some(
-                EnvFilter::builder()
-                    .with_default_directive(LevelFilter::DEBUG.into())
-                    .from_env_lossy(),
-            )
         } else {
             None
         })
