@@ -64,7 +64,7 @@ fn load_witness() -> ChunkWitness {
 #[cfg(not(feature = "scroll"))]
 fn load_witness() -> ChunkWitness {
     let base = WORKSPACE_ROOT.join("crates/integration/testdata/ethereum");
-    let blocks = (23588347..=23588347)
+    let blocks = (23587691..23587692)
         .map(|n| base.join(format!("{n}.json")))
         .map(|path| File::open(&path).unwrap())
         .map(|rdr| serde_json::from_reader::<_, BlockWitness>(rdr).unwrap())
