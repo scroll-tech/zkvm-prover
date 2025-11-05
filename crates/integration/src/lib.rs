@@ -1,6 +1,7 @@
+use crate::axiom::AxiomProver;
 use cargo_metadata::MetadataCommand;
 use once_cell::sync::OnceCell;
-use openvm_sdk::{StdIn, F};
+use openvm_sdk::StdIn;
 use scroll_zkvm_prover::{
     Prover,
     setup::{read_app_config, read_app_exe},
@@ -14,13 +15,12 @@ use scroll_zkvm_types::{
     utils::serialize_vk,
 };
 use scroll_zkvm_verifier::verifier::{AGG_STARK_PROVING_KEY, UniversalVerifier};
+use std::collections::HashMap;
 use std::{
     path::{Path, PathBuf},
     process,
     sync::LazyLock,
 };
-use openvm_circuit::arch::instructions::exe::VmExe;
-use openvm_sdk::config::{AppConfig, SdkVmConfig};
 use tracing::instrument;
 use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -35,9 +35,6 @@ const DIR_PROOFS: &str = "proofs";
 
 /// File descriptor for app openvm config.
 const FD_APP_CONFIG: &str = "openvm.toml";
-
-/// File descriptor for app elf.
-const FD_APP_ELF: &str = "app.elf";
 
 /// File descriptor for app exe.
 const FD_APP_EXE: &str = "app.vmexe";
@@ -84,31 +81,6 @@ static DIR_OUTPUT: LazyLock<&Path> = LazyLock::new(|| {
     eprintln!("DIR_OUTPUT = {}", path.display());
     Box::leak(path.into_boxed_path())
 });
-
-#[derive(Debug, Clone)]
-pub struct AssetPaths {
-    pub app_config: PathBuf,
-    pub app_elf: PathBuf,
-    pub app_exe: PathBuf,
-}
-
-impl AssetPaths {
-    pub fn read_app_config(&self) -> eyre::Result<AppConfig<SdkVmConfig>> {
-        Ok(read_app_config(self.app_config.as_path())?)
-    }
-
-    pub fn read_app_elf(&self) -> eyre::Result<Vec<u8>> {
-        Ok(std::fs::read(self.app_elf.as_path())?)
-    }
-
-    pub fn read_app_exe(&self) -> eyre::Result<VmExe<F>> {
-        Ok(read_app_exe(self.app_exe.as_path())?)
-    }
-
-    pub fn read_raw_app_exe(&self) -> eyre::Result<Vec<u8>> {
-        Ok(std::fs::read(self.app_exe.as_path())?)
-    }
-}
 
 /// Every test run will write assets to a new directory.
 ///
@@ -158,6 +130,8 @@ pub trait ProverTester {
 
     /// Setup directory structure for the test suite.
     fn setup(setup_logger: bool) -> eyre::Result<()> {
+        dotenvy::dotenv().ok();
+
         // Setup tracing subscriber.
         if setup_logger {
             crate::setup_logger()?;
@@ -189,24 +163,19 @@ pub trait ProverTester {
         Ok(())
     }
 
-    /// Load the assets paths
-    fn get_asset_paths() -> eyre::Result<AssetPaths> {
+    /// Load the app config.
+    fn load() -> eyre::Result<(PathBuf, PathBuf)> {
         let assets_version = guest_version();
         let release_dir = WORKSPACE_ROOT.join("releases").join(assets_version);
-        let app_config = release_dir.join(Self::NAME).join(FD_APP_CONFIG);
-        let app_elf = release_dir.join(Self::NAME).join(FD_APP_ELF);
-        let app_exe = release_dir.join(Self::NAME).join(FD_APP_EXE);
-        Ok(AssetPaths {
-            app_config,
-            app_elf,
-            app_exe,
-        })
+        let path_app_config = release_dir.join(Self::NAME).join(FD_APP_CONFIG);
+        let path_app_exe = release_dir.join(Self::NAME).join(FD_APP_EXE);
+        Ok((path_app_config, path_app_exe))
     }
 
     /// Load the prover
     #[instrument("Prover::load_prover")]
     fn load_prover(with_evm: bool) -> eyre::Result<Prover> {
-        let paths = Self::get_asset_paths()?;
+        let (path_app_config, path_app_exe) = Self::load()?;
 
         let path_assets = DIR_TESTRUN
             .get()
@@ -215,12 +184,29 @@ pub trait ProverTester {
         std::fs::create_dir_all(&path_assets)?;
 
         let config = scroll_zkvm_prover::ProverConfig {
-            path_app_exe: paths.app_exe,
-            path_app_config: paths.app_config,
+            path_app_exe,
+            path_app_config,
             ..Default::default()
         };
         let prover = Prover::setup(config, Some(Self::NAME))?;
 
+        Ok(prover)
+    }
+
+    /// Load the axiom program prover
+    fn load_axiom_prover() -> eyre::Result<AxiomProver> {
+        let assets_version = guest_version();
+        let axiom_program_ids = WORKSPACE_ROOT
+            .join("releases")
+            .join(assets_version)
+            .join("verifier")
+            .join("axiom_program_ids.json");
+        let program_ids: HashMap<String, String> = read_json(&axiom_program_ids)?;
+        let program_id = program_ids
+            .get(Self::NAME)
+            .ok_or_else(|| eyre::eyre!("missing axiom program id for {}", Self::NAME))?
+            .to_string();
+        let prover = AxiomProver::from_env(Self::NAME.to_string(), program_id);
         Ok(prover)
     }
 
@@ -235,7 +221,6 @@ pub trait ProverTester {
         witness: &Self::Witness,
         aggregated_proofs: impl Iterator<Item = &'a StarkProof>,
     ) -> eyre::Result<UniversalProvingTask> {
-
         Ok(UniversalProvingTask {
             serialized_witness: vec![witness.archive()?],
             aggregated_proofs: aggregated_proofs.cloned().collect(),
@@ -261,11 +246,15 @@ pub trait TaskProver {
 }
 
 impl TaskProver for Prover {
-    fn name(&self) -> &str {self.prover_name.as_str()}
+    fn name(&self) -> &str {
+        self.prover_name.as_str()
+    }
 
-    fn get_vk(&mut self) -> Vec<u8> { self.get_app_vk() }
+    fn get_vk(&mut self) -> Vec<u8> {
+        self.get_app_vk()
+    }
 
-    fn prove_task(&mut self, t: &UniversalProvingTask, gen_snark: bool) -> eyre::Result<ProofEnum>{
+    fn prove_task(&mut self, t: &UniversalProvingTask, gen_snark: bool) -> eyre::Result<ProofEnum> {
         use scroll_zkvm_prover::task::ProvingTask;
         let stdin = t.build_guest_input();
         if !gen_snark {
@@ -343,9 +332,9 @@ pub fn tester_execute<T: ProverTester>(
     witness: &T::Witness,
     proofs: &[ProofEnum],
 ) -> eyre::Result<ExecutionResult> {
-    let assets = T::get_asset_paths()?;
-    let app_exe = assets.read_app_exe()?;
-    let app_config = assets.read_app_config()?;
+    let (path_app_config, path_app_exe) = T::load()?;
+    let app_exe = read_app_exe(&path_app_exe)?;
+    let app_config = read_app_config(&path_app_config)?;
     let stdin = T::build_guest_input(
         witness,
         proofs

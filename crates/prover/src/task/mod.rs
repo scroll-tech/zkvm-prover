@@ -36,7 +36,6 @@ impl ProvingTask for UniversalProvingTask {
                 stdin.write_field(s);
             }
         }
-
     }
 
     fn fork_name(&self) -> ForkName {

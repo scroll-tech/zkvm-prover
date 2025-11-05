@@ -32,10 +32,9 @@
 //! - OpenVM assets: `releases/dev/verifier/`
 //! - Commitment files: Written to respective circuit crate directories
 
-use std::{env, fs, path::{Path, PathBuf}, sync::Arc, time::Instant};
-
+use axiom_sdk::{AxiomConfig, AxiomSdk, build::BuildSdk};
 use clap::{Parser, ValueEnum};
-use dotenv::dotenv;
+use dotenvy::dotenv;
 use eyre::Result;
 use openvm_build::GuestOptions;
 use openvm_instructions::exe::VmExe;
@@ -49,6 +48,12 @@ use openvm_sdk::{
 };
 use openvm_stark_sdk::p3_bn254_fr::Bn254Fr;
 use snark_verifier_sdk::snark_verifier::loader::evm::compile_solidity;
+use std::{
+    env, fs,
+    path::{Path, PathBuf},
+    sync::Arc,
+    time::Instant,
+};
 
 mod verifier;
 
@@ -132,7 +137,17 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
 
     println!("{LOG_PREFIX} Projects to build: {:?}", projects_to_build);
 
+    // Setup axiom sdk
+    let axiom_api_key = env::var("AXIOM_API_KEY").expect("AXIOM_API_KEY env var is required");
+    let axiom_project_id =
+        env::var("AXIOM_PROJECT_ID").expect("AXIOM_PROJECT_ID env var is required");
+    let axiom_sdk = AxiomSdk::new(AxiomConfig {
+        api_key: Some(axiom_api_key),
+        ..Default::default()
+    });
+
     let mut vk_dump: serde_json::Value = serde_json::from_str("{}")?;
+    let mut axiom_program_ids: serde_json::Value = serde_json::from_str("{}")?;
     for project_name in projects_to_build {
         let project_path = workspace_dir
             .join("crates")
@@ -236,6 +251,22 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
             vm_commit_u32,
         )?;
 
+        // 4. upload program to axiom
+        let program_id = axiom_sdk.upload_exe_raw(
+            fs::read(&path_app_elf)?,
+            fs::read(&path_app_exe)?,
+            axiom_sdk::build::UploadExeArgs {
+                config_id: Some("cfg_01k3w1spnpnxzry017g5jzcy97".to_string()),
+                project_id: Some(axiom_project_id.clone()),
+                project_name: None,
+                bin_name: Some(project_name.to_string()),
+                program_name: Some(project_name.to_string()),
+                default_num_gpus: None,
+            },
+        )?;
+        println!("{LOG_PREFIX} Uploaded program to Axiom program_id={program_id}");
+        axiom_program_ids[project_name] = serde_json::Value::String(program_id);
+
         // Special handling for bundle project
         if project_name == "bundle" {
             let output_path = release_output_dir.join(project_name).join("digest_1.hex");
@@ -272,6 +303,16 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
         serde_json::to_string_pretty(&vk_dump)?
     );
     println!("{LOG_PREFIX} VK data written to openVmVk.json");
+
+    let output_path = release_output_dir
+        .join("verifier")
+        .join("axiom_program_ids.json");
+    let f = fs::File::create(output_path)?;
+    serde_json::to_writer_pretty(f, &axiom_program_ids)?;
+    println!(
+        "{LOG_PREFIX} axiom_program_ids.json: {}",
+        serde_json::to_string_pretty(&axiom_program_ids)?
+    );
     Ok(())
 }
 

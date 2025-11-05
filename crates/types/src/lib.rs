@@ -24,6 +24,6 @@ pub mod proof;
 pub mod task;
 pub use task::ProvingTask;
 
-pub mod axiom;
+pub mod openvm;
 
 pub mod utils;

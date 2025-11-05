@@ -1,260 +1,156 @@
-use super::{ProverTester, TaskProver};
-use axiom_sdk::{AxiomConfig, AxiomSdk, build::BuildSdk};
-use serde::{Deserialize, Serialize};
-use std::{env, fs};
-use axiom_sdk::build::UploadExeArgs;
+use super::TaskProver;
+use axiom_sdk::build::BuildSdk;
+use axiom_sdk::input::Input;
+use axiom_sdk::prove::{ProveArgs, ProveSdk};
+use axiom_sdk::{AxiomConfig, AxiomSdk, ProgressCallback, ProofType, SaveOption};
+use openvm_sdk::commit::CommitBytes;
+use openvm_sdk::types::VersionedVmStarkProof;
+use scroll_zkvm_types::ProvingTask as UniversalProvingTask;
+use scroll_zkvm_types::proof::ProofEnum;
+use scroll_zkvm_types::types_agg::ProgramCommitment;
+use scroll_zkvm_types::utils::serialize_vk;
+use std::env;
 
-/// Axiom Proofs API Client
-#[derive(Debug, Clone)]
-pub struct AxiomClient {
-    project_id: String,
-    config: AxiomConfig,
-}
-
-#[derive(Debug, Clone)]
 pub struct AxiomProver {
-    client: AxiomClient,
+    name: String,
+    sdk: AxiomSdk,
     program_id: String,
 }
 
-impl AxiomClient {
+struct TracingProgressCallback;
+
+impl AxiomProver {
     /// Create a new client
-    pub fn from_env() -> Self {
+    pub fn from_env(name: String, program_id: String) -> Self {
         let api_key = env::var("AXIOM_API_KEY").expect("AXIOM_API_KEY env var is required");
-        let project_id = env::var("AXIOM_PROJECT_ID").expect("AXIOM_PROJECT_ID env var is required");
         let config = AxiomConfig {
             api_key: Some(api_key),
             ..Default::default()
         };
-        Self { project_id, config }
-    }
-
-    pub fn sdk(&self) -> AxiomSdk {
-        AxiomSdk::new(self.config.clone())
-    }
-
-    pub fn setup_prover<T: ProverTester>(&self) -> eyre::Result<AxiomProver> {
-        let assets = T::get_asset_paths()?;
-        let elf = assets.read_app_elf()?;
-        let vmexe = fs::read(assets.app_exe)?;
-        let program_id = self.sdk().upload_exe_raw(
-            elf,
-            vmexe,
-            UploadExeArgs {
-                config_id: Some("cfg_01k3w1spnpnxzry017g5jzcy97".to_string()),
-                project_id: Some(self.project_id.clone()),
-                project_name: None,
-                bin_name: Some(T::NAME.to_string()),
-                program_name: Some(T::NAME.to_string()),
-                default_num_gpus: None,
-            }
-        )?;
-        Ok(AxiomProver {
-            client: self.clone(),
+        let sdk = AxiomSdk::new(config).with_callback(TracingProgressCallback);
+        Self {
+            name,
+            sdk,
             program_id,
-        })
+        }
+    }
+
+    pub fn get_app_commitment(&mut self) -> ProgramCommitment {
+        // let vm_commitment: [u8; _] = self.sdk.get_vm_commitment(None, SaveOption::DoNotSave)
+        //     .expect("Failed to get VM commitment")
+        //     .as_ref()
+        //     .try_into()
+        //     .expect("Failed to convert VM commitment");
+        let app_exe_commit: [u8; _] = self
+            .sdk
+            .get_app_exe_commit(&self.program_id)
+            .expect("Failed to get VM commitment")
+            .try_into()
+            .expect("Failed to convert EXE commitment");
+
+        let exe = CommitBytes::new(app_exe_commit).to_u32_digest();
+        // let vm = CommitBytes::new(vm_commitment).to_u32_digest();
+
+        let vm: [u32; 8] = [
+            310007309, 1583937256, 1239050703, 1961913597, 371788238, 374728480, 340481313,
+            1103367244,
+        ];
+
+        ProgramCommitment { exe, vm }
     }
 }
 
-impl AxiomProver {
-    pub fn prove(&self) {}
-}
+impl TaskProver for AxiomProver {
+    fn name(&self) -> &str {
+        &self.name
+    }
 
-#[cfg(test)]
-mod tests {
-    use crate::testers::chunk::ChunkProverTester;
-    use super::*;
+    fn prove_task(&mut self, t: &UniversalProvingTask, gen_snark: bool) -> eyre::Result<ProofEnum> {
+        let input = serde_json::to_value(t.build_openvm_input())?;
 
-    #[test]
-    fn test_axiom_client_setup() -> eyre::Result<()> {
-        let client = AxiomClient::from_env();
-        println!("{:?}", client.setup_prover::<ChunkProverTester>()?);
-        Ok(())
+        let proof_type = if gen_snark {
+            ProofType::Evm
+        } else {
+            ProofType::Stark
+        };
+
+        let job_id = self.sdk.generate_new_proof(ProveArgs {
+            program_id: Some(self.program_id.clone()),
+            input: Some(Input::Value(input)),
+            proof_type: Some(proof_type),
+            num_gpus: None,
+            priority: None,
+        })?;
+
+        let status = self.sdk.wait_for_proof_completion(&job_id, false)?;
+        if status.state.as_str() != "Succeeded" {
+            return Err(eyre::eyre!(
+                "Proof generation failed with status: {}",
+                status.state
+            ));
+        }
+        let proof_bytes =
+            self.sdk
+                .get_generated_proof(&status.id, &proof_type, SaveOption::DoNotSave)?;
+
+        match proof_type {
+            ProofType::Stark => {
+                let proof: VersionedVmStarkProof = serde_json::from_slice(&proof_bytes)?;
+                Ok(ProofEnum::Stark(
+                    proof.try_into().expect("Failed to convert to StarkProof"),
+                ))
+            }
+            ProofType::Evm => unimplemented!(),
+        }
+    }
+
+    fn get_vk(&mut self) -> Vec<u8> {
+        serialize_vk::serialize(&self.get_app_commitment())
     }
 }
 
-// use serde::{Deserialize, Serialize};
-// use std::{env, path::Path};
-// use super::TaskProver;
-// use scroll_zkvm_types::{ProvingTask, proof::ProofEnum, axiom};
-// use axiom_sdk::prove as axiom_prove;
-//
-// /// Default Axiom API base URL
-// pub const DEFAULT_AXIOM_BASE_URL: &str = "https://api.axiom.xyz";
-//
-// /// Simple blocking client for Axiom Proofs API
-// pub struct AxiomClient {
-//     base_url: String,
-//     api_key: String,
-//     program_id: String,
-// }
-//
-// impl TaskProver for AxiomClient {
-//     fn name(&self) -> &str { &self.program_id}
-//     fn get_vk(&mut self) -> Vec<u8> {
-//         unimplemented!();
-//     }use super::TaskProver;
-//     use axiom_sdk::{AxiomConfig, AxiomSdk, build::BuildSdk};
-//     use serde::{Deserialize, Serialize};
-//     use std::{env, path::Path};
-//
-//     /// Simple blocking client for Axiom Proofs API
-//     pub struct AxiomClient {
-//         inner: AxiomSdk,
-//     }
-//
-//     impl AxiomClient {
-//         /// Create a new client
-//         pub fn from_env() -> Self {
-//             let api_key = env::var("AXIOM_API_KEY").expect("AXIOM_API_KEY env var is required");
-//             let config = AxiomConfig {
-//                 api_key: Some(api_key),
-//                 ..Default::default()
-//             };
-//             let sdk = AxiomSdk::new(config);
-//             Self { inner: sdk }
-//         }
-//     }
-//
-//     fn prove_task(&mut self, t: &ProvingTask, gen_snark: bool) -> eyre::Result<ProofEnum> {
-//         //axiom_prove::ProveSdk::
-//         unimplemented!();
-//     }
-// }
-//
-// impl AxiomClient {
-//     /// Create a new client
-//     pub fn new(base_url: impl Into<String>) -> Self {
-//         let api_key = env::var("AXIOM_API_KEY").expect("AXIOM_API_KEY env var is required");
-//         let program_id = env::var("AXIOM_PROGRAM_ID").expect("AXIOM_PROGRAM_ID env var is required");
-//         Self { base_url: base_url.into(), api_key, program_id }
-//     }
-//
-//     /// Generate a new proof via POST /v1/proofs
-//     ///
-//     /// - program_id: UUID of the program to prove
-//     /// - proof_type: Optional proof type ("stark" | "evm"). Defaults to "stark" if None.
-//     /// - witness: array of byte slices, each encoded as a single input hex string prefixed with 0x01
-//     /// - fields: array of u32 slices, each encoded as a single input hex string (u32 little-endian) prefixed with 0x02
-//     ///
-//     /// Returns the proof request id on success.
-//     pub fn generate_proof(
-//         &self,
-//         program_id: &str,
-//         proof_type: Option<&str>,
-//         witness: &[&[u8]],
-//         fields: &[&[u32]],
-//     ) -> eyre::Result<String> {
-//         let mut inputs: Vec<String> = Vec::with_capacity(witness.len() + fields.len());
-//
-//         // Encode witness entries: 0x01 | bytes
-//         for w in witness {
-//             inputs.push(encode_witness(w));
-//         }
-//
-//         // Encode fields entries: 0x02 | u32 (little-endian bytes)
-//         for f in fields {
-//             inputs.push(encode_fields(f));
-//         }
-//
-//         let body = ProofRequest { input: inputs };
-//
-//         //axiom_prove::ProveSdk::generate_new_proof(&self, args)
-//
-//         unimplemented!();
-//
-//         let url = format!("{}/v1/proofs", self.base_url.trim_end_matches('/'));
-//         // let client = reqwest::blocking::Client::new();
-//
-//         // // Build query
-//         // let mut query: Vec<(&str, &str)> = vec![("program_id", program_id)];
-//         // if let Some(pt) = proof_type { query.push(("proof_type", pt)); }
-//
-//         // let resp = client
-//         //     .post(url)
-//         //     .header("Axiom-API-Key", &self.api_key)
-//         //     .query(&query)
-//         //     .json(&body)
-//         //     .send()?;
-//
-//         // if resp.status().is_success() {
-//         //     let pr: ProofResponse = resp.json()?;
-//         //     Ok(pr.id)
-//         // } else {
-//         //     let status = resp.status();
-//         //     let text = resp.text().unwrap_or_default();
-//         //     Err(AxiomError::Http(format!("status {}: {}", status, text)))
-//         // }
-//     }
-// }
-//
-// #[derive(Serialize)]
-// struct ProofRequest {
-//     input: Vec<String>,
-// }
-//
-// #[derive(Deserialize)]
-// struct ProofResponse {
-//     id: String,
-// }
-//
-// fn encode_witness(w: &[u8]) -> String {
-//     let mut buf = Vec::with_capacity(1 + w.len());
-//     buf.push(0x01);
-//     buf.extend_from_slice(w);
-//     format!("0x{}", hex::encode(buf))
-// }
-//
-// fn encode_fields(f: &[u32]) -> String {
-//     let mut buf = Vec::with_capacity(1 + f.len() * 4);
-//     buf.push(0x02);
-//     for &v in f {
-//         buf.extend_from_slice(&v.to_le_bytes());
-//     }
-//     format!("0x{}", hex::encode(buf))
-// }
-//
-// // Custom deserializer: decode hex string (no 0x prefix) into bytes.
-// fn hex_to_bytes<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
-// where
-//     D: serde::Deserializer<'de>,
-// {
-//     let s = String::deserialize(deserializer)?;
-//     hex::decode(&s).map_err(serde::de::Error::custom)
-// }
-//
-// #[derive(serde::Deserialize)]
-// struct AxiomStarkProof {
-//     #[serde(deserialize_with = "hex_to_bytes")]
-//     proof: Vec<u8>,
-//     #[serde(deserialize_with = "hex_to_bytes")]
-//     user_public_values: Vec<u8>,
-//     version: String,
-// }
-//
-//
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//
-//     #[test]
-//     fn test_encode_witness() {
-//         let w = b"ABC"; // 41 42 43
-//         let s = encode_witness(w);
-//         assert_eq!(s, "0x01414243");
-//     }
-//
-//     #[test]
-//     fn test_encode_fields() {
-//         let f: &[u32] = &[0x1, 0xA0B0C0D0];
-//         let s = encode_fields(f);
-//         // 0x02 | 01 00 00 00 | D0 C0 B0 A0
-//         assert_eq!(s, "0x0201000000d0c0b0a0");
-//     }
-//
-//     #[test]
-//     fn test_decode_axiom_stark_proof_from_file() {
-//         let _ = scroll_zkvm_types::proof::StarkProof::read_from_axiom_cloud(Path::new("./testdata/axiom/stark-proof.json")).unwrap();
-//
-//     }
-// }
+impl ProgressCallback for TracingProgressCallback {
+    fn on_header(&self, text: &str) {
+        tracing::info!("{text}");
+    }
+
+    fn on_success(&self, text: &str) {
+        tracing::info!("{text}");
+    }
+
+    fn on_info(&self, text: &str) {
+        tracing::info!("{text}");
+    }
+
+    fn on_warning(&self, text: &str) {
+        tracing::warn!("{text}");
+    }
+
+    fn on_error(&self, text: &str) {
+        tracing::error!("{text}");
+    }
+
+    fn on_section(&self, title: &str) {
+        tracing::info!("{title}:");
+    }
+
+    fn on_field(&self, key: &str, value: &str) {
+        tracing::info!("  {key}: {value}");
+    }
+
+    fn on_status(&self, text: &str) {
+        tracing::info!("status={text}");
+    }
+
+    fn on_progress_start(&self, _message: &str, _total: Option<u64>) {}
+
+    fn on_progress_update(&self, _current: u64) {}
+
+    fn on_progress_update_message(&self, _message: &str) {}
+
+    fn on_progress_finish(&self, _message: &str) {}
+
+    fn on_clear_line(&self) {}
+
+    fn on_clear_line_and_reset(&self) {}
+}
