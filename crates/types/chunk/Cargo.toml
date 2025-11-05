@@ -34,7 +34,7 @@ serde_json.workspace = true
 
 [features]
 default = []
-host = ["scroll-compress-ratio", "alloy-primitives/tiny-keccak"]
+host = ["scroll-compress-info", "alloy-primitives/tiny-keccak"]
 scroll = [
     "sbv-core/scroll",
     "sbv-primitives/scroll-evm-types",
@@ -42,4 +42,4 @@ scroll = [
     "sbv-primitives/scroll-revm-types",
     "sbv-primitives/scroll-reth-evm-types"
 ]
-scroll-compress-ratio = ["sbv-core/scroll-compress-ratio"]
+scroll-compress-info = ["sbv-core/scroll-compress-info"]
