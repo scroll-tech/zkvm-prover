@@ -1,5 +1,5 @@
 use cargo_metadata::MetadataCommand;
-use ceno_emul::{Cycle, Platform, Program};
+use ceno_emul::{Platform, Program};
 use ceno_host::CenoStdin;
 use ceno_zkvm::e2e::{
     Checkpoint, DEFAULT_MIN_CYCLE_PER_SHARDS, MultiProver, Preset, run_e2e_with_checkpoint,
