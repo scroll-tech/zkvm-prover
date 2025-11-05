@@ -69,11 +69,11 @@ openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v
 # more openvm related libs
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.1" }
 
-sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
-sbv-helpers = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
-sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
-sbv-utils = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
-sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "master" }
+sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "fix/build-chainspec" }
+sbv-helpers = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "fix/build-chainspec" }
+sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "fix/build-chainspec" }
+sbv-utils = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "fix/build-chainspec" }
+sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "fix/build-chainspec" }
 
 alloy-consensus = "1.0"
 alloy-provider = "1.0"
