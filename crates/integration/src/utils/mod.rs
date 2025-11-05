@@ -299,7 +299,7 @@ pub fn build_batch_witnesses(
                 blob_versioned_hash,
             })
         }
-        ForkName::Feynman => {
+        ForkName::Feynman | ForkName::Galileo => {
             use scroll_zkvm_types::batch::BatchHeaderV8;
             let _ = x + z;
             ReferenceHeader::V8(BatchHeaderV8 {
@@ -427,6 +427,10 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
         },
         ForkName::Feynman => ChunkTaskGenerator {
             block_range: (16525000..=16525003).collect(),
+            ..Default::default()
+        },
+        ForkName::Galileo => ChunkTaskGenerator {
+            block_range: (20239156..=20239192).collect(),
             ..Default::default()
         },
     }

@@ -80,8 +80,6 @@ pub enum Codec {
     V7,
     /// da-codec@v8.
     V8,
-    /// da-codec@v9.
-    V9,
 }
 
 /// The number of bits used for [`STFVersion`].
@@ -140,7 +138,7 @@ impl Version {
             domain: Domain::Scroll,
             stf_version: STFVersion::V9,
             fork: ForkName::Galileo,
-            codec: Codec::V9,
+            codec: Codec::V8,
         }
     }
 
@@ -149,7 +147,7 @@ impl Version {
             domain: Domain::Validium,
             stf_version: STFVersion::V1,
             fork: ForkName::Feynman,
-            codec: Codec::V9,
+            codec: Codec::V8,
         }
     }
 
