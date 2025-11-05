@@ -1586,6 +1586,7 @@ dependencies = [
  "scroll-zkvm-types-chunk",
  "serde_json",
  "tracing",
+ "tracing-forest",
  "tracing-subscriber 0.3.20",
 ]
 

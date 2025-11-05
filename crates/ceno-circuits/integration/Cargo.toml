@@ -24,6 +24,7 @@ sbv-primitives.workspace = true
 scroll-zkvm-types-chunk.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+tracing-forest.workspace = true
 
 [features]
 default = []
