@@ -256,7 +256,7 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
             fs::read(&path_app_elf)?,
             fs::read(&path_app_exe)?,
             axiom_sdk::build::UploadExeArgs {
-                config_id: Some("cfg_01k3w1spnpnxzry017g5jzcy97".to_string()),
+                config_id: Some(scroll_zkvm_types::axiom::get_config_id(project_name).to_string()),
                 project_id: Some(axiom_project_id.clone()),
                 project_name: None,
                 bin_name: Some(project_name.to_string()),
