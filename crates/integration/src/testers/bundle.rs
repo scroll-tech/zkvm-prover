@@ -9,7 +9,7 @@ use scroll_zkvm_types::{
 use scroll_zkvm_prover::Prover;
 
 use crate::{
-    PartialProvingTask, ProverTester, load_program_commitments, prove_verify_single_evm,
+    PROGRAM_COMMITMENTS, PartialProvingTask, ProverTester, prove_verify_single_evm,
     testers::batch::BatchTaskGenerator, utils::metadata_from_batch_witnesses,
 };
 
@@ -114,7 +114,7 @@ impl BundleTaskGenerator {
             .version();
         let fork_name = version.fork;
 
-        let commitment = load_program_commitments("batch")?;
+        let commitment = PROGRAM_COMMITMENTS["batch"];
         let mut batch_proofs = Vec::new();
         let mut batch_infos: Vec<BatchInfo> = Vec::new();
 

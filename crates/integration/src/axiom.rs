@@ -1,8 +1,10 @@
 use super::TaskProver;
 use axiom_sdk::build::BuildSdk;
+use axiom_sdk::config::ConfigSdk;
 use axiom_sdk::input::Input;
 use axiom_sdk::prove::{ProveArgs, ProveSdk};
 use axiom_sdk::{AxiomConfig, AxiomSdk, ProgressCallback, ProofType, SaveOption};
+use chrono::DateTime;
 use openvm_sdk::commit::CommitBytes;
 use openvm_sdk::types::VersionedVmStarkProof;
 use scroll_zkvm_types::ProvingTask as UniversalProvingTask;
@@ -36,11 +38,15 @@ impl AxiomProver {
     }
 
     pub fn get_app_commitment(&mut self) -> ProgramCommitment {
-        // let vm_commitment: [u8; _] = self.sdk.get_vm_commitment(None, SaveOption::DoNotSave)
-        //     .expect("Failed to get VM commitment")
-        //     .as_ref()
-        //     .try_into()
-        //     .expect("Failed to convert VM commitment");
+        let vm_commitment = self
+            .sdk
+            .get_vm_config_metadata(None)
+            .expect("Failed to get VM commitment")
+            .app_vm_commit;
+        let vm_commitment: [u8; _] = hex::decode(vm_commitment)
+            .expect("Failed to decode VM commitment")
+            .try_into()
+            .expect("Failed to convert VM commitment");
         let app_exe_commit: [u8; _] = self
             .sdk
             .get_app_exe_commit(&self.program_id)
@@ -49,12 +55,7 @@ impl AxiomProver {
             .expect("Failed to convert EXE commitment");
 
         let exe = CommitBytes::new(app_exe_commit).to_u32_digest();
-        // let vm = CommitBytes::new(vm_commitment).to_u32_digest();
-
-        let vm: [u32; 8] = [
-            310007309, 1583937256, 1239050703, 1961913597, 371788238, 374728480, 340481313,
-            1103367244,
-        ];
+        let vm = CommitBytes::new(vm_commitment).to_u32_digest();
 
         ProgramCommitment { exe, vm }
     }
@@ -89,6 +90,17 @@ impl TaskProver for AxiomProver {
                 status.state
             ));
         }
+        tracing::info!("{status:#?}");
+
+        let cycles = status.num_instructions.unwrap();
+        let launched_at = DateTime::parse_from_rfc3339(status.launched_at.as_deref().unwrap())?;
+        let terminated_at = DateTime::parse_from_rfc3339(status.terminated_at.as_deref().unwrap())?;
+        let duration = terminated_at
+            .signed_duration_since(launched_at)
+            .as_seconds_f64();
+        let mhz = cycles as f64 / duration / 1e6f64;
+        tracing::info!("Proof generated in {duration:.2} seconds: {mhz:.2} MHz");
+
         let proof_bytes =
             self.sdk
                 .get_generated_proof(&status.id, &proof_type, SaveOption::DoNotSave)?;

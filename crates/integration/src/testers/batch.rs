@@ -8,7 +8,7 @@ use scroll_zkvm_types::{
 };
 
 use crate::{
-    PartialProvingTask, ProverTester, load_program_commitments, prove_verify,
+    PROGRAM_COMMITMENTS, PartialProvingTask, ProverTester, prove_verify,
     testers::chunk::{ChunkTaskGenerator, preset_chunk_multiple, preset_chunk_validium},
     utils::{build_batch_witnesses, build_batch_witnesses_validium},
 };
@@ -116,7 +116,7 @@ impl BatchTaskGenerator {
             .map(|g| g.get_or_build_witness())
             .collect::<eyre::Result<Vec<_>>>()?;
 
-        let commitment = load_program_commitments("chunk")?;
+        let commitment = PROGRAM_COMMITMENTS["chunk"];
 
         let ret_wit = if chunks
             .first()

@@ -59,9 +59,11 @@ pub fn testing_version_validium() -> Version {
 /// Read the 'GUEST_VERSION' from the environment variable.
 /// If not existed, return "dev" as default
 /// The returned value will be used to locate asset files: $workspace/releases/$guest_version
-pub fn guest_version() -> String {
-    std::env::var("GUEST_VERSION").unwrap_or_else(|_| "dev".to_string())
-}
+pub static GUEST_VERSION: LazyLock<&str> = LazyLock::new(|| {
+    let ver = std::env::var("GUEST_VERSION").unwrap_or_else(|_| "dev".to_string());
+    eprintln!("GUEST_VERSION = {ver}");
+    Box::leak(ver.into_boxed_str())
+});
 
 pub static WORKSPACE_ROOT: LazyLock<&Path> = LazyLock::new(|| {
     let path = MetadataCommand::new()
@@ -74,12 +76,37 @@ pub static WORKSPACE_ROOT: LazyLock<&Path> = LazyLock::new(|| {
     Box::leak(path.into_boxed_path())
 });
 
+pub static ASSET_BASE_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
+    let path = WORKSPACE_ROOT.join("releases").join(*GUEST_VERSION);
+    eprintln!("ASSET_BASE_DIR = {}", path.display());
+    path
+});
+
 /// Path to store release assets, root directory of zkvm-prover repository.
-static DIR_OUTPUT: LazyLock<&Path> = LazyLock::new(|| {
+pub static DIR_OUTPUT: LazyLock<&Path> = LazyLock::new(|| {
     let path = WORKSPACE_ROOT.join(".output");
     std::fs::create_dir_all(&path).expect("failed to create output directory");
     eprintln!("DIR_OUTPUT = {}", path.display());
     Box::leak(path.into_boxed_path())
+});
+
+pub static PROGRAM_COMMITMENTS: LazyLock<HashMap<String, ProgramCommitment>> =
+    LazyLock::new(|| {
+        let mut commitments = load_program_commitments().expect("failed to load program commitments");
+        commitments.shrink_to_fit();
+        eprintln!("PROGRAM_COMMITMENTS = {commitments:#?}");
+        commitments
+    });
+
+pub static AXIOM_PROGRAM_IDS: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
+    let axiom_program_ids = ASSET_BASE_DIR
+        .join("verifier")
+        .join("axiom_program_ids.json");
+    let mut program_ids: HashMap<String, String> =
+        read_json(&axiom_program_ids).expect("failed to read axiom program ids");
+    program_ids.shrink_to_fit();
+    eprintln!("AXIOM_PROGRAM_IDS = {program_ids:#?}");
+    program_ids
 });
 
 /// Every test run will write assets to a new directory.
@@ -100,7 +127,7 @@ pub trait PartialProvingTask: serde::Serialize {
     where
         Self: Sized,
     {
-        let bytes: Vec<u8> = match guest_version().as_str() {
+        let bytes: Vec<u8> = match GUEST_VERSION.as_ref() {
             "0.5.2" => self.legacy_rkyv_archive()?,
             _ => {
                 let config = bincode::config::standard();
@@ -165,10 +192,8 @@ pub trait ProverTester {
 
     /// Load the app config.
     fn load() -> eyre::Result<(PathBuf, PathBuf)> {
-        let assets_version = guest_version();
-        let release_dir = WORKSPACE_ROOT.join("releases").join(assets_version);
-        let path_app_config = release_dir.join(Self::NAME).join(FD_APP_CONFIG);
-        let path_app_exe = release_dir.join(Self::NAME).join(FD_APP_EXE);
+        let path_app_config = ASSET_BASE_DIR.join(Self::NAME).join(FD_APP_CONFIG);
+        let path_app_exe = ASSET_BASE_DIR.join(Self::NAME).join(FD_APP_EXE);
         Ok((path_app_config, path_app_exe))
     }
 
@@ -195,14 +220,7 @@ pub trait ProverTester {
 
     /// Load the axiom program prover
     fn load_axiom_prover() -> eyre::Result<AxiomProver> {
-        let assets_version = guest_version();
-        let axiom_program_ids = WORKSPACE_ROOT
-            .join("releases")
-            .join(assets_version)
-            .join("verifier")
-            .join("axiom_program_ids.json");
-        let program_ids: HashMap<String, String> = read_json(&axiom_program_ids)?;
-        let program_id = program_ids
+        let program_id = AXIOM_PROGRAM_IDS
             .get(Self::NAME)
             .ok_or_else(|| eyre::eyre!("missing axiom program id for {}", Self::NAME))?
             .to_string();
@@ -416,11 +434,8 @@ where
     std::fs::create_dir_all(&cache_dir)?;
 
     // Dump verifier-only assets to disk.
-    let path_verifier_dir = WORKSPACE_ROOT
-        .join("releases")
-        .join(guest_version())
-        .join("verifier");
-    let verifier = scroll_zkvm_verifier::verifier::UniversalVerifier::setup(&path_verifier_dir)?;
+    let path_verifier_dir = ASSET_BASE_DIR.join("verifier");
+    let verifier = UniversalVerifier::setup(&path_verifier_dir)?;
 
     // Try reading proof from cache if available, and early return in that case.
     let task_id = witness.identifier();
@@ -459,25 +474,23 @@ where
     Ok(proof)
 }
 
-pub fn load_program_commitments(program: &str) -> eyre::Result<ProgramCommitment> {
+fn load_program_commitments() -> eyre::Result<HashMap<String, ProgramCommitment>> {
     use base64::{Engine, prelude::BASE64_STANDARD};
-    let file_path = WORKSPACE_ROOT
-        .join("releases")
-        .join(guest_version())
-        .join("verifier")
-        .join("openVmVk.json");
-    let json_value: serde_json::Value = {
+    let file_path = ASSET_BASE_DIR.join("verifier").join("openVmVk.json");
+    let commitments: HashMap<String, String> = {
         let file = std::fs::File::open(&file_path)?;
         serde_json::from_reader(file)?
     };
-    let commitment_string = json_value[&format!("{}_vk", program)]
-        .as_str()
-        .ok_or_else(|| eyre::eyre!("Missing or invalid program commitment for {}", program))?;
-    let commitment_bytes = hex::decode(commitment_string)
-        .or_else(|_| BASE64_STANDARD.decode(commitment_string))
-        .map_err(|_| eyre::eyre!("Failed to decode program commitment for {}", program))?;
-    let commitment = serialize_vk::deserialize(&commitment_bytes);
-    Ok(commitment)
+    let mut result = HashMap::new();
+    for (program, commitment_string) in commitments {
+        let program = program.strip_suffix("_vk").unwrap().to_string();
+        let commitment_bytes = hex::decode(&commitment_string)
+            .or_else(|_| BASE64_STANDARD.decode(commitment_string))
+            .map_err(|_| eyre::eyre!("Failed to decode program commitment for {}", program))?;
+        let commitment = serialize_vk::deserialize(&commitment_bytes);
+        result.insert(program, commitment);
+    }
+    Ok(result)
 }
 
 #[test]
