@@ -48,7 +48,7 @@ pub fn generate_evm_verifier() -> Result<String> {
 }
 
 pub fn download_evm_verifier() -> Result<String> {
-    let verifier_url = "https://github.com/openvm-org/openvm-solidity-sdk/raw/refs/heads/main/src/v1.3/Halo2Verifier.sol";
+    let verifier_url = "https://github.com/openvm-org/openvm-solidity-sdk/raw/refs/heads/main/src/v1.4/Halo2Verifier.sol";
     println!("{LOG_PREFIX} Downloading pre-built verifier from openvm-solidity-sdk...");
 
     let output = std::process::Command::new("wget")
