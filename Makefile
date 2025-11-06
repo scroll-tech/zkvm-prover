@@ -99,6 +99,9 @@ test-single-batch:
 test-e2e-batch:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test batch_circuit e2e -- --exact --nocapture
 
+test-axiom-e2e-batch:
+	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test batch_circuit axiom_e2e -- --exact --nocapture
+
 test-bundle:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test bundle_circuit setup_prove_verify -- --exact --nocapture
 

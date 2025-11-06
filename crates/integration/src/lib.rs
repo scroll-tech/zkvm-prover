@@ -92,7 +92,8 @@ pub static DIR_OUTPUT: LazyLock<&Path> = LazyLock::new(|| {
 
 pub static PROGRAM_COMMITMENTS: LazyLock<HashMap<String, ProgramCommitment>> =
     LazyLock::new(|| {
-        let mut commitments = load_program_commitments().expect("failed to load program commitments");
+        let mut commitments =
+            load_program_commitments().expect("failed to load program commitments");
         commitments.shrink_to_fit();
         eprintln!("PROGRAM_COMMITMENTS = {commitments:#?}");
         commitments
@@ -224,7 +225,11 @@ pub trait ProverTester {
             .get(Self::NAME)
             .ok_or_else(|| eyre::eyre!("missing axiom program id for {}", Self::NAME))?
             .to_string();
-        let prover = AxiomProver::from_env(Self::NAME.to_string(), program_id);
+        let prover = AxiomProver::from_env(
+            Self::NAME.to_string(),
+            scroll_zkvm_types::axiom::get_config_id(Self::NAME).to_string(),
+            program_id
+        );
         Ok(prover)
     }
 

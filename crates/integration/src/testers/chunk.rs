@@ -1,5 +1,5 @@
 use crate::{
-    PartialProvingTask, ProverTester, guest_version, prove_verify, testdata_fork_directory,
+    PartialProvingTask, ProverTester, TaskProver, guest_version, prove_verify, testdata_fork_directory,
     tester_execute, testers::PATH_TESTDATA, testing_hardfork, testing_version,
     utils::metadata_from_chunk_witnesses,
 };
@@ -18,6 +18,12 @@ use scroll_zkvm_types::{
 use std::{
     fs::File,
     path::{Path, PathBuf},
+};
+
+use crate::{
+    PartialProvingTask, ProverTester, prove_verify, testdata_fork_directory, tester_execute,
+    testers::PATH_TESTDATA, testing_hardfork, testing_version,
+    utils::metadata_from_chunk_witnesses,
 };
 
 /// Load a file <block_n>.json in the <PATH_BLOCK_WITNESS> directory.
@@ -127,7 +133,7 @@ impl ChunkTaskGenerator {
         Ok(witness)
     }
 
-    pub fn get_or_build_proof(&mut self, prover: &mut Prover) -> eyre::Result<ProofEnum> {
+    pub fn get_or_build_proof(&mut self, prover: &mut impl TaskProver) -> eyre::Result<ProofEnum> {
         if let Some(proof) = &self.proof {
             return Ok(proof.clone());
         }

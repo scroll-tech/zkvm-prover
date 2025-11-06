@@ -1,4 +1,3 @@
-use scroll_zkvm_prover::Prover;
 use scroll_zkvm_types::{
     batch::{BatchHeader, BatchInfo, BatchWitness, LegacyBatchWitness, ReferenceHeader},
     chunk::ChunkInfo,
@@ -8,7 +7,7 @@ use scroll_zkvm_types::{
 };
 
 use crate::{
-    PROGRAM_COMMITMENTS, PartialProvingTask, ProverTester, prove_verify,
+    PROGRAM_COMMITMENTS, PartialProvingTask, ProverTester, TaskProver, prove_verify,
     testers::chunk::{ChunkTaskGenerator, preset_chunk_multiple, preset_chunk_validium},
     utils::{build_batch_witnesses, build_batch_witnesses_validium},
 };
@@ -79,8 +78,8 @@ impl BatchTaskGenerator {
 
     pub fn get_or_build_proof(
         &mut self,
-        prover: &mut Prover,
-        child_prover: &mut Prover,
+        prover: &mut impl TaskProver,
+        child_prover: &mut impl TaskProver,
     ) -> eyre::Result<ProofEnum> {
         if let Some(proof) = &self.proof {
             return Ok(proof.clone());
@@ -94,7 +93,7 @@ impl BatchTaskGenerator {
 
     pub fn get_or_build_child_proofs(
         &mut self,
-        child_prover: &mut Prover,
+        child_prover: &mut impl TaskProver,
     ) -> eyre::Result<Vec<ProofEnum>> {
         let mut proofs = Vec::new();
         for chunk_gen in &mut self.chunk_generators {

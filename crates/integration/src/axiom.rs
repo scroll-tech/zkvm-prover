@@ -23,10 +23,11 @@ struct TracingProgressCallback;
 
 impl AxiomProver {
     /// Create a new client
-    pub fn from_env(name: String, program_id: String) -> Self {
+    pub fn from_env(name: String, config_id: String, program_id: String) -> Self {
         let api_key = env::var("AXIOM_API_KEY").expect("AXIOM_API_KEY env var is required");
         let config = AxiomConfig {
             api_key: Some(api_key),
+            config_id: Some(config_id),
             ..Default::default()
         };
         let sdk = AxiomSdk::new(config).with_callback(TracingProgressCallback);
@@ -38,21 +39,18 @@ impl AxiomProver {
     }
 
     pub fn get_app_commitment(&mut self) -> eyre::Result<ProgramCommitment> {
-        let vm_commitment = self
-            .sdk
-            .get_vm_config_metadata(None)?
-            .app_vm_commit;
-        let vm_commitment: [u8; _] = hex::decode(vm_commitment)?
-            .try_into().unwrap();
+        let vm_commitment = self.sdk.get_vm_config_metadata(None)?.app_vm_commit;
+        let vm_commitment: [u8; _] = hex::decode(vm_commitment)?.try_into().unwrap();
         let app_exe_commit: [u8; _] = self
             .sdk
             .get_app_exe_commit(&self.program_id)?
-            .try_into().unwrap();
+            .try_into()
+            .unwrap();
 
         let exe = CommitBytes::new(app_exe_commit).to_u32_digest();
         let vm = CommitBytes::new(vm_commitment).to_u32_digest();
 
-       Ok (ProgramCommitment { exe, vm })
+        Ok(ProgramCommitment { exe, vm })
     }
 }
 
