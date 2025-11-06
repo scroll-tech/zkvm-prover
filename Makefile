@@ -110,3 +110,6 @@ test-bundle-local:
 
 test-e2e-bundle:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test bundle_circuit e2e -- --exact --nocapture
+
+test-axiom-e2e-bundle:
+	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test bundle_circuit axiom_e2e -- --exact --nocapture

@@ -6,7 +6,7 @@ use axiom_sdk::prove::{ProveArgs, ProveSdk};
 use axiom_sdk::{AxiomConfig, AxiomSdk, ProgressCallback, ProofType, SaveOption};
 use chrono::DateTime;
 use openvm_sdk::commit::CommitBytes;
-use openvm_sdk::types::VersionedVmStarkProof;
+use openvm_sdk::types::{EvmProof, VersionedVmStarkProof};
 use scroll_zkvm_types::ProvingTask as UniversalProvingTask;
 use scroll_zkvm_types::proof::ProofEnum;
 use scroll_zkvm_types::types_agg::ProgramCommitment;
@@ -105,7 +105,10 @@ impl TaskProver for AxiomProver {
                     proof.try_into().expect("Failed to convert to StarkProof"),
                 ))
             }
-            ProofType::Evm => unimplemented!(),
+            ProofType::Evm =>  {
+                let proof: EvmProof = serde_json::from_slice(&proof_bytes)?;
+                Ok(ProofEnum::Evm(proof.into()))
+            }
         }
     }
 

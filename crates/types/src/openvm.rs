@@ -1,14 +1,8 @@
 use openvm_native_recursion::hints::Hintable;
-use openvm_sdk::SC;
-use openvm_sdk::codec::Decode;
-use openvm_sdk::types::VersionedVmStarkProof;
 use openvm_stark_sdk::{
-    openvm_stark_backend::{p3_field::PrimeField32, proof::Proof},
-    p3_baby_bear::BabyBear,
+    openvm_stark_backend::{p3_field::PrimeField32},
 };
 use serde::{Deserialize, Serialize};
-use std::io;
-use std::io::Cursor;
 
 /// Input structure for OpenVM input json
 ///
@@ -53,24 +47,3 @@ impl super::ProvingTask {
     }
 }
 
-impl TryFrom<VersionedVmStarkProof> for super::proof::StarkProof {
-    type Error = io::Error;
-
-    fn try_from(proof: VersionedVmStarkProof) -> io::Result<Self> {
-        let inner_proof = Proof::<SC>::decode_from_bytes(&proof.proof)?;
-        let mut pv_reader = Cursor::new(proof.user_public_values);
-        // decode_vec is not pub so we have to use the detail inside it ...
-        let len = usize::decode(&mut pv_reader)?;
-        let mut public_values = Vec::with_capacity(len);
-
-        for _ in 0..len {
-            public_values.push(BabyBear::decode(&mut pv_reader)?);
-        }
-
-        Ok(Self {
-            proofs: vec![inner_proof],
-            public_values,
-            stat: Default::default(),
-        })
-    }
-}
