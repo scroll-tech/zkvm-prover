@@ -16,7 +16,7 @@ use types_base::{
     public_inputs::chunk::{BlockContextV2, ChunkInfo},
 };
 
-/// `compression_ratios` can be `None` in host mode.
+/// `compression_infos` can be `None` in host mode.
 /// But in guest mode, it must be provided.
 pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
     let chain = Chain::from_id(witness.blocks[0].chain_id);
@@ -43,7 +43,7 @@ pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
         post_state_root,
         withdraw_root,
         ..
-    } = verifier::run(&witness.blocks, chain_spec, witness.compression_ratios)
+    } = verifier::run(&witness.blocks, chain_spec, witness.compression_infos)
         .map_err(|e| format!("verify error: {e}"))?;
 
     let blocks = manually_drop_on_zkvm!(blocks);

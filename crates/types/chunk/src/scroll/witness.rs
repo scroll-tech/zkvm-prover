@@ -3,6 +3,7 @@ use alloy_primitives::B256;
 use sbv_core::{verifier::StateCommitMode, witness::BlockWitness};
 use sbv_primitives::U256;
 use sbv_primitives::types::consensus::TxL1Message;
+use sbv_primitives::types::evm::ScrollTxCompressionInfos;
 use std::collections::HashSet;
 use types_base::version::Version;
 use types_base::{fork_name::ForkName, public_inputs::chunk::ChunkInfo};
@@ -18,8 +19,8 @@ pub struct ChunkWitness {
     pub prev_msg_queue_hash: B256,
     /// The code version specify the chain spec
     pub fork_name: ForkName,
-    /// The compression ratios for each block in the chunk.
-    pub compression_ratios: Vec<Vec<U256>>,
+    /// The compression info for each block in the chunk.
+    pub compression_infos: Vec<ScrollTxCompressionInfos>,
     /// Validium encrypted txs and secret key if this is a validium chain.
     pub validium: Option<ValidiumInputs>,
 }
@@ -129,9 +130,9 @@ impl ChunkWitness {
                     .collect(),
             })
             .collect();
-        let compression_ratios = blocks
+        let compression_infos = blocks
             .iter()
-            .map(|block| block.compression_ratios())
+            .map(|block| block.compression_infos())
             .collect();
 
         Self {
@@ -139,7 +140,7 @@ impl ChunkWitness {
             blocks,
             prev_msg_queue_hash,
             fork_name,
-            compression_ratios,
+            compression_infos,
             validium,
         }
     }
@@ -183,7 +184,11 @@ impl From<ChunkWitness> for LegacyChunkWitness {
                 .collect(),
             prev_msg_queue_hash: value.prev_msg_queue_hash,
             fork_name: value.fork_name,
-            compression_ratios: value.compression_ratios,
+            compression_ratios: value
+                .compression_infos
+                .into_iter()
+                .map(|infos| infos.into_iter().map(|info| info.0).collect())
+                .collect(),
             state_commit_mode: StateCommitMode::Auto,
         }
     }
