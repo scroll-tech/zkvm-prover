@@ -1163,6 +1163,7 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 [[package]]
 name = "axiom-sdk"
 version = "1.0.6"
+source = "git+https://github.com/axiom-crypto/axiom-api-cli.git?branch=feat%2Fupload-exe-raw#a46052807157079760311b199ee9940c71cba0d9"
 dependencies = [
  "bytes",
  "cargo_metadata 0.21.0",
