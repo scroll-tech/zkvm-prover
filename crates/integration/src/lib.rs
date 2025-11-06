@@ -260,16 +260,12 @@ pub trait ProverTester {
 pub trait TaskProver {
     fn name(&self) -> &str;
     fn prove_task(&mut self, t: &UniversalProvingTask, gen_snark: bool) -> eyre::Result<ProofEnum>;
-    fn get_vk(&mut self) -> Vec<u8>;
+    fn get_vk(&mut self) -> eyre::Result<Vec<u8>>;
 }
 
 impl TaskProver for Prover {
     fn name(&self) -> &str {
         self.prover_name.as_str()
-    }
-
-    fn get_vk(&mut self) -> Vec<u8> {
-        self.get_app_vk()
     }
 
     fn prove_task(&mut self, t: &UniversalProvingTask, gen_snark: bool) -> eyre::Result<ProofEnum> {
@@ -282,6 +278,10 @@ impl TaskProver for Prover {
             let proof: EvmProof = self.gen_proof_snark(stdin)?.into();
             Ok(proof.into())
         }
+    }
+
+    fn get_vk(&mut self) -> eyre::Result<Vec<u8>> {
+        Ok(self.get_app_vk())
     }
 }
 
@@ -379,7 +379,7 @@ pub fn prove_verify<T: ProverTester>(
         .join(T::DIR_ASSETS)
         .join(DIR_PROOFS);
     std::fs::create_dir_all(&cache_dir)?;
-    let vk = prover.get_vk();
+    let vk = prover.get_vk()?;
 
     // Try reading proof from cache if available, and early return in that case.
     let task_id = witness.identifier();
@@ -460,7 +460,7 @@ where
         proof
     };
 
-    let vk = prover.get_vk();
+    let vk = prover.get_vk()?;
     // Verify proof.
     verifier.verify_evm_proof(
         &proof

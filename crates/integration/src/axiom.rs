@@ -37,27 +37,22 @@ impl AxiomProver {
         }
     }
 
-    pub fn get_app_commitment(&mut self) -> ProgramCommitment {
+    pub fn get_app_commitment(&mut self) -> eyre::Result<ProgramCommitment> {
         let vm_commitment = self
             .sdk
-            .get_vm_config_metadata(None)
-            .expect("Failed to get VM commitment")
+            .get_vm_config_metadata(None)?
             .app_vm_commit;
-        let vm_commitment: [u8; _] = hex::decode(vm_commitment)
-            .expect("Failed to decode VM commitment")
-            .try_into()
-            .expect("Failed to convert VM commitment");
+        let vm_commitment: [u8; _] = hex::decode(vm_commitment)?
+            .try_into().unwrap();
         let app_exe_commit: [u8; _] = self
             .sdk
-            .get_app_exe_commit(&self.program_id)
-            .expect("Failed to get VM commitment")
-            .try_into()
-            .expect("Failed to convert EXE commitment");
+            .get_app_exe_commit(&self.program_id)?
+            .try_into().unwrap();
 
         let exe = CommitBytes::new(app_exe_commit).to_u32_digest();
         let vm = CommitBytes::new(vm_commitment).to_u32_digest();
 
-        ProgramCommitment { exe, vm }
+       Ok (ProgramCommitment { exe, vm })
     }
 }
 
@@ -90,7 +85,7 @@ impl TaskProver for AxiomProver {
                 status.state
             ));
         }
-        tracing::info!("{status:#?}");
+        tracing::info!(name: "wait_for_proof_completion", "{status:#?}");
 
         let cycles = status.num_instructions.unwrap();
         let launched_at = DateTime::parse_from_rfc3339(status.launched_at.as_deref().unwrap())?;
@@ -116,8 +111,8 @@ impl TaskProver for AxiomProver {
         }
     }
 
-    fn get_vk(&mut self) -> Vec<u8> {
-        serialize_vk::serialize(&self.get_app_commitment())
+    fn get_vk(&mut self) -> eyre::Result<Vec<u8>> {
+        Ok(serialize_vk::serialize(&self.get_app_commitment()?))
     }
 }
 
