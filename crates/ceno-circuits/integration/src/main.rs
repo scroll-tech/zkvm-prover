@@ -83,7 +83,8 @@ fn load_witness() -> ChunkWitness {
     ChunkWitness::new(&blocks)
 }
 
-pub const MAX_CYCLE_PER_SHARD: u64 = 1 << 26;
+pub const MIN_CYCLE_PER_SHARD: u64 = 1 << 18;
+pub const MAX_CYCLE_PER_SHARD: u64 = 1 << 19;
 
 fn main() -> eyre::Result<()> {
     let profiling_level: usize = env::var("PROFILING")
@@ -145,7 +146,7 @@ fn main() -> eyre::Result<()> {
     let ctx = setup_program::<E>(
         program,
         platform,
-        MultiProver::new(0, 1, DEFAULT_MIN_CYCLE_PER_SHARDS, MAX_CYCLE_PER_SHARD),
+        MultiProver::new(0, 1, MIN_CYCLE_PER_SHARD, MAX_CYCLE_PER_SHARD),
     );
     println!("setup_program done in {:?}", start.elapsed());
 

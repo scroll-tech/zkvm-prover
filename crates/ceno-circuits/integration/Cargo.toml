@@ -28,6 +28,7 @@ tracing-forest.workspace = true
 
 [features]
 default = []
+cuda = ["ceno_zkvm/gpu"]
 jemalloc = ["ceno_zkvm/jemalloc"]
 scroll = ["scroll-zkvm-types-chunk/scroll", "scroll-zkvm-types-chunk/host"]
 

@@ -1562,7 +1562,7 @@ dependencies = [
 [[package]]
 name = "ceno-examples"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=master#69dd886f97e7046d8d0688fab20f1ffb136c97a2"
+source = "git+https://github.com/scroll-tech/ceno?branch=dev%2Fceno-alpha-gpu#90735775f0dbce7e7879e8858c7123a5a67eb37c"
 dependencies = [
  "glob",
 ]
@@ -1593,7 +1593,7 @@ dependencies = [
 [[package]]
 name = "ceno_crypto"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=master#69dd886f97e7046d8d0688fab20f1ffb136c97a2"
+source = "git+https://github.com/scroll-tech/ceno?branch=dev%2Fceno-alpha-gpu#90735775f0dbce7e7879e8858c7123a5a67eb37c"
 dependencies = [
  "ceno_keccak",
  "ceno_sha2",
@@ -1614,11 +1614,11 @@ dependencies = [
 [[package]]
 name = "ceno_emul"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=master#69dd886f97e7046d8d0688fab20f1ffb136c97a2"
+source = "git+https://github.com/scroll-tech/ceno?branch=dev%2Fceno-alpha-gpu#90735775f0dbce7e7879e8858c7123a5a67eb37c"
 dependencies = [
  "anyhow",
  "ceno_rt",
- "ceno_syscall 0.1.0 (git+https://github.com/scroll-tech/ceno?branch=master)",
+ "ceno_syscall 0.1.0 (git+https://github.com/scroll-tech/ceno?branch=dev%2Fceno-alpha-gpu)",
  "elf",
  "ff_ext",
  "itertools 0.13.0",
@@ -1641,7 +1641,7 @@ dependencies = [
 [[package]]
 name = "ceno_host"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=master#69dd886f97e7046d8d0688fab20f1ffb136c97a2"
+source = "git+https://github.com/scroll-tech/ceno?branch=dev%2Fceno-alpha-gpu#90735775f0dbce7e7879e8858c7123a5a67eb37c"
 dependencies = [
  "anyhow",
  "ceno_emul",
@@ -1653,16 +1653,16 @@ dependencies = [
 [[package]]
 name = "ceno_keccak"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=master#69dd886f97e7046d8d0688fab20f1ffb136c97a2"
+source = "git+https://github.com/scroll-tech/ceno?branch=dev%2Fceno-alpha-gpu#90735775f0dbce7e7879e8858c7123a5a67eb37c"
 dependencies = [
- "ceno_syscall 0.1.0 (git+https://github.com/scroll-tech/ceno?branch=master)",
+ "ceno_syscall 0.1.0 (git+https://github.com/scroll-tech/ceno?branch=dev%2Fceno-alpha-gpu)",
  "tiny-keccak",
 ]
 
 [[package]]
 name = "ceno_rt"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=master#69dd886f97e7046d8d0688fab20f1ffb136c97a2"
+source = "git+https://github.com/scroll-tech/ceno?branch=dev%2Fceno-alpha-gpu#90735775f0dbce7e7879e8858c7123a5a67eb37c"
 dependencies = [
  "getrandom 0.2.16",
  "getrandom 0.3.3",
@@ -1672,16 +1672,16 @@ dependencies = [
 [[package]]
 name = "ceno_sha2"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=master#69dd886f97e7046d8d0688fab20f1ffb136c97a2"
+source = "git+https://github.com/scroll-tech/ceno?branch=dev%2Fceno-alpha-gpu#90735775f0dbce7e7879e8858c7123a5a67eb37c"
 dependencies = [
- "ceno_syscall 0.1.0 (git+https://github.com/scroll-tech/ceno?branch=master)",
+ "ceno_syscall 0.1.0 (git+https://github.com/scroll-tech/ceno?branch=dev%2Fceno-alpha-gpu)",
  "digest 0.10.7",
 ]
 
 [[package]]
 name = "ceno_syscall"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=master#69dd886f97e7046d8d0688fab20f1ffb136c97a2"
+source = "git+https://github.com/scroll-tech/ceno?branch=dev%2Fceno-alpha-gpu#90735775f0dbce7e7879e8858c7123a5a67eb37c"
 
 [[package]]
 name = "ceno_syscall"
@@ -1691,7 +1691,7 @@ source = "git+https://github.com/scroll-tech/ceno#69dd886f97e7046d8d0688fab20f1f
 [[package]]
 name = "ceno_zkvm"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=master#69dd886f97e7046d8d0688fab20f1ffb136c97a2"
+source = "git+https://github.com/scroll-tech/ceno?branch=dev%2Fceno-alpha-gpu#90735775f0dbce7e7879e8858c7123a5a67eb37c"
 dependencies = [
  "base64",
  "bincode 1.3.3",
@@ -1700,6 +1700,7 @@ dependencies = [
  "ceno_host",
  "cfg-if",
  "clap",
+ "cuda_hal",
  "derive",
  "either",
  "ff_ext",
@@ -2043,10 +2044,43 @@ dependencies = [
 ]
 
 [[package]]
+name = "cuda_hal"
+version = "0.1.0"
+source = "git+ssh://git@github.com/scroll-tech/ceno-gpu.git?branch=dev%2Fceno-alpha#e477f23c9234c5997670ff9395cb441140f8066b"
+dependencies = [
+ "anyhow",
+ "cudarc 0.13.9",
+ "downcast-rs",
+ "ff_ext",
+ "itertools 0.13.0",
+ "mpcs",
+ "multilinear_extensions",
+ "p3",
+ "rand 0.8.5",
+ "rayon",
+ "sppark",
+ "sppark_plug",
+ "sumcheck",
+ "thiserror 1.0.69",
+ "tracing",
+ "transcript",
+ "witness",
+]
+
+[[package]]
 name = "cudarc"
 version = "0.9.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f1871a911a2b9a3f66a285896a719159985683bf9903aa2cf89e0c9f53e14552"
+
+[[package]]
+name = "cudarc"
+version = "0.13.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "486c221362668c63a1636cfa51463b09574433b39029326cff40864b3ba12b6e"
+dependencies = [
+ "libloading",
+]
 
 [[package]]
 name = "darling"
@@ -2247,7 +2281,7 @@ dependencies = [
 [[package]]
 name = "derive"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=master#69dd886f97e7046d8d0688fab20f1ffb136c97a2"
+source = "git+https://github.com/scroll-tech/ceno?branch=dev%2Fceno-alpha-gpu#90735775f0dbce7e7879e8858c7123a5a67eb37c"
 dependencies = [
  "quote",
  "syn 1.0.109",
@@ -3007,9 +3041,11 @@ dependencies = [
 [[package]]
 name = "gkr_iop"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?branch=master#69dd886f97e7046d8d0688fab20f1ffb136c97a2"
+source = "git+https://github.com/scroll-tech/ceno?branch=dev%2Fceno-alpha-gpu#90735775f0dbce7e7879e8858c7123a5a67eb37c"
 dependencies = [
  "bincode 1.3.3",
+ "cuda_hal",
+ "cudarc 0.13.9",
  "either",
  "ff_ext",
  "itertools 0.13.0",
@@ -3349,6 +3385,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c49c37c09c17a53d937dfbb742eb3a961d65a994e6bcdcf37e7399d0cc8ab5e"
 dependencies = [
  "digest 0.10.7",
+]
+
+[[package]]
+name = "home"
+version = "0.5.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cc627f471c528ff0c4a49e1d5e60450c8f6461dd6d10ba9dcd3a61d3dff7728d"
+dependencies = [
+ "windows-sys 0.61.0",
 ]
 
 [[package]]
@@ -3841,6 +3886,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6a82ae493e598baaea5209805c49bbf2ea7de956d50d7da0da1164f9c6d28543"
 
 [[package]]
+name = "libloading"
+version = "0.8.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d7c4b02199fee7c5d21a5ae7d8cfa79a6ef5bb2fc834d6e9058e89c825efdc55"
+dependencies = [
+ "cfg-if",
+ "windows-link 0.2.0",
+]
+
+[[package]]
 name = "libm"
 version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3901,6 +3956,12 @@ checksum = "3db8d6ba2cec9eacc40e6e8ccc98931840301f1006e95647ceb2dd5c3aa06f7c"
 dependencies = [
  "libsecp256k1-core",
 ]
+
+[[package]]
+name = "linux-raw-sys"
+version = "0.4.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d26c52dbd32dccf2d10cac7725f8eae5296885fb5703b261f7d0a0739ec807ab"
 
 [[package]]
 name = "linux-raw-sys"
@@ -7868,6 +7929,19 @@ dependencies = [
 
 [[package]]
 name = "rustix"
+version = "0.38.44"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fdb5bc1ae2baa591800df16c9ca78619bf65c0488b41b96ccec5d11220d8c154"
+dependencies = [
+ "bitflags",
+ "errno",
+ "libc",
+ "linux-raw-sys 0.4.15",
+ "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "rustix"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cd15f8a2c5551a84d56efdc1cd049089e409ac19a3072d5037a17fd70719ff3e"
@@ -7875,7 +7949,7 @@ dependencies = [
  "bitflags",
  "errno",
  "libc",
- "linux-raw-sys",
+ "linux-raw-sys 0.11.0",
  "windows-sys 0.61.0",
 ]
 
@@ -8281,7 +8355,7 @@ version = "0.6.0"
 dependencies = [
  "base64",
  "bincode 1.3.3",
- "cudarc",
+ "cudarc 0.9.15",
  "eyre",
  "git-version",
  "hex",
@@ -8919,6 +8993,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "sppark"
+version = "0.1.11"
+source = "git+ssh://git@github.com/scroll-tech/ceno-gpu.git?branch=dev%2Fceno-alpha#e477f23c9234c5997670ff9395cb441140f8066b"
+dependencies = [
+ "cc",
+ "which",
+]
+
+[[package]]
+name = "sppark_plug"
+version = "0.1.0"
+source = "git+ssh://git@github.com/scroll-tech/ceno-gpu.git?branch=dev%2Fceno-alpha#e477f23c9234c5997670ff9395cb441140f8066b"
+dependencies = [
+ "cc",
+ "ff_ext",
+ "itertools 0.13.0",
+ "p3",
+ "sppark",
+]
+
+[[package]]
 name = "stable_deref_trait"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9166,7 +9261,7 @@ dependencies = [
  "fastrand",
  "getrandom 0.3.3",
  "once_cell",
- "rustix",
+ "rustix 1.1.2",
  "windows-sys 0.61.0",
 ]
 
@@ -9965,6 +10060,18 @@ checksum = "5a6580f308b1fad9207618087a65c04e7a10bc77e02c8e84e9b00dd4b12fa0bb"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "which"
+version = "4.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "87ba24419a2078cd2b0f2ede2691b6c66d8e47836da3b6db8265ebad47afbfc7"
+dependencies = [
+ "either",
+ "home",
+ "once_cell",
+ "rustix 0.38.44",
 ]
 
 [[package]]
