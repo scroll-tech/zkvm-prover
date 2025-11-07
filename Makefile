@@ -27,6 +27,9 @@ export RUST_LOG
 OPENVM_RUST_TOOLCHAIN ?= nightly-2025-08-18
 export OPENVM_RUST_TOOLCHAIN
 
+JEMALLOC_SYS_WITH_MALLOC_CONF ?= retain:true,metadata_thp:always,thp:always,dirty_decay_ms:-1,muzzy_decay_ms:-1
+export JEMALLOC_SYS_WITH_MALLOC_CONF	
+
 # Set GPU config if GPU=1 is set
 ifeq ($(GPU),1)
 CARGO_CONFIG_FLAG = --features scroll-zkvm-integration/cuda
@@ -69,10 +72,10 @@ test-execute-chunk:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test chunk_circuit test_execute -- --exact --nocapture
 
 test-ceno-scroll-chunk:
-	@cargo run --release --features scroll -p ceno-integration-test -- --exact --nocapture
+	@cargo run --release --features scroll -p ceno-integration-test --features jemalloc -- --exact --nocapture
 
 test-ceno-ethereum-chunk:
-	@cargo run --release -p ceno-integration-test -- --exact --nocapture
+	@cargo run --release -p ceno-integration-test --features jemalloc -- --exact --nocapture
 
 test-execute-chunk-multi:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test chunk_circuit test_execute_multi -- --exact --nocapture

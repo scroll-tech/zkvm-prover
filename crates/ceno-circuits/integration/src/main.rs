@@ -1,17 +1,26 @@
-use std::fs::File;
+use cargo_metadata::MetadataCommand;
 use ceno_emul::{Platform, Program};
 use ceno_host::CenoStdin;
-use ceno_zkvm::e2e::{Checkpoint, Preset, run_e2e_with_checkpoint, setup_platform};
+use ceno_zkvm::e2e::{
+    DEFAULT_MIN_CYCLE_PER_SHARDS, MultiProver, Preset, run_e2e_proof, run_e2e_verify,
+    setup_platform, setup_program,
+};
+use ceno_zkvm::scheme::hal::ProverDevice;
+use ceno_zkvm::scheme::verifier::ZKVMVerifier;
 use ceno_zkvm::scheme::{create_backend, create_prover};
 use ff_ext::BabyBearExt4;
 use gkr_iop::cpu::default_backend_config;
 use mpcs::BasefoldDefault;
-use std::path::Path;
-use std::sync::LazyLock;
-use std::time::Instant;
-use cargo_metadata::MetadataCommand;
 use sbv_core::BlockWitness;
 use scroll_zkvm_types_chunk::ChunkWitness;
+use std::env;
+use std::fs::File;
+use std::path::Path;
+use std::sync::LazyLock;
+use tracing::level_filters::LevelFilter;
+use tracing_forest::ForestLayer;
+use tracing_subscriber::filter::filter_fn;
+use tracing_subscriber::{EnvFilter, Registry, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
 type Pcs = BasefoldDefault<E>;
 type E = BabyBearExt4;
@@ -55,7 +64,9 @@ fn load_witness() -> ChunkWitness {
     let blocks = (16525000..=16525003)
         .map(|n| base.join(format!("{n}.json")))
         .map(|path| File::open(&path).unwrap())
-        .map(|rdr| serde_json::from_reader::<_, sbv_primitives::legacy_types::BlockWitness>(rdr).unwrap())
+        .map(|rdr| {
+            serde_json::from_reader::<_, sbv_primitives::legacy_types::BlockWitness>(rdr).unwrap()
+        })
         .map(BlockWitness::from)
         .collect::<Vec<_>>();
     ChunkWitness::new(&blocks, B256::ZERO, ForkName::Feynman)
@@ -64,7 +75,7 @@ fn load_witness() -> ChunkWitness {
 #[cfg(not(feature = "scroll"))]
 fn load_witness() -> ChunkWitness {
     let base = WORKSPACE_ROOT.join("crates/integration/testdata/ethereum");
-    let blocks = (23588347..=23588347)
+    let blocks = (23587691..23587692)
         .map(|n| base.join(format!("{n}.json")))
         .map(|path| File::open(&path).unwrap())
         .map(|rdr| serde_json::from_reader::<_, BlockWitness>(rdr).unwrap())
@@ -72,13 +83,51 @@ fn load_witness() -> ChunkWitness {
     ChunkWitness::new(&blocks)
 }
 
+pub const MAX_CYCLE_PER_SHARD: u64 = 1 << 26;
+
 fn main() -> eyre::Result<()> {
+    let profiling_level: usize = env::var("PROFILING")
+        .ok()
+        .and_then(|v| v.parse::<usize>().ok())
+        .unwrap_or_default();
+
+    if profiling_level > 0 {
+        let fmt_layer = fmt::layer()
+            .compact()
+            .with_thread_ids(false)
+            .with_thread_names(false)
+            .without_time();
+        let filter_by_profiling_level = filter_fn(move |metadata| {
+            (1..=profiling_level)
+                .map(|i| format!("profiling_{i}"))
+                .any(|field| metadata.fields().field(&field).is_some())
+        });
+        Registry::default()
+            .with(fmt_layer)
+            .with(ForestLayer::default())
+            .with(filter_by_profiling_level)
+            .init()
+    } else {
+        let fmt_layer = fmt::layer()
+            .compact()
+            .with_thread_ids(false)
+            .with_thread_names(false)
+            .without_time();
+        Registry::default()
+            .with(fmt_layer)
+            .with(
+                EnvFilter::builder()
+                    .with_default_directive(LevelFilter::DEBUG.into())
+                    .from_env_lossy(),
+            )
+            .init()
+    };
+
     let (elf, program, platform) = setup();
 
     let (_, security_level) = default_backend_config();
     let max_num_variables = 26;
     let backend = create_backend::<E, Pcs>(max_num_variables, security_level);
-
 
     let mut hints = CenoStdin::default();
     let wit = load_witness();
@@ -90,20 +139,33 @@ fn main() -> eyre::Result<()> {
     ceno_host::run(platform.clone(), &elf, &hints, None);
 
     let max_steps = usize::MAX;
-    let start = Instant::now();
-    let result = run_e2e_with_checkpoint::<E, Pcs, _, _>(
-        create_prover(backend.clone()),
-        program.clone(),
-        platform.clone(),
-        &Vec::from(&hints),
-        &[],
-        max_steps,
-        Checkpoint::Complete,
-    );
-    let duration = start.elapsed();
-    println!("run_e2e_with_checkpoint took: {:?}", duration);
-    let _proof = result.proof.expect("PrepSanityCheck do not provide proof");
-    let _vk = result.vk.expect("PrepSanityCheck do not provide verifier");
+    let proving_device = create_prover(backend.clone());
 
+    let start = std::time::Instant::now();
+    let ctx = setup_program::<E>(
+        program,
+        platform,
+        MultiProver::new(0, 1, DEFAULT_MIN_CYCLE_PER_SHARDS, MAX_CYCLE_PER_SHARD),
+    );
+    println!("setup_program done in {:?}", start.elapsed());
+
+    // Keygen
+    let start = std::time::Instant::now();
+    let (pk, vk) = ctx.keygen_with_pb(proving_device.get_pb());
+    println!("keygen done in {:?}", start.elapsed());
+
+    let start = std::time::Instant::now();
+    let init_full_mem = ctx.setup_init_mem(&Vec::from(&hints), &[]);
+    tracing::debug!("setup_init_mem done in {:?}", start.elapsed());
+
+    let proofs =
+        run_e2e_proof::<E, Pcs, _, _>(&ctx, proving_device, &init_full_mem, pk, max_steps, false);
+    let duration = start.elapsed();
+    println!("run_e2e_proof took: {:?}", duration);
+
+    let verifier = ZKVMVerifier::new(vk.clone());
+    let start = std::time::Instant::now();
+    run_e2e_verify(&verifier, proofs, Some(0), max_steps);
+    tracing::debug!("verified in {:?}", start.elapsed());
     Ok(())
 }

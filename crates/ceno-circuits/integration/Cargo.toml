@@ -22,8 +22,12 @@ serde_json.workspace = true
 sbv-core.workspace = true
 sbv-primitives.workspace = true
 scroll-zkvm-types-chunk.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+tracing-forest.workspace = true
 
 [features]
 default = []
+jemalloc = ["ceno_zkvm/jemalloc"]
 scroll = ["scroll-zkvm-types-chunk/scroll", "scroll-zkvm-types-chunk/host"]
 

@@ -68,17 +68,17 @@ openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0",
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
 
 # ceno guest lib
-ceno_rt = { git = "https://github.com/scroll-tech/ceno" }
-ceno_crypto = { git = "https://github.com/scroll-tech/ceno" }
+ceno_rt = { git = "https://github.com/scroll-tech/ceno", branch = "master" }
+ceno_crypto = { git = "https://github.com/scroll-tech/ceno", branch = "master" }
 
 # ceno host lib
-ceno_emul = { git = "https://github.com/scroll-tech/ceno" }
-ceno_host = { git = "https://github.com/scroll-tech/ceno" }
-ceno_zkvm = { git = "https://github.com/scroll-tech/ceno" }
-ceno_sha2 = { git = "https://github.com/scroll-tech/ceno" }
-gkr_iop = { git = "https://github.com/scroll-tech/ceno" }
-ff_ext = { git = "https://github.com/scroll-tech/gkr-backend.git", rev = "v1.0.0-alpha.9" }
-mpcs = { git = "https://github.com/scroll-tech/gkr-backend.git", rev = "v1.0.0-alpha.9" }
+ceno_emul = { git = "https://github.com/scroll-tech/ceno", branch = "master" }
+ceno_host = { git = "https://github.com/scroll-tech/ceno", branch = "master" }
+ceno_zkvm = { git = "https://github.com/scroll-tech/ceno", branch = "master" }
+ceno_sha2 = { git = "https://github.com/scroll-tech/ceno", branch = "master" }
+gkr_iop = { git = "https://github.com/scroll-tech/ceno", branch = "master" }
+ff_ext = { git = "https://github.com/scroll-tech/gkr-backend.git", tag = "v1.0.0-alpha.13" }
+mpcs = { git = "https://github.com/scroll-tech/gkr-backend.git", tag = "v1.0.0-alpha.13" }
 
 # more openvm related libs
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.0" }
@@ -139,6 +139,7 @@ tracing = "0.1"
 vm-zstd = { git = "https://github.com/scroll-tech/rust-zstd-decompressor.git", branch = "master" }
 toml = "0.8.14"
 tracing-subscriber = "0.3"
+tracing-forest = "0.1.6"
 sysinfo = { version = "0.35", default-features = false }
 bytesize = "2.0.1"
 url = "2.5.4"
