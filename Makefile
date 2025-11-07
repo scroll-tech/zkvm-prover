@@ -72,10 +72,10 @@ test-execute-chunk:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test chunk_circuit test_execute -- --exact --nocapture
 
 test-ceno-scroll-chunk:
-	@cargo run --release --features scroll -p ceno-integration-test -- --exact --nocapture
+	@cargo run --release --features scroll -p ceno-integration-test --features jemalloc -- --exact --nocapture
 
 test-ceno-ethereum-chunk:
-	@cargo run --release -p ceno-integration-test -- --exact --nocapture
+	@cargo run --release -p ceno-integration-test --features jemalloc -- --exact --nocapture
 
 test-execute-chunk-multi:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test chunk_circuit test_execute_multi -- --exact --nocapture
