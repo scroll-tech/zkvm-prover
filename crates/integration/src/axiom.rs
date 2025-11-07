@@ -105,7 +105,7 @@ impl TaskProver for AxiomProver {
                     proof.try_into().expect("Failed to convert to StarkProof"),
                 ))
             }
-            ProofType::Evm =>  {
+            ProofType::Evm => {
                 let proof: EvmProof = serde_json::from_slice(&proof_bytes)?;
                 Ok(ProofEnum::Evm(proof.into()))
             }

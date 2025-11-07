@@ -100,9 +100,7 @@ pub static PROGRAM_COMMITMENTS: LazyLock<HashMap<String, ProgramCommitment>> =
     });
 
 pub static AXIOM_PROGRAM_IDS: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
-    let axiom_program_ids = ASSET_BASE_DIR
-        .join("verifier")
-        .join("axiom_program_ids.json");
+    let axiom_program_ids = ASSET_BASE_DIR.join("axiom_program_ids.json");
     let mut program_ids: HashMap<String, String> =
         read_json(&axiom_program_ids).expect("failed to read axiom program ids");
     program_ids.shrink_to_fit();
@@ -228,7 +226,7 @@ pub trait ProverTester {
         let prover = AxiomProver::from_env(
             Self::NAME.to_string(),
             scroll_zkvm_types::axiom::get_config_id(Self::NAME).to_string(),
-            program_id
+            program_id,
         );
         Ok(prover)
     }

@@ -1,10 +1,15 @@
 use sbv_primitives::B256;
-use scroll_zkvm_integration::{ProverTester, testers::{
-    batch::{BatchProverTester, preset_batch_multiple, preset_batch_validium},
-    bundle::{BundleProverTester, BundleTaskGenerator},
-    chunk::ChunkProverTester,
-    load_local_task,
-}, testing_hardfork, testing_version_validium, utils::metadata_from_bundle_witnesses, TaskProver};
+use scroll_zkvm_integration::{
+    ProverTester, TaskProver,
+    testers::{
+        batch::{BatchProverTester, preset_batch_multiple, preset_batch_validium},
+        bundle::{BundleProverTester, BundleTaskGenerator},
+        chunk::ChunkProverTester,
+        load_local_task,
+    },
+    testing_hardfork, testing_version_validium,
+    utils::metadata_from_bundle_witnesses,
+};
 use scroll_zkvm_prover::{Prover, ProverConfig};
 use scroll_zkvm_types::{
     proof::OpenVmEvmProof,
@@ -162,8 +167,7 @@ fn e2e_inner(
         "unexpected pi hash for e2e bundle info, block witness changed?"
     );
 
-    let proof =
-        task.get_or_build_proof(bundle_prover, batch_prover, chunk_prover)?;
+    let proof = task.get_or_build_proof(bundle_prover, batch_prover, chunk_prover)?;
 
     let evm_proof: OpenVmEvmProof = proof.into_evm_proof().unwrap().into();
 

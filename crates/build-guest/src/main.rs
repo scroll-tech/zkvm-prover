@@ -304,9 +304,7 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
     );
     println!("{LOG_PREFIX} VK data written to openVmVk.json");
 
-    let output_path = release_output_dir
-        .join("verifier")
-        .join("axiom_program_ids.json");
+    let output_path = release_output_dir.join("axiom_program_ids.json");
     let f = fs::File::create(output_path)?;
     serde_json::to_writer_pretty(f, &axiom_program_ids)?;
     println!(
@@ -333,7 +331,7 @@ fn generate_root_verifier(workspace_dir: &Path, force_overwrite: bool) -> Result
         return Ok(());
     }
 
-    let asm = openvm_sdk::Sdk::riscv32().generate_root_verifier_asm();
+    let asm = Sdk::riscv32().generate_root_verifier_asm();
     fs::write(&root_verifier_path, asm).expect("fail to write");
 
     println!(
@@ -355,11 +353,8 @@ fn generate_evm_verifier(
     let path_root_agg_pk = verifier_output_dir.join("root_verifier_vk");
 
     if force_overwrite || !path_root_agg_pk.exists() {
-        openvm_sdk::fs::write_object_to_file(
-            &path_root_agg_pk,
-            openvm_sdk::Sdk::riscv32().agg_pk().get_agg_vk(),
-        )
-        .expect("fail to write");
+        write_object_to_file(&path_root_agg_pk, Sdk::riscv32().agg_pk().get_agg_vk())
+            .expect("fail to write");
     }
 
     // Check if files exist and skip if in auto mode
@@ -421,7 +416,7 @@ pub fn main() -> Result<()> {
     let workspace_dir = metadata.workspace_root.into_std_path_buf();
     println!("{LOG_PREFIX} Workspace root: {}", workspace_dir.display());
 
-    let release_output_dir: std::path::PathBuf = workspace_dir.join("releases").join(&cli.output);
+    let release_output_dir: PathBuf = workspace_dir.join("releases").join(&cli.output);
     fs::create_dir_all(&release_output_dir)?;
     println!(
         "{LOG_PREFIX} Release output directory: {}",

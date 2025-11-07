@@ -1,7 +1,5 @@
 use openvm_native_recursion::hints::Hintable;
-use openvm_stark_sdk::{
-    openvm_stark_backend::{p3_field::PrimeField32},
-};
+use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
 use serde::{Deserialize, Serialize};
 
 /// Input structure for OpenVM input json
@@ -46,4 +44,3 @@ impl super::ProvingTask {
         OpenVMInput { input }
     }
 }
-

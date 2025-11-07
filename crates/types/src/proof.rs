@@ -1,15 +1,15 @@
-use std::io;
-use std::io::Cursor;
 use crate::utils::{as_base64, vec_as_base64};
 use openvm_native_recursion::halo2::RawEvmProof;
-use openvm_sdk::codec::Decode;
 use openvm_sdk::SC;
+use openvm_sdk::codec::Decode;
+use openvm_sdk::types::VersionedVmStarkProof;
 use openvm_stark_sdk::{
     openvm_stark_backend::{p3_field::PrimeField32, proof::Proof},
     p3_baby_bear::BabyBear,
 };
 use serde::{Deserialize, Serialize};
-use openvm_sdk::types::VersionedVmStarkProof;
+use std::io;
+use std::io::Cursor;
 
 /// Helper type for convenience that implements [`From`] and [`Into`] traits between
 /// [`OpenVmEvmProof`]. The difference is that the instances in [`EvmProof`] are the byte-encoding
@@ -72,7 +72,6 @@ pub struct VmInternalStarkProof {
     pub public_values: Vec<BabyBear>,
 }
 
-
 impl TryFrom<VersionedVmStarkProof> for StarkProof {
     type Error = io::Error;
 
@@ -94,7 +93,6 @@ impl TryFrom<VersionedVmStarkProof> for StarkProof {
         })
     }
 }
-
 
 pub use openvm_sdk::types::EvmProof as OpenVmEvmProof;
 use snark_verifier_sdk::snark_verifier::{
