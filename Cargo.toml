@@ -26,24 +26,24 @@ version = "0.6.0"
 
 [workspace.dependencies]
 # openvm guest libs
-openvm = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0" }
-openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
-openvm-custom-insn = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
-openvm-sha2 = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0" }
-openvm-sha256-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
-openvm-p256 = { git = "https://github.com/openvm-org/openvm.git", package = "p256", tag = "v1.4.0", features = [
+openvm = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1" }
+openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
+openvm-custom-insn = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
+openvm-sha2 = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1" }
+openvm-sha256-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
+openvm-p256 = { git = "https://github.com/openvm-org/openvm.git", package = "p256", tag = "v1.4.1", features = [
   "std",
 ] }
-openvm-k256 = { git = "https://github.com/openvm-org/openvm.git", package = "k256", tag = "v1.4.0", features = [
+openvm-k256 = { git = "https://github.com/openvm-org/openvm.git", package = "k256", tag = "v1.4.1", features = [
   "std",
 ] }
-openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0" }
-openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
-openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
-openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
-openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
-openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
-openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
+openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1" }
+openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
+openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
+openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
+openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
+openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
+openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
 
 # openvm host libs
 openvm-benchmarks-prove = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
