@@ -2,7 +2,6 @@ use crate::utils::{as_base64, vec_as_base64};
 use openvm_native_recursion::halo2::RawEvmProof;
 use openvm_sdk::SC;
 use openvm_sdk::codec::Decode;
-use openvm_sdk::types::VersionedVmStarkProof;
 use openvm_stark_sdk::{
     openvm_stark_backend::{p3_field::PrimeField32, proof::Proof},
     p3_baby_bear::BabyBear,
@@ -72,10 +71,12 @@ pub struct VmInternalStarkProof {
     pub public_values: Vec<BabyBear>,
 }
 
-impl TryFrom<VersionedVmStarkProof> for StarkProof {
+pub use openvm_sdk::types::VersionedVmStarkProof as OpenVmVersionedVmStarkProof;
+
+impl TryFrom<OpenVmVersionedVmStarkProof> for StarkProof {
     type Error = io::Error;
 
-    fn try_from(proof: VersionedVmStarkProof) -> io::Result<Self> {
+    fn try_from(proof: OpenVmVersionedVmStarkProof) -> io::Result<Self> {
         let inner_proof = Proof::<SC>::decode_from_bytes(&proof.proof)?;
         let mut pv_reader = Cursor::new(proof.user_public_values);
         // decode_vec is not pub so we have to use the detail inside it ...
