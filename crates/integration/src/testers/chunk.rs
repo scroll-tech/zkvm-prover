@@ -76,7 +76,10 @@ impl PartialProvingTask for ChunkWitness {
             "0.5.2" => self.legacy_rkyv_archive()?,
             "0.6.0-rc.6" => {
                 let config = bincode::config::standard();
-                bincode::serde::encode_to_vec(ChunkWitnessUpgradeCompact::from(self.clone()), config)?
+                bincode::serde::encode_to_vec(
+                    ChunkWitnessUpgradeCompact::from(self.clone()),
+                    config,
+                )?
             }
             _ => {
                 let config = bincode::config::standard();
