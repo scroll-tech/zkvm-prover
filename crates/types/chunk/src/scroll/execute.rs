@@ -42,7 +42,7 @@ pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
         post_state_root,
         withdraw_root,
         ..
-    } = verifier::run(&witness.blocks, chain_spec, witness.compression_ratios)
+    } = verifier::run(&witness.blocks, chain_spec, witness.compression_infos)
         .map_err(|e| format!("verify error: {e}"))?;
 
     let blocks = manually_drop_on_zkvm!(blocks);
