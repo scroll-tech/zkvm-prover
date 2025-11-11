@@ -252,7 +252,7 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
 
         // 4. upload program to axiom
         if let Some(ref axiom_sdk) = axiom_sdk {
-            let axiom_project_id = env::var("AXIOM_API_KEY").expect("AXIOM_API_KEY env var is required");
+            let axiom_project_id = env::var("AXIOM_PROJECT_ID").expect("AXIOM_API_KEY env var is required");
             let program_id = axiom_sdk.upload_exe_raw(
                 fs::read(&path_app_elf)?,
                 fs::read(&path_app_exe)?,
