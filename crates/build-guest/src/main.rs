@@ -307,7 +307,7 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
     );
     println!("{LOG_PREFIX} VK data written to openVmVk.json");
 
-    if let Some(ref axiom_sdk) = axiom_sdk {
+    if axiom_sdk.is_some() {
         let output_path = release_output_dir.join("axiom_program_ids.json");
         let f = fs::File::create(output_path)?;
         serde_json::to_writer_pretty(f, &axiom_program_ids)?;
