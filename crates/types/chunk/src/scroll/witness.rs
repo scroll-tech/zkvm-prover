@@ -19,7 +19,7 @@ pub struct ChunkWitness {
     /// The code version specify the chain spec
     pub fork_name: ForkName,
     /// The compression ratios for each block in the chunk.
-    pub compression_ratios: Vec<Vec<U256>>,
+    pub compression_infos: Vec<Vec<(U256, usize)>>,
     /// Validium encrypted txs and secret key if this is a validium chain.
     pub validium: Option<ValidiumInputs>,
 }
@@ -31,6 +31,23 @@ pub struct ValidiumInputs {
     pub validium_txs: Vec<Vec<TxL1Message>>,
     /// The secret key used for decrypting validium transactions.
     pub secret_key: Box<[u8]>,
+}
+
+/// The witness type accepted by last version chunk-circuit.
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct ChunkWitnessUpgradeCompact {
+    /// Version byte as per [version][types_base::version].
+    pub version: u8,
+    /// The block witness for each block in the chunk.
+    pub blocks: Vec<BlockWitness>,
+    /// The on-chain rolling L1 message queue hash before enqueueing any L1 msg tx from the chunk.
+    pub prev_msg_queue_hash: B256,
+    /// The code version specify the chain spec
+    pub fork_name: ForkName,
+    /// The compression ratios for each block in the chunk.
+    pub compression_ratios: Vec<Vec<U256>>,
+    /// Validium encrypted txs and secret key if this is a validium chain.
+    pub validium: Option<ValidiumInputs>,
 }
 
 /// The witness type accepted by the chunk-circuit.
@@ -129,9 +146,10 @@ impl ChunkWitness {
                     .collect(),
             })
             .collect();
-        let compression_ratios = blocks
+
+        let compression_infos = blocks
             .iter()
-            .map(|block| block.compression_ratios())
+            .map(|block| block.compression_infos())
             .collect();
 
         Self {
@@ -139,7 +157,7 @@ impl ChunkWitness {
             blocks,
             prev_msg_queue_hash,
             fork_name,
-            compression_ratios,
+            compression_infos,
             validium,
         }
     }
@@ -183,8 +201,29 @@ impl From<ChunkWitness> for LegacyChunkWitness {
                 .collect(),
             prev_msg_queue_hash: value.prev_msg_queue_hash,
             fork_name: value.fork_name,
-            compression_ratios: value.compression_ratios,
+            compression_ratios: value
+                .compression_infos
+                .iter()
+                .map(|compression_infos| compression_infos.iter().map(|v| v.0).collect())
+                .collect(),
             state_commit_mode: StateCommitMode::Auto,
+        }
+    }
+}
+
+impl From<ChunkWitness> for ChunkWitnessUpgradeCompact {
+    fn from(value: ChunkWitness) -> Self {
+        ChunkWitnessUpgradeCompact {
+            version: value.version,
+            blocks: value.blocks,
+            prev_msg_queue_hash: value.prev_msg_queue_hash,
+            fork_name: value.fork_name,
+            compression_ratios: value
+                .compression_infos
+                .iter()
+                .map(|compression_infos| compression_infos.iter().map(|v| v.0).collect())
+                .collect(),
+            validium: value.validium,
         }
     }
 }
