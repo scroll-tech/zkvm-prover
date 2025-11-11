@@ -4,120 +4,14 @@ log_final_poly_len = 0
 num_queries = 100
 proof_of_work_bits = 16
 
-[app_vm_config.system.config]
-max_constraint_degree = 3
-continuation_enabled = true
-num_public_values = 32
-profiling = false
-
-[app_vm_config.system.config.memory_config]
-addr_space_height = 3
-pointer_max_bits = 29
-timestamp_max_bits = 29
-decomp = 17
-max_access_adapter_n = 32
-
-[[app_vm_config.system.config.memory_config.addr_spaces]]
-num_cells = 0
-min_block_size = 1
-layout = "Null"
-
-[[app_vm_config.system.config.memory_config.addr_spaces]]
-num_cells = 128
-min_block_size = 4
-layout = "U8"
-
-[[app_vm_config.system.config.memory_config.addr_spaces]]
-num_cells = 536870912
-min_block_size = 4
-layout = "U8"
-
-[[app_vm_config.system.config.memory_config.addr_spaces]]
-num_cells = 32
-min_block_size = 4
-layout = "U8"
-
-[[app_vm_config.system.config.memory_config.addr_spaces]]
-num_cells = 536870912
-min_block_size = 1
-
-[app_vm_config.system.config.memory_config.addr_spaces.layout.Native]
-size = 4
-
-[[app_vm_config.system.config.memory_config.addr_spaces]]
-num_cells = 0
-min_block_size = 1
-
-[app_vm_config.system.config.memory_config.addr_spaces.layout.Native]
-size = 4
-
-[[app_vm_config.system.config.memory_config.addr_spaces]]
-num_cells = 0
-min_block_size = 1
-
-[app_vm_config.system.config.memory_config.addr_spaces.layout.Native]
-size = 4
-
-[[app_vm_config.system.config.memory_config.addr_spaces]]
-num_cells = 0
-min_block_size = 1
-
-[app_vm_config.system.config.memory_config.addr_spaces.layout.Native]
-size = 4
-
-[[app_vm_config.system.config.memory_config.addr_spaces]]
-num_cells = 0
-min_block_size = 1
-
-[app_vm_config.system.config.memory_config.addr_spaces.layout.Native]
-size = 4
-
 [app_vm_config.rv32i]
+
+[app_vm_config.rv32m]
 
 [app_vm_config.io]
 
 [app_vm_config.keccak]
 
-[app_vm_config.native]
-
 [app_vm_config.castf]
 
-[app_vm_config.rv32m]
-range_tuple_checker_sizes = [256, 2048]
-
-[leaf_fri_params.fri_params]
-log_blowup = 1
-log_final_poly_len = 0
-num_queries = 100
-proof_of_work_bits = 16
-
-[compiler_options]
-word_size = 8
-enable_cycle_tracker = false
-
-[agg_config]
-max_num_user_public_values = 32
-profiling = false
-root_max_constraint_degree = 9
-
-[agg_config.leaf_fri_params]
-log_blowup = 1
-log_final_poly_len = 0
-num_queries = 100
-proof_of_work_bits = 16
-
-[agg_config.internal_fri_params]
-log_blowup = 2
-log_final_poly_len = 0
-num_queries = 44
-proof_of_work_bits = 16
-
-[agg_config.root_fri_params]
-log_blowup = 3
-log_final_poly_len = 0
-num_queries = 30
-proof_of_work_bits = 16
-
-[agg_config.compiler_options]
-word_size = 8
-enable_cycle_tracker = false
+[app_vm_config.native]
