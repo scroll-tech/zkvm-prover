@@ -133,7 +133,7 @@ impl BundleTaskGenerator {
                     .iter()
                     .map(|&b| b as u32)
                     .collect::<Vec<_>>(),
-                commitment: commitment.clone(),
+                commitment,
             };
             batch_proofs.push(proof);
             batch_infos.push(info);
