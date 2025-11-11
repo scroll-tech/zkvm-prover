@@ -1,8 +1,15 @@
+use crate::{
+    PartialProvingTask, ProverTester, guest_version, prove_verify, testdata_fork_directory,
+    tester_execute, testers::PATH_TESTDATA, testing_hardfork, testing_version,
+    utils::metadata_from_chunk_witnesses,
+};
+use openvm_sdk::StdIn;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use sbv_core::BlockWitness;
 use sbv_primitives::{B256, types::consensus::TxL1Message};
 use scroll_zkvm_prover::utils::vm::ExecutionResult;
 use scroll_zkvm_prover::{Prover, utils::read_json};
+use scroll_zkvm_types::chunk::ChunkWitnessUpgradeCompact;
 use scroll_zkvm_types::{
     chunk::{ChunkInfo, ChunkWitness, LegacyChunkWitness, SecretKey},
     proof::ProofEnum,
@@ -11,12 +18,6 @@ use scroll_zkvm_types::{
 use std::{
     fs::File,
     path::{Path, PathBuf},
-};
-
-use crate::{
-    PartialProvingTask, ProverTester, prove_verify, testdata_fork_directory, tester_execute,
-    testers::PATH_TESTDATA, testing_hardfork, testing_version,
-    utils::metadata_from_chunk_witnesses,
 };
 
 /// Load a file <block_n>.json in the <PATH_BLOCK_WITNESS> directory.
@@ -65,6 +66,28 @@ impl PartialProvingTask for ChunkWitness {
         let witness_legacy = LegacyChunkWitness::from(self.clone());
         let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(&witness_legacy)?;
         Ok(bytes.to_vec())
+    }
+
+    fn write_guest_input(&self, stdin: &mut StdIn) -> eyre::Result<()>
+    where
+        Self: Sized,
+    {
+        let bytes: Vec<u8> = match guest_version().as_str() {
+            "0.5.2" => self.legacy_rkyv_archive()?,
+            "0.6.0-rc.6" => {
+                let config = bincode::config::standard();
+                bincode::serde::encode_to_vec(
+                    ChunkWitnessUpgradeCompact::from(self.clone()),
+                    config,
+                )?
+            }
+            _ => {
+                let config = bincode::config::standard();
+                bincode::serde::encode_to_vec(self, config)?
+            }
+        };
+        stdin.write_bytes(&bytes);
+        Ok(())
     }
 
     fn fork_name(&self) -> ForkName {
