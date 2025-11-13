@@ -1,4 +1,4 @@
-// This should be removed after we fully migrated to openvm 1.4 after protoco upgrade.
+// This should be removed after we fully migrated to openvm 1.4 after protocol upgrade.
 use once_cell::sync::Lazy;
 use openvm_sdk::Sdk;
 use openvm_sdk::keygen::AggProvingKey;
