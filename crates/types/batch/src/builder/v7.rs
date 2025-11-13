@@ -112,6 +112,15 @@ impl<P: Payload> super::BatchInfoBuilder for GenericBatchInfoBuilderV7<P> {
         // Validate payload (batch data).
         let (first_chunk, last_chunk) = payload.validate(&args.header, args.chunk_infos.as_slice());
 
+        // header version is the stf-version.
+        assert_eq!(
+            args.header.version(),
+            version.stf_version as u8,
+            "batch header version mismatch: expected(witness)={:?}, got(onchain)={:?}",
+            version.stf_version as u8,
+            args.header.version()
+        );
+
         BatchInfo {
             parent_state_root: first_chunk.prev_state_root,
             parent_batch_hash: args.header.parent_batch_hash(),

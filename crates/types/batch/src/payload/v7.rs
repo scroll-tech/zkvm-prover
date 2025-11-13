@@ -197,7 +197,7 @@ impl super::Payload for GenericPayloadV7 {
 
     fn validate<'a>(
         &self,
-        header: &Self::BatchHeader,
+        _header: &Self::BatchHeader,
         chunk_infos: &'a [ChunkInfo],
     ) -> (&'a ChunkInfo, &'a ChunkInfo) {
         // Get the first and last chunks' info, to construct the batch info.
@@ -205,9 +205,6 @@ impl super::Payload for GenericPayloadV7 {
             chunk_infos.first().expect("at least one chunk in batch"),
             chunk_infos.last().expect("at least one chunk in batch"),
         );
-
-        // version from payload is what's present in the on-chain batch header
-        assert_eq!(self.version, header.version);
 
         // number of blocks in the batch
         assert_eq!(

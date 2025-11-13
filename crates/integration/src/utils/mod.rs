@@ -3,7 +3,7 @@ use bytesize::ByteSize;
 use sbv_core::BlockWitness;
 use sbv_primitives::types::consensus::ScrollTransaction;
 use sbv_primitives::{B256, types::eips::Encodable2718};
-use scroll_zkvm_types::batch::build_point_eval_witness;
+use scroll_zkvm_types::batch::{N_BLOB_BYTES, build_point_eval_witness};
 use scroll_zkvm_types::{
     batch::{
         BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchHeaderValidium, BatchHeaderValidiumV1,
@@ -201,6 +201,14 @@ pub fn build_batch_witnesses(
     payload.extend(chunk_tx_bytes);
     // compress ...
     let compressed_payload = zstd_encode(&payload);
+
+    // 5 bytes are utilised by version (1), compressed_len (3) and is_encoded (1).
+    if compressed_payload.len() > N_BLOB_BYTES - 5 {
+        return Err(eyre::eyre!(
+            "compression payload of batch too big: len={}",
+            compressed_payload.len()
+        ));
+    }
 
     let heading = compressed_payload.len() as u32 + ((version.codec() as u32) << 24);
 

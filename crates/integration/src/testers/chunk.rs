@@ -221,7 +221,7 @@ pub fn preset_chunk() -> ChunkTaskGenerator {
         ForkName::EuclidV1 => (Version::euclid_v1(), 12508460u64..=12508463u64),
         ForkName::EuclidV2 => (Version::euclid_v2(), 1u64..=4u64),
         ForkName::Feynman => (Version::feynman(), 16525000u64..=16525003u64),
-        ForkName::Galileo => (Version::galileo(), 20239156..=20239166),
+        ForkName::Galileo => (Version::galileo(), 20239156..=20239235),
     };
 
     ChunkTaskGenerator {
@@ -285,9 +285,9 @@ pub fn preset_chunk_multiple() -> Vec<ChunkTaskGenerator> {
                 ),
                 ForkName::Galileo => (
                     vec![
-                        20239156..=20239170,
-                        20239171..=20239200,
-                        20239201..=20239235,
+                        20239156..=20239158,
+                        20239159..=20239161,
+                        20239162..=20239163,
                     ],
                     Version::galileo(),
                 ),
