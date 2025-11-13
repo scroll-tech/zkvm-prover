@@ -29,3 +29,5 @@ pub mod openvm;
 pub mod axiom;
 
 pub mod utils;
+
+pub mod zkvm;

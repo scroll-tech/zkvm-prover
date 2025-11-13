@@ -210,6 +210,7 @@ pub trait ProverTester {
         let config = scroll_zkvm_prover::ProverConfig {
             path_app_exe,
             path_app_config,
+            is_openvm_v13: guest_version() == "0.5.2",
             ..Default::default()
         };
         let prover = Prover::setup(config, Some(Self::NAME))?;

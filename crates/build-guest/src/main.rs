@@ -47,6 +47,7 @@ use openvm_sdk::{
     prover::AppProver,
 };
 use openvm_stark_sdk::p3_bn254_fr::Bn254Fr;
+use scroll_zkvm_types::zkvm::AGG_STARK_PROVING_KEY;
 use snark_verifier_sdk::snark_verifier::loader::evm::compile_solidity;
 use std::{
     env, fs,
@@ -358,7 +359,7 @@ fn generate_evm_verifier(
     let path_root_agg_pk = verifier_output_dir.join("root_verifier_vk");
 
     if force_overwrite || !path_root_agg_pk.exists() {
-        write_object_to_file(&path_root_agg_pk, Sdk::riscv32().agg_pk().get_agg_vk())
+        write_object_to_file(&path_root_agg_pk, AGG_STARK_PROVING_KEY.get_agg_vk())
             .expect("fail to write");
     }
 
