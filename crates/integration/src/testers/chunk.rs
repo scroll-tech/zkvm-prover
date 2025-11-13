@@ -285,9 +285,9 @@ pub fn preset_chunk_multiple() -> Vec<ChunkTaskGenerator> {
                 ),
                 ForkName::Galileo => (
                     vec![
-                        20239156..=20239158,
-                        20239159..=20239161,
-                        20239162..=20239163,
+                        20239220..=20239220,
+                        20239221..=20239221,
+                        20239222..=20239222,
                     ],
                     Version::galileo(),
                 ),

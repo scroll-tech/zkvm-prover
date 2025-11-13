@@ -138,7 +138,7 @@ fn e2e() -> eyre::Result<()> {
         ForkName::EuclidV1 => "3cc70faf6b5a4bd565694a4c64de59befb735f4aac2a4b9e6a6fc2ee950b8a72",
         ForkName::EuclidV2 => "2028510c403837c6ed77660fd92814ba61d7b746e7268cc8dfc14d163d45e6bd",
         ForkName::Feynman => "80523a61b2b94b2922638ec90edd084b1022798e1e5539c3a079d2b0736e4f32",
-        ForkName::Galileo => "5b58c1ac0f237736711041f7e7e18eed400ed263d453710e20eb406288967ff0",
+        ForkName::Galileo => "bef1b9511ed0162cde799f4a3c49a44436f20bf4d7a0a851f3b5f9c4b2dbea71",
     };
     let expected_pi_hash = metadata.pi_hash_by_version(version);
     // sanity check for pi of bundle hash, update the expected hash if block witness changed
