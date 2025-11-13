@@ -25,3 +25,5 @@ pub mod task;
 pub use task::ProvingTask;
 
 pub mod utils;
+
+pub mod zkvm;
