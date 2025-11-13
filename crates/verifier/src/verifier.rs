@@ -1,19 +1,16 @@
-use once_cell::sync::Lazy;
 use openvm_sdk::commit::AppExecutionCommit;
-use openvm_sdk::keygen::{AggProvingKey, AggVerifyingKey};
+use openvm_sdk::keygen::AggVerifyingKey;
 use openvm_sdk::{Sdk, commit::CommitBytes};
 use scroll_zkvm_types::proof::OpenVmEvmProof;
 use scroll_zkvm_types::{proof::StarkProof, utils::serialize_vk};
 use std::path::Path;
 
-/// Proving key for STARK aggregation. Primarily used to aggregate
-/// [continuation proofs][openvm_sdk::prover::vm::ContinuationVmProof].
-pub static AGG_STARK_PROVING_KEY: Lazy<AggProvingKey> =
-    Lazy::new(|| Sdk::riscv32().agg_pk().clone());
+pub use scroll_zkvm_types::zkvm::{AGG_STARK_PROVING_KEY, AGG_STARK_PROVING_KEY_V13};
 
 pub struct UniversalVerifier {
     pub evm_verifier: Vec<u8>,
     pub loaded_agg_vk: AggVerifyingKey,
+    pub is_openvm_v13: bool,
 }
 
 impl UniversalVerifier {
@@ -51,16 +48,34 @@ impl UniversalVerifier {
         let path_verifier_code = path_verifier.as_ref().join("verifier.bin");
         let path_agg_vk = path_verifier.as_ref().join("root_verifier_vk");
         let evm_verifier = std::fs::read(path_verifier_code)?;
+
+        // TODO: clean this after we get rid of openvm v1.3.
+        let is_openvm_v13 = {
+            let hash = sha256::digest(&evm_verifier);
+            // from 0.5.2 release files
+            let is_openvm_v13 =
+                hash == ("4f1b70db9fade2ce7425924dc662d75c5a315f3a611ed8cadd68b516407a4cf1");
+            println!(
+                "is_openvm_v13: {}, verifier.bin sha256sum: {}",
+                is_openvm_v13, hash
+            );
+            is_openvm_v13
+        };
         let loaded_agg_vk = openvm_sdk::fs::read_object_from_file(path_agg_vk).unwrap_or_else(
             |_|{
                 tracing::warn!("root_Verifier_vk is not avaliable in disk, try to calculate it on-the-fly, which may be time consuming ...");
-                AGG_STARK_PROVING_KEY.get_agg_vk()
+                if is_openvm_v13 {
+                    AGG_STARK_PROVING_KEY_V13.get_agg_vk()
+                } else {
+                    AGG_STARK_PROVING_KEY.get_agg_vk()
+                }
             }
         );
 
         Ok(Self {
             evm_verifier,
             loaded_agg_vk,
+            is_openvm_v13,
         })
     }
 
