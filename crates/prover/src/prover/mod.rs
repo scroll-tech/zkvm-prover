@@ -11,7 +11,10 @@ use openvm_native_circuit::NativeGpuBuilder as NativeBuilder;
 use openvm_circuit::arch::instructions::exe::VmExe;
 use openvm_sdk::{DefaultStarkEngine, config::SdkVmBuilder};
 use openvm_sdk::{F, Sdk, StdIn, prover::StarkProver};
-use scroll_zkvm_types::{proof::OpenVmEvmProof, types_agg::ProgramCommitment, utils::serialize_vk};
+use scroll_zkvm_types::{
+    proof::OpenVmEvmProof, types_agg::ProgramCommitment, utils::serialize_vk,
+    zkvm::AGG_STARK_PROVING_KEY_V13,
+};
 use scroll_zkvm_verifier::verifier::{AGG_STARK_PROVING_KEY, UniversalVerifier};
 use tracing::instrument;
 
@@ -94,7 +97,11 @@ impl Prover {
             sdk.halo2_config_mut().verifier_k = verifier_k;
 
             // 45s for first time
-            let sdk = sdk.with_agg_pk(AGG_STARK_PROVING_KEY.clone());
+            let sdk = sdk.with_agg_pk(if self.config.is_openvm_v13 {
+                AGG_STARK_PROVING_KEY_V13.clone()
+            } else {
+                AGG_STARK_PROVING_KEY.clone()
+            });
             Ok(sdk)
         })
     }
