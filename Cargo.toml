@@ -79,7 +79,7 @@ alloy-consensus = "1.0"
 alloy-provider = "1.0"
 alloy-rpc-client = "1.0"
 alloy-transport = "1.0"
-alloy-primitives = { version = "1.3", default-features = false, features = [
+alloy-primitives = { version = "1.4.1", default-features = false, features = [
   "std",
   "map-hashbrown",
   "map-fxhash",
@@ -143,20 +143,20 @@ scroll-zkvm-prover = { path = "crates/prover" }
 scroll-zkvm-verifier = { path = "crates/verifier" }
 
 [patch.crates-io]
-revm = { git = "https://github.com/scroll-tech/revm" }
-revm-bytecode = { git = "https://github.com/scroll-tech/revm" }
-revm-context = { git = "https://github.com/scroll-tech/revm" }
-revm-context-interface = { git = "https://github.com/scroll-tech/revm" }
-revm-database = { git = "https://github.com/scroll-tech/revm" }
-revm-database-interface = { git = "https://github.com/scroll-tech/revm" }
-revm-handler = { git = "https://github.com/scroll-tech/revm" }
-revm-inspector = { git = "https://github.com/scroll-tech/revm" }
-revm-interpreter = { git = "https://github.com/scroll-tech/revm" }
-revm-precompile = { git = "https://github.com/scroll-tech/revm" }
-revm-primitives = { git = "https://github.com/scroll-tech/revm" }
-revm-state = { git = "https://github.com/scroll-tech/revm" }
+revm = { git = "https://github.com/scroll-tech/revm", branch = "feat/v88" }
+revm-bytecode = { git = "https://github.com/scroll-tech/revm", branch = "feat/v88" }
+revm-context = { git = "https://github.com/scroll-tech/revm", branch = "feat/v88" }
+revm-context-interface = { git = "https://github.com/scroll-tech/revm", branch = "feat/v88" }
+revm-database = { git = "https://github.com/scroll-tech/revm", branch = "feat/v88" }
+revm-database-interface = { git = "https://github.com/scroll-tech/revm", branch = "feat/v88" }
+revm-handler = { git = "https://github.com/scroll-tech/revm", branch = "feat/v88" }
+revm-inspector = { git = "https://github.com/scroll-tech/revm", branch = "feat/v88" }
+revm-interpreter = { git = "https://github.com/scroll-tech/revm", branch = "feat/v88" }
+revm-precompile = { git = "https://github.com/scroll-tech/revm", branch = "feat/v88" }
+revm-primitives = { git = "https://github.com/scroll-tech/revm", branch = "feat/v88" }
+revm-state = { git = "https://github.com/scroll-tech/revm", branch = "feat/v88" }
 
-alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "feat/rkyv" }
+alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "feat/1.4.1-rkyv" }
 
 ## FIXME: when openvm fixes https://github.com/openvm-org/openvm/pull/1937
 #[patch.'https://github.com/openvm-org/openvm.git']
