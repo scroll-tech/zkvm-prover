@@ -207,7 +207,7 @@ impl From<&BatchWitness> for BatchInfo {
                     blob_bytes: witness.blob_bytes.to_vec(),
                     point_eval_witness: None,
                 };
-                BatchInfoBuilderV6::build(args)
+                BatchInfoBuilderV6::build(witness.version, args)
             }
             ReferenceHeader::V7(header) => {
                 let point_eval_witness = witness
@@ -220,7 +220,7 @@ impl From<&BatchWitness> for BatchInfo {
                     blob_bytes: witness.blob_bytes.to_vec(),
                     point_eval_witness: Some(point_eval_witness.clone()),
                 };
-                BatchInfoBuilderV7::build(args)
+                BatchInfoBuilderV7::build(witness.version, args)
             }
             ReferenceHeader::V8(header) => {
                 let point_eval_witness = witness
@@ -233,7 +233,7 @@ impl From<&BatchWitness> for BatchInfo {
                     blob_bytes: witness.blob_bytes.to_vec(),
                     point_eval_witness: Some(point_eval_witness.clone()),
                 };
-                BatchInfoBuilderV8::build(args)
+                BatchInfoBuilderV8::build(witness.version, args)
             }
             ReferenceHeader::Validium(header) => ValidiumBatchInfoBuilder::build(
                 ValidiumBuilderArgs::new(witness.version, *header, chunk_infos),

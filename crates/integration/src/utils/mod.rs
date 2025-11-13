@@ -202,9 +202,9 @@ pub fn build_batch_witnesses(
     // compress ...
     let compressed_payload = zstd_encode(&payload);
 
-    let heading = compressed_payload.len() as u32 + ((version.as_version_byte() as u32) << 24);
+    let heading = compressed_payload.len() as u32 + ((version.codec() as u32) << 24);
 
-    let blob_bytes = if testing_hardfork() >= ForkName::EuclidV2 {
+    let blob_bytes = if version.fork >= ForkName::EuclidV2 {
         let mut blob_bytes = Vec::from(heading.to_be_bytes());
         blob_bytes.push(1u8); // compressed flag
         blob_bytes.extend(compressed_payload);

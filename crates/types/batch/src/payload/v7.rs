@@ -6,13 +6,13 @@ use types_base::{
 
 use crate::BatchHeaderV7;
 
-use super::{DA_CODEC_VERSION_V7, N_BLOB_BYTES};
+use super::N_BLOB_BYTES;
 
 /// Envelope@v7 represents the generic envelope type from v7 onwards, marked by the appropriate
 /// da-codec version byte.
-pub type EnvelopeV7 = GenericEnvelopeV7<DA_CODEC_VERSION_V7>;
+pub type EnvelopeV7 = GenericEnvelopeV7;
 
-pub type PayloadV7 = GenericPayloadV7<DA_CODEC_VERSION_V7>;
+pub type PayloadV7 = GenericPayloadV7;
 
 /// Represents the data contained within an EIP-4844 blob that is published on-chain.
 ///
@@ -23,7 +23,7 @@ pub type PayloadV7 = GenericPayloadV7<DA_CODEC_VERSION_V7>;
 /// difference being the codec version byte in the envelope. Hence we supply that as a generic
 /// version type to [`EnvelopeV7`].
 #[derive(Debug, Clone)]
-pub struct GenericEnvelopeV7<const CODEC_VERSION: u8> {
+pub struct GenericEnvelopeV7 {
     /// The original envelope bytes supplied.
     ///
     /// Caching just for re-use later in challenge digest computation.
@@ -37,14 +37,13 @@ pub struct GenericEnvelopeV7<const CODEC_VERSION: u8> {
     pub unpadded_bytes: Vec<u8>,
 }
 
-impl<const CODEC_VERSION: u8> super::Envelope for GenericEnvelopeV7<CODEC_VERSION> {
+impl super::Envelope for GenericEnvelopeV7 {
     fn from_slice(blob_bytes: &[u8]) -> Self {
         // The number of bytes is as expected.
         assert_eq!(blob_bytes.len(), N_BLOB_BYTES);
 
         // The version of the blob encoding was as expected, i.e. da-codec@v7.
         let version = blob_bytes[0];
-        assert_eq!(version, CODEC_VERSION);
 
         // Calculate the unpadded size of the encoded payload.
         //
@@ -92,6 +91,10 @@ impl<const CODEC_VERSION: u8> super::Envelope for GenericEnvelopeV7<CODEC_VERSIO
                 .collect::<Vec<u8>>(),
         )
     }
+
+    fn version(&self) -> Option<u8> {
+        Some(self.version)
+    }
 }
 
 pub const INDEX_PREV_MSG_QUEUE_HASH: usize = 0;
@@ -113,7 +116,7 @@ pub const INDEX_BLOCK_CTX: usize = INDEX_NUM_BLOCKS + 2;
 /// | blockCtxs[n-1]         | 52      | BlockContextV2 | 74 + 52*(n-1) |
 /// | l2TxsData              | dynamic | bytes          | 74 + 52*n     |
 #[derive(Debug, Clone)]
-pub struct GenericPayloadV7<const CODEC_VERSION: u8> {
+pub struct GenericPayloadV7 {
     /// The version from da-codec, i.e. v7 in this case.
     ///
     /// Note: This is not really a part of payload, simply coopied from the envelope for
@@ -133,10 +136,10 @@ pub struct GenericPayloadV7<const CODEC_VERSION: u8> {
     pub tx_data: Vec<u8>,
 }
 
-impl<const CODEC_VERSION: u8> super::Payload for GenericPayloadV7<CODEC_VERSION> {
+impl super::Payload for GenericPayloadV7 {
     type BatchHeader = BatchHeaderV7;
 
-    type Envelope = GenericEnvelopeV7<CODEC_VERSION>;
+    type Envelope = GenericEnvelopeV7;
 
     fn from_envelope(envelope: &Self::Envelope) -> Self {
         // Conditionally decode depending on the flag set in the envelope.

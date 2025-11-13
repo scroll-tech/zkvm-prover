@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 
 use alloy_primitives::B256;
 use types_base::public_inputs::batch::BatchInfo;
+use types_base::version::Version;
 
 use crate::PointEvalWitness;
 use crate::witness::build_point;
@@ -69,6 +70,7 @@ impl<P: Payload> super::BatchInfoBuilder for GenericBatchInfoBuilderV7<P> {
     type Payload = P;
 
     fn build(
+        version: u8,
         args: super::BuilderArgs<<Self::Payload as crate::payload::Payload>::BatchHeader>,
     ) -> BatchInfo {
         // Sanity check on the length of unpadded blob bytes.
@@ -86,6 +88,16 @@ impl<P: Payload> super::BatchInfoBuilder for GenericBatchInfoBuilderV7<P> {
             envelope_bytes.as_slice(),
         );
         let payload = Self::Payload::from_envelope(&envelope);
+
+        let version = Version::from(version);
+        let codec_version: u8 = version.codec.into();
+        assert_eq!(
+            envelope.version(),
+            Some(codec_version),
+            "blob codec version mismatch: expected(witness)={:?}, got(blob)={:?}",
+            codec_version,
+            envelope.version(),
+        );
 
         let blob_versioned_hash = args.header.blob_versioned_hash();
         let challenge_digest = envelope.challenge_digest(blob_versioned_hash);

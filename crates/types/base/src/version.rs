@@ -82,6 +82,16 @@ pub enum Codec {
     V8,
 }
 
+impl From<Codec> for u8 {
+    fn from(value: Codec) -> Self {
+        match value {
+            Codec::V6 => 6,
+            Codec::V7 => 7,
+            Codec::V8 => 8,
+        }
+    }
+}
+
 /// The number of bits used for [`STFVersion`].
 const N_BITS_STF_VERSION: u8 = 6;
 
@@ -153,6 +163,10 @@ impl Version {
 
     pub fn is_validium(&self) -> bool {
         self.domain == Domain::Validium
+    }
+
+    pub fn codec(&self) -> u8 {
+        self.codec.into()
     }
 }
 
