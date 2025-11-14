@@ -2,7 +2,6 @@ use axiom_sdk::AxiomConfig;
 use axiom_sdk::build::{BuildSdk, UploadExeArgs};
 use axiom_sdk::config::ConfigSdk;
 use axiom_sdk::projects::ProjectSdk;
-use cargo_metadata::Metadata;
 use clap::ArgGroup;
 use clap::{Parser, ValueEnum};
 use console::{Emoji, style};
@@ -11,7 +10,7 @@ use eyre::Context;
 use inquire::{Confirm, Text};
 use jiff::civil::{DateTime, DateTimeDifference};
 use jiff::tz::TimeZone;
-use jiff::{Span, Timestamp, Unit, Zoned};
+use jiff::{Timestamp, Unit, Zoned};
 use openvm_sdk::commit::CommitBytes;
 use scroll_zkvm_types::axiom::get_config_id;
 use scroll_zkvm_types::utils::serialize_vk;
@@ -98,8 +97,6 @@ enum ColorChoice {
 
 const LOG_PREFIX: &str = "[upload-axiom]";
 const OK: Emoji = Emoji("✅", "✓ ");
-const WARN: Emoji = Emoji("⚠️", "! ");
-const ERR: Emoji = Emoji("❌", "✖ ");
 
 fn main() -> eyre::Result<()> {
     // Load .env file if present
@@ -258,7 +255,7 @@ fn main() -> eyre::Result<()> {
 }
 
 fn print_metadata<P: AsRef<Path>>(path: P) -> eyre::Result<()> {
-    let now: DateTime = Zoned::now().try_into()?;
+    let now: DateTime = Zoned::now().into();
 
     let name = path.as_ref().file_name().unwrap().to_string_lossy();
     let metadata = fs::metadata(&path)?;
@@ -268,7 +265,7 @@ fn print_metadata<P: AsRef<Path>>(path: P) -> eyre::Result<()> {
 
     let created: DateTime = Timestamp::try_from(metadata.created()?)?
         .to_zoned(TimeZone::system())
-        .try_into()?;
+        .into();
     let passed = created.until(DateTimeDifference::new(now).smallest(Unit::Second))?;
     println!("  - created: {passed:#} ago ({created:#})");
     Ok(())
