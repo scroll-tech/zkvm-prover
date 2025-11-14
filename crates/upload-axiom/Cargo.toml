@@ -1,0 +1,23 @@
+[package]
+name = "scroll-zkvm-upload-axiom"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+axiom-sdk.workspace = true
+cargo_metadata.workspace = true
+clap = { version = "4.0", features = ["derive"] }
+console = "0.16"
+dotenvy.workspace = true
+color-eyre.workspace = true
+eyre.workspace = true
+hex.workspace = true
+inquire = "0.9"
+openvm-sdk.workspace = true
+serde_json.workspace = true
+scroll-zkvm-types.workspace = true
+jiff.workspace = true

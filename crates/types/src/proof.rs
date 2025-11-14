@@ -1,11 +1,14 @@
 use crate::utils::{as_base64, vec_as_base64};
 use openvm_native_recursion::halo2::RawEvmProof;
 use openvm_sdk::SC;
+use openvm_sdk::codec::Decode;
 use openvm_stark_sdk::{
     openvm_stark_backend::{p3_field::PrimeField32, proof::Proof},
     p3_baby_bear::BabyBear,
 };
 use serde::{Deserialize, Serialize};
+use std::io;
+use std::io::Cursor;
 
 /// Helper type for convenience that implements [`From`] and [`Into`] traits between
 /// [`OpenVmEvmProof`]. The difference is that the instances in [`EvmProof`] are the byte-encoding
@@ -66,6 +69,30 @@ pub struct StarkProof {
 pub struct VmInternalStarkProof {
     pub proofs: Vec<Proof<SC>>,
     pub public_values: Vec<BabyBear>,
+}
+
+pub use openvm_sdk::types::VersionedVmStarkProof as OpenVmVersionedVmStarkProof;
+
+impl TryFrom<OpenVmVersionedVmStarkProof> for StarkProof {
+    type Error = io::Error;
+
+    fn try_from(proof: OpenVmVersionedVmStarkProof) -> io::Result<Self> {
+        let inner_proof = Proof::<SC>::decode_from_bytes(&proof.proof)?;
+        let mut pv_reader = Cursor::new(proof.user_public_values);
+        // decode_vec is not pub so we have to use the detail inside it ...
+        let len = usize::decode(&mut pv_reader)?;
+        let mut public_values = Vec::with_capacity(len);
+
+        for _ in 0..len {
+            public_values.push(BabyBear::decode(&mut pv_reader)?);
+        }
+
+        Ok(Self {
+            proofs: vec![inner_proof],
+            public_values,
+            stat: Default::default(),
+        })
+    }
 }
 
 pub use openvm_sdk::types::EvmProof as OpenVmEvmProof;

@@ -6,10 +6,8 @@ use scroll_zkvm_types::{
 };
 
 // Only related to hardcoded commitments. Can be refactored later.
-use scroll_zkvm_prover::Prover;
-
 use crate::{
-    PartialProvingTask, ProverTester, load_program_commitments, prove_verify_single_evm,
+    PROGRAM_COMMITMENTS, PartialProvingTask, ProverTester, TaskProver, prove_verify_single_evm,
     testers::batch::BatchTaskGenerator, utils::metadata_from_batch_witnesses,
 };
 
@@ -66,9 +64,9 @@ impl BundleTaskGenerator {
 
     pub fn get_or_build_proof(
         &mut self,
-        prover: &mut Prover,
-        batch_prover: &mut Prover,
-        chunk_prover: &mut Prover,
+        prover: &mut impl TaskProver,
+        batch_prover: &mut impl TaskProver,
+        chunk_prover: &mut impl TaskProver,
     ) -> eyre::Result<ProofEnum> {
         if let Some(proof) = &self.proof {
             return Ok(proof.clone());
@@ -82,8 +80,8 @@ impl BundleTaskGenerator {
 
     fn get_or_build_child_proofs(
         &mut self,
-        batch_prover: &mut Prover,
-        chunk_prover: &mut Prover,
+        batch_prover: &mut impl TaskProver,
+        chunk_prover: &mut impl TaskProver,
     ) -> eyre::Result<Vec<ProofEnum>> {
         let mut proofs = Vec::new();
         for chunk_gen in &mut self.batch_generators {
@@ -114,7 +112,7 @@ impl BundleTaskGenerator {
             .version();
         let fork_name = version.fork;
 
-        let commitment = load_program_commitments("batch")?;
+        let commitment = PROGRAM_COMMITMENTS["batch"];
         let mut batch_proofs = Vec::new();
         let mut batch_infos: Vec<BatchInfo> = Vec::new();
 
@@ -135,7 +133,7 @@ impl BundleTaskGenerator {
                     .iter()
                     .map(|&b| b as u32)
                     .collect::<Vec<_>>(),
-                commitment: commitment.clone(),
+                commitment,
             };
             batch_proofs.push(proof);
             batch_infos.push(info);

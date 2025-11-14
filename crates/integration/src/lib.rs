@@ -1,3 +1,4 @@
+use crate::axiom::AxiomProver;
 use cargo_metadata::MetadataCommand;
 use once_cell::sync::OnceCell;
 use openvm_sdk::StdIn;
@@ -7,12 +8,14 @@ use scroll_zkvm_prover::{
     utils::{read_json, vm::ExecutionResult, write_json},
 };
 use scroll_zkvm_types::{
+    ProvingTask as UniversalProvingTask,
     proof::{EvmProof, ProofEnum, StarkProof},
     public_inputs::{ForkName, Version},
     types_agg::ProgramCommitment,
     utils::serialize_vk,
 };
 use scroll_zkvm_verifier::verifier::{AGG_STARK_PROVING_KEY, UniversalVerifier};
+use std::collections::HashMap;
 use std::{
     path::{Path, PathBuf},
     process,
@@ -24,6 +27,8 @@ use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::Subsc
 pub mod testers;
 
 pub mod utils;
+
+mod axiom;
 
 /// Directory to store proofs on disc.
 const DIR_PROOFS: &str = "proofs";
@@ -54,9 +59,11 @@ pub fn testing_version_validium() -> Version {
 /// Read the 'GUEST_VERSION' from the environment variable.
 /// If not existed, return "dev" as default
 /// The returned value will be used to locate asset files: $workspace/releases/$guest_version
-pub fn guest_version() -> String {
-    std::env::var("GUEST_VERSION").unwrap_or_else(|_| "dev".to_string())
-}
+pub static GUEST_VERSION: LazyLock<&str> = LazyLock::new(|| {
+    let ver = std::env::var("GUEST_VERSION").unwrap_or_else(|_| "dev".to_string());
+    eprintln!("GUEST_VERSION = {ver}");
+    Box::leak(ver.into_boxed_str())
+});
 
 pub static WORKSPACE_ROOT: LazyLock<&Path> = LazyLock::new(|| {
     let path = MetadataCommand::new()
@@ -69,12 +76,36 @@ pub static WORKSPACE_ROOT: LazyLock<&Path> = LazyLock::new(|| {
     Box::leak(path.into_boxed_path())
 });
 
+pub static ASSET_BASE_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
+    let path = WORKSPACE_ROOT.join("releases").join(*GUEST_VERSION);
+    eprintln!("ASSET_BASE_DIR = {}", path.display());
+    path
+});
+
 /// Path to store release assets, root directory of zkvm-prover repository.
-static DIR_OUTPUT: LazyLock<&Path> = LazyLock::new(|| {
+pub static DIR_OUTPUT: LazyLock<&Path> = LazyLock::new(|| {
     let path = WORKSPACE_ROOT.join(".output");
     std::fs::create_dir_all(&path).expect("failed to create output directory");
     eprintln!("DIR_OUTPUT = {}", path.display());
     Box::leak(path.into_boxed_path())
+});
+
+pub static PROGRAM_COMMITMENTS: LazyLock<HashMap<String, ProgramCommitment>> =
+    LazyLock::new(|| {
+        let mut commitments =
+            load_program_commitments().expect("failed to load program commitments");
+        commitments.shrink_to_fit();
+        eprintln!("PROGRAM_COMMITMENTS = {commitments:#?}");
+        commitments
+    });
+
+pub static AXIOM_PROGRAM_IDS: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
+    let axiom_program_ids = ASSET_BASE_DIR.join("axiom_program_ids.json");
+    let mut program_ids: HashMap<String, String> =
+        read_json(&axiom_program_ids).expect("failed to read axiom program ids");
+    program_ids.shrink_to_fit();
+    eprintln!("AXIOM_PROGRAM_IDS = {program_ids:#?}");
+    program_ids
 });
 
 /// Every test run will write assets to a new directory.
@@ -91,19 +122,18 @@ pub trait PartialProvingTask: serde::Serialize {
 
     fn legacy_rkyv_archive(&self) -> eyre::Result<Vec<u8>>;
 
-    fn write_guest_input(&self, stdin: &mut StdIn) -> eyre::Result<()>
+    fn archive(&self) -> eyre::Result<Vec<u8>>
     where
         Self: Sized,
     {
-        let bytes: Vec<u8> = match guest_version().as_str() {
+        let bytes: Vec<u8> = match GUEST_VERSION.as_ref() {
             "0.5.2" => self.legacy_rkyv_archive()?,
             _ => {
                 let config = bincode::config::standard();
                 bincode::serde::encode_to_vec(self, config)?
             }
         };
-        stdin.write_bytes(&bytes);
-        Ok(())
+        Ok(bytes)
     }
 }
 
@@ -126,6 +156,8 @@ pub trait ProverTester {
 
     /// Setup directory structure for the test suite.
     fn setup(setup_logger: bool) -> eyre::Result<()> {
+        dotenvy::dotenv().ok();
+
         // Setup tracing subscriber.
         if setup_logger {
             crate::setup_logger()?;
@@ -159,10 +191,8 @@ pub trait ProverTester {
 
     /// Load the app config.
     fn load() -> eyre::Result<(PathBuf, PathBuf)> {
-        let assets_version = guest_version();
-        let release_dir = WORKSPACE_ROOT.join("releases").join(assets_version);
-        let path_app_config = release_dir.join(Self::NAME).join(FD_APP_CONFIG);
-        let path_app_exe = release_dir.join(Self::NAME).join(FD_APP_EXE);
+        let path_app_config = ASSET_BASE_DIR.join(Self::NAME).join(FD_APP_CONFIG);
+        let path_app_exe = ASSET_BASE_DIR.join(Self::NAME).join(FD_APP_EXE);
         Ok((path_app_config, path_app_exe))
     }
 
@@ -180,11 +210,25 @@ pub trait ProverTester {
         let config = scroll_zkvm_prover::ProverConfig {
             path_app_exe,
             path_app_config,
-            is_openvm_v13: guest_version() == "0.5.2",
+            is_openvm_v13: *GUEST_VERSION == "0.5.2",
             ..Default::default()
         };
-        let prover = scroll_zkvm_prover::Prover::setup(config, Some(Self::NAME))?;
+        let prover = Prover::setup(config, Some(Self::NAME))?;
 
+        Ok(prover)
+    }
+
+    /// Load the axiom program prover
+    fn load_axiom_prover() -> eyre::Result<AxiomProver> {
+        let program_id = AXIOM_PROGRAM_IDS
+            .get(Self::NAME)
+            .ok_or_else(|| eyre::eyre!("missing axiom program id for {}", Self::NAME))?
+            .to_string();
+        let prover = AxiomProver::from_env(
+            Self::NAME.to_string(),
+            scroll_zkvm_types::axiom::get_config_id(Self::NAME).to_string(),
+            program_id,
+        );
         Ok(prover)
     }
 
@@ -195,22 +239,53 @@ pub trait ProverTester {
         path_proof
     }
 
+    fn build_universal_task<'a>(
+        witness: &Self::Witness,
+        aggregated_proofs: impl Iterator<Item = &'a StarkProof>,
+    ) -> eyre::Result<UniversalProvingTask> {
+        Ok(UniversalProvingTask {
+            serialized_witness: vec![witness.archive()?],
+            aggregated_proofs: aggregated_proofs.cloned().collect(),
+            fork_name: witness.fork_name().as_str().to_string(),
+            identifier: witness.identifier(),
+            vk: Default::default(),
+        })
+    }
+
     fn build_guest_input<'a>(
         witness: &Self::Witness,
         aggregated_proofs: impl Iterator<Item = &'a StarkProof>,
     ) -> eyre::Result<StdIn> {
-        use openvm_native_recursion::hints::Hintable;
+        use scroll_zkvm_prover::task::ProvingTask;
+        Ok(Self::build_universal_task(witness, aggregated_proofs)?.build_guest_input())
+    }
+}
 
-        let mut stdin = StdIn::default();
-        witness.write_guest_input(&mut stdin)?;
+pub trait TaskProver {
+    fn name(&self) -> &str;
+    fn prove_task(&mut self, t: &UniversalProvingTask, gen_snark: bool) -> eyre::Result<ProofEnum>;
+    fn get_vk(&mut self) -> eyre::Result<Vec<u8>>;
+}
 
-        for proof in aggregated_proofs {
-            let streams = proof.proofs[0].write();
-            for s in &streams {
-                stdin.write_field(s);
-            }
+impl TaskProver for Prover {
+    fn name(&self) -> &str {
+        self.prover_name.as_str()
+    }
+
+    fn prove_task(&mut self, t: &UniversalProvingTask, gen_snark: bool) -> eyre::Result<ProofEnum> {
+        use scroll_zkvm_prover::task::ProvingTask;
+        let stdin = t.build_guest_input();
+        if !gen_snark {
+            // gen stark proof
+            Ok(self.gen_proof_stark(stdin)?.into())
+        } else {
+            let proof: EvmProof = self.gen_proof_snark(stdin)?.into();
+            Ok(proof.into())
         }
-        Ok(stdin)
+    }
+
+    fn get_vk(&mut self) -> eyre::Result<Vec<u8>> {
+        Ok(self.get_app_vk())
     }
 }
 
@@ -295,9 +370,9 @@ pub fn tester_execute<T: ProverTester>(
 }
 
 /// End-to-end test for proving witnesses of the same prover.
-#[instrument(name = "prove_verify", skip_all, fields(task_id, prover_name = prover.prover_name))]
+#[instrument(name = "prove_verify", skip_all, fields(task_id, prover_name = prover.name()))]
 pub fn prove_verify<T: ProverTester>(
-    prover: &mut Prover,
+    prover: &mut impl TaskProver,
     witness: &T::Witness,
     proofs: &[ProofEnum],
 ) -> eyre::Result<ProofEnum> {
@@ -308,7 +383,7 @@ pub fn prove_verify<T: ProverTester>(
         .join(T::DIR_ASSETS)
         .join(DIR_PROOFS);
     std::fs::create_dir_all(&cache_dir)?;
-    let vk = prover.get_app_vk();
+    let vk = prover.get_vk()?;
 
     // Try reading proof from cache if available, and early return in that case.
     let task_id = witness.identifier();
@@ -320,14 +395,14 @@ pub fn prove_verify<T: ProverTester>(
         tracing::debug!(name: "early_return_proof", ?task_id);
         proof
     } else {
-        let stdin = T::build_guest_input(
+        let task = T::build_universal_task(
             witness,
             proofs
                 .iter()
                 .map(|p| p.as_stark_proof().expect("must be stark proof")),
         )?;
         // Construct stark proof for the circuit.
-        let proof = prover.gen_proof_stark(stdin)?.into();
+        let proof = prover.prove_task(&task, false)?;
         write_json(&path_proof, &proof)?;
         tracing::debug!(name: "cached_proof", ?task_id);
 
@@ -347,7 +422,7 @@ pub fn prove_verify<T: ProverTester>(
 /// End-to-end test for a single proving task to generate an EVM-verifiable SNARK proof.
 #[instrument(name = "prove_verify_single_evm", skip_all)]
 pub fn prove_verify_single_evm<T>(
-    prover: &mut Prover,
+    prover: &mut impl TaskProver,
     witness: &T::Witness,
     proofs: &[ProofEnum],
 ) -> eyre::Result<ProofEnum>
@@ -363,11 +438,8 @@ where
     std::fs::create_dir_all(&cache_dir)?;
 
     // Dump verifier-only assets to disk.
-    let path_verifier_dir = WORKSPACE_ROOT
-        .join("releases")
-        .join(guest_version())
-        .join("verifier");
-    let verifier = scroll_zkvm_verifier::verifier::UniversalVerifier::setup(&path_verifier_dir)?;
+    let path_verifier_dir = ASSET_BASE_DIR.join("verifier");
+    let verifier = UniversalVerifier::setup(&path_verifier_dir)?;
 
     // Try reading proof from cache if available, and early return in that case.
     let task_id = witness.identifier();
@@ -379,20 +451,20 @@ where
         tracing::debug!(name: "early_return_evm_proof", ?task_id);
         proof
     } else {
-        let stdin = T::build_guest_input(
+        let task = T::build_universal_task(
             witness,
             proofs
                 .iter()
                 .map(|p| p.as_stark_proof().expect("must be stark proof")),
         )?;
         // Construct stark proof for the circuit.
-        let proof: EvmProof = prover.gen_proof_snark(stdin)?.into();
+        let proof = prover.prove_task(&task, true)?;
         write_json(&path_proof, &proof)?;
         tracing::debug!(name: "cached_evm_proof", ?task_id);
-        proof.into()
+        proof
     };
 
-    let vk = prover.get_app_vk();
+    let vk = prover.get_vk()?;
     // Verify proof.
     verifier.verify_evm_proof(
         &proof
@@ -406,25 +478,23 @@ where
     Ok(proof)
 }
 
-pub fn load_program_commitments(program: &str) -> eyre::Result<ProgramCommitment> {
+fn load_program_commitments() -> eyre::Result<HashMap<String, ProgramCommitment>> {
     use base64::{Engine, prelude::BASE64_STANDARD};
-    let file_path = WORKSPACE_ROOT
-        .join("releases")
-        .join(guest_version())
-        .join("verifier")
-        .join("openVmVk.json");
-    let json_value: serde_json::Value = {
+    let file_path = ASSET_BASE_DIR.join("verifier").join("openVmVk.json");
+    let commitments: HashMap<String, String> = {
         let file = std::fs::File::open(&file_path)?;
         serde_json::from_reader(file)?
     };
-    let commitment_string = json_value[&format!("{}_vk", program)]
-        .as_str()
-        .ok_or_else(|| eyre::eyre!("Missing or invalid program commitment for {}", program))?;
-    let commitment_bytes = hex::decode(commitment_string)
-        .or_else(|_| BASE64_STANDARD.decode(commitment_string))
-        .map_err(|_| eyre::eyre!("Failed to decode program commitment for {}", program))?;
-    let commitment = serialize_vk::deserialize(&commitment_bytes);
-    Ok(commitment)
+    let mut result = HashMap::new();
+    for (program, commitment_string) in commitments {
+        let program = program.strip_suffix("_vk").unwrap().to_string();
+        let commitment_bytes = hex::decode(&commitment_string)
+            .or_else(|_| BASE64_STANDARD.decode(commitment_string))
+            .map_err(|_| eyre::eyre!("Failed to decode program commitment for {}", program))?;
+        let commitment = serialize_vk::deserialize(&commitment_bytes);
+        result.insert(program, commitment);
+    }
+    Ok(result)
 }
 
 #[test]

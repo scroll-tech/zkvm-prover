@@ -1,14 +1,13 @@
 use crate::{
-    PartialProvingTask, ProverTester, guest_version, prove_verify, testdata_fork_directory,
-    tester_execute, testers::PATH_TESTDATA, testing_hardfork, testing_version,
-    utils::metadata_from_chunk_witnesses,
+    GUEST_VERSION, PartialProvingTask, ProverTester, TaskProver, prove_verify,
+    testdata_fork_directory, tester_execute, testers::PATH_TESTDATA, testing_hardfork,
+    testing_version, utils::metadata_from_chunk_witnesses,
 };
-use openvm_sdk::StdIn;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use sbv_core::BlockWitness;
 use sbv_primitives::{B256, types::consensus::TxL1Message};
+use scroll_zkvm_prover::utils::read_json;
 use scroll_zkvm_prover::utils::vm::ExecutionResult;
-use scroll_zkvm_prover::{Prover, utils::read_json};
 use scroll_zkvm_types::chunk::ChunkWitnessUpgradeCompact;
 use scroll_zkvm_types::{
     chunk::{ChunkInfo, ChunkWitness, LegacyChunkWitness, SecretKey},
@@ -68,11 +67,11 @@ impl PartialProvingTask for ChunkWitness {
         Ok(bytes.to_vec())
     }
 
-    fn write_guest_input(&self, stdin: &mut StdIn) -> eyre::Result<()>
+    fn archive(&self) -> eyre::Result<Vec<u8>>
     where
         Self: Sized,
     {
-        let bytes: Vec<u8> = match guest_version().as_str() {
+        let bytes: Vec<u8> = match GUEST_VERSION.as_ref() {
             "0.5.2" => self.legacy_rkyv_archive()?,
             "0.6.0-rc.6" => {
                 let config = bincode::config::standard();
@@ -86,8 +85,7 @@ impl PartialProvingTask for ChunkWitness {
                 bincode::serde::encode_to_vec(self, config)?
             }
         };
-        stdin.write_bytes(&bytes);
-        Ok(())
+        Ok(bytes)
     }
 
     fn fork_name(&self) -> ForkName {
@@ -127,7 +125,7 @@ impl ChunkTaskGenerator {
         Ok(witness)
     }
 
-    pub fn get_or_build_proof(&mut self, prover: &mut Prover) -> eyre::Result<ProofEnum> {
+    pub fn get_or_build_proof(&mut self, prover: &mut impl TaskProver) -> eyre::Result<ProofEnum> {
         if let Some(proof) = &self.proof {
             return Ok(proof.clone());
         }

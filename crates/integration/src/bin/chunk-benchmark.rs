@@ -11,12 +11,11 @@ use clap::Parser;
 use openvm_benchmarks_prove::util::BenchmarkCli;
 use openvm_benchmarks_utils::build_elf;
 use openvm_circuit::openvm_stark_sdk::bench::run_with_metric_collection;
-use openvm_sdk::StdIn;
 use openvm_sdk::config::{SdkVmBuilder, SdkVmConfig};
 use scroll_zkvm_integration::testers::chunk::{
     ChunkProverTester, get_witness_from_env_or_builder, preset_chunk,
 };
-use scroll_zkvm_integration::{DIR_TESTRUN, PartialProvingTask, ProverTester, WORKSPACE_ROOT};
+use scroll_zkvm_integration::{DIR_TESTRUN, ProverTester, WORKSPACE_ROOT};
 use std::{env, fs};
 
 fn main() -> eyre::Result<()> {
@@ -50,12 +49,14 @@ fn main() -> eyre::Result<()> {
     )?;
     env::set_current_dir(current_dir)?;
 
-    let mut stdin = StdIn::default();
-
     let wit = get_witness_from_env_or_builder(&mut preset_chunk())?;
-    wit.write_guest_input(&mut stdin)?;
 
     run_with_metric_collection("OUTPUT_PATH", || {
-        args.bench_from_exe::<SdkVmBuilder, _>("chunk-circuit", app_vm_config, elf, stdin)
+        args.bench_from_exe::<SdkVmBuilder, _>(
+            "chunk-circuit",
+            app_vm_config,
+            elf,
+            ChunkProverTester::build_guest_input(&wit, std::iter::empty())?,
+        )
     })
 }
