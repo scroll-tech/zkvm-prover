@@ -61,7 +61,7 @@ fn load_witness() -> ChunkWitness {
     use scroll_zkvm_types::public_inputs::ForkName;
 
     let base = WORKSPACE_ROOT.join("crates/integration/testdata/feynman/witnesses");
-    let blocks = (16525000..=16525003)
+    let blocks = (16525001..=16525001) // temp: GPU test, use single block for now
         .map(|n| base.join(format!("{n}.json")))
         .map(|path| File::open(&path).unwrap())
         .map(|rdr| {
@@ -83,8 +83,8 @@ fn load_witness() -> ChunkWitness {
     ChunkWitness::new(&blocks)
 }
 
-pub const MIN_CYCLE_PER_SHARD: u64 = 1 << 18;
-pub const MAX_CYCLE_PER_SHARD: u64 = 1 << 19;
+pub const MIN_CYCLE_PER_SHARD: u64 = 1 << 20;
+pub const MAX_CYCLE_PER_SHARD: u64 = 1 << 24;
 
 fn main() -> eyre::Result<()> {
     let profiling_level: usize = env::var("PROFILING")
@@ -160,9 +160,22 @@ fn main() -> eyre::Result<()> {
     tracing::debug!("setup_init_mem done in {:?}", start.elapsed());
 
     let proofs =
-        run_e2e_proof::<E, Pcs, _, _>(&ctx, proving_device, &init_full_mem, pk, max_steps, false);
+        run_e2e_proof::<E, Pcs, _, _>(&ctx, create_prover(backend.clone()), &init_full_mem, pk, max_steps, false);
     let duration = start.elapsed();
     println!("run_e2e_proof took: {:?}", duration);
+
+    // let start = std::time::Instant::now();
+    // let (pk, vk) = ctx.keygen_with_pb(proving_device.get_pb());
+    // println!("keygen done in {:?}", start.elapsed());
+
+    // let start = std::time::Instant::now();
+    // let init_full_mem = ctx.setup_init_mem(&Vec::from(&hints), &[]);
+    // tracing::debug!("setup_init_mem done in {:?}", start.elapsed());
+
+    // let proofs =
+    //     run_e2e_proof::<E, Pcs, _, _>(&ctx, proving_device, &init_full_mem, pk, max_steps, false);
+    // let duration = start.elapsed();
+    // println!("run_e2e_proof took: {:?}", duration);
 
     let verifier = ZKVMVerifier::new(vk.clone());
     let start = std::time::Instant::now();
