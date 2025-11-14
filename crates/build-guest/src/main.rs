@@ -138,18 +138,8 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
 
     println!("{LOG_PREFIX} Projects to build: {:?}", projects_to_build);
 
-    // Setup axiom sdk if environment variables are set
-    let axiom_sdk = env::var("AXIOM_API_KEY")
-        .map(|axiom_api_key| {
-            AxiomSdk::new(AxiomConfig {
-                api_key: Some(axiom_api_key),
-                ..Default::default()
-            })
-        })
-        .ok();
 
     let mut vk_dump: serde_json::Value = serde_json::from_str("{}")?;
-    let mut axiom_program_ids: serde_json::Value = serde_json::from_str("{}")?;
     for project_name in projects_to_build {
         let project_path = workspace_dir
             .join("crates")
@@ -253,28 +243,6 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
             vm_commit_u32,
         )?;
 
-        // 4. upload program to axiom
-        if let Some(ref axiom_sdk) = axiom_sdk {
-            let axiom_project_id =
-                env::var("AXIOM_PROJECT_ID").expect("AXIOM_API_KEY env var is required");
-            let program_id = axiom_sdk.upload_exe_raw(
-                fs::read(&path_app_elf)?,
-                fs::read(&path_app_exe)?,
-                axiom_sdk::build::UploadExeArgs {
-                    config_id: Some(
-                        scroll_zkvm_types::axiom::get_config_id(project_name).to_string(),
-                    ),
-                    project_id: Some(axiom_project_id.clone()),
-                    project_name: None,
-                    bin_name: Some(project_name.to_string()),
-                    program_name: Some(project_name.to_string()),
-                    default_num_gpus: None,
-                },
-            )?;
-            println!("{LOG_PREFIX} Uploaded program to Axiom program_id={program_id}");
-            axiom_program_ids[project_name] = serde_json::Value::String(program_id);
-        }
-
         // Special handling for bundle project
         if project_name == "bundle" {
             let output_path = release_output_dir.join(project_name).join("digest_1.hex");
@@ -311,16 +279,6 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
         serde_json::to_string_pretty(&vk_dump)?
     );
     println!("{LOG_PREFIX} VK data written to openVmVk.json");
-
-    if axiom_sdk.is_some() {
-        let output_path = release_output_dir.join("axiom_program_ids.json");
-        let f = fs::File::create(output_path)?;
-        serde_json::to_writer_pretty(f, &axiom_program_ids)?;
-        println!(
-            "{LOG_PREFIX} axiom_program_ids.json: {}",
-            serde_json::to_string_pretty(&axiom_program_ids)?
-        );
-    }
     Ok(())
 }
 
