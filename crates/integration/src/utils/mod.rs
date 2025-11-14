@@ -210,7 +210,7 @@ pub fn build_batch_witnesses(
         ));
     }
 
-    let heading = compressed_payload.len() as u32 + ((version.codec() as u32) << 24);
+    let heading = compressed_payload.len() as u32 + ((version.stf_version as u32) << 24);
 
     let blob_bytes = if version.fork >= ForkName::EuclidV2 {
         let mut blob_bytes = Vec::from(heading.to_be_bytes());

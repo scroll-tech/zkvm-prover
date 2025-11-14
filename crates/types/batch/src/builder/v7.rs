@@ -89,16 +89,6 @@ impl<P: Payload> super::BatchInfoBuilder for GenericBatchInfoBuilderV7<P> {
         );
         let payload = Self::Payload::from_envelope(&envelope);
 
-        let version = Version::from(version);
-        let codec_version: u8 = version.codec.into();
-        assert_eq!(
-            envelope.version(),
-            Some(codec_version),
-            "blob codec version mismatch: expected(witness)={:?}, got(blob)={:?}",
-            codec_version,
-            envelope.version(),
-        );
-
         let blob_versioned_hash = args.header.blob_versioned_hash();
         let challenge_digest = envelope.challenge_digest(blob_versioned_hash);
 
@@ -112,12 +102,21 @@ impl<P: Payload> super::BatchInfoBuilder for GenericBatchInfoBuilderV7<P> {
         // Validate payload (batch data).
         let (first_chunk, last_chunk) = payload.validate(&args.header, args.chunk_infos.as_slice());
 
-        // header version is the stf-version.
+        // Validate versions from the blob and batch header.
+        let version = Version::from(version);
+        let stf_version = version.stf_version as u8;
+        assert_eq!(
+            envelope.version(),
+            Some(stf_version),
+            "blob codec version mismatch: expected(witness)={:?}, got(blob)={:?}",
+            stf_version,
+            envelope.version(),
+        );
         assert_eq!(
             args.header.version(),
-            version.stf_version as u8,
+            stf_version,
             "batch header version mismatch: expected(witness)={:?}, got(onchain)={:?}",
-            version.stf_version as u8,
+            stf_version,
             args.header.version()
         );
 
