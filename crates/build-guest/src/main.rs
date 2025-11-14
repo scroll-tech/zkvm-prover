@@ -32,7 +32,6 @@
 //! - OpenVM assets: `releases/dev/verifier/`
 //! - Commitment files: Written to respective circuit crate directories
 
-use axiom_sdk::{AxiomConfig, AxiomSdk, build::BuildSdk};
 use clap::{Parser, ValueEnum};
 use dotenvy::dotenv;
 use eyre::Result;
@@ -137,7 +136,6 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
         .unwrap_or_else(|_| vec!["chunk", "batch", "bundle"]); // Default projects
 
     println!("{LOG_PREFIX} Projects to build: {:?}", projects_to_build);
-
 
     let mut vk_dump: serde_json::Value = serde_json::from_str("{}")?;
     for project_name in projects_to_build {
