@@ -11,7 +11,10 @@ use openvm_native_circuit::NativeGpuBuilder as NativeBuilder;
 use openvm_circuit::arch::instructions::exe::VmExe;
 use openvm_sdk::{DefaultStarkEngine, config::SdkVmBuilder};
 use openvm_sdk::{F, Sdk, StdIn, prover::StarkProver};
-use scroll_zkvm_types::{proof::OpenVmEvmProof, types_agg::ProgramCommitment, utils::serialize_vk};
+use scroll_zkvm_types::{
+    proof::OpenVmEvmProof, types_agg::ProgramCommitment, utils::serialize_vk,
+    zkvm::AGG_STARK_PROVING_KEY_V13,
+};
 use scroll_zkvm_verifier::verifier::{AGG_STARK_PROVING_KEY, UniversalVerifier};
 use tracing::instrument;
 
@@ -46,6 +49,8 @@ pub struct ProverConfig {
     pub path_app_config: PathBuf,
     /// The maximum length for a single OpenVM segment.
     pub segment_len: Option<usize>,
+    /// Use v1.3 openvm
+    pub is_openvm_v13: bool,
 }
 
 const DEFAULT_SEGMENT_SIZE: usize = (1 << 22) - 1000;
@@ -81,9 +86,22 @@ impl Prover {
             segmentation_limits.max_trace_height = segment_len as u32;
             segmentation_limits.max_cells = 1_200_000_000_usize; // For 24G vram
 
-            let sdk = Sdk::new(app_config).expect("sdk init failed");
+            let mut sdk = Sdk::new(app_config).expect("sdk init failed");
+
+            let verifier_k = if self.config.is_openvm_v13 { 24 } else { 23 };
+            tracing::info!(
+                "changing openvm_sdk.halo2_config.verifier_k from {} to {}",
+                sdk.halo2_config().verifier_k,
+                verifier_k
+            );
+            sdk.halo2_config_mut().verifier_k = verifier_k;
+
             // 45s for first time
-            let sdk = sdk.with_agg_pk(AGG_STARK_PROVING_KEY.clone());
+            let sdk = sdk.with_agg_pk(if self.config.is_openvm_v13 {
+                AGG_STARK_PROVING_KEY_V13.clone()
+            } else {
+                AGG_STARK_PROVING_KEY.clone()
+            });
             Ok(sdk)
         })
     }
