@@ -68,15 +68,15 @@ openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0",
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
 
 # ceno guest lib
-ceno_rt = { git = "https://github.com/scroll-tech/ceno", branch = "dev/ceno-alpha-gpu" }
-ceno_crypto = { git = "https://github.com/scroll-tech/ceno", branch = "dev/ceno-alpha-gpu" }
+ceno_rt = { git = "https://github.com/scroll-tech/ceno", branch = "dev/gpu-memory-usage" }
+ceno_crypto = { git = "https://github.com/scroll-tech/ceno", branch = "dev/gpu-memory-usage" }
 
 # ceno host lib
-ceno_emul = { git = "https://github.com/scroll-tech/ceno", branch = "dev/ceno-alpha-gpu" }
-ceno_host = { git = "https://github.com/scroll-tech/ceno", branch = "dev/ceno-alpha-gpu" }
-ceno_zkvm = { git = "https://github.com/scroll-tech/ceno", branch = "dev/ceno-alpha-gpu", features = ["jemalloc"]}
-ceno_sha2 = { git = "https://github.com/scroll-tech/ceno", branch = "dev/ceno-alpha-gpu" }
-gkr_iop = { git = "https://github.com/scroll-tech/ceno", branch = "dev/ceno-alpha-gpu" }
+ceno_emul = { git = "https://github.com/scroll-tech/ceno", branch = "dev/gpu-memory-usage" }
+ceno_host = { git = "https://github.com/scroll-tech/ceno", branch = "dev/gpu-memory-usage" }
+ceno_zkvm = { git = "https://github.com/scroll-tech/ceno", branch = "dev/gpu-memory-usage", features = ["jemalloc"]}
+ceno_sha2 = { git = "https://github.com/scroll-tech/ceno", branch = "dev/gpu-memory-usage" }
+gkr_iop = { git = "https://github.com/scroll-tech/ceno", branch = "dev/gpu-memory-usage" }
 ff_ext = { git = "https://github.com/scroll-tech/gkr-backend.git", tag = "v1.0.0-alpha.13" }
 mpcs = { git = "https://github.com/scroll-tech/gkr-backend.git", tag = "v1.0.0-alpha.13" }
 
