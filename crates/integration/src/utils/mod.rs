@@ -3,7 +3,7 @@ use bytesize::ByteSize;
 use sbv_core::BlockWitness;
 use sbv_primitives::types::consensus::ScrollTransaction;
 use sbv_primitives::{B256, types::eips::Encodable2718};
-use scroll_zkvm_types::batch::build_point_eval_witness;
+use scroll_zkvm_types::batch::{N_BLOB_BYTES, build_point_eval_witness};
 use scroll_zkvm_types::{
     batch::{
         BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchHeaderValidium, BatchHeaderValidiumV1,
@@ -202,9 +202,17 @@ pub fn build_batch_witnesses(
     // compress ...
     let compressed_payload = zstd_encode(&payload);
 
-    let heading = compressed_payload.len() as u32 + ((version.as_version_byte() as u32) << 24);
+    // 5 bytes are utilised by version (1), compressed_len (3) and is_encoded (1).
+    if compressed_payload.len() > N_BLOB_BYTES - 5 {
+        return Err(eyre::eyre!(
+            "compression payload of batch too big: len={}",
+            compressed_payload.len()
+        ));
+    }
 
-    let blob_bytes = if testing_hardfork() >= ForkName::EuclidV2 {
+    let heading = compressed_payload.len() as u32 + ((version.stf_version as u32) << 24);
+
+    let blob_bytes = if version.fork >= ForkName::EuclidV2 {
         let mut blob_bytes = Vec::from(heading.to_be_bytes());
         blob_bytes.push(1u8); // compressed flag
         blob_bytes.extend(compressed_payload);
@@ -299,7 +307,7 @@ pub fn build_batch_witnesses(
                 blob_versioned_hash,
             })
         }
-        ForkName::Feynman => {
+        ForkName::Feynman | ForkName::Galileo => {
             use scroll_zkvm_types::batch::BatchHeaderV8;
             let _ = x + z;
             ReferenceHeader::V8(BatchHeaderV8 {
@@ -427,6 +435,10 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
         },
         ForkName::Feynman => ChunkTaskGenerator {
             block_range: (16525000..=16525003).collect(),
+            ..Default::default()
+        },
+        ForkName::Galileo => ChunkTaskGenerator {
+            block_range: (20239156..=20239192).collect(),
             ..Default::default()
         },
     }

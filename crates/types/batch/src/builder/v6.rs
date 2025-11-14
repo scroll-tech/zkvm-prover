@@ -15,6 +15,7 @@ impl super::BatchInfoBuilder for BatchInfoBuilderV6 {
     type Payload = PayloadV6;
 
     fn build(
+        _version: u8,
         args: super::BuilderArgs<<Self::Payload as crate::payload::Payload>::BatchHeader>,
     ) -> BatchInfo {
         // Construct the batch payload using blob bytes.

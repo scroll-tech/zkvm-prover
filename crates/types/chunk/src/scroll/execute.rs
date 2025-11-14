@@ -16,7 +16,7 @@ use types_base::{
     public_inputs::chunk::{BlockContextV2, ChunkInfo},
 };
 
-/// `compression_ratios` can be `None` in host mode.
+/// `compression_infos` can be `None` in host mode.
 /// But in guest mode, it must be provided.
 pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
     let chain = Chain::from_id(witness.blocks[0].chain_id);
@@ -33,6 +33,7 @@ pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
             ForkName::EuclidV1 => Hardfork::Euclid,
             ForkName::EuclidV2 => Hardfork::EuclidV2,
             ForkName::Feynman => Hardfork::Feynman,
+            ForkName::Galileo => Hardfork::Galileo,
         },
     );
 

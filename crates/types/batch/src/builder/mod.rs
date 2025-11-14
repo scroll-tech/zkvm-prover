@@ -31,5 +31,5 @@ pub trait BatchInfoBuilder {
 
     /// Build the public-input values [`BatchInfo`] for the [`BatchCircuit`][crate::circuit::BatchCircuit]
     /// by processing the witness, while making some validations.
-    fn build(args: BuilderArgs<<Self::Payload as Payload>::BatchHeader>) -> BatchInfo;
+    fn build(version: u8, args: BuilderArgs<<Self::Payload as Payload>::BatchHeader>) -> BatchInfo;
 }

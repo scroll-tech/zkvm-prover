@@ -54,6 +54,8 @@ pub enum STFVersion {
     V7 = 7,
     /// Scroll@v8.
     V8 = 8,
+    /// Scroll@v9.
+    V9 = 9,
 }
 
 impl From<u8> for STFVersion {
@@ -63,6 +65,7 @@ impl From<u8> for STFVersion {
             6 => Self::V6,
             7 => Self::V7,
             8 => Self::V8,
+            9 => Self::V9,
             value => unreachable!("unsupported stf-version={value}"),
         }
     }
@@ -77,8 +80,16 @@ pub enum Codec {
     V7,
     /// da-codec@v8.
     V8,
-    /// da-codec@v9.
-    V9,
+}
+
+impl From<Codec> for u8 {
+    fn from(value: Codec) -> Self {
+        match value {
+            Codec::V6 => 6,
+            Codec::V7 => 7,
+            Codec::V8 => 8,
+        }
+    }
 }
 
 /// The number of bits used for [`STFVersion`].
@@ -132,17 +143,30 @@ impl Version {
         }
     }
 
+    pub const fn galileo() -> Self {
+        Self {
+            domain: Domain::Scroll,
+            stf_version: STFVersion::V9,
+            fork: ForkName::Galileo,
+            codec: Codec::V8,
+        }
+    }
+
     pub const fn validium_v1() -> Self {
         Self {
             domain: Domain::Validium,
             stf_version: STFVersion::V1,
             fork: ForkName::Feynman,
-            codec: Codec::V9,
+            codec: Codec::V8,
         }
     }
 
     pub fn is_validium(&self) -> bool {
         self.domain == Domain::Validium
+    }
+
+    pub fn codec(&self) -> u8 {
+        self.codec.into()
     }
 }
 
@@ -161,6 +185,7 @@ impl From<u8> for Version {
             (Domain::Scroll, STFVersion::V6) => Self::euclid_v1(),
             (Domain::Scroll, STFVersion::V7) => Self::euclid_v2(),
             (Domain::Scroll, STFVersion::V8) => Self::feynman(),
+            (Domain::Scroll, STFVersion::V9) => Self::galileo(),
             (Domain::Validium, STFVersion::V1) => Self::validium_v1(),
             (domain, stf_version) => {
                 unreachable!("unsupported version=({domain:?}, {stf_version:?})")
@@ -170,5 +195,7 @@ impl From<u8> for Version {
 }
 
 /// Version byte for Validium @ v1.
-pub const VALIDIUM_V1: u8 =
-    ((Domain::Validium as u8) << N_BITS_STF_VERSION) + (STFVersion::V1 as u8);
+pub const VALIDIUM_V1: u8 = Version::validium_v1().as_version_byte();
+
+/// Version byte for Galileo @ v9.
+pub const SCROLL_GALILEO: u8 = Version::galileo().as_version_byte();

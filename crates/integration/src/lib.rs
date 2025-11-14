@@ -39,12 +39,12 @@ const ENV_OUTPUT_DIR: &str = "OUTPUT_DIR";
 
 /// Enviroment settings for test: fork
 pub fn testing_hardfork() -> ForkName {
-    ForkName::Feynman
+    ForkName::Galileo
 }
 
 /// Test settings (version).
 pub fn testing_version() -> Version {
-    Version::feynman()
+    Version::galileo()
 }
 
 pub fn testing_version_validium() -> Version {
