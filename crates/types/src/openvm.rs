@@ -9,6 +9,8 @@ use serde::{Deserialize, Serialize};
 ///   "input": [ "0x...", "0x...", ... ]
 /// }
 /// ```
+///
+/// Reference: https://github.com/openvm-org/openvm/blob/7e9488992a74d49fa697359681cd2a7e768b90ef/crates/cli/src/input.rs#L82-L115
 #[derive(Clone, Default, Serialize, Deserialize)]
 pub struct OpenVMInput {
     input: Vec<String>,
