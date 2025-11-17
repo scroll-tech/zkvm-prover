@@ -9,12 +9,12 @@ use scroll_zkvm_types::{public_inputs::ForkName, task::ProvingTask as UniversalP
 pub trait ProvingTask: serde::de::DeserializeOwned {
     fn identifier(&self) -> String;
 
-    fn build_guest_input_inner(&self, stdin: &mut StdIn) -> Result<(), rkyv::rancor::Error>;
+    fn build_guest_input_inner(&self, stdin: &mut StdIn);
 
-    fn build_guest_input(&self) -> Result<StdIn, rkyv::rancor::Error> {
+    fn build_guest_input(&self) -> StdIn {
         let mut stdin = StdIn::default();
-        self.build_guest_input_inner(&mut stdin)?;
-        Ok(stdin)
+        self.build_guest_input_inner(&mut stdin);
+        stdin
     }
 
     fn fork_name(&self) -> ForkName;
@@ -25,7 +25,7 @@ impl ProvingTask for UniversalProvingTask {
         self.identifier.clone()
     }
 
-    fn build_guest_input_inner(&self, stdin: &mut StdIn) -> Result<(), rkyv::rancor::Error> {
+    fn build_guest_input_inner(&self, stdin: &mut StdIn) {
         for witness in &self.serialized_witness {
             stdin.write_bytes(witness);
         }
@@ -36,7 +36,6 @@ impl ProvingTask for UniversalProvingTask {
                 stdin.write_field(s);
             }
         }
-        Ok(())
     }
 
     fn fork_name(&self) -> ForkName {

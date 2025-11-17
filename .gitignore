@@ -16,3 +16,5 @@ root_verifier_vk
 verifier.bin
 
 .vscode/
+
+.env

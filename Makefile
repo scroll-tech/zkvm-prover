@@ -32,6 +32,9 @@ $(SRS_PARAMS_DIR)/%.srs:
 download-release:
 	sh download-release.sh
 
+upload-release:
+	@cargo run --bin scroll-zkvm-upload-axiom
+
 fmt:
 	@cargo fmt --all
 
@@ -87,6 +90,9 @@ test-execute-validium-e2e:
 test-single-chunk:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test chunk_circuit setup_prove_verify_single -- --exact --nocapture
 
+test-axiom-single-chunk:
+	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test chunk_circuit setup_axiom_prove_verify_single -- --exact --nocapture
+
 test-multi-chunk:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test chunk_circuit setup_prove_verify_multi -- --exact --nocapture
 
@@ -96,6 +102,9 @@ test-single-batch:
 test-e2e-batch:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test batch_circuit e2e -- --exact --nocapture
 
+test-axiom-e2e-batch:
+	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test batch_circuit axiom_e2e -- --exact --nocapture
+
 test-bundle:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test bundle_circuit setup_prove_verify -- --exact --nocapture
 
@@ -104,3 +113,6 @@ test-bundle-local:
 
 test-e2e-bundle:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test bundle_circuit e2e -- --exact --nocapture
+
+test-axiom-e2e-bundle:
+	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test bundle_circuit axiom_e2e -- --exact --nocapture

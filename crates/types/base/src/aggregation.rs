@@ -18,6 +18,7 @@ pub struct AggregationInput {
 
 /// Represent the commitment needed to verify a [`RootProof`].
 #[derive(
+    Copy,
     Clone,
     Debug,
     Default,
@@ -27,7 +28,7 @@ pub struct AggregationInput {
     serde::Deserialize,
     serde::Serialize,
 )]
-#[rkyv(derive(Debug))]
+#[rkyv(derive(Debug, Copy, Clone))]
 pub struct ProgramCommitment {
     /// The commitment to the child program exe.
     pub exe: [u32; 8],

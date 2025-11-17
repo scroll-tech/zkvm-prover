@@ -1,6 +1,6 @@
 use sbv_primitives::B256;
 use scroll_zkvm_integration::{
-    ProverTester,
+    ProverTester, TaskProver,
     testers::{
         batch::{BatchProverTester, preset_batch_multiple, preset_batch_validium},
         bundle::{BundleProverTester, BundleTaskGenerator},
@@ -127,7 +127,28 @@ fn e2e() -> eyre::Result<()> {
     let mut chunk_prover = ChunkProverTester::load_prover(false)?;
     let mut batch_prover = BatchProverTester::load_prover(false)?;
     let mut bundle_prover = BundleProverTester::load_prover(true)?;
+    e2e_inner(&mut chunk_prover, &mut batch_prover, &mut bundle_prover)?;
 
+    Ok(())
+}
+
+#[test]
+fn axiom_e2e() -> eyre::Result<()> {
+    BundleProverTester::setup(true)?;
+
+    let mut chunk_prover = ChunkProverTester::load_axiom_prover()?;
+    let mut batch_prover = BatchProverTester::load_axiom_prover()?;
+    let mut bundle_prover = BundleProverTester::load_axiom_prover()?;
+    e2e_inner(&mut chunk_prover, &mut batch_prover, &mut bundle_prover)?;
+
+    Ok(())
+}
+
+fn e2e_inner(
+    chunk_prover: &mut impl TaskProver,
+    batch_prover: &mut impl TaskProver,
+    bundle_prover: &mut impl TaskProver,
+) -> eyre::Result<()> {
     let mut task = preset_bundle();
     let wit = task.get_or_build_witness()?;
     let metadata = metadata_from_bundle_witnesses(&wit)?;
@@ -148,8 +169,7 @@ fn e2e() -> eyre::Result<()> {
         "unexpected pi hash for e2e bundle info, block witness changed?"
     );
 
-    let proof =
-        task.get_or_build_proof(&mut bundle_prover, &mut batch_prover, &mut chunk_prover)?;
+    let proof = task.get_or_build_proof(bundle_prover, batch_prover, chunk_prover)?;
 
     let evm_proof: OpenVmEvmProof = proof.into_evm_proof().unwrap().into();
 

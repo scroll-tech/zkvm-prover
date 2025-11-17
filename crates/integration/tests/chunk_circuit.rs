@@ -196,6 +196,17 @@ fn setup_prove_verify_single() -> eyre::Result<()> {
 }
 
 #[test]
+fn setup_axiom_prove_verify_single() -> eyre::Result<()> {
+    ChunkProverTester::setup(true)?;
+    let mut prover = ChunkProverTester::load_axiom_prover()?;
+
+    let wit = get_witness_from_env_or_builder(&mut preset_chunk())?;
+    let _ = prove_verify::<ChunkProverTester>(&mut prover, &wit, &[])?;
+
+    Ok(())
+}
+
+#[test]
 fn setup_prove_verify_multi() -> eyre::Result<()> {
     ChunkProverTester::setup(true)?;
     let mut prover = ChunkProverTester::load_prover(false)?;
