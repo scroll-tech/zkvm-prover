@@ -87,7 +87,7 @@ fn load_witness() -> ChunkWitness {
 pub const MIN_CYCLE_PER_SHARD: u64 = 1 << 20;
 pub const MAX_CYCLE_PER_SHARD: u64 = 1 << 24;
 
-pub const DEFAULT_MAX_CELLS_PER_SHARDS: u64 = (1 << 30) * 16 / 4 / 2;
+pub const DEFAULT_MAX_CELLS_PER_SHARDS: u64 = (1 << 30) * 1 / 4 / 2;
 pub const DEFAULT_MAX_CYCLE_PER_SHARDS: u64 = 1 << 29;
 
 fn main() -> eyre::Result<()> {

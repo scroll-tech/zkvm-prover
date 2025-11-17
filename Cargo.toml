@@ -189,14 +189,14 @@ strip = false
 [profile.bench]
 inherits = "profiling"
 
-# [patch."https://github.com/scroll-tech/ceno"]
-# ceno_rt = { path = "../ceno/ceno_rt", package = "ceno_rt" }
-# ceno_crypto = { path = "../ceno/guest_libs/crypto", package = "ceno_crypto" }
-# ceno_emul = { path = "../ceno/ceno_emul", package = "ceno_emul" }
-# ceno_host = { path = "../ceno/ceno_host", package = "ceno_host" }
-# ceno_zkvm = { path = "../ceno/ceno_zkvm", package = "ceno_zkvm" }
-# ceno_sha2 = { path = "../ceno/guest_libs/sha2", package = "ceno_sha2" }
-# gkr_iop = { path = "../ceno/gkr_iop", package = "gkr_iop" }
-# 
-# [patch."ssh://git@github.com/scroll-tech/ceno-gpu.git"]
-# ceno_gpu = { path = "../ceno-gpu/cuda_hal", package = "cuda_hal" }
+[patch."https://github.com/scroll-tech/ceno"]
+ceno_rt = { path = "../ceno/ceno_rt", package = "ceno_rt" }
+ceno_crypto = { path = "../ceno/guest_libs/crypto", package = "ceno_crypto" }
+ceno_emul = { path = "../ceno/ceno_emul", package = "ceno_emul" }
+ceno_host = { path = "../ceno/ceno_host", package = "ceno_host" }
+ceno_zkvm = { path = "../ceno/ceno_zkvm", package = "ceno_zkvm" }
+ceno_sha2 = { path = "../ceno/guest_libs/sha2", package = "ceno_sha2" }
+gkr_iop = { path = "../ceno/gkr_iop", package = "gkr_iop" }
+
+[patch."ssh://git@github.com/scroll-tech/ceno-gpu.git"]
+ceno_gpu = { path = "../ceno-gpu/cuda_hal", package = "cuda_hal" }
