@@ -2,11 +2,12 @@ use cargo_metadata::MetadataCommand;
 use ceno_emul::{Platform, Program};
 use ceno_host::CenoStdin;
 use ceno_zkvm::e2e::{
-    DEFAULT_MIN_CYCLE_PER_SHARDS, MultiProver, Preset, run_e2e_proof, run_e2e_verify,
+    MultiProver, Preset, run_e2e_proof, run_e2e_verify,
     setup_platform, setup_program,
 };
 use ceno_zkvm::scheme::hal::ProverDevice;
 use ceno_zkvm::scheme::verifier::ZKVMVerifier;
+use ceno_zkvm::scheme::prover::ZKVMProver;
 use ceno_zkvm::scheme::{create_backend, create_prover};
 use ff_ext::BabyBearExt4;
 use gkr_iop::cpu::default_backend_config;
@@ -86,6 +87,9 @@ fn load_witness() -> ChunkWitness {
 pub const MIN_CYCLE_PER_SHARD: u64 = 1 << 20;
 pub const MAX_CYCLE_PER_SHARD: u64 = 1 << 24;
 
+pub const DEFAULT_MAX_CELLS_PER_SHARDS: u64 = (1 << 30) * 16 / 4 / 2;
+pub const DEFAULT_MAX_CYCLE_PER_SHARDS: u64 = 1 << 29;
+
 fn main() -> eyre::Result<()> {
     let profiling_level: usize = env::var("PROFILING")
         .ok()
@@ -146,13 +150,15 @@ fn main() -> eyre::Result<()> {
     let ctx = setup_program::<E>(
         program,
         platform,
-        MultiProver::new(0, 1, MIN_CYCLE_PER_SHARD, MAX_CYCLE_PER_SHARD),
+        MultiProver::new(0, 1, DEFAULT_MAX_CELLS_PER_SHARDS, DEFAULT_MAX_CYCLE_PER_SHARDS),
     );
     println!("setup_program done in {:?}", start.elapsed());
+
 
     // Keygen
     let start = std::time::Instant::now();
     let (pk, vk) = ctx.keygen_with_pb(proving_device.get_pb());
+    let prover = ZKVMProver::new(pk, proving_device);
     println!("keygen done in {:?}", start.elapsed());
 
     let start = std::time::Instant::now();
@@ -160,7 +166,7 @@ fn main() -> eyre::Result<()> {
     tracing::debug!("setup_init_mem done in {:?}", start.elapsed());
 
     let proofs =
-        run_e2e_proof::<E, Pcs, _, _>(&ctx, create_prover(backend.clone()), &init_full_mem, pk, max_steps, false);
+        run_e2e_proof::<E, Pcs, _, _>(&ctx, &prover, &init_full_mem, max_steps, false);
     let duration = start.elapsed();
     println!("run_e2e_proof took: {:?}", duration);
 
