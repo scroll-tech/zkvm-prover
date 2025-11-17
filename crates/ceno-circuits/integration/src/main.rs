@@ -1,10 +1,7 @@
 use cargo_metadata::MetadataCommand;
 use ceno_emul::{Platform, Program};
 use ceno_host::CenoStdin;
-use ceno_zkvm::e2e::{
-    DEFAULT_MIN_CYCLE_PER_SHARDS, MultiProver, Preset, run_e2e_proof, run_e2e_verify,
-    setup_platform, setup_program,
-};
+use ceno_zkvm::e2e::{MultiProver, Preset, run_e2e_proof, run_e2e_verify, setup_platform, setup_program, DEFAULT_MAX_CELLS_PER_SHARDS};
 use ceno_zkvm::scheme::hal::ProverDevice;
 use ceno_zkvm::scheme::verifier::ZKVMVerifier;
 use ceno_zkvm::scheme::{create_backend, create_prover};
@@ -17,6 +14,7 @@ use std::env;
 use std::fs::File;
 use std::path::Path;
 use std::sync::LazyLock;
+use ceno_zkvm::scheme::prover::ZKVMProver;
 use tracing::level_filters::LevelFilter;
 use tracing_forest::ForestLayer;
 use tracing_subscriber::filter::filter_fn;
@@ -83,7 +81,7 @@ fn load_witness() -> ChunkWitness {
     ChunkWitness::new(&blocks)
 }
 
-pub const MAX_CYCLE_PER_SHARD: u64 = 1 << 26;
+pub const MAX_CYCLE_PER_SHARD: u64 = 1 << 29;
 
 fn main() -> eyre::Result<()> {
     let profiling_level: usize = env::var("PROFILING")
@@ -145,7 +143,7 @@ fn main() -> eyre::Result<()> {
     let ctx = setup_program::<E>(
         program,
         platform,
-        MultiProver::new(0, 1, DEFAULT_MIN_CYCLE_PER_SHARDS, MAX_CYCLE_PER_SHARD),
+        MultiProver::new(0, 1, (1 << 30) * 8 / 4 / 2, MAX_CYCLE_PER_SHARD),
     );
     println!("setup_program done in {:?}", start.elapsed());
 
@@ -158,8 +156,9 @@ fn main() -> eyre::Result<()> {
     let init_full_mem = ctx.setup_init_mem(&Vec::from(&hints), &[]);
     tracing::debug!("setup_init_mem done in {:?}", start.elapsed());
 
+    let prover = ZKVMProver::new(pk, proving_device);
     let proofs =
-        run_e2e_proof::<E, Pcs, _, _>(&ctx, proving_device, &init_full_mem, pk, max_steps, false);
+        run_e2e_proof::<E, Pcs, _, _>(&ctx, &prover, &init_full_mem, max_steps, false);
     let duration = start.elapsed();
     println!("run_e2e_proof took: {:?}", duration);
 
