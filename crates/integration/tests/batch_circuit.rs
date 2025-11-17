@@ -15,7 +15,7 @@ use scroll_zkvm_types::public_inputs::Version;
 fn test_execute() -> eyre::Result<()> {
     BatchProverTester::setup(true)?;
     let u_task = load_local_task("batch-task.json")?;
-    let stdin = u_task.build_guest_input()?;
+    let stdin = u_task.build_guest_input();
 
     let prover = BatchProverTester::load_prover(false)?;
 
@@ -63,6 +63,18 @@ fn e2e() -> eyre::Result<()> {
 
     let mut prover = BatchProverTester::load_prover(false)?;
     let mut chunk_prover = ChunkProverTester::load_prover(false)?;
+    let mut batch = BatchTaskGenerator::from_chunk_tasks(&preset_chunk_multiple(), None);
+    let _ = batch.get_or_build_proof(&mut prover, &mut chunk_prover)?;
+
+    Ok(())
+}
+
+#[test]
+fn axiom_e2e() -> eyre::Result<()> {
+    BatchProverTester::setup(true)?;
+
+    let mut prover = BatchProverTester::load_axiom_prover()?;
+    let mut chunk_prover = ChunkProverTester::load_axiom_prover()?;
     let mut batch = BatchTaskGenerator::from_chunk_tasks(&preset_chunk_multiple(), None);
     let _ = batch.get_or_build_proof(&mut prover, &mut chunk_prover)?;
 

@@ -322,7 +322,7 @@ pub fn build_batch_witnesses(
                     .iter()
                     .map(|&b| b as u32)
                     .collect::<Vec<_>>(),
-                commitment: commitment.clone(),
+                commitment,
             }
         })
         .collect::<Vec<_>>();
@@ -395,7 +395,7 @@ pub fn build_batch_witnesses_validium(
                     .iter()
                     .map(|&b| b as u32)
                     .collect::<Vec<_>>(),
-                commitment: commitment.clone(),
+                commitment,
             }
         })
         .collect::<Vec<_>>();
