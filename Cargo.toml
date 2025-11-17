@@ -13,7 +13,7 @@ members = [
   "crates/verifier",
   "crates/integration",
   "crates/build-guest",
-  "crates/upload-axiom",
+  "crates/tools/upload-axiom",
 ]
 resolver = "2"
 

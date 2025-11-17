@@ -97,6 +97,7 @@ enum ColorChoice {
 
 const LOG_PREFIX: &str = "[upload-axiom]";
 const OK: Emoji = Emoji("✅", "✓ ");
+const WARN: Emoji = Emoji("⚠️", "! ");
 
 fn main() -> eyre::Result<()> {
     // Load .env file if present
