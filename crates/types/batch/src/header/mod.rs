@@ -1,10 +1,10 @@
+#![allow(non_camel_case_types)]
+
 use alloy_primitives::B256;
 
 pub mod v6;
 
 pub mod v7;
-
-pub mod v8;
 
 pub mod validium;
 
@@ -51,10 +51,11 @@ pub trait ValidiumBatchHeader: BatchHeader {
 pub enum ReferenceHeader {
     /// Represents DA-codec v6.
     V6(v6::BatchHeaderV6),
-    /// Represents DA-codec v7.
-    V7(v7::BatchHeaderV7),
-    /// Represents DA-codec v8.
-    V8(v8::BatchHeaderV8),
+    /// Represents DA-codec v7, v8 and v9.
+    ///
+    /// Since the codec implementation is unchanged across STF-versions v7, v8 and v9, we define a
+    /// single variant to cover all those cases.
+    V7_V8_V9(v7::BatchHeaderV7),
     /// Represents batch header utilised in L3 validium.
     Validium(validium::BatchHeaderValidium),
 }

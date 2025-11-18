@@ -53,10 +53,9 @@ impl Default for LastHeader {
         // create a default LastHeader according to the dummy value
         // being set in the e2e test in scroll-prover:
         // https://github.com/scroll-tech/scroll-prover/blob/82f8ed3fabee5c3001b0b900cda1608413e621f8/integration/tests/e2e_tests.rs#L203C1-L207C8
-
         Self {
             batch_index: 123,
-            version: testing_hardfork().to_protocol_version(),
+            version: testing_version().as_version_byte(),
             batch_hash: B256::new([
                 0xab, 0xac, 0xad, 0xae, 0xaf, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -70,8 +69,7 @@ impl From<&ReferenceHeader> for LastHeader {
     fn from(value: &ReferenceHeader) -> Self {
         match value {
             ReferenceHeader::V6(h) => h.into(),
-            ReferenceHeader::V7(h) => h.into(),
-            ReferenceHeader::V8(h) => h.into(),
+            ReferenceHeader::V7_V8_V9(h) => h.into(),
             ReferenceHeader::Validium(h) => h.into(),
         }
     }
@@ -297,20 +295,10 @@ pub fn build_batch_witnesses(
                 blob_data_proof: point_evaluations.map(|u| B256::new(u.to_be_bytes())),
             })
         }
-        ForkName::EuclidV2 => {
+        ForkName::EuclidV2 | ForkName::Feynman | ForkName::Galileo => {
             use scroll_zkvm_types::batch::BatchHeaderV7;
             let _ = x + z;
-            ReferenceHeader::V7(BatchHeaderV7 {
-                version: last_header.version,
-                batch_index: last_header.batch_index + 1,
-                parent_batch_hash: last_header.batch_hash,
-                blob_versioned_hash,
-            })
-        }
-        ForkName::Feynman | ForkName::Galileo => {
-            use scroll_zkvm_types::batch::BatchHeaderV8;
-            let _ = x + z;
-            ReferenceHeader::V8(BatchHeaderV8 {
+            ReferenceHeader::V7_V8_V9(BatchHeaderV7 {
                 version: last_header.version,
                 batch_index: last_header.batch_index + 1,
                 parent_batch_hash: last_header.batch_hash,
@@ -459,13 +447,9 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
             let enveloped = batch::EnvelopeV6::from_slice(&task_wit.blob_bytes);
             <batch::PayloadV6 as Payload>::from_envelope(&enveloped).validate(h, infos);
         }
-        ReferenceHeader::V7(h) => {
+        ReferenceHeader::V7_V8_V9(h) => {
             let enveloped = batch::EnvelopeV7::from_slice(&task_wit.blob_bytes);
             <batch::PayloadV7 as Payload>::from_envelope(&enveloped).validate(h, infos);
-        }
-        ReferenceHeader::V8(h) => {
-            let enveloped = batch::EnvelopeV8::from_slice(&task_wit.blob_bytes);
-            <batch::PayloadV8 as Payload>::from_envelope(&enveloped).validate(h, infos);
         }
         ReferenceHeader::Validium(_h) => {
             todo!()

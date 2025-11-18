@@ -95,8 +95,7 @@ impl BundleInfo {
     }
 
     pub fn pi_hash_feynman(&self) -> B256 {
-        let protocol_version =
-            B256::left_padding_from(&ForkName::Feynman.to_protocol_version().to_be_bytes());
+        let protocol_version = B256::left_padding_from(&[Version::feynman().as_version_byte()]);
         let pi: Vec<u8> = std::iter::empty()
             .chain(protocol_version.as_slice())
             .chain(self.pi_euclidv2().as_slice())
