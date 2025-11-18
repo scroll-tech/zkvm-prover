@@ -220,9 +220,12 @@ pub trait ProverTester {
 
     /// Load the axiom program prover
     fn load_axiom_prover() -> eyre::Result<AxiomProver> {
+        let mut prover = Self::load_prover(false)?;
+        let vk = prover.get_app_commitment();
+        let vk = hex::encode(serialize_vk::serialize(&vk));
         let program_id = AXIOM_PROGRAM_IDS
-            .get(Self::NAME)
-            .ok_or_else(|| eyre::eyre!("missing axiom program id for {}", Self::NAME))?
+            .get(&vk)
+            .ok_or_else(|| eyre::eyre!("missing axiom program id for {}: {}", Self::NAME, vk))?
             .to_string();
         let prover = AxiomProver::from_env(
             Self::NAME.to_string(),
