@@ -297,7 +297,6 @@ pub fn build_batch_witnesses(
         }
         ForkName::EuclidV2 | ForkName::Feynman | ForkName::Galileo => {
             use scroll_zkvm_types::batch::BatchHeaderV7;
-            let _ = x + z;
             ReferenceHeader::V7_V8_V9(BatchHeaderV7 {
                 version: last_header.version,
                 batch_index: last_header.batch_index + 1,

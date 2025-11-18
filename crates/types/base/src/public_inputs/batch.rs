@@ -136,6 +136,7 @@ impl BatchInfo {
                 .collect::<Vec<u8>>(),
         )
     }
+
     /// Public input hash for a L3 validium @ v1.
     ///
     /// keccak(
@@ -172,20 +173,11 @@ impl BatchInfo {
 pub type VersionedBatchInfo = (BatchInfo, Version);
 
 impl MultiVersionPublicInputs for BatchInfo {
-    fn pi_hash_by_fork(&self, fork_name: ForkName) -> B256 {
-        match fork_name {
-            ForkName::EuclidV1 => self.pi_hash_euclidv1(),
-            ForkName::EuclidV2 => self.pi_hash_euclidv2(),
-            ForkName::Feynman => self.pi_hash_feynman(),
-            _ => unreachable!("Fork > Feynman should use `pi_hash_by_version`"),
-        }
-    }
-
     fn pi_hash_by_version(&self, version: Version) -> B256 {
         match (version.domain, version.stf_version) {
-            (Domain::Scroll, STFVersion::V6) => self.pi_hash_by_fork(ForkName::EuclidV1),
-            (Domain::Scroll, STFVersion::V7) => self.pi_hash_by_fork(ForkName::EuclidV2),
-            (Domain::Scroll, STFVersion::V8) => self.pi_hash_by_fork(ForkName::Feynman),
+            (Domain::Scroll, STFVersion::V6) => self.pi_hash_euclidv1(),
+            (Domain::Scroll, STFVersion::V7) => self.pi_hash_euclidv2(),
+            (Domain::Scroll, STFVersion::V8) => self.pi_hash_feynman(),
             (Domain::Scroll, STFVersion::V9) => self.pi_hash_galileo(version),
             (Domain::Validium, STFVersion::V1) => self.pi_hash_validium(version),
             (domain, stf_version) => {

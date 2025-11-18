@@ -77,6 +77,10 @@ pub enum Codec {
     /// da-codec@v6.
     V6,
     /// da-codec@v7.
+    ///
+    /// Between EuclidV2, Feynman and Galileo hardforks, i.e. STF versions 7, 8 and 9, the da-codec
+    /// implementation remains unchanged. As a result, we use the Codec::V7 for each of those
+    /// hardforks.
     V7,
 }
 

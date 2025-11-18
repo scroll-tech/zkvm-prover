@@ -18,7 +18,6 @@ pub trait PublicInputs {
 
 /// helper trait to extend PublicInputs
 pub trait MultiVersionPublicInputs {
-    fn pi_hash_by_fork(&self, fork_name: ForkName) -> B256;
     fn pi_hash_by_version(&self, version: Version) -> B256;
     fn validate(&self, prev_pi: &Self, version: Version);
 }
