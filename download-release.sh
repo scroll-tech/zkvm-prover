@@ -32,7 +32,7 @@ function can_access_s3() {
   aws --profile default s3 ls "s3://circuit-release/scroll-zkvm/releases/$GUEST_VERSION" >/dev/null 2>&1
 }
 function download_by_s3() {
-  echo "$INFO_PREFIX download via s3"
+  echo -e "$INFO_PREFIX download via s3"
   aws --profile default s3 cp s3://circuit-release/scroll-zkvm/releases/$GUEST_VERSION releases/$GUEST_VERSION --recursive
 }
 
