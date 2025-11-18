@@ -47,15 +47,6 @@ impl ForkName {
             ForkName::Galileo => "galileo",
         }
     }
-    /// Convert ForkName to its protocol version
-    pub fn to_protocol_version(&self) -> u8 {
-        match self {
-            ForkName::EuclidV1 => 6,
-            ForkName::EuclidV2 => 7,
-            ForkName::Feynman => 8,
-            ForkName::Galileo => 9,
-        }
-    }
 }
 
 impl From<Option<&str>> for ForkName {

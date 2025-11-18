@@ -4,12 +4,12 @@ use types_base::{
     utils::keccak256,
 };
 
-use crate::BatchHeaderV7;
-
-use super::N_BLOB_BYTES;
+use crate::{BatchHeaderV7, N_BLOB_BYTES};
 
 /// Envelope@v7 represents the generic envelope type from v7 onwards, marked by the appropriate
 /// da-codec version byte.
+///
+/// The same envelope is used in da-codec versions v7, v8 and v9.
 pub type EnvelopeV7 = GenericEnvelopeV7;
 
 pub type PayloadV7 = GenericPayloadV7;
@@ -19,7 +19,7 @@ pub type PayloadV7 = GenericPayloadV7;
 /// The bytes following some metadata represent zstd-encoded [`PayloadV7`] if the envelope is
 /// indicated as `is_encoded == true`.
 ///
-/// Both da-codec@v7 and da-codec@v8 use the same envelope and payload structure, the only
+/// da-codec@v7, da-codec@v8 and da-codec@v9 use the same envelope and payload structure, the only
 /// difference being the codec version byte in the envelope. Hence we supply that as a generic
 /// version type to [`EnvelopeV7`].
 #[derive(Debug, Clone)]

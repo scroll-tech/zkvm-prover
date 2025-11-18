@@ -77,9 +77,11 @@ pub enum Codec {
     /// da-codec@v6.
     V6,
     /// da-codec@v7.
+    ///
+    /// Between EuclidV2, Feynman and Galileo hardforks, i.e. STF versions 7, 8 and 9, the da-codec
+    /// implementation remains unchanged. As a result, we use the Codec::V7 for each of those
+    /// hardforks.
     V7,
-    /// da-codec@v8.
-    V8,
 }
 
 impl From<Codec> for u8 {
@@ -87,7 +89,6 @@ impl From<Codec> for u8 {
         match value {
             Codec::V6 => 6,
             Codec::V7 => 7,
-            Codec::V8 => 8,
         }
     }
 }
@@ -139,7 +140,7 @@ impl Version {
             domain: Domain::Scroll,
             stf_version: STFVersion::V8,
             fork: ForkName::Feynman,
-            codec: Codec::V8,
+            codec: Codec::V7,
         }
     }
 
@@ -148,7 +149,7 @@ impl Version {
             domain: Domain::Scroll,
             stf_version: STFVersion::V9,
             fork: ForkName::Galileo,
-            codec: Codec::V8,
+            codec: Codec::V7,
         }
     }
 
@@ -157,7 +158,7 @@ impl Version {
             domain: Domain::Validium,
             stf_version: STFVersion::V1,
             fork: ForkName::Feynman,
-            codec: Codec::V8,
+            codec: Codec::V7,
         }
     }
 
@@ -172,7 +173,7 @@ impl Version {
 
 impl Default for Version {
     fn default() -> Self {
-        Self::feynman()
+        Self::galileo()
     }
 }
 

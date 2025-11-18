@@ -44,7 +44,7 @@ const ENV_OUTPUT_DIR: &str = "OUTPUT_DIR";
 
 /// Enviroment settings for test: fork
 pub fn testing_hardfork() -> ForkName {
-    ForkName::Galileo
+    testing_version().fork
 }
 
 /// Test settings (version).
