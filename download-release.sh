@@ -20,7 +20,7 @@ WARN_PREFIX="${YELLOW_BOLD}[!]${NC}"
 
 # select release version
 GUEST_VERSION="${GUEST_VERSION:-}"
-if [ -n "$1" ]; then
+if [ $# -gt 0 ]; then
   GUEST_VERSION="$1"
 fi
 if [ -z "$GUEST_VERSION" ]; then
