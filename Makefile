@@ -30,7 +30,7 @@ $(SRS_PARAMS_DIR)/%.srs:
 	fi
 
 download-release:
-	sh download-release.sh
+	bash download-release.sh
 
 upload-release:
 	@cargo run --bin scroll-zkvm-upload-axiom
