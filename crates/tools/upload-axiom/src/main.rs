@@ -18,6 +18,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{IsTerminal, stderr, stdout};
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::{env, fs};
 
 #[derive(Parser)]
@@ -28,6 +29,14 @@ use std::{env, fs};
         ArgGroup::new("project_selection")
             .args(&["project_id", "create_project"])
             .required(true)
+            .multiple(false)
+    )
+)]
+#[command(
+    group(
+        ArgGroup::new("program_ids")
+            .args(&["no_write_ids", "upload_s3"])
+            .required(false)
             .multiple(false)
     )
 )]
@@ -51,6 +60,9 @@ struct Cli {
     /// Don't write program ids json
     #[arg(long)]
     no_write_ids: bool,
+    /// Uploads program ids json to s3 if available
+    #[arg(long)]
+    upload_s3: bool,
 
     /// The directory containing the manifest of the crate to run this command in.
     #[arg(long, env = "CARGO_MANIFEST_DIR")]
@@ -250,6 +262,29 @@ fn main() -> eyre::Result<()> {
             "{LOG_PREFIX} {OK} Wrote Axiom program IDs to {}",
             output_path.display()
         );
+
+        // "s3://circuit-release/scroll-zkvm/releases/$GUEST_VERSION/axiom_program_ids.json"
+        // aws --profile default s3 cp
+        if cli.upload_s3 {
+            let s3_path = format!(
+                "s3://circuit-release/scroll-zkvm/releases/{guest_version}/axiom_program_ids.json"
+            );
+            let status = Command::new("aws")
+                .arg("--profile")
+                .arg("default")
+                .arg("s3")
+                .arg("cp")
+                .arg(output_path)
+                .arg(&s3_path)
+                .status()?;
+            if status.success() {
+                println!("{LOG_PREFIX} {OK} Uploaded axiom_program_ids.json to {s3_path}");
+            } else {
+                println!(
+                    "{LOG_PREFIX} {WARN} Failed to upload axiom_program_ids.json to {s3_path}"
+                );
+            }
+        }
     }
 
     Ok(())
