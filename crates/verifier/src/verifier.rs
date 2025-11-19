@@ -52,9 +52,10 @@ impl UniversalVerifier {
         // TODO: clean this after we get rid of openvm v1.3.
         let is_openvm_v13 = {
             let hash = sha256::digest(&evm_verifier);
-            // from 0.5.2 release files
-            let is_openvm_v13 =
-                hash == ("4f1b70db9fade2ce7425924dc662d75c5a315f3a611ed8cadd68b516407a4cf1");
+            // from 0.5.2 and 0.5.6 release files
+            let is_openvm_v13 = hash
+                == ("4f1b70db9fade2ce7425924dc662d75c5a315f3a611ed8cadd68b516407a4cf1")
+                || hash == ("d1f7a8066bd45c1bb82b73c7a7138d5793589fb8c6b2eb3c74b94db63109501d");
             println!(
                 "is_openvm_v13: {}, verifier.bin sha256sum: {}",
                 is_openvm_v13, hash

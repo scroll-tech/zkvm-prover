@@ -17,6 +17,7 @@ impl PartialProvingTask for BatchWitness {
         let header_hash = match &self.reference_header {
             ReferenceHeader::V6(h) => h.batch_hash(),
             ReferenceHeader::V7_V8_V9(h) => h.batch_hash(),
+            ReferenceHeader::V8(_) => unreachable!("Unexpected ReferenceHeader::V8 0.7.0 onwards"),
             ReferenceHeader::Validium(h) => h.batch_hash(),
         };
         header_hash.to_string()
