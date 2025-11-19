@@ -70,6 +70,9 @@ impl From<&ReferenceHeader> for LastHeader {
         match value {
             ReferenceHeader::V6(h) => h.into(),
             ReferenceHeader::V7_V8_V9(h) => h.into(),
+            ReferenceHeader::V8(_) => {
+                unreachable!("Unexpected ReferenceHeader::V8 from 0.7.0 onwards")
+            }
             ReferenceHeader::Validium(h) => h.into(),
         }
     }
@@ -450,6 +453,7 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
             let enveloped = batch::EnvelopeV7::from_slice(&task_wit.blob_bytes);
             <batch::PayloadV7 as Payload>::from_envelope(&enveloped).validate(h, infos);
         }
+        ReferenceHeader::V8(_) => unreachable!("Unexpected ReferenceHeader::V8 from 0.7.0 onwards"),
         ReferenceHeader::Validium(_h) => {
             todo!()
         }

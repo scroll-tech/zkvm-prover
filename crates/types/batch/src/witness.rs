@@ -182,7 +182,10 @@ impl From<BatchWitness> for LegacyBatchWitness {
             chunk_infos: value.chunk_infos.into_iter().map(|c| c.into()).collect(),
             blob_bytes: value.blob_bytes,
             point_eval_witness: point_eval_witness.clone().into(),
-            reference_header: value.reference_header,
+            reference_header: match value.fork_name {
+                ForkName::Feynman => value.reference_header.into_v8_feynman(),
+                _ => unreachable!("0.5.2 expects fork=Feynman"),
+            },
             fork_name: value.fork_name,
         }
     }
@@ -220,6 +223,9 @@ impl From<&BatchWitness> for BatchInfo {
                     point_eval_witness: Some(point_eval_witness.clone()),
                 };
                 BatchInfoBuilderV7::build(witness.version, args)
+            }
+            ReferenceHeader::V8(_) => {
+                unreachable!("Unexpected ReferenceHeader::V8 from 0.7.0 onwards");
             }
             ReferenceHeader::Validium(header) => ValidiumBatchInfoBuilder::build(
                 ValidiumBuilderArgs::new(witness.version, *header, chunk_infos),
