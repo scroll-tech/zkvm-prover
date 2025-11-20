@@ -1562,7 +1562,7 @@ dependencies = [
 [[package]]
 name = "ceno-examples"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?rev=2e0437b43351d90a359f647fb617f1ef789f124f#2e0437b43351d90a359f647fb617f1ef789f124f"
+source = "git+https://github.com/scroll-tech/ceno?rev=3f1960ab826f29c86f420bd5c7e3e3576865d3f8#3f1960ab826f29c86f420bd5c7e3e3576865d3f8"
 dependencies = [
  "glob",
 ]
@@ -1593,7 +1593,7 @@ dependencies = [
 [[package]]
 name = "ceno_crypto"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?rev=2e0437b43351d90a359f647fb617f1ef789f124f#2e0437b43351d90a359f647fb617f1ef789f124f"
+source = "git+https://github.com/scroll-tech/ceno?rev=3f1960ab826f29c86f420bd5c7e3e3576865d3f8#3f1960ab826f29c86f420bd5c7e3e3576865d3f8"
 dependencies = [
  "ceno_keccak",
  "ceno_sha2",
@@ -1614,15 +1614,16 @@ dependencies = [
 [[package]]
 name = "ceno_emul"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?rev=2e0437b43351d90a359f647fb617f1ef789f124f#2e0437b43351d90a359f647fb617f1ef789f124f"
+source = "git+https://github.com/scroll-tech/ceno?rev=3f1960ab826f29c86f420bd5c7e3e3576865d3f8#3f1960ab826f29c86f420bd5c7e3e3576865d3f8"
 dependencies = [
  "anyhow",
  "ceno_rt",
- "ceno_syscall 0.1.0 (git+https://github.com/scroll-tech/ceno?rev=2e0437b43351d90a359f647fb617f1ef789f124f)",
+ "ceno_syscall 0.1.0 (git+https://github.com/scroll-tech/ceno?rev=3f1960ab826f29c86f420bd5c7e3e3576865d3f8)",
  "elf",
  "ff_ext",
  "itertools 0.13.0",
  "multilinear_extensions",
+ "num",
  "num-derive",
  "num-traits",
  "rayon",
@@ -1631,17 +1632,19 @@ dependencies = [
  "secp",
  "serde",
  "smallvec",
+ "sp1-curves",
  "strum 0.26.3",
  "strum_macros 0.26.4",
  "substrate-bn 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "tiny-keccak",
  "tracing",
+ "typenum",
 ]
 
 [[package]]
 name = "ceno_host"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?rev=2e0437b43351d90a359f647fb617f1ef789f124f#2e0437b43351d90a359f647fb617f1ef789f124f"
+source = "git+https://github.com/scroll-tech/ceno?rev=3f1960ab826f29c86f420bd5c7e3e3576865d3f8#3f1960ab826f29c86f420bd5c7e3e3576865d3f8"
 dependencies = [
  "anyhow",
  "ceno_emul",
@@ -1653,16 +1656,16 @@ dependencies = [
 [[package]]
 name = "ceno_keccak"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?rev=2e0437b43351d90a359f647fb617f1ef789f124f#2e0437b43351d90a359f647fb617f1ef789f124f"
+source = "git+https://github.com/scroll-tech/ceno?rev=3f1960ab826f29c86f420bd5c7e3e3576865d3f8#3f1960ab826f29c86f420bd5c7e3e3576865d3f8"
 dependencies = [
- "ceno_syscall 0.1.0 (git+https://github.com/scroll-tech/ceno?rev=2e0437b43351d90a359f647fb617f1ef789f124f)",
+ "ceno_syscall 0.1.0 (git+https://github.com/scroll-tech/ceno?rev=3f1960ab826f29c86f420bd5c7e3e3576865d3f8)",
  "tiny-keccak",
 ]
 
 [[package]]
 name = "ceno_rt"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?rev=2e0437b43351d90a359f647fb617f1ef789f124f#2e0437b43351d90a359f647fb617f1ef789f124f"
+source = "git+https://github.com/scroll-tech/ceno?rev=3f1960ab826f29c86f420bd5c7e3e3576865d3f8#3f1960ab826f29c86f420bd5c7e3e3576865d3f8"
 dependencies = [
  "getrandom 0.2.16",
  "getrandom 0.3.3",
@@ -1672,16 +1675,16 @@ dependencies = [
 [[package]]
 name = "ceno_sha2"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?rev=2e0437b43351d90a359f647fb617f1ef789f124f#2e0437b43351d90a359f647fb617f1ef789f124f"
+source = "git+https://github.com/scroll-tech/ceno?rev=3f1960ab826f29c86f420bd5c7e3e3576865d3f8#3f1960ab826f29c86f420bd5c7e3e3576865d3f8"
 dependencies = [
- "ceno_syscall 0.1.0 (git+https://github.com/scroll-tech/ceno?rev=2e0437b43351d90a359f647fb617f1ef789f124f)",
+ "ceno_syscall 0.1.0 (git+https://github.com/scroll-tech/ceno?rev=3f1960ab826f29c86f420bd5c7e3e3576865d3f8)",
  "digest 0.10.7",
 ]
 
 [[package]]
 name = "ceno_syscall"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?rev=2e0437b43351d90a359f647fb617f1ef789f124f#2e0437b43351d90a359f647fb617f1ef789f124f"
+source = "git+https://github.com/scroll-tech/ceno?rev=3f1960ab826f29c86f420bd5c7e3e3576865d3f8#3f1960ab826f29c86f420bd5c7e3e3576865d3f8"
 
 [[package]]
 name = "ceno_syscall"
@@ -1691,7 +1694,7 @@ source = "git+https://github.com/scroll-tech/ceno#69dd886f97e7046d8d0688fab20f1f
 [[package]]
 name = "ceno_zkvm"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?rev=2e0437b43351d90a359f647fb617f1ef789f124f#2e0437b43351d90a359f647fb617f1ef789f124f"
+source = "git+https://github.com/scroll-tech/ceno?rev=3f1960ab826f29c86f420bd5c7e3e3576865d3f8#3f1960ab826f29c86f420bd5c7e3e3576865d3f8"
 dependencies = [
  "base64",
  "bincode 1.3.3",
@@ -1734,6 +1737,7 @@ dependencies = [
  "tracing-forest",
  "tracing-subscriber 0.3.20",
  "transcript",
+ "typenum",
  "whir",
  "witness",
 ]
@@ -2247,7 +2251,7 @@ dependencies = [
 [[package]]
 name = "derive"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?rev=2e0437b43351d90a359f647fb617f1ef789f124f#2e0437b43351d90a359f647fb617f1ef789f124f"
+source = "git+https://github.com/scroll-tech/ceno?rev=3f1960ab826f29c86f420bd5c7e3e3576865d3f8#3f1960ab826f29c86f420bd5c7e3e3576865d3f8"
 dependencies = [
  "quote",
  "syn 1.0.109",
@@ -2729,7 +2733,7 @@ dependencies = [
 [[package]]
 name = "ff_ext"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/gkr-backend.git?tag=v1.0.0-alpha.13#89aa6add9f4d16cd2f10ec81f7c11d4507400c9b"
+source = "git+https://github.com/scroll-tech/gkr-backend.git?tag=v1.0.0-alpha.15#9be620b18900138d0b89569759fc2b3b9451b49e"
 dependencies = [
  "once_cell",
  "p3",
@@ -3007,7 +3011,7 @@ dependencies = [
 [[package]]
 name = "gkr_iop"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/ceno?rev=2e0437b43351d90a359f647fb617f1ef789f124f#2e0437b43351d90a359f647fb617f1ef789f124f"
+source = "git+https://github.com/scroll-tech/ceno?rev=3f1960ab826f29c86f420bd5c7e3e3576865d3f8#3f1960ab826f29c86f420bd5c7e3e3576865d3f8"
 dependencies = [
  "bincode 1.3.3",
  "either",
@@ -4105,7 +4109,7 @@ dependencies = [
 [[package]]
 name = "mpcs"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/gkr-backend.git?tag=v1.0.0-alpha.13#89aa6add9f4d16cd2f10ec81f7c11d4507400c9b"
+source = "git+https://github.com/scroll-tech/gkr-backend.git?tag=v1.0.0-alpha.15#9be620b18900138d0b89569759fc2b3b9451b49e"
 dependencies = [
  "bincode 1.3.3",
  "clap",
@@ -4129,7 +4133,7 @@ dependencies = [
 [[package]]
 name = "multilinear_extensions"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/gkr-backend.git?tag=v1.0.0-alpha.13#89aa6add9f4d16cd2f10ec81f7c11d4507400c9b"
+source = "git+https://github.com/scroll-tech/gkr-backend.git?tag=v1.0.0-alpha.15#9be620b18900138d0b89569759fc2b3b9451b49e"
 dependencies = [
  "either",
  "ff_ext",
@@ -5693,7 +5697,7 @@ dependencies = [
 [[package]]
 name = "p3"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/gkr-backend.git?tag=v1.0.0-alpha.13#89aa6add9f4d16cd2f10ec81f7c11d4507400c9b"
+source = "git+https://github.com/scroll-tech/gkr-backend.git?tag=v1.0.0-alpha.15#9be620b18900138d0b89569759fc2b3b9451b49e"
 dependencies = [
  "p3-air",
  "p3-baby-bear",
@@ -6302,7 +6306,7 @@ dependencies = [
 [[package]]
 name = "poseidon"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/gkr-backend.git?tag=v1.0.0-alpha.13#89aa6add9f4d16cd2f10ec81f7c11d4507400c9b"
+source = "git+https://github.com/scroll-tech/gkr-backend.git?tag=v1.0.0-alpha.15#9be620b18900138d0b89569759fc2b3b9451b49e"
 dependencies = [
  "ff_ext",
  "p3",
@@ -8874,7 +8878,7 @@ dependencies = [
 [[package]]
 name = "sp1-curves"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/gkr-backend.git?tag=v1.0.0-alpha.13#89aa6add9f4d16cd2f10ec81f7c11d4507400c9b"
+source = "git+https://github.com/scroll-tech/gkr-backend.git?tag=v1.0.0-alpha.15#9be620b18900138d0b89569759fc2b3b9451b49e"
 dependencies = [
  "cfg-if",
  "dashu",
@@ -9055,7 +9059,7 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 [[package]]
 name = "sumcheck"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/gkr-backend.git?tag=v1.0.0-alpha.13#89aa6add9f4d16cd2f10ec81f7c11d4507400c9b"
+source = "git+https://github.com/scroll-tech/gkr-backend.git?tag=v1.0.0-alpha.15#9be620b18900138d0b89569759fc2b3b9451b49e"
 dependencies = [
  "either",
  "ff_ext",
@@ -9073,7 +9077,7 @@ dependencies = [
 [[package]]
 name = "sumcheck_macro"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/gkr-backend.git?tag=v1.0.0-alpha.13#89aa6add9f4d16cd2f10ec81f7c11d4507400c9b"
+source = "git+https://github.com/scroll-tech/gkr-backend.git?tag=v1.0.0-alpha.15#9be620b18900138d0b89569759fc2b3b9451b49e"
 dependencies = [
  "itertools 0.13.0",
  "p3",
@@ -9647,7 +9651,7 @@ dependencies = [
 [[package]]
 name = "transcript"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/gkr-backend.git?tag=v1.0.0-alpha.13#89aa6add9f4d16cd2f10ec81f7c11d4507400c9b"
+source = "git+https://github.com/scroll-tech/gkr-backend.git?tag=v1.0.0-alpha.15#9be620b18900138d0b89569759fc2b3b9451b49e"
 dependencies = [
  "ff_ext",
  "itertools 0.13.0",
@@ -9970,7 +9974,7 @@ dependencies = [
 [[package]]
 name = "whir"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/gkr-backend.git?tag=v1.0.0-alpha.13#89aa6add9f4d16cd2f10ec81f7c11d4507400c9b"
+source = "git+https://github.com/scroll-tech/gkr-backend.git?tag=v1.0.0-alpha.15#9be620b18900138d0b89569759fc2b3b9451b49e"
 dependencies = [
  "bincode 1.3.3",
  "clap",
@@ -10321,7 +10325,7 @@ checksum = "f17a85883d4e6d00e8a97c586de764dabcc06133f7f1d55dce5cdc070ad7fe59"
 [[package]]
 name = "witness"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/gkr-backend.git?tag=v1.0.0-alpha.13#89aa6add9f4d16cd2f10ec81f7c11d4507400c9b"
+source = "git+https://github.com/scroll-tech/gkr-backend.git?tag=v1.0.0-alpha.15#9be620b18900138d0b89569759fc2b3b9451b49e"
 dependencies = [
  "ff_ext",
  "multilinear_extensions",
