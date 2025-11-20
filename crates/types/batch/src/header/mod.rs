@@ -1,10 +1,10 @@
+#![allow(non_camel_case_types)]
+
 use alloy_primitives::B256;
 
 pub mod v6;
 
 pub mod v7;
-
-pub mod v8;
 
 pub mod validium;
 
@@ -51,10 +51,24 @@ pub trait ValidiumBatchHeader: BatchHeader {
 pub enum ReferenceHeader {
     /// Represents DA-codec v6.
     V6(v6::BatchHeaderV6),
-    /// Represents DA-codec v7.
-    V7(v7::BatchHeaderV7),
-    /// Represents DA-codec v8.
-    V8(v8::BatchHeaderV8),
+    /// Represents DA-codec v7, v8 and v9.
+    ///
+    /// Since the codec implementation is unchanged across STF-versions v7, v8 and v9, we define a
+    /// single variant to cover all those cases.
+    V7_V8_V9(v7::BatchHeaderV7),
+    /// Batch header v8 for backwards compatibility to support Feynman (0.5.2).
+    V8(v7::BatchHeaderV7),
     /// Represents batch header utilised in L3 validium.
     Validium(validium::BatchHeaderValidium),
+}
+
+impl ReferenceHeader {
+    /// Consumes the reference header that is expected to be [`Self::V7_V8_V9`] and transforms it
+    /// to [`Self::V8`] for backwards compatibilty support for [`Version::feynman`].
+    pub fn into_v8_feynman(self) -> Self {
+        match self {
+            Self::V7_V8_V9(h) => Self::V8(h),
+            _ => unreachable!("Expect ReferenceHeader::V7_V8_V9 from 0.7.0 onwards"),
+        }
+    }
 }

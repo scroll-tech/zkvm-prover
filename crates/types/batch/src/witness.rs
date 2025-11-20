@@ -10,8 +10,7 @@ use types_base::{
 
 use crate::{
     builder::{
-        BatchInfoBuilder, BatchInfoBuilderV6, BatchInfoBuilderV7, BatchInfoBuilderV8,
-        BuilderArgsV6, BuilderArgsV7, BuilderArgsV8,
+        BatchInfoBuilder, BatchInfoBuilderV6, BatchInfoBuilderV7, BuilderArgsV6, BuilderArgsV7,
         validium::{ValidiumBatchInfoBuilder, ValidiumBuilderArgs},
     },
     header::ReferenceHeader,
@@ -183,7 +182,10 @@ impl From<BatchWitness> for LegacyBatchWitness {
             chunk_infos: value.chunk_infos.into_iter().map(|c| c.into()).collect(),
             blob_bytes: value.blob_bytes,
             point_eval_witness: point_eval_witness.clone().into(),
-            reference_header: value.reference_header,
+            reference_header: match value.fork_name {
+                ForkName::Feynman => value.reference_header.into_v8_feynman(),
+                _ => unreachable!("0.5.2 expects fork=Feynman"),
+            },
             fork_name: value.fork_name,
         }
     }
@@ -207,9 +209,9 @@ impl From<&BatchWitness> for BatchInfo {
                     blob_bytes: witness.blob_bytes.to_vec(),
                     point_eval_witness: None,
                 };
-                BatchInfoBuilderV6::build(args)
+                BatchInfoBuilderV6::build(witness.version, args)
             }
-            ReferenceHeader::V7(header) => {
+            ReferenceHeader::V7_V8_V9(header) => {
                 let point_eval_witness = witness
                     .point_eval_witness
                     .as_ref()
@@ -220,20 +222,10 @@ impl From<&BatchWitness> for BatchInfo {
                     blob_bytes: witness.blob_bytes.to_vec(),
                     point_eval_witness: Some(point_eval_witness.clone()),
                 };
-                BatchInfoBuilderV7::build(args)
+                BatchInfoBuilderV7::build(witness.version, args)
             }
-            ReferenceHeader::V8(header) => {
-                let point_eval_witness = witness
-                    .point_eval_witness
-                    .as_ref()
-                    .expect("point_eval_witness missing for header::v8");
-                let args = BuilderArgsV8 {
-                    header: *header,
-                    chunk_infos,
-                    blob_bytes: witness.blob_bytes.to_vec(),
-                    point_eval_witness: Some(point_eval_witness.clone()),
-                };
-                BatchInfoBuilderV8::build(args)
+            ReferenceHeader::V8(_) => {
+                unreachable!("Unexpected ReferenceHeader::V8 from 0.7.0 onwards");
             }
             ReferenceHeader::Validium(header) => ValidiumBatchInfoBuilder::build(
                 ValidiumBuilderArgs::new(witness.version, *header, chunk_infos),

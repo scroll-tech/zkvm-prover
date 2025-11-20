@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 
 use alloy_primitives::B256;
 use types_base::public_inputs::batch::BatchInfo;
+use types_base::version::Version;
 
 use crate::PointEvalWitness;
 use crate::witness::build_point;
@@ -69,6 +70,7 @@ impl<P: Payload> super::BatchInfoBuilder for GenericBatchInfoBuilderV7<P> {
     type Payload = P;
 
     fn build(
+        version: u8,
         args: super::BuilderArgs<<Self::Payload as crate::payload::Payload>::BatchHeader>,
     ) -> BatchInfo {
         // Sanity check on the length of unpadded blob bytes.
@@ -99,6 +101,24 @@ impl<P: Payload> super::BatchInfoBuilder for GenericBatchInfoBuilderV7<P> {
 
         // Validate payload (batch data).
         let (first_chunk, last_chunk) = payload.validate(&args.header, args.chunk_infos.as_slice());
+
+        // Validate versions from the blob and batch header.
+        let version = Version::from(version);
+        let stf_version = version.stf_version as u8;
+        assert_eq!(
+            envelope.version(),
+            Some(stf_version),
+            "blob codec version mismatch: expected(witness)={:?}, got(blob)={:?}",
+            stf_version,
+            envelope.version(),
+        );
+        assert_eq!(
+            args.header.version(),
+            stf_version,
+            "batch header version mismatch: expected(witness)={:?}, got(onchain)={:?}",
+            stf_version,
+            args.header.version()
+        );
 
         BatchInfo {
             parent_state_root: first_chunk.prev_state_root,

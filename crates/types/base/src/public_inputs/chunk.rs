@@ -272,6 +272,49 @@ impl ChunkInfo {
         )
     }
 
+    /// Feynman chunk public inputs are the same as EuclidV2.
+    pub fn pi_hash_feynman(&self) -> B256 {
+        self.pi_hash_euclidv2()
+    }
+
+    /// Public input hash for a given chunk (galileo or da-codec@v9) is defined as
+    ///
+    /// keccak(
+    ///     version ||
+    ///     chain id ||
+    ///     prev state root ||
+    ///     post state root ||
+    ///     withdraw root ||
+    ///     tx data digest ||
+    ///     prev msg queue hash ||
+    ///     post msg queue hash ||
+    ///     initial block number ||
+    ///     block_ctx for block_ctx in block_ctxs
+    /// )
+    pub fn pi_hash_galileo(&self, version: Version) -> B256 {
+        keccak256(
+            std::iter::empty()
+                .chain(&[version.as_version_byte()])
+                .chain(&self.chain_id.to_be_bytes())
+                .chain(self.prev_state_root.as_slice())
+                .chain(self.post_state_root.as_slice())
+                .chain(self.withdraw_root.as_slice())
+                .chain(self.tx_data_digest.as_slice())
+                .chain(self.prev_msg_queue_hash.as_slice())
+                .chain(self.post_msg_queue_hash.as_slice())
+                .chain(&self.initial_block_number.to_be_bytes())
+                .chain(
+                    self.block_ctxs
+                        .iter()
+                        .flat_map(|block_ctx| block_ctx.to_bytes())
+                        .collect::<Vec<u8>>()
+                        .as_slice(),
+                )
+                .cloned()
+                .collect::<Vec<u8>>(),
+        )
+    }
+
     /// Public input hash for a given chunk for L3 validium @ v1:
     ///
     /// keccak(
@@ -320,27 +363,16 @@ impl ChunkInfo {
 pub type VersionedChunkInfo = (ChunkInfo, Version);
 
 impl MultiVersionPublicInputs for ChunkInfo {
-    /// Compute the public input hash for the chunk.
-    fn pi_hash_by_fork(&self, fork_name: ForkName) -> B256 {
-        match fork_name {
-            ForkName::EuclidV1 => {
-                assert_ne!(self.data_hash, B256::ZERO, "v6 must has valid data hash");
-                self.pi_hash_euclidv1()
-            }
-            ForkName::EuclidV2 => self.pi_hash_euclidv2(),
-            ForkName::Feynman => {
-                // Feynman fork uses the same hash as EuclidV2
-                self.pi_hash_euclidv2()
-            }
-        }
-    }
-
     /// Compute the public input hash for the chunk given the version tuple.
     fn pi_hash_by_version(&self, version: Version) -> B256 {
         match (version.domain, version.stf_version) {
-            (Domain::Scroll, STFVersion::V6) => self.pi_hash_by_fork(ForkName::EuclidV1),
-            (Domain::Scroll, STFVersion::V7) => self.pi_hash_by_fork(ForkName::EuclidV2),
-            (Domain::Scroll, STFVersion::V8) => self.pi_hash_by_fork(ForkName::Feynman),
+            (Domain::Scroll, STFVersion::V6) => {
+                assert_ne!(self.data_hash, B256::ZERO, "v6 must have valid data_hash");
+                self.pi_hash_euclidv1()
+            }
+            (Domain::Scroll, STFVersion::V7) => self.pi_hash_euclidv2(),
+            (Domain::Scroll, STFVersion::V8) => self.pi_hash_feynman(),
+            (Domain::Scroll, STFVersion::V9) => self.pi_hash_galileo(version),
             (Domain::Validium, STFVersion::V1) => self.pi_hash_validium(version),
             (domain, stf_version) => {
                 unreachable!("unsupported version=({domain:?}, {stf_version:?})")

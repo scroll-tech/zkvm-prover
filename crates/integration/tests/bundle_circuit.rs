@@ -7,7 +7,7 @@ use scroll_zkvm_integration::{
         chunk::ChunkProverTester,
         load_local_task,
     },
-    testing_hardfork, testing_version_validium,
+    testing_version, testing_version_validium,
     utils::metadata_from_bundle_witnesses,
 };
 use scroll_zkvm_prover::{Prover, ProverConfig};
@@ -154,12 +154,14 @@ fn e2e_inner(
     let metadata = metadata_from_bundle_witnesses(&wit)?;
 
     // Sanity check for pi of bundle hash, update the expected hash if block witness changed
-    let pi_str = match testing_hardfork() {
+    let version = testing_version();
+    let pi_str = match version.fork {
         ForkName::EuclidV1 => "3cc70faf6b5a4bd565694a4c64de59befb735f4aac2a4b9e6a6fc2ee950b8a72",
         ForkName::EuclidV2 => "2028510c403837c6ed77660fd92814ba61d7b746e7268cc8dfc14d163d45e6bd",
         ForkName::Feynman => "80523a61b2b94b2922638ec90edd084b1022798e1e5539c3a079d2b0736e4f32",
+        ForkName::Galileo => "86290e8c329dd2ec430df4a8b2ae8396b3996b3e814afff24b7cedeb26387087",
     };
-    let expected_pi_hash = metadata.pi_hash(testing_hardfork());
+    let expected_pi_hash = metadata.pi_hash_by_version(version);
     // sanity check for pi of bundle hash, update the expected hash if block witness changed
     assert_eq!(
         alloy_primitives::hex::encode(expected_pi_hash),
