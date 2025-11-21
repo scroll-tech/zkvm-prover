@@ -8209,6 +8209,7 @@ dependencies = [
  "ceno_sha2",
  "rkyv",
  "scroll-zkvm-types-chunk",
+ "serde_json",
 ]
 
 [[package]]

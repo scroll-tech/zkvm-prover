@@ -14,5 +14,7 @@ mod ethereum;
 pub use ethereum::*;
 
 pub use alloy_consensus;
+pub use sbv_primitives;
 pub use sbv_primitives::Address;
 pub use sbv_primitives::types::revm::precompile as revm_precompile;
+pub use sbv_primitives::types::consensus::TxEnvelope;
