@@ -68,15 +68,15 @@ openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0",
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0", default-features = false }
 
 # ceno guest lib
-ceno_rt = { git = "https://github.com/scroll-tech/ceno", rev = "3f1960ab826f29c86f420bd5c7e3e3576865d3f8" }
-ceno_crypto = { git = "https://github.com/scroll-tech/ceno", rev = "3f1960ab826f29c86f420bd5c7e3e3576865d3f8" }
+ceno_rt = { git = "https://github.com/scroll-tech/ceno", rev = "4b6c7ac3039b606cccc05ff7c7f7a0994c07218f" }
+ceno_crypto = { git = "https://github.com/scroll-tech/ceno", rev = "4b6c7ac3039b606cccc05ff7c7f7a0994c07218f" }
 
 # ceno host lib
-ceno_emul = { git = "https://github.com/scroll-tech/ceno", rev = "3f1960ab826f29c86f420bd5c7e3e3576865d3f8" }
-ceno_host = { git = "https://github.com/scroll-tech/ceno", rev = "3f1960ab826f29c86f420bd5c7e3e3576865d3f8" }
-ceno_zkvm = { git = "https://github.com/scroll-tech/ceno", rev = "3f1960ab826f29c86f420bd5c7e3e3576865d3f8" }
-ceno_sha2 = { git = "https://github.com/scroll-tech/ceno", rev = "3f1960ab826f29c86f420bd5c7e3e3576865d3f8" }
-gkr_iop = { git = "https://github.com/scroll-tech/ceno", rev = "3f1960ab826f29c86f420bd5c7e3e3576865d3f8" }
+ceno_emul = { git = "https://github.com/scroll-tech/ceno", rev = "4b6c7ac3039b606cccc05ff7c7f7a0994c07218f" }
+ceno_host = { git = "https://github.com/scroll-tech/ceno", rev = "4b6c7ac3039b606cccc05ff7c7f7a0994c07218f" }
+ceno_zkvm = { git = "https://github.com/scroll-tech/ceno", rev = "4b6c7ac3039b606cccc05ff7c7f7a0994c07218f" }
+ceno_sha2 = { git = "https://github.com/scroll-tech/ceno", rev = "4b6c7ac3039b606cccc05ff7c7f7a0994c07218f" }
+gkr_iop = { git = "https://github.com/scroll-tech/ceno", rev = "4b6c7ac3039b606cccc05ff7c7f7a0994c07218f" }
 ff_ext = { git = "https://github.com/scroll-tech/gkr-backend.git", tag = "v1.0.0-alpha.15" }
 mpcs = { git = "https://github.com/scroll-tech/gkr-backend.git", tag = "v1.0.0-alpha.15" }
 
