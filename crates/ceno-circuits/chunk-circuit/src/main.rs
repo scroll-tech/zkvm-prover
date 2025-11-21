@@ -7,6 +7,7 @@ use rkyv::Archived;
 use scroll_zkvm_types_chunk::{Address, ChunkWitness, alloy_consensus, execute, revm_precompile, TxEnvelope};
 use scroll_zkvm_types_chunk::sbv_primitives::{address, b256, Signature, B256};
 use scroll_zkvm_types_chunk::alloy_consensus::transaction::SignerRecoverable;
+use scroll_zkvm_types_chunk::alloy_consensus::{Signed, TxEip1559, TxLegacy};
 use scroll_zkvm_types_chunk::sbv_primitives::alloy_primitives::hex;
 
 ceno_crypto!(
@@ -15,34 +16,33 @@ ceno_crypto!(
     address_type = Address,
 );
 
-
-static TX: &str = r#"{
-  "Legacy": {
-    "signature": {
-      "r": "0x10f71f4be1d573ca7d686d9c29c3165b9e2725e9dee8296eacb12cf4c27b24b4",
-      "s": "0x13e4d58bfaf75faf85225f49fe8caa7f81a36483a05b13d30020b341fdfc0521",
-      "yParity": "0x0",
-      "v": "0x0"
-    },
-    "transaction": {
-      "chain_id": "0x82750",
-      "nonce": 20481,
-      "gas_price": 120106,
-      "gas_limit": 777624,
-      "to": "0xc9c35e593842c3d5e71304b2291e204583226e2a",
-      "value": "0x0",
-      "input": "0x412658e5000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000001260000000000000000000000000000000000000000020027004f00cd00f900fd0101010501150125530000000000000000000000000000000000000406efdbff2a14a7c8e15944d1f4a48f9f95f663a4005300903c96cfa2a369ec67a93c324a35e693fbeea11c0594f4b328cd17d59be12040a2d03d656bdbca3206bff4b328cd17d59be12040a2d03d656bdbca3206bf3c814a23b053fd0f102aeeda0459215c2444799c7006efdbff2a14a7c8e15944d1f4a48f9f95f663a4530000000000000000000000000000000000000400d100e5f4b328cd17d59be12040a2d03d656bdbca3206bfbf0f198847c0020dbb462971eedbfdcf950b955200d100e500010005000000000000000000000000000a91950b6ebacc00000000000000000000000f8866df92010000000000000000000000000000000000000000000000000000"
-    }
-  }
-}"#;
-
 fn main() {
     CenoCrypto::install();
 
-    let tx: TxEnvelope = serde_json::from_str(TX).unwrap();
-    tx.recover_signer().ok();
+    // let TX: &str = r#"{
+    //   "signature": {
+    //     "r": "0xc6b2255c8e2aff3269d38611946d6fef4d51f3c8d325b343c117ca582cef219a",
+    //     "s": "0x7a11a261cd796ef059f9c1922882f2f00985d9e255485725e847c004686f6d7f",
+    //     "yParity": "0x0",
+    //     "v": "0x0"
+    //   },
+    //   "transaction": {
+    //     "Eip1559": {
+    //       "chain_id": 1,
+    //       "nonce": 0,
+    //       "gas_limit": 21000,
+    //       "max_fee_per_gas": 2153982416,
+    //       "max_priority_fee_per_gas": 2000000000,
+    //       "to": "0x7772fe062c2b6ac0c0f83ca4948177be4889b1b3",
+    //       "value": "0x5eec17ccacc3d80",
+    //       "access_list": [],
+    //       "input": "0x"
+    //     }
+    //   }
+    // }"#;
 
-
+   // let tx: Signed<TxEip1559> = serde_json::from_str(TX).unwrap();
+    // tx.recover_signer().ok();
     // test ceno precompile call
     // let (sig, recid, tx_hash, signer) = (
     //     &hex!(
@@ -62,15 +62,14 @@ fn main() {
     //
     // let _result = alloy_consensus::crypto::secp256k1::recover_signer(&signature, signature_hash);
 
-    // secp256k1_ecrecover
-    // let witness_bytes: &Archived<Vec<u8>> = ceno_rt::read();
-    //
-    // let config = bincode::config::standard();
-    // let (witness, _): (ChunkWitness, _) = bincode::serde::decode_from_slice(witness_bytes, config)
-    //     .expect("ChunkCircuit: deserialisation of witness bytes failed");
-    //
-    // // let _fork_name = witness.fork_name;
-    // let _chunk_info = execute(witness).expect("execution failed");
+    let witness_bytes: &Archived<Vec<u8>> = ceno_rt::read();
+
+    let config = bincode::config::standard();
+    let (witness, _): (ChunkWitness, _) = bincode::serde::decode_from_slice(witness_bytes, config)
+        .expect("ChunkCircuit: deserialisation of witness bytes failed");
+    
+    // let _fork_name = witness.fork_name;
+    let _chunk_info = execute(witness).expect("execution failed");
 
     // let pi_hash = (chunk_info, fork_name).pi_hash();
     // ceno_rt::commit(&pi_hash);
