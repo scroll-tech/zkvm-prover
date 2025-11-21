@@ -1,10 +1,7 @@
 use types_base::{
     aggregation::{AggregationInput, ProofCarryingWitness},
     fork_name::ForkName,
-    public_inputs::{
-        batch::{BatchInfo, LegacyBatchInfo},
-        bundle::BundleInfo,
-    },
+    public_inputs::{batch::BatchInfo, bundle::BundleInfo},
 };
 
 /// The witness for the bundle circuit.
@@ -18,39 +15,6 @@ pub struct BundleWitness {
     pub batch_infos: Vec<BatchInfo>,
     /// The code version specify the chain spec
     pub fork_name: ForkName,
-}
-
-/// The witness for the bundle circuit.
-#[derive(
-    Clone,
-    Debug,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    serde::Deserialize,
-    serde::Serialize,
-)]
-#[rkyv(derive(Debug))]
-pub struct LegacyBundleWitness {
-    /// Batch proofs being aggregated in the bundle.
-    #[rkyv()]
-    pub batch_proofs: Vec<AggregationInput>,
-    /// Public-input values for the corresponding batch proofs.
-    #[rkyv()]
-    pub batch_infos: Vec<LegacyBatchInfo>,
-    /// The code version specify the chain spec
-    #[rkyv()]
-    pub fork_name: ForkName,
-}
-
-impl From<BundleWitness> for LegacyBundleWitness {
-    fn from(value: BundleWitness) -> Self {
-        Self {
-            batch_proofs: value.batch_proofs,
-            batch_infos: value.batch_infos.into_iter().map(|c| c.into()).collect(),
-            fork_name: value.fork_name,
-        }
-    }
 }
 
 impl ProofCarryingWitness for BundleWitness {

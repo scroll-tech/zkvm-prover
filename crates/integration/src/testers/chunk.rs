@@ -1,16 +1,15 @@
 use crate::{
-    GUEST_VERSION, PartialProvingTask, ProverTester, TaskProver, prove_verify,
-    testdata_fork_directory, tester_execute, testers::PATH_TESTDATA, testing_hardfork,
-    testing_version, utils::metadata_from_chunk_witnesses,
+    PartialProvingTask, ProverTester, TaskProver, prove_verify, testdata_fork_directory,
+    tester_execute, testers::PATH_TESTDATA, testing_hardfork, testing_version,
+    utils::metadata_from_chunk_witnesses,
 };
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use sbv_core::BlockWitness;
 use sbv_primitives::{B256, types::consensus::TxL1Message};
 use scroll_zkvm_prover::utils::read_json;
 use scroll_zkvm_prover::utils::vm::ExecutionResult;
-use scroll_zkvm_types::chunk::ChunkWitnessUpgradeCompact;
 use scroll_zkvm_types::{
-    chunk::{ChunkInfo, ChunkWitness, LegacyChunkWitness, SecretKey},
+    chunk::{ChunkInfo, ChunkWitness, SecretKey},
     proof::ProofEnum,
     public_inputs::{ForkName, Version},
 };
@@ -61,29 +60,13 @@ impl PartialProvingTask for ChunkWitness {
         format!("{first}-{last}")
     }
 
-    fn legacy_rkyv_archive(&self) -> eyre::Result<Vec<u8>> {
-        let witness_legacy = LegacyChunkWitness::from(self.clone());
-        let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(&witness_legacy)?;
-        Ok(bytes.to_vec())
-    }
-
     fn archive(&self) -> eyre::Result<Vec<u8>>
     where
         Self: Sized,
     {
-        let bytes: Vec<u8> = match GUEST_VERSION.as_ref() {
-            "0.5.2" => self.legacy_rkyv_archive()?,
-            "0.6.0-rc.6" => {
-                let config = bincode::config::standard();
-                bincode::serde::encode_to_vec(
-                    ChunkWitnessUpgradeCompact::from(self.clone()),
-                    config,
-                )?
-            }
-            _ => {
-                let config = bincode::config::standard();
-                bincode::serde::encode_to_vec(self, config)?
-            }
+        let bytes: Vec<u8> = {
+            let config = bincode::config::standard();
+            bincode::serde::encode_to_vec(self, config)?
         };
         Ok(bytes)
     }

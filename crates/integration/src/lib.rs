@@ -120,18 +120,13 @@ pub trait PartialProvingTask: serde::Serialize {
     fn identifier(&self) -> String;
     fn fork_name(&self) -> ForkName;
 
-    fn legacy_rkyv_archive(&self) -> eyre::Result<Vec<u8>>;
-
     fn archive(&self) -> eyre::Result<Vec<u8>>
     where
         Self: Sized,
     {
-        let bytes: Vec<u8> = match GUEST_VERSION.as_ref() {
-            "0.5.2" => self.legacy_rkyv_archive()?,
-            _ => {
-                let config = bincode::config::standard();
-                bincode::serde::encode_to_vec(self, config)?
-            }
+        let bytes: Vec<u8> = {
+            let config = bincode::config::standard();
+            bincode::serde::encode_to_vec(self, config)?
         };
         Ok(bytes)
     }
@@ -210,7 +205,6 @@ pub trait ProverTester {
         let config = scroll_zkvm_prover::ProverConfig {
             path_app_exe,
             path_app_config,
-            is_openvm_v13: *GUEST_VERSION == "0.5.2",
             ..Default::default()
         };
         let prover = Prover::setup(config, Some(Self::NAME))?;

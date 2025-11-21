@@ -1,11 +1,7 @@
 use halo2curves_axiom::CurveAffine;
 use types_base::{
     aggregation::{AggregationInput, ProofCarryingWitness},
-    public_inputs::{
-        ForkName,
-        batch::BatchInfo,
-        chunk::{ChunkInfo, LegacyChunkInfo},
-    },
+    public_inputs::{ForkName, batch::BatchInfo, chunk::ChunkInfo},
 };
 
 use crate::{
@@ -51,41 +47,6 @@ pub struct PointEvalWitness {
     pub kzg_proof_x: Bytes48,
     #[serde(with = "array48")]
     pub kzg_proof_y: Bytes48,
-}
-
-/// Witness required by applying point evaluation
-#[derive(
-    Clone,
-    Debug,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    serde::Deserialize,
-    serde::Serialize,
-)]
-#[rkyv(derive(Debug))]
-pub struct LegacyPointEvalWitness {
-    /// kzg commitment
-    #[rkyv()]
-    #[serde(with = "array48")]
-    pub kzg_commitment: Bytes48,
-    /// kzg proof
-    #[rkyv()]
-    #[serde(with = "array48")]
-    pub kzg_proof: Bytes48,
-}
-
-impl From<PointEvalWitness> for LegacyPointEvalWitness {
-    fn from(value: PointEvalWitness) -> Self {
-        Self {
-            kzg_commitment: build_point(value.kzg_commitment_x, value.kzg_commitment_y)
-                .unwrap()
-                .to_compressed_be(),
-            kzg_proof: build_point(value.kzg_proof_x, value.kzg_proof_y)
-                .unwrap()
-                .to_compressed_be(),
-        }
-    }
 }
 
 pub fn build_point_eval_witness(kzg_commitment: Bytes48, kzg_proof: Bytes48) -> PointEvalWitness {
@@ -140,55 +101,6 @@ pub struct BatchWitness {
     pub reference_header: ReferenceHeader,
     /// The code version specify the chain spec
     pub fork_name: ForkName,
-}
-
-/// Witness to the batch circuit.
-#[derive(
-    Clone,
-    Debug,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    serde::Deserialize,
-    serde::Serialize,
-)]
-#[rkyv(derive(Debug))]
-pub struct LegacyBatchWitness {
-    /// Flattened root proofs from all chunks in the batch.
-    #[rkyv()]
-    pub chunk_proofs: Vec<AggregationInput>,
-    /// Chunk infos.
-    #[rkyv()]
-    pub chunk_infos: Vec<LegacyChunkInfo>,
-    /// Blob bytes.
-    #[rkyv()]
-    pub blob_bytes: Vec<u8>,
-    /// Witness for point evaluation
-    #[rkyv()]
-    pub point_eval_witness: LegacyPointEvalWitness,
-    /// Header for reference.
-    #[rkyv()]
-    pub reference_header: ReferenceHeader,
-    /// The code version specify the chain spec
-    #[rkyv()]
-    pub fork_name: ForkName,
-}
-
-impl From<BatchWitness> for LegacyBatchWitness {
-    fn from(value: BatchWitness) -> Self {
-        let point_eval_witness = value.point_eval_witness.expect("should not be none");
-        Self {
-            chunk_proofs: value.chunk_proofs,
-            chunk_infos: value.chunk_infos.into_iter().map(|c| c.into()).collect(),
-            blob_bytes: value.blob_bytes,
-            point_eval_witness: point_eval_witness.clone().into(),
-            reference_header: match value.fork_name {
-                ForkName::Feynman => value.reference_header.into_v8_feynman(),
-                _ => unreachable!("0.5.2 expects fork=Feynman"),
-            },
-            fork_name: value.fork_name,
-        }
-    }
 }
 
 impl ProofCarryingWitness for BatchWitness {

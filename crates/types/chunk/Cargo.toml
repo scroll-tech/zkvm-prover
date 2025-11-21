@@ -13,10 +13,8 @@ alloy-consensus = { workspace = true, features = ["crypto-backend"] }
 alloy-sol-types.workspace = true
 ecies.workspace = true
 itertools.workspace = true
-#revm-precompile = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-v74", default-features=false, features = ["kzg-rs", "libsecp256k1"] }
-rkyv.workspace = true
 sbv-helpers.workspace = true
-sbv-core = { workspace = true, features = ["rkyv"] }
+sbv-core = { workspace = true, features = [] }
 sbv-trie = { workspace = true }
 sbv-primitives = { workspace = true, features = ["hardforks", "evm-types", "revm-types", "reth-evm-types"] }
 serde.workspace = true

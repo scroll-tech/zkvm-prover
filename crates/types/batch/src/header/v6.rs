@@ -3,45 +3,25 @@ use alloy_primitives::B256;
 use types_base::utils::keccak256;
 
 /// Represents the header summarising the batch of chunks as per DA-codec v6.
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Default,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    serde::Deserialize,
-    serde::Serialize,
-)]
-#[rkyv(derive(Debug))]
+#[derive(Clone, Copy, Debug, Default, serde::Deserialize, serde::Serialize)]
 pub struct BatchHeaderV6 {
     /// The DA-codec version for the batch.
-    #[rkyv()]
     pub version: u8,
     /// The index of the batch
-    #[rkyv()]
     pub batch_index: u64,
     /// Number of L1 messages popped in the batch
-    #[rkyv()]
     pub l1_message_popped: u64,
     /// Number of total L1 messages popped after the batch
-    #[rkyv()]
     pub total_l1_message_popped: u64,
     /// The parent batch hash
-    #[rkyv()]
     pub parent_batch_hash: B256,
     /// The timestamp of the last block in this batch
-    #[rkyv()]
     pub last_block_timestamp: u64,
     /// The data hash of the batch
-    #[rkyv()]
     pub data_hash: B256,
     /// The versioned hash of the blob with this batch's data
-    #[rkyv()]
     pub blob_versioned_hash: B256,
     /// The blob data proof: z (32), y (32)
-    #[rkyv()]
     pub blob_data_proof: [B256; 2],
 }
 
