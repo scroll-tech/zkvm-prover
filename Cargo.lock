@@ -8455,7 +8455,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-batch-circuit"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "alloy-primitives",
  "bincode 2.0.1",
@@ -8492,7 +8492,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-bundle-circuit"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "alloy-primitives",
  "bincode 2.0.1",
@@ -8504,7 +8504,7 @@ dependencies = [
 
 [[package]]
 name = "scroll-zkvm-chunk-circuit"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "bincode 2.0.1",
  "ecies",
