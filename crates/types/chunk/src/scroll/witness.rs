@@ -1,7 +1,6 @@
 use super::types::validium::SecretKey;
 use alloy_primitives::B256;
-use sbv_core::{verifier::StateCommitMode, witness::BlockWitness};
-use sbv_primitives::U256;
+use sbv_core::witness::BlockWitness;
 use sbv_primitives::types::consensus::TxL1Message;
 use sbv_primitives::types::evm::ScrollTxCompressionInfos;
 use std::collections::HashSet;
@@ -32,47 +31,6 @@ pub struct ValidiumInputs {
     pub validium_txs: Vec<Vec<TxL1Message>>,
     /// The secret key used for decrypting validium transactions.
     pub secret_key: Box<[u8]>,
-}
-
-/// The witness type accepted by last version chunk-circuit.
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
-pub struct ChunkWitnessUpgradeCompact {
-    /// Version byte as per [version][types_base::version].
-    pub version: u8,
-    /// The block witness for each block in the chunk.
-    pub blocks: Vec<BlockWitness>,
-    /// The on-chain rolling L1 message queue hash before enqueueing any L1 msg tx from the chunk.
-    pub prev_msg_queue_hash: B256,
-    /// The code version specify the chain spec
-    pub fork_name: ForkName,
-    /// The compression ratios for each block in the chunk.
-    pub compression_ratios: Vec<Vec<U256>>,
-    /// Validium encrypted txs and secret key if this is a validium chain.
-    pub validium: Option<ValidiumInputs>,
-}
-
-/// The witness type accepted by the chunk-circuit.
-#[derive(
-    Clone,
-    Debug,
-    serde::Deserialize,
-    serde::Serialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-)]
-#[rkyv(derive(Debug))]
-pub struct LegacyChunkWitness {
-    /// The block witness for each block in the chunk.
-    pub blocks: Vec<sbv_primitives::legacy_types::BlockWitness>,
-    /// The on-chain rolling L1 message queue hash before enqueueing any L1 msg tx from the chunk.
-    pub prev_msg_queue_hash: B256,
-    /// The code version specify the chain spec
-    pub fork_name: ForkName,
-    /// The compression ratios for each block in the chunk.
-    pub compression_ratios: Vec<Vec<U256>>,
-    /// The mode of state commitment for the chunk.
-    pub state_commit_mode: StateCommitMode,
 }
 
 #[derive(Clone, Debug)]
@@ -189,42 +147,5 @@ impl TryFrom<ChunkWitness> for ChunkInfo {
 
     fn try_from(value: ChunkWitness) -> Result<Self, Self::Error> {
         crate::execute(value)
-    }
-}
-
-impl From<ChunkWitness> for LegacyChunkWitness {
-    fn from(value: ChunkWitness) -> Self {
-        LegacyChunkWitness {
-            blocks: value
-                .blocks
-                .into_iter()
-                .map(|block| block.into_legacy())
-                .collect(),
-            prev_msg_queue_hash: value.prev_msg_queue_hash,
-            fork_name: value.fork_name,
-            compression_ratios: value
-                .compression_infos
-                .iter()
-                .map(|compression_infos| compression_infos.iter().map(|v| v.0).collect())
-                .collect(),
-            state_commit_mode: StateCommitMode::Auto,
-        }
-    }
-}
-
-impl From<ChunkWitness> for ChunkWitnessUpgradeCompact {
-    fn from(value: ChunkWitness) -> Self {
-        ChunkWitnessUpgradeCompact {
-            version: value.version,
-            blocks: value.blocks,
-            prev_msg_queue_hash: value.prev_msg_queue_hash,
-            fork_name: value.fork_name,
-            compression_ratios: value
-                .compression_infos
-                .iter()
-                .map(|compression_infos| compression_infos.iter().map(|v| v.0).collect())
-                .collect(),
-            validium: value.validium,
-        }
     }
 }

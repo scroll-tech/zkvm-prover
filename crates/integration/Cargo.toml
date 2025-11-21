@@ -16,7 +16,6 @@ scroll-zkvm-types.workspace = true
 scroll-zkvm-prover.workspace = true
 scroll-zkvm-verifier.workspace = true
 
-rkyv.workspace = true
 sbv-primitives = { workspace = true }
 sbv-utils = { workspace = true }
 sbv-core = { workspace = true, features = ["scroll"] }
