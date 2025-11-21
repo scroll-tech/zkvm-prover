@@ -3,7 +3,7 @@ name = "scroll-zkvm-batch-circuit"
 edition.workspace = true
 readme.workspace = true
 repository.workspace = true
-version = "0.6.0"
+version = "0.7.0"
 
 [dependencies]
 scroll-zkvm-types-circuit.workspace = true
