@@ -39,9 +39,6 @@ static TX: &str = r#"{
 fn main() {
     CenoCrypto::install();
 
-    let tx: TxEnvelope = serde_json::from_str(TX).unwrap();
-    tx.recover_signer().ok();
-
 
     // test ceno precompile call
     // let (sig, recid, tx_hash, signer) = (
@@ -63,12 +60,13 @@ fn main() {
     // let _result = alloy_consensus::crypto::secp256k1::recover_signer(&signature, signature_hash);
 
     // secp256k1_ecrecover
-    // let witness_bytes: &Archived<Vec<u8>> = ceno_rt::read();
-    //
-    // let config = bincode::config::standard();
-    // let (witness, _): (ChunkWitness, _) = bincode::serde::decode_from_slice(witness_bytes, config)
-    //     .expect("ChunkCircuit: deserialisation of witness bytes failed");
-    //
+    let witness_bytes: &Archived<Vec<u8>> = ceno_rt::read();
+
+    let config = bincode::config::standard();
+    let (witness, _): (ChunkWitness, _) = bincode::serde::decode_from_slice(witness_bytes, config)
+        .expect("ChunkCircuit: deserialisation of witness bytes failed");
+    witness.blocks[0].transactions[0].recover_signer().ok();
+
     // // let _fork_name = witness.fork_name;
     // let _chunk_info = execute(witness).expect("execution failed");
 
