@@ -19,29 +19,7 @@ ceno_crypto!(
 fn main() {
     CenoCrypto::install();
 
-    // let TX: &str = r#"{
-    //   "signature": {
-    //     "r": "0xc6b2255c8e2aff3269d38611946d6fef4d51f3c8d325b343c117ca582cef219a",
-    //     "s": "0x7a11a261cd796ef059f9c1922882f2f00985d9e255485725e847c004686f6d7f",
-    //     "yParity": "0x0",
-    //     "v": "0x0"
-    //   },
-    //   "transaction": {
-    //     "Eip1559": {
-    //       "chain_id": 1,
-    //       "nonce": 0,
-    //       "gas_limit": 21000,
-    //       "max_fee_per_gas": 2153982416,
-    //       "max_priority_fee_per_gas": 2000000000,
-    //       "to": "0x7772fe062c2b6ac0c0f83ca4948177be4889b1b3",
-    //       "value": "0x5eec17ccacc3d80",
-    //       "access_list": [],
-    //       "input": "0x"
-    //     }
-    //   }
-    // }"#;
-
-   // let tx: Signed<TxEip1559> = serde_json::from_str(TX).unwrap();
+    // let tx: Signed<TxEip1559> = serde_json::from_str(TX).unwrap();
     // tx.recover_signer().ok();
     // test ceno precompile call
     // let (sig, recid, tx_hash, signer) = (
@@ -61,14 +39,16 @@ fn main() {
     // let signature = Signature::from_raw(&hex::decode("0xb44fa252d86bd16e029b5d5241bf382829db0339bb0f571d2444dc18b342e8cb324a5412cc85018661cdc8749fddd721b8db803fbad4a163ec9a152d1cad41851c").unwrap()).unwrap();
     // let _result = alloy_consensus::crypto::secp256k1::recover_signer(&signature, signature_hash);
 
+    // secp256k1_ecrecover
     let witness_bytes: &Archived<Vec<u8>> = ceno_rt::read();
 
     let config = bincode::config::standard();
     let (witness, _): (ChunkWitness, _) = bincode::serde::decode_from_slice(witness_bytes, config)
         .expect("ChunkCircuit: deserialisation of witness bytes failed");
+    witness.blocks[0].transactions[0].recover_signer().ok();
 
-    // let _fork_name = witness.fork_name;
-    let _chunk_info = execute(witness).expect("execution failed");
+    // // let _fork_name = witness.fork_name;
+    // let _chunk_info = execute(witness).expect("execution failed");
 
     // let pi_hash = (chunk_info, fork_name).pi_hash();
     // ceno_rt::commit(&pi_hash);
