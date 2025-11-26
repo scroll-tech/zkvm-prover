@@ -12,7 +12,7 @@ use jiff::civil::{DateTime, DateTimeDifference};
 use jiff::tz::TimeZone;
 use jiff::{Timestamp, Unit, Zoned};
 use openvm_sdk::commit::CommitBytes;
-use scroll_zkvm_types::axiom::get_config_id;
+use scroll_zkvm_types::axiom::{AxiomProgram, get_config_id};
 use scroll_zkvm_types::utils::serialize_vk;
 use std::collections::HashMap;
 use std::fs::File;
@@ -252,7 +252,7 @@ fn main() -> eyre::Result<()> {
             "{LOG_PREFIX} {OK} Uploaded project {styled_project} with Program ID: {program_id}"
         );
 
-        program_ids.insert(vk, program_id);
+        program_ids.insert(vk, AxiomProgram::new(config_id, program_id));
     }
 
     if !cli.no_write_ids {
