@@ -116,6 +116,15 @@ fn verify_batch_hash_invariant() -> eyre::Result<()> {
                 20239176..=20239192,
             ],
         ),
+        ForkName::GalileoV2 => (
+            Version::galileo_v2(),
+            // TODO(rohit): update after adding testdata.
+            vec![
+                20239156..=20239162,
+                20239163..=20239175,
+                20239176..=20239192,
+            ],
+        ),
     };
     let outcome_2 = create_canonical_tasks(version, block_range.into_iter())?;
 

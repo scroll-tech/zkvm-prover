@@ -298,7 +298,7 @@ pub fn build_batch_witnesses(
                 blob_data_proof: point_evaluations.map(|u| B256::new(u.to_be_bytes())),
             })
         }
-        ForkName::EuclidV2 | ForkName::Feynman | ForkName::Galileo => {
+        ForkName::EuclidV2 | ForkName::Feynman | ForkName::Galileo | ForkName::GalileoV2 => {
             use scroll_zkvm_types::batch::BatchHeaderV7;
             ReferenceHeader::V7_V8_V9(BatchHeaderV7 {
                 version: last_header.version,
@@ -428,6 +428,11 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
             ..Default::default()
         },
         ForkName::Galileo => ChunkTaskGenerator {
+            block_range: (20239156..=20239192).collect(),
+            ..Default::default()
+        },
+        // TODO(rohit): update after adding testdata.
+        ForkName::GalileoV2 => ChunkTaskGenerator {
             block_range: (20239156..=20239192).collect(),
             ..Default::default()
         },

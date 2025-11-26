@@ -34,6 +34,7 @@ pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
             ForkName::EuclidV2 => Hardfork::EuclidV2,
             ForkName::Feynman => Hardfork::Feynman,
             ForkName::Galileo => Hardfork::Galileo,
+            ForkName::GalileoV2 => Hardfork::GalileoV2,
         },
     );
 

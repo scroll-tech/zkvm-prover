@@ -70,11 +70,11 @@ openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v
 # more openvm related libs
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.1" }
 
-sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", tag = "scroll-v91" }
-sbv-helpers = { git = "https://github.com/scroll-tech/stateless-block-verifier", tag = "scroll-v91", features = ["dev"] }
-sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", tag = "scroll-v91" }
-sbv-utils = { git = "https://github.com/scroll-tech/stateless-block-verifier", tag = "scroll-v91" }
-sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", tag = "scroll-v91" }
+sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "feat/galileo-v2" }
+sbv-helpers = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "feat/galileo-v2", features = ["dev"] }
+sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "feat/galileo-v2" }
+sbv-utils = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "feat/galileo-v2" }
+sbv-trie = { git = "https://github.com/scroll-tech/stateless-block-verifier", branch = "feat/galileo-v2" }
 
 alloy-consensus = "1.0"
 alloy-provider = "1.0"

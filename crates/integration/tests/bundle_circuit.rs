@@ -160,6 +160,8 @@ fn e2e_inner(
         ForkName::EuclidV2 => "2028510c403837c6ed77660fd92814ba61d7b746e7268cc8dfc14d163d45e6bd",
         ForkName::Feynman => "80523a61b2b94b2922638ec90edd084b1022798e1e5539c3a079d2b0736e4f32",
         ForkName::Galileo => "86290e8c329dd2ec430df4a8b2ae8396b3996b3e814afff24b7cedeb26387087",
+        // TODO(rohit): update after adding testdata.
+        ForkName::GalileoV2 => "86290e8c329dd2ec430df4a8b2ae8396b3996b3e814afff24b7cedeb26387087",
     };
     let expected_pi_hash = metadata.pi_hash_by_version(version);
     // sanity check for pi of bundle hash, update the expected hash if block witness changed
