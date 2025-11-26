@@ -252,7 +252,7 @@ fn main() -> eyre::Result<()> {
             "{LOG_PREFIX} {OK} Uploaded project {styled_project} with Program ID: {program_id}"
         );
 
-        program_ids.insert(vk, AxiomProgram::new(config_id, program_id));
+        program_ids.insert(vk, AxiomProgram::new(program_id, config_id));
     }
 
     if !cli.no_write_ids {
