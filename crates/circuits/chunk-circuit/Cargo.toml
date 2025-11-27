@@ -3,7 +3,7 @@ name = "scroll-zkvm-chunk-circuit"
 edition.workspace = true
 readme.workspace = true
 repository.workspace = true
-version = "0.7.0"
+version = "0.7.1"
 
 [dependencies]
 bincode = { workspace = true }

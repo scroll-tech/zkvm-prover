@@ -23,7 +23,7 @@ edition = "2021"
 homepage = "https://github.com/scroll-tech/zkvm-prover"
 readme = "README.md"
 repository = "https://github.com/scroll-tech/zkvm-prover"
-version = "0.7.0"
+version = "0.7.1"
 
 [workspace.dependencies]
 # openvm guest libs
