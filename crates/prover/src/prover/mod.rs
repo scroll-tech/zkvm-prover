@@ -173,8 +173,10 @@ impl Prover {
         stdin: &StdIn,
     ) -> Result<crate::utils::vm::ExecutionResult, Error> {
         let sdk = self.get_sdk()?;
+        let config = sdk.app_config();
         let t = std::time::Instant::now();
-        let exec_result = crate::utils::vm::execute_guest(sdk, self.app_exe.clone(), stdin)?;
+        let exec_result =
+            crate::utils::vm::execute_guest(config.app_vm_config.clone(), &self.app_exe, stdin)?;
         let execution_time_mills = t.elapsed().as_millis() as u64;
         let execution_time_s = execution_time_mills as f32 / 1000.0f32;
         let exec_speed = (exec_result.total_cycle as f32 / 1_000_000.0f32) / execution_time_s; // MHz

@@ -102,6 +102,10 @@ impl BundleInfo {
         self.pi_euclidv2()
     }
 
+    pub fn pi_galileo_v2(&self) -> Vec<u8> {
+        self.pi_euclidv2()
+    }
+
     pub fn pi_hash_versioned(&self, version: Version, pi: &[u8]) -> B256 {
         keccak256(
             std::iter::empty()
@@ -136,6 +140,9 @@ impl MultiVersionPublicInputs for BundleInfo {
             }
             (Domain::Scroll, STFVersion::V9) => {
                 self.pi_hash_versioned(version, self.pi_galileo().as_slice())
+            }
+            (Domain::Scroll, STFVersion::V10) => {
+                self.pi_hash_versioned(version, self.pi_galileo_v2().as_slice())
             }
             (Domain::Validium, STFVersion::V1) => {
                 self.pi_hash_versioned(version, self.pi_validium_v1().as_slice())

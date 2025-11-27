@@ -1,7 +1,7 @@
 use crate::axiom::AxiomProver;
 use cargo_metadata::MetadataCommand;
 use once_cell::sync::OnceCell;
-use openvm_sdk::{Sdk, StdIn};
+use openvm_sdk::StdIn;
 use scroll_zkvm_prover::{
     Prover,
     setup::{read_app_config, read_app_exe},
@@ -49,7 +49,7 @@ pub fn testing_hardfork() -> ForkName {
 
 /// Test settings (version).
 pub fn testing_version() -> Version {
-    Version::galileo()
+    Version::galileo_v2()
 }
 
 pub fn testing_version_validium() -> Version {
@@ -367,8 +367,8 @@ pub fn tester_execute<T: ProverTester>(
             .map(|p| p.as_stark_proof().expect("must be stark proof")),
     )?;
 
-    let sdk = Sdk::new(app_config)?;
-    let ret = scroll_zkvm_prover::utils::vm::execute_guest(&sdk, app_exe, &stdin)?;
+    let ret =
+        scroll_zkvm_prover::utils::vm::execute_guest(app_config.app_vm_config, &app_exe, &stdin)?;
     Ok(ret)
 }
 
