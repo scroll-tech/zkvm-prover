@@ -120,9 +120,9 @@ fn verify_batch_hash_invariant() -> eyre::Result<()> {
             Version::galileo_v2(),
             // TODO(rohit): update after adding testdata.
             vec![
-                20239156..=20239162,
-                20239163..=20239175,
-                20239176..=20239192,
+                20239240..=20239241,
+                20239242..=20239243,
+                20239244..=20239245,
             ],
         ),
     };

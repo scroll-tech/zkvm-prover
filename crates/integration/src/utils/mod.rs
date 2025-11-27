@@ -431,9 +431,8 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
             block_range: (20239156..=20239192).collect(),
             ..Default::default()
         },
-        // TODO(rohit): update after adding testdata.
         ForkName::GalileoV2 => ChunkTaskGenerator {
-            block_range: (20239156..=20239192).collect(),
+            block_range: (20239240..=20239245).collect(),
             ..Default::default()
         },
     }
