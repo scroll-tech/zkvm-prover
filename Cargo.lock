@@ -6738,7 +6738,7 @@ dependencies = [
 [[package]]
 name = "reth-chainspec"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-chains",
  "alloy-consensus",
@@ -6758,7 +6758,7 @@ dependencies = [
 [[package]]
 name = "reth-codecs"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.1.1",
@@ -6776,7 +6776,7 @@ dependencies = [
 [[package]]
 name = "reth-codecs-derive"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6786,7 +6786,7 @@ dependencies = [
 [[package]]
 name = "reth-consensus"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
@@ -6799,7 +6799,7 @@ dependencies = [
 [[package]]
 name = "reth-consensus-common"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.1.1",
@@ -6811,7 +6811,7 @@ dependencies = [
 [[package]]
 name = "reth-db-models"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-eips 1.1.1",
  "alloy-primitives",
@@ -6821,7 +6821,7 @@ dependencies = [
 [[package]]
 name = "reth-errors"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "reth-consensus",
  "reth-execution-errors",
@@ -6832,7 +6832,7 @@ dependencies = [
 [[package]]
 name = "reth-ethereum-consensus"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.1.1",
@@ -6848,7 +6848,7 @@ dependencies = [
 [[package]]
 name = "reth-ethereum-forks"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-eip2124",
  "alloy-hardforks",
@@ -6860,7 +6860,7 @@ dependencies = [
 [[package]]
 name = "reth-ethereum-primitives"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.1.1",
@@ -6877,7 +6877,7 @@ dependencies = [
 [[package]]
 name = "reth-evm"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.1.1",
@@ -6899,7 +6899,7 @@ dependencies = [
 [[package]]
 name = "reth-evm-ethereum"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.1.1",
@@ -6919,7 +6919,7 @@ dependencies = [
 [[package]]
 name = "reth-execution-errors"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-evm",
  "alloy-primitives",
@@ -6932,7 +6932,7 @@ dependencies = [
 [[package]]
 name = "reth-execution-types"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.1.1",
@@ -6948,7 +6948,7 @@ dependencies = [
 [[package]]
 name = "reth-network-peers"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -6960,7 +6960,7 @@ dependencies = [
 [[package]]
 name = "reth-primitives"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-consensus",
  "once_cell",
@@ -6973,7 +6973,7 @@ dependencies = [
 [[package]]
 name = "reth-primitives-traits"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.1.1",
@@ -7001,7 +7001,7 @@ dependencies = [
 [[package]]
 name = "reth-prune-types"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-primitives",
  "derive_more 2.0.1",
@@ -7011,7 +7011,7 @@ dependencies = [
 [[package]]
 name = "reth-revm"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-primitives",
  "reth-primitives-traits",
@@ -7023,7 +7023,7 @@ dependencies = [
 [[package]]
 name = "reth-scroll-chainspec"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-chains",
  "alloy-consensus",
@@ -7048,7 +7048,7 @@ dependencies = [
 [[package]]
 name = "reth-scroll-evm"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.1.1",
@@ -7078,7 +7078,7 @@ dependencies = [
 [[package]]
 name = "reth-scroll-forks"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-chains",
  "alloy-primitives",
@@ -7092,7 +7092,7 @@ dependencies = [
 [[package]]
 name = "reth-scroll-primitives"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.1.1",
@@ -7109,7 +7109,7 @@ dependencies = [
 [[package]]
 name = "reth-stages-types"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-primitives",
  "reth-trie-common",
@@ -7118,7 +7118,7 @@ dependencies = [
 [[package]]
 name = "reth-stateless"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
@@ -7144,7 +7144,7 @@ dependencies = [
 [[package]]
 name = "reth-static-file-types"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-primitives",
  "derive_more 2.0.1",
@@ -7155,7 +7155,7 @@ dependencies = [
 [[package]]
 name = "reth-storage-api"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.1.1",
@@ -7177,7 +7177,7 @@ dependencies = [
 [[package]]
 name = "reth-storage-errors"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-eips 1.1.1",
  "alloy-primitives",
@@ -7193,7 +7193,7 @@ dependencies = [
 [[package]]
 name = "reth-trie"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.1.1",
@@ -7215,7 +7215,7 @@ dependencies = [
 [[package]]
 name = "reth-trie-common"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
@@ -7231,7 +7231,7 @@ dependencies = [
 [[package]]
 name = "reth-trie-sparse"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -7247,7 +7247,7 @@ dependencies = [
 [[package]]
 name = "reth-zstd-compressors"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "zstd",
 ]
@@ -8250,7 +8250,7 @@ dependencies = [
 [[package]]
 name = "sbv-core"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fgalileo-v2#4ea1c6d0b78be03986d46f0fa95aaa6d2d8e050d"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?tag=scroll-v91.2#3a32848c9438432125751eae8837757f6b87562e"
 dependencies = [
  "auto_impl",
  "itertools 0.14.0",
@@ -8267,7 +8267,7 @@ dependencies = [
 [[package]]
 name = "sbv-helpers"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fgalileo-v2#4ea1c6d0b78be03986d46f0fa95aaa6d2d8e050d"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?tag=scroll-v91.2#3a32848c9438432125751eae8837757f6b87562e"
 dependencies = [
  "tracing",
 ]
@@ -8275,7 +8275,7 @@ dependencies = [
 [[package]]
 name = "sbv-primitives"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fgalileo-v2#4ea1c6d0b78be03986d46f0fa95aaa6d2d8e050d"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?tag=scroll-v91.2#3a32848c9438432125751eae8837757f6b87562e"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.1.1",
@@ -8310,7 +8310,7 @@ dependencies = [
 [[package]]
 name = "sbv-trie"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fgalileo-v2#4ea1c6d0b78be03986d46f0fa95aaa6d2d8e050d"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?tag=scroll-v91.2#3a32848c9438432125751eae8837757f6b87562e"
 dependencies = [
  "alloy-rlp",
  "alloy-trie 0.9.1",
@@ -8323,7 +8323,7 @@ dependencies = [
 [[package]]
 name = "sbv-utils"
 version = "2.0.0"
-source = "git+https://github.com/scroll-tech/stateless-block-verifier?branch=feat%2Fgalileo-v2#4ea1c6d0b78be03986d46f0fa95aaa6d2d8e050d"
+source = "git+https://github.com/scroll-tech/stateless-block-verifier?tag=scroll-v91.2#3a32848c9438432125751eae8837757f6b87562e"
 dependencies = [
  "alloy-provider",
  "alloy-transport",
@@ -8377,7 +8377,7 @@ checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 [[package]]
 name = "scroll-alloy-consensus"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.1.1",
@@ -8393,7 +8393,7 @@ dependencies = [
 [[package]]
 name = "scroll-alloy-evm"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.1.1",
@@ -8411,7 +8411,7 @@ dependencies = [
 [[package]]
 name = "scroll-alloy-hardforks"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-hardforks",
  "auto_impl",
@@ -8421,7 +8421,7 @@ dependencies = [
 [[package]]
 name = "scroll-alloy-network"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-consensus",
  "alloy-network",
@@ -8436,7 +8436,7 @@ dependencies = [
 [[package]]
 name = "scroll-alloy-rpc-types"
 version = "1.8.2"
-source = "git+https://github.com/scroll-tech/reth?branch=feat-galileo-v2#871daf2943df348ca51e9d6cbf73e68a4bbcbbfd"
+source = "git+https://github.com/scroll-tech/reth?tag=scroll-v91.2#11d0a3f73186dee7a1ba0d51ea5416dc8fef3e46"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 1.1.1",
