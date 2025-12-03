@@ -7,6 +7,7 @@ use scroll_zkvm_prover::{
     setup::{read_app_config, read_app_exe},
     utils::{read_json, vm::ExecutionResult, write_json},
 };
+use scroll_zkvm_types::axiom::AxiomProgram;
 use scroll_zkvm_types::{
     ProvingTask as UniversalProvingTask,
     proof::{EvmProof, ProofEnum, StarkProof},
@@ -23,7 +24,6 @@ use std::{
 };
 use tracing::instrument;
 use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::SubscriberInitExt};
-use scroll_zkvm_types::axiom::AxiomProgram;
 
 pub mod testers;
 
@@ -227,10 +227,7 @@ pub trait ProverTester {
         let program = AXIOM_PROGRAM_IDS
             .get(&vk)
             .ok_or_else(|| eyre::eyre!("missing axiom program id for {}: {}", Self::NAME, vk))?;
-        let prover = AxiomProver::from_env(
-            Self::NAME.to_string(),
-            program
-        );
+        let prover = AxiomProver::from_env(Self::NAME.to_string(), program);
         Ok(prover)
     }
 
