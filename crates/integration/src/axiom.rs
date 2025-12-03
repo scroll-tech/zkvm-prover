@@ -12,6 +12,7 @@ use scroll_zkvm_types::proof::ProofEnum;
 use scroll_zkvm_types::types_agg::ProgramCommitment;
 use scroll_zkvm_types::utils::serialize_vk;
 use std::env;
+use scroll_zkvm_types::axiom::AxiomProgram;
 
 pub struct AxiomProver {
     name: String,
@@ -23,18 +24,18 @@ struct TracingProgressCallback;
 
 impl AxiomProver {
     /// Create a new client
-    pub fn from_env(name: String, config_id: String, program_id: String) -> Self {
+    pub fn from_env(name: String, program: &AxiomProgram) -> Self {
         let api_key = env::var("AXIOM_API_KEY").expect("AXIOM_API_KEY env var is required");
         let config = AxiomConfig {
             api_key: Some(api_key),
-            config_id: Some(config_id),
+            config_id: Some(program.config_id().to_string()),
             ..Default::default()
         };
         let sdk = AxiomSdk::new(config).with_callback(TracingProgressCallback);
         Self {
             name,
             sdk,
-            program_id,
+            program_id: program.program_id().to_string(),
         }
     }
 
@@ -72,7 +73,7 @@ impl TaskProver for AxiomProver {
             program_id: Some(self.program_id.clone()),
             input: Some(Input::Value(input)),
             proof_type: Some(proof_type),
-            num_gpus: None,
+            num_gpus: Some(16),
             priority: None,
         })?;
 
