@@ -7,6 +7,7 @@ use scroll_zkvm_prover::{
     setup::{read_app_config, read_app_exe},
     utils::{read_json, vm::ExecutionResult, write_json},
 };
+use scroll_zkvm_types::axiom::AxiomProgram;
 use scroll_zkvm_types::{
     ProvingTask as UniversalProvingTask,
     proof::{EvmProof, ProofEnum, StarkProof},
@@ -99,9 +100,9 @@ pub static PROGRAM_COMMITMENTS: LazyLock<HashMap<String, ProgramCommitment>> =
         commitments
     });
 
-pub static AXIOM_PROGRAM_IDS: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
+pub static AXIOM_PROGRAM_IDS: LazyLock<HashMap<String, AxiomProgram>> = LazyLock::new(|| {
     let axiom_program_ids = ASSET_BASE_DIR.join("axiom_program_ids.json");
-    let mut program_ids: HashMap<String, String> =
+    let mut program_ids: HashMap<String, AxiomProgram> =
         read_json(&axiom_program_ids).expect("failed to read axiom program ids");
     program_ids.shrink_to_fit();
     eprintln!("AXIOM_PROGRAM_IDS = {program_ids:#?}");
@@ -223,15 +224,10 @@ pub trait ProverTester {
         let mut prover = Self::load_prover(false)?;
         let vk = prover.get_app_commitment();
         let vk = hex::encode(serialize_vk::serialize(&vk));
-        let program_id = AXIOM_PROGRAM_IDS
+        let program = AXIOM_PROGRAM_IDS
             .get(&vk)
-            .ok_or_else(|| eyre::eyre!("missing axiom program id for {}: {}", Self::NAME, vk))?
-            .to_string();
-        let prover = AxiomProver::from_env(
-            Self::NAME.to_string(),
-            scroll_zkvm_types::axiom::get_config_id(Self::NAME).to_string(),
-            program_id,
-        );
+            .ok_or_else(|| eyre::eyre!("missing axiom program id for {}: {}", Self::NAME, vk))?;
+        let prover = AxiomProver::from_env(Self::NAME.to_string(), program);
         Ok(prover)
     }
 
