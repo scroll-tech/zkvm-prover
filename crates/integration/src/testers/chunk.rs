@@ -220,7 +220,7 @@ pub fn preset_chunk() -> ChunkTaskGenerator {
         ForkName::EuclidV2 => (Version::euclid_v2(), 1u64..=4u64),
         ForkName::Feynman => (Version::feynman(), 16525000u64..=16525003u64),
         ForkName::Galileo => (Version::galileo(), 20239156..=20239235),
-        ForkName::GalileoV2 => (Version::galileo_v2(), 20239240..=20239245),
+        ForkName::GalileoV2 => (Version::galileo_v2(), 20250084..=20250084),
     };
 
     ChunkTaskGenerator {
