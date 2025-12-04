@@ -1,18 +1,6 @@
 use alloy_sol_types::{sol, SolCall};
 
 sol! {
-    /// L2ScrollMessenger.relayMessage function
-    /// This is what gets stored in L1MessageQueue and executed on L2
-    /// Signature: relayMessage(address,address,uint256,uint256,bytes)
-    /// Method selector: 0x8ef1332e
-    function relayMessage(
-        address from,
-        address to,
-        uint256 value,
-        uint256 nonce,
-        bytes message
-    ) external;
-
     /// Moat.handleL1Message function
     /// This is the final L2 execution target
     /// Signature: handleL1Message(address,bytes32)
@@ -20,24 +8,14 @@ sol! {
         address _target,
         bytes32 _depositID
     ) external;
-
-    /// L1ScrollMessenger.sendMessage function
-    /// This is the L1 interface (for reference/validation only)
-    /// NOT used in queue construction - only for validation
-    function sendMessage(
-        address target,
-        uint256 value,
-        bytes calldata message,
-        uint256 gasLimit,
-        address refundAddress
-    ) external payable;
 }
 
 #[cfg(test)]
 mod tests {
     use alloy_primitives::{Address, B256, U256};
     use alloy_sol_types::SolCall;
-    use crate::dogeos::types::{handleL1MessageCall, relayMessageCall};
+    use crate::dogeos::types::{handleL1MessageCall};
+    use crate::scroll::relayMessageCall;
 
     fn create_queue_transaction_calldata(
         moat_contract_address: Address,
