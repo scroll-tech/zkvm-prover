@@ -14,6 +14,9 @@ members = [
   "crates/integration",
   "crates/build-guest",
   "crates/tools/upload-axiom",
+  "crates/dogeos-circuits/chunk-circuit",
+  "crates/dogeos-circuits/batch-circuit",
+  "crates/dogeos-circuits/bundle-circuit",
 ]
 resolver = "2"
 

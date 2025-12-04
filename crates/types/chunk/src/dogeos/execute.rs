@@ -1,9 +1,9 @@
 use sbv_primitives::types::consensus::TxL1Message;
-use types_base::public_inputs::dogeos::DogeOsChunkInfo;
+use types_base::public_inputs::dogeos::chunk::DogeOsChunkInfo;
 use super::witness::DogeOsChunkWitness;
 
 pub fn execute(witness: DogeOsChunkWitness) -> Result<DogeOsChunkInfo, String>  {
-    let l1_messages = witness
+    let _l1_messages = witness
         .inner.blocks.iter()
         .flat_map(|block| block.transactions.iter())
         .filter_map(|tx| tx.as_l1_message())

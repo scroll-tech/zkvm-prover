@@ -5,7 +5,7 @@ pub use crypto::Crypto;
 pub mod scroll;
 
 #[cfg(feature = "scroll")]
-mod dogeos;
+pub mod dogeos;
 
 #[cfg(not(feature = "scroll"))]
 pub mod ethereum;

@@ -2346,6 +2346,55 @@ dependencies = [
 ]
 
 [[package]]
+name = "dogeos-zkvm-batch-circuit"
+version = "0.7.1"
+dependencies = [
+ "alloy-primitives",
+ "bincode 2.0.1",
+ "openvm",
+ "openvm-algebra-guest",
+ "openvm-ecc-guest",
+ "openvm-keccak256-guest",
+ "openvm-pairing",
+ "openvm-sha256-guest",
+ "scroll-zkvm-types-batch",
+ "scroll-zkvm-types-circuit",
+]
+
+[[package]]
+name = "dogeos-zkvm-bundle-circuit"
+version = "0.7.1"
+dependencies = [
+ "alloy-primitives",
+ "bincode 2.0.1",
+ "openvm",
+ "openvm-keccak256-guest",
+ "scroll-zkvm-types-bundle",
+ "scroll-zkvm-types-circuit",
+]
+
+[[package]]
+name = "dogeos-zkvm-chunk-circuit"
+version = "0.7.1"
+dependencies = [
+ "bincode 2.0.1",
+ "k256 0.13.4 (git+https://github.com/openvm-org/openvm.git?tag=v1.4.1)",
+ "openvm",
+ "openvm-algebra-complex-macros",
+ "openvm-algebra-guest",
+ "openvm-bigint-guest",
+ "openvm-ecc-guest",
+ "openvm-keccak256-guest",
+ "openvm-pairing",
+ "openvm-pairing-guest",
+ "openvm-rv32im-guest",
+ "openvm-sha2",
+ "p256 0.13.2 (git+https://github.com/openvm-org/openvm.git?tag=v1.4.1)",
+ "scroll-zkvm-types-chunk",
+ "scroll-zkvm-types-circuit",
+]
+
+[[package]]
 name = "dotenvy"
 version = "0.15.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
