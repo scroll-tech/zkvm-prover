@@ -1,7 +1,7 @@
 use types_base::{
     aggregation::{AggregationInput, ProofCarryingWitness},
     fork_name::ForkName,
-    public_inputs::{
+    public_inputs::scroll::{
         batch::{BatchInfo, LegacyBatchInfo},
         bundle::BundleInfo,
     },

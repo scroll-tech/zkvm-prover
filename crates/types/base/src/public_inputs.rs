@@ -1,8 +1,6 @@
 use alloy_primitives::B256;
 
-pub mod batch;
-pub mod bundle;
-pub mod chunk;
+pub mod scroll;
 
 pub use crate::{fork_name::ForkName, version::Version};
 

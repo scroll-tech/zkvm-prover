@@ -13,7 +13,7 @@ use sbv_primitives::{
 };
 use types_base::{
     fork_name::ForkName,
-    public_inputs::chunk::{BlockContextV2, ChunkInfo},
+    public_inputs::scroll::chunk::{BlockContextV2, ChunkInfo},
 };
 
 /// `compression_infos` can be `None` in host mode.
