@@ -2,7 +2,6 @@ use alloy_primitives::B256;
 
 use crate::{
     public_inputs::{ForkName, MultiVersionPublicInputs},
-    utils::keccak256,
     version::{Domain, STFVersion, Version},
 };
 
@@ -48,9 +47,9 @@ pub struct BatchInfo {
 }
 
 impl BatchInfo {
-    /// Public input hash for a batch (euclidv1 or da-codec@v6) is defined as
+    /// Public inputs encoded for a batch (euclidv1 or da-codec@v6) is defined as
     ///
-    /// keccak(
+    /// concat(
     ///     parent state root ||
     ///     parent batch hash ||
     ///     state root ||
@@ -58,23 +57,21 @@ impl BatchInfo {
     ///     chain id ||
     ///     withdraw root ||
     /// )
-    fn pi_hash_euclidv1(&self) -> B256 {
-        keccak256(
-            std::iter::empty()
-                .chain(self.parent_state_root.as_slice())
-                .chain(self.parent_batch_hash.as_slice())
-                .chain(self.state_root.as_slice())
-                .chain(self.batch_hash.as_slice())
-                .chain(self.chain_id.to_be_bytes().as_slice())
-                .chain(self.withdraw_root.as_slice())
-                .cloned()
-                .collect::<Vec<u8>>(),
-        )
+    fn pi_euclidv1(&self) -> Vec<u8> {
+        std::iter::empty()
+            .chain(self.parent_state_root.as_slice())
+            .chain(self.parent_batch_hash.as_slice())
+            .chain(self.state_root.as_slice())
+            .chain(self.batch_hash.as_slice())
+            .chain(self.chain_id.to_be_bytes().as_slice())
+            .chain(self.withdraw_root.as_slice())
+            .copied()
+            .collect()
     }
 
-    /// Public input hash for a batch (euclidv2 or da-codec@v7) is defined as
+    /// Public inputs encoded for a batch (euclidv2 or da-codec@v7) is defined as
     ///
-    /// keccak(
+    /// concat(
     ///     parent state root ||
     ///     parent batch hash ||
     ///     state root ||
@@ -84,32 +81,30 @@ impl BatchInfo {
     ///     prev msg queue hash ||
     ///     post msg queue hash
     /// )
-    fn pi_hash_euclidv2(&self) -> B256 {
-        keccak256(
-            std::iter::empty()
-                .chain(self.parent_state_root.as_slice())
-                .chain(self.parent_batch_hash.as_slice())
-                .chain(self.state_root.as_slice())
-                .chain(self.batch_hash.as_slice())
-                .chain(self.chain_id.to_be_bytes().as_slice())
-                .chain(self.withdraw_root.as_slice())
-                .chain(self.prev_msg_queue_hash.as_slice())
-                .chain(self.post_msg_queue_hash.as_slice())
-                .cloned()
-                .collect::<Vec<u8>>(),
-        )
+    fn pi_euclidv2(&self) -> Vec<u8> {
+        std::iter::empty()
+            .chain(self.parent_state_root.as_slice())
+            .chain(self.parent_batch_hash.as_slice())
+            .chain(self.state_root.as_slice())
+            .chain(self.batch_hash.as_slice())
+            .chain(self.chain_id.to_be_bytes().as_slice())
+            .chain(self.withdraw_root.as_slice())
+            .chain(self.prev_msg_queue_hash.as_slice())
+            .chain(self.post_msg_queue_hash.as_slice())
+            .copied()
+            .collect()
     }
 
-    /// Public input hash for a batch (feynman or da-codec@v8).
+    /// Public inputs encoded for a batch (feynman or da-codec@v8).
     ///
     /// Unchanged from euclid-v2.
-    fn pi_hash_feynman(&self) -> B256 {
-        self.pi_hash_euclidv2()
+    fn pi_feynman(&self) -> Vec<u8> {
+        self.pi_euclidv2()
     }
 
-    /// Public input hash for a batch (galileo or da-codec@v9) is defined as
+    /// Public inputs encoded for a batch (galileo or da-codec@v9) is defined as
     ///
-    /// keccak(
+    /// concat(
     ///     version ||
     ///     parent state root ||
     ///     parent batch hash ||
@@ -120,33 +115,31 @@ impl BatchInfo {
     ///     prev msg queue hash ||
     ///     post msg queue hash
     /// )
-    fn pi_hash_galileo(&self, version: Version) -> B256 {
-        keccak256(
-            std::iter::empty()
-                .chain(&[version.as_version_byte()])
-                .chain(self.parent_state_root.as_slice())
-                .chain(self.parent_batch_hash.as_slice())
-                .chain(self.state_root.as_slice())
-                .chain(self.batch_hash.as_slice())
-                .chain(self.chain_id.to_be_bytes().as_slice())
-                .chain(self.withdraw_root.as_slice())
-                .chain(self.prev_msg_queue_hash.as_slice())
-                .chain(self.post_msg_queue_hash.as_slice())
-                .cloned()
-                .collect::<Vec<u8>>(),
-        )
+    fn pi_galileo(&self, version: Version) -> Vec<u8> {
+        std::iter::empty()
+            .chain(&[version.as_version_byte()])
+            .chain(self.parent_state_root.as_slice())
+            .chain(self.parent_batch_hash.as_slice())
+            .chain(self.state_root.as_slice())
+            .chain(self.batch_hash.as_slice())
+            .chain(self.chain_id.to_be_bytes().as_slice())
+            .chain(self.withdraw_root.as_slice())
+            .chain(self.prev_msg_queue_hash.as_slice())
+            .chain(self.post_msg_queue_hash.as_slice())
+            .copied()
+            .collect()
     }
 
-    /// Public input hash for a batch (galileo or da-codec@v9) is defined as
+    /// Public inputs encoded for a batch (galileo or da-codec@v9) is defined as
     ///
     /// Same as galileo.
-    pub fn pi_hash_galileo_v2(&self, version: Version) -> B256 {
-        self.pi_hash_galileo(version)
+    pub fn pi_galileo_v2(&self, version: Version) -> Vec<u8> {
+        self.pi_galileo(version)
     }
 
-    /// Public input hash for a L3 validium @ v1.
+    /// Public inputs encoded for a L3 validium @ v1.
     ///
-    /// keccak(
+    /// concat(
     ///     version ||
     ///     parent state root ||
     ///     parent batch hash ||
@@ -158,36 +151,34 @@ impl BatchInfo {
     ///     post msg queue hash
     ///     encryption key
     /// )
-    fn pi_hash_validium(&self, version: Version) -> B256 {
-        keccak256(
-            std::iter::empty()
-                .chain(&[version.as_version_byte()])
-                .chain(self.parent_state_root.as_slice())
-                .chain(self.parent_batch_hash.as_slice())
-                .chain(self.state_root.as_slice())
-                .chain(self.batch_hash.as_slice())
-                .chain(self.chain_id.to_be_bytes().as_slice())
-                .chain(self.withdraw_root.as_slice())
-                .chain(self.prev_msg_queue_hash.as_slice())
-                .chain(self.post_msg_queue_hash.as_slice())
-                .chain(self.encryption_key.as_ref().expect("domain=Validium"))
-                .cloned()
-                .collect::<Vec<u8>>(),
-        )
+    fn pi_validium(&self, version: Version) -> Vec<u8> {
+        std::iter::empty()
+            .chain(&[version.as_version_byte()])
+            .chain(self.parent_state_root.as_slice())
+            .chain(self.parent_batch_hash.as_slice())
+            .chain(self.state_root.as_slice())
+            .chain(self.batch_hash.as_slice())
+            .chain(self.chain_id.to_be_bytes().as_slice())
+            .chain(self.withdraw_root.as_slice())
+            .chain(self.prev_msg_queue_hash.as_slice())
+            .chain(self.post_msg_queue_hash.as_slice())
+            .chain(self.encryption_key.as_ref().expect("domain=Validium"))
+            .copied()
+            .collect()
     }
 }
 
 pub type VersionedBatchInfo = (BatchInfo, Version);
 
 impl MultiVersionPublicInputs for BatchInfo {
-    fn pi_hash_by_version(&self, version: Version) -> B256 {
+    fn pi_by_version(&self, version: Version) -> Vec<u8> {
         match (version.domain, version.stf_version) {
-            (Domain::Scroll, STFVersion::V6) => self.pi_hash_euclidv1(),
-            (Domain::Scroll, STFVersion::V7) => self.pi_hash_euclidv2(),
-            (Domain::Scroll, STFVersion::V8) => self.pi_hash_feynman(),
-            (Domain::Scroll, STFVersion::V9) => self.pi_hash_galileo(version),
-            (Domain::Scroll, STFVersion::V10) => self.pi_hash_galileo_v2(version),
-            (Domain::Validium, STFVersion::V1) => self.pi_hash_validium(version),
+            (Domain::Scroll, STFVersion::V6) => self.pi_euclidv1(),
+            (Domain::Scroll, STFVersion::V7) => self.pi_euclidv2(),
+            (Domain::Scroll, STFVersion::V8) => self.pi_feynman(),
+            (Domain::Scroll, STFVersion::V9) => self.pi_galileo(version),
+            (Domain::Scroll, STFVersion::V10) => self.pi_galileo_v2(version),
+            (Domain::Validium, STFVersion::V1) => self.pi_validium(version),
             (domain, stf_version) => {
                 unreachable!("unsupported version=({domain:?}, {stf_version:?})")
             }

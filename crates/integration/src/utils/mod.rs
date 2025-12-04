@@ -3,15 +3,16 @@ use bytesize::ByteSize;
 use sbv_core::BlockWitness;
 use sbv_primitives::types::consensus::ScrollTransaction;
 use sbv_primitives::{B256, types::eips::Encodable2718};
-use scroll_zkvm_types::batch::{N_BLOB_BYTES, build_point_eval_witness};
 use scroll_zkvm_types::{
-    batch::{
-        BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchHeaderValidium, BatchHeaderValidiumV1,
-        BatchInfo, BatchWitness, ReferenceHeader,
-    },
-    bundle::{BundleInfo, BundleWitness},
-    chunk::{ChunkInfo, ChunkWitness},
     public_inputs::{ForkName, MultiVersionPublicInputs},
+    scroll::{
+        batch::{
+            BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchHeaderValidium, BatchHeaderValidiumV1,
+            BatchInfo, BatchWitness, N_BLOB_BYTES, ReferenceHeader, build_point_eval_witness,
+        },
+        bundle::{BundleInfo, BundleWitness},
+        chunk::{ChunkInfo, ChunkWitness},
+    },
     types_agg::AggregationInput,
     utils::{keccak256, point_eval, serialize_vk},
 };
@@ -299,7 +300,7 @@ pub fn build_batch_witnesses(
             })
         }
         ForkName::EuclidV2 | ForkName::Feynman | ForkName::Galileo | ForkName::GalileoV2 => {
-            use scroll_zkvm_types::batch::BatchHeaderV7;
+            use scroll_zkvm_types::scroll::batch::BatchHeaderV7;
             ReferenceHeader::V7_V8_V9(BatchHeaderV7 {
                 version: last_header.version,
                 batch_index: last_header.batch_index + 1,
@@ -412,7 +413,7 @@ pub fn build_batch_witnesses_validium(
 #[test]
 fn test_build_and_parse_batch_task() -> eyre::Result<()> {
     use crate::testers::chunk::ChunkTaskGenerator;
-    use scroll_zkvm_types::batch::{self, Envelope, Payload};
+    use scroll_zkvm_types::scroll::batch::{self, Envelope, Payload};
 
     let witness = match testing_hardfork() {
         ForkName::EuclidV2 => ChunkTaskGenerator {

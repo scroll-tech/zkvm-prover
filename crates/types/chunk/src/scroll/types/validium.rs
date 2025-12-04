@@ -1,42 +1,11 @@
 #![allow(non_snake_case)]
 
+use super::{finalizeDepositERC20Call, finalizeDepositERC20EncryptedCall, relayMessageCall};
 use alloy_primitives::{Address, Bytes};
-use alloy_sol_types::{SolCall, sol};
+use alloy_sol_types::SolCall;
 use sbv_primitives::types::consensus::TxL1Message;
 
 pub use ecies::SecretKey;
-
-sol! {
-    #[derive(Debug)]
-    function relayMessage(
-        address sender,
-        address target,
-        uint256 value,
-        uint256 messageNonce,
-        bytes message
-    );
-
-    #[derive(Debug)]
-    function finalizeDepositERC20(
-        address token,
-        address l2Token,
-        address from,
-        address to,
-        uint256 amount,
-        bytes l2Data
-    );
-
-    #[derive(Debug)]
-    function finalizeDepositERC20Encrypted(
-        address token,
-        address l2Token,
-        address from,
-        bytes to,
-        uint256 amount,
-        bytes l2Data
-    );
-
-}
 
 #[derive(Debug, thiserror::Error)]
 pub enum ValidiumError {

@@ -5,8 +5,10 @@ use scroll_zkvm_types_circuit::{
     io::read_witnesses,
     public_inputs::{
         Version,
-        batch::{BatchInfo, VersionedBatchInfo},
-        chunk::VersionedChunkInfo,
+        scroll::{
+            batch::{BatchInfo, VersionedBatchInfo},
+            chunk::VersionedChunkInfo,
+        },
     },
 };
 

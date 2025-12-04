@@ -1,4 +1,4 @@
-use crate::{ChunkWitness, scroll::types::ChunkExt};
+use super::{ChunkWitness, types::ChunkExt};
 use ecies::SecretKey;
 use sbv_core::verifier::{self, VerifyResult};
 use sbv_helpers::manually_drop_on_zkvm;
@@ -13,7 +13,7 @@ use sbv_primitives::{
 };
 use types_base::{
     fork_name::ForkName,
-    public_inputs::chunk::{BlockContextV2, ChunkInfo},
+    public_inputs::scroll::chunk::{BlockContextV2, ChunkInfo},
 };
 
 /// `compression_infos` can be `None` in host mode.

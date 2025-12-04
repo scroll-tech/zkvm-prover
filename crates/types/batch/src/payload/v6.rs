@@ -1,6 +1,6 @@
 use alloy_primitives::B256;
 use itertools::Itertools;
-use types_base::{public_inputs::chunk::ChunkInfo, utils::keccak256};
+use types_base::{public_inputs::scroll::chunk::ChunkInfo, utils::keccak256};
 
 use crate::BatchHeaderV6;
 

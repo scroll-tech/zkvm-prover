@@ -1,4 +1,4 @@
-use crate::ChunkWitness;
+use super::ChunkWitness;
 use sbv_core::verifier;
 use sbv_primitives::chainspec::{Chain, get_chain_spec};
 

@@ -1,6 +1,6 @@
 use alloy_primitives::B256;
 use types_base::{
-    public_inputs::chunk::{BlockContextV2, ChunkInfo, SIZE_BLOCK_CTX},
+    public_inputs::scroll::chunk::{BlockContextV2, ChunkInfo, SIZE_BLOCK_CTX},
     utils::keccak256,
 };
 

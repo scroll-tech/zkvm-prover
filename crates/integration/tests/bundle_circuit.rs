@@ -11,9 +11,10 @@ use scroll_zkvm_integration::{
     utils::metadata_from_bundle_witnesses,
 };
 use scroll_zkvm_prover::{Prover, ProverConfig};
+use scroll_zkvm_types::version::Version;
 use scroll_zkvm_types::{
     proof::OpenVmEvmProof,
-    public_inputs::{ForkName, MultiVersionPublicInputs},
+    public_inputs::{ForkName, MultiVersionPublicInputs, PublicInputs},
 };
 use std::str::FromStr;
 
@@ -84,7 +85,7 @@ fn setup_prove_verify_local_task() -> eyre::Result<()> {
 
 #[test]
 fn verify_bundle_info_pi() {
-    use scroll_zkvm_types::bundle::BundleInfo;
+    use scroll_zkvm_types::scroll::bundle::BundleInfo;
 
     let info = BundleInfo {
         chain_id: 534352,
@@ -114,7 +115,7 @@ fn verify_bundle_info_pi() {
     };
 
     assert_eq!(
-        info.pi_hash_euclidv1(),
+        (info, Version::euclid_v1()).pi_hash(),
         B256::from_str("0x5e49fc59ce02b42a2f693c738c582b36bd08e9cfe3acb8cee299216743869bd4")
             .unwrap()
     );

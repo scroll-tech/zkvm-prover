@@ -1,5 +1,5 @@
 use alloy_primitives::B256;
-use types_base::public_inputs::chunk::ChunkInfo;
+use types_base::public_inputs::scroll::chunk::ChunkInfo;
 
 use crate::BatchHeader;
 

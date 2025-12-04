@@ -14,8 +14,8 @@ use scroll_zkvm_integration::{
     utils::metadata_from_chunk_witnesses,
 };
 use scroll_zkvm_prover::utils::read_json;
-use scroll_zkvm_types::chunk::{ChunkWitness, SecretKey};
 use scroll_zkvm_types::public_inputs::Version;
+use scroll_zkvm_types::scroll::chunk::{ChunkWitness, SecretKey};
 use std::env;
 use std::path::Path;
 
