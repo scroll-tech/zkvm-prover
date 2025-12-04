@@ -1,0 +1,25 @@
+[package]
+name = "dogeos-zkvm-batch-circuit"
+edition.workspace = true
+readme.workspace = true
+repository.workspace = true
+version = "0.7.1"
+
+[dependencies]
+scroll-zkvm-types-circuit.workspace = true
+scroll-zkvm-types-batch.workspace = true
+
+openvm = { workspace = true, features = ["std"] }
+openvm-algebra-guest.workspace = true
+openvm-pairing = { workspace = true, features = ["bls12_381"] }
+openvm-keccak256-guest.workspace = true
+openvm-sha256-guest.workspace = true
+openvm-ecc-guest = { workspace = true, features = ["halo2curves"] }
+
+alloy-primitives = { workspace = true, features = ["native-keccak"] }
+bincode.workspace = true
+
+[features]
+default = []
+
+[dev-dependencies]
