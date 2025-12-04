@@ -99,7 +99,7 @@ impl BundleInfo {
         self.pi_euclidv2()
     }
 
-    pub fn pi_versioned(&self, version: Version, pi: Vec<u8>) -> Vec<u8> {
+    pub fn pi_versioned(&self, version: Version, pi: impl IntoIterator<Item = u8>) -> Vec<u8> {
         std::iter::empty()
             .chain(B256::left_padding_from(
                 version.as_version_byte().to_be_bytes().as_slice(),
