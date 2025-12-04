@@ -2,7 +2,6 @@ use alloy_primitives::B256;
 
 use crate::{
     public_inputs::MultiVersionPublicInputs,
-    utils::keccak256,
     version::{Domain, STFVersion, Version},
 };
 
@@ -38,9 +37,9 @@ pub struct BundleInfo {
 }
 
 impl BundleInfo {
-    /// Public input hash for a bundle (euclidv1 or da-codec@v6) is defined as
+    /// Public inputs encoded for a bundle (euclidv1 or da-codec@v6) is defined as
     ///
-    /// keccak(
+    /// concat(
     ///     chain id ||
     ///     num batches ||
     ///     prev state root ||
@@ -49,22 +48,20 @@ impl BundleInfo {
     ///     batch hash ||
     ///     withdraw root
     /// )
-    pub fn pi_hash_euclidv1(&self) -> B256 {
-        keccak256(
-            std::iter::empty()
-                .chain(self.chain_id.to_be_bytes().as_slice())
-                .chain(self.num_batches.to_be_bytes().as_slice())
-                .chain(self.prev_state_root.as_slice())
-                .chain(self.prev_batch_hash.as_slice())
-                .chain(self.post_state_root.as_slice())
-                .chain(self.batch_hash.as_slice())
-                .chain(self.withdraw_root.as_slice())
-                .cloned()
-                .collect::<Vec<u8>>(),
-        )
+    pub fn pi_euclidv1(&self) -> Vec<u8> {
+        std::iter::empty()
+            .chain(self.chain_id.to_be_bytes().as_slice())
+            .chain(self.num_batches.to_be_bytes().as_slice())
+            .chain(self.prev_state_root.as_slice())
+            .chain(self.prev_batch_hash.as_slice())
+            .chain(self.post_state_root.as_slice())
+            .chain(self.batch_hash.as_slice())
+            .chain(self.withdraw_root.as_slice())
+            .copied()
+            .collect()
     }
 
-    /// Public input for a bundle (euclidv2 or da-codec@v7) is defined as
+    /// Public inputs encoded for a bundle (euclidv2 or da-codec@v7) is defined as
     ///
     /// concat(
     ///     chain id ||
@@ -86,12 +83,8 @@ impl BundleInfo {
             .chain(self.post_state_root.as_slice())
             .chain(self.batch_hash.as_slice())
             .chain(self.withdraw_root.as_slice())
-            .cloned()
+            .copied()
             .collect()
-    }
-
-    pub fn pi_hash_euclidv2(&self) -> B256 {
-        keccak256(self.pi_euclidv2())
     }
 
     pub fn pi_feynman(&self) -> Vec<u8> {
@@ -106,17 +99,13 @@ impl BundleInfo {
         self.pi_euclidv2()
     }
 
-    pub fn pi_hash_versioned(&self, version: Version, pi: &[u8]) -> B256 {
-        keccak256(
-            std::iter::empty()
-                .chain(
-                    B256::left_padding_from(version.as_version_byte().to_be_bytes().as_slice())
-                        .as_slice(),
-                )
-                .chain(pi)
-                .cloned()
-                .collect::<Vec<u8>>(),
-        )
+    pub fn pi_versioned(&self, version: Version, pi: Vec<u8>) -> Vec<u8> {
+        std::iter::empty()
+            .chain(B256::left_padding_from(
+                version.as_version_byte().to_be_bytes().as_slice(),
+            ))
+            .chain(pi)
+            .collect()
     }
 
     pub fn pi_validium_v1(&self) -> Vec<u8> {
@@ -131,22 +120,14 @@ impl BundleInfo {
 pub type VersionedBundleInfo = (BundleInfo, Version);
 
 impl MultiVersionPublicInputs for BundleInfo {
-    fn pi_hash_by_version(&self, version: Version) -> B256 {
+    fn pi_by_version(&self, version: Version) -> Vec<u8> {
         match (version.domain, version.stf_version) {
-            (Domain::Scroll, STFVersion::V6) => self.pi_hash_euclidv1(),
-            (Domain::Scroll, STFVersion::V7) => self.pi_hash_euclidv2(),
-            (Domain::Scroll, STFVersion::V8) => {
-                self.pi_hash_versioned(version, self.pi_feynman().as_slice())
-            }
-            (Domain::Scroll, STFVersion::V9) => {
-                self.pi_hash_versioned(version, self.pi_galileo().as_slice())
-            }
-            (Domain::Scroll, STFVersion::V10) => {
-                self.pi_hash_versioned(version, self.pi_galileo_v2().as_slice())
-            }
-            (Domain::Validium, STFVersion::V1) => {
-                self.pi_hash_versioned(version, self.pi_validium_v1().as_slice())
-            }
+            (Domain::Scroll, STFVersion::V6) => self.pi_euclidv1(),
+            (Domain::Scroll, STFVersion::V7) => self.pi_euclidv2(),
+            (Domain::Scroll, STFVersion::V8) => self.pi_versioned(version, self.pi_feynman()),
+            (Domain::Scroll, STFVersion::V9) => self.pi_versioned(version, self.pi_galileo()),
+            (Domain::Scroll, STFVersion::V10) => self.pi_versioned(version, self.pi_galileo_v2()),
+            (Domain::Validium, STFVersion::V1) => self.pi_versioned(version, self.pi_validium_v1()),
             (domain, stf_version) => {
                 unreachable!("unsupported version=({domain:?}, {stf_version:?})")
             }

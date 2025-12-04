@@ -1,3 +1,4 @@
+use crate::utils::keccak256;
 use alloy_primitives::B256;
 
 pub mod scroll;
@@ -6,9 +7,14 @@ pub use crate::{fork_name::ForkName, version::Version};
 
 /// Defines behaviour to be implemented by types representing the public-input values of a circuit.
 pub trait PublicInputs {
+    /// Public inputs encoded.
+    fn pi(&self) -> Vec<u8>;
+
     /// Keccak-256 digest of the public inputs. The public-input hash are revealed as public values
     /// via [`openvm::io::reveal`].
-    fn pi_hash(&self) -> B256;
+    fn pi_hash(&self) -> B256 {
+        keccak256(self.pi())
+    }
 
     /// Validation logic between public inputs of two contiguous instances.
     fn validate(&self, prev_pi: &Self);
@@ -16,13 +22,18 @@ pub trait PublicInputs {
 
 /// helper trait to extend PublicInputs
 pub trait MultiVersionPublicInputs {
-    fn pi_hash_by_version(&self, version: Version) -> B256;
+    /// Public inputs encoded for a specific version.
+    fn pi_by_version(&self, version: Version) -> Vec<u8>;
+    /// Keccak-256 digest of the public inputs for a specific version.
+    fn pi_hash_by_version(&self, version: Version) -> B256 {
+        keccak256(self.pi_by_version(version))
+    }
     fn validate(&self, prev_pi: &Self, version: Version);
 }
 
 impl<T: MultiVersionPublicInputs> PublicInputs for (T, Version) {
-    fn pi_hash(&self) -> B256 {
-        self.0.pi_hash_by_version(self.1)
+    fn pi(&self) -> Vec<u8> {
+        self.0.pi_by_version(self.1)
     }
 
     fn validate(&self, prev_pi: &Self) {
