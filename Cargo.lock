@@ -8919,6 +8919,7 @@ dependencies = [
  "bridge_adapters_zk",
  "bridge_core",
  "bridge_steps_deposit",
+ "bridge_transforms",
  "ecies",
  "itertools 0.14.0",
  "k256 0.13.4 (git+https://github.com/openvm-org/openvm.git?tag=v1.4.1)",

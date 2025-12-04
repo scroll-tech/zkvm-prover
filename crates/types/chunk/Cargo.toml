@@ -32,6 +32,7 @@ types-base = { path = "../base", package = "scroll-zkvm-types-base"}
 bridge_core = { workspace = true }
 bridge_adapters_zk = { workspace = true, features = ["verifier"] }
 bridge_steps_deposit = { workspace = true, features = ["verifier"] }
+bridge_transforms = { workspace = true }
 
 [dev-dependencies]
 serde_json.workspace = true

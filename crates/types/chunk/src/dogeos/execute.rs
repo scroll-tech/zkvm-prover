@@ -1,8 +1,12 @@
+use alloy_primitives::U256;
+use alloy_sol_types::SolCall;
 use bridge_adapters_zk::{StepInputEnvelope, ZkVerifierExt};
 use bridge_steps_deposit::{HeaderVerifier, MidstateVerifier};
 use itertools::Itertools;
 use sbv_primitives::types::consensus::TxL1Message;
 use types_base::public_inputs::dogeos::chunk::DogeOsChunkInfo;
+use crate::dogeos::types::{handleL1MessageCall, MOAT_CONTRACT_ADDRESS};
+use crate::scroll::relayMessageCall;
 use super::witness::DogeOsChunkWitness;
 
 pub fn execute(witness: DogeOsChunkWitness) -> Result<DogeOsChunkInfo, String>  {
@@ -40,6 +44,7 @@ pub fn execute(witness: DogeOsChunkWitness) -> Result<DogeOsChunkInfo, String>  
     })
 }
 
+
 fn verify_deposits(
     verifier_context: &bridge_core::VerifierContext,
     header_envelope: &StepInputEnvelope<HeaderVerifier>,
@@ -52,9 +57,25 @@ fn verify_deposits(
     MidstateVerifier.verify_envelope(&midstate_envelope, &verifier_context)
         .map_err(|e| format!("dogeos deposit midstate verification failed: {e}"))?;
 
-    for (deposit, l1_message) in midstate_envelope.statement.expected_deposits.iter().zip_eq(l1_messages) {
-        l1_message.input
+    for (deposit, l1_message) in midstate_envelope
+        .statement
+        .expected_deposits
+        .iter()
+        .zip_eq(l1_messages) {
+        let relay_call: relayMessageCall = relayMessageCall::abi_decode(l1_message.input.as_ref())
+            .map_err(|e| format!("dogeos relay call decode failed: {e}"))?;
+        // relay call checks
+        assert_eq!(relay_call.sender, deposit.txid[..20], "dogeos synthetic relay call sender mismatch");
+        assert_eq!(relay_call.target, MOAT_CONTRACT_ADDRESS, "dogeos relay call target mismatch");
+        let amount = U256::from(bridge_transforms::convert_doge_to_eth_units(deposit.amount_sats));
+        assert_eq!(relay_call.value, amount, "dogeos relay call amount mismatch");
+        // nonce/queueIndex check is skipped, as it's guaranteed by rolling hash
 
+        let moat_call: handleL1MessageCall = handleL1MessageCall::abi_decode(relay_call.message.as_ref())
+            .map_err(|e| format!("dogeos moat call decode failed: {e}"))?;
+        // moat call checks
+        assert_eq!(moat_call.target, deposit.evm_recipient, "dogeos deposit recipient mismatch");
+        assert_eq!(moat_call.depositID, deposit.txid);
     }
 
     Ok(())
