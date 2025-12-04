@@ -150,6 +150,11 @@ scroll-zkvm-integration = { path = "crates/integration" }
 scroll-zkvm-prover = { path = "crates/prover" }
 scroll-zkvm-verifier = { path = "crates/verifier" }
 
+# dogeos crates
+bridge_core = { path = "../dogeos-core/crates/bridge_core", default-features = false }
+bridge_adapters_zk = { path = "../dogeos-core/crates/bridge_adapters_zk", default-features = false }
+bridge_steps_deposit = { path = "../dogeos-core/crates/bridge_steps_deposit", default-features = false }
+
 [patch.crates-io]
 revm = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
 revm-bytecode = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
