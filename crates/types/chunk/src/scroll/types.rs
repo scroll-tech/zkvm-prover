@@ -1,5 +1,6 @@
 use super::{types::validium::SecretKey, witness::ValidiumInputs};
 use alloy_primitives::keccak256;
+use alloy_sol_types::sol;
 use itertools::Itertools;
 use sbv_helpers::manually_drop_on_zkvm;
 use sbv_primitives::{
@@ -13,6 +14,38 @@ use sbv_primitives::{
 use std::ops::Deref;
 
 pub mod validium;
+
+sol! {
+    #[derive(Debug)]
+    function relayMessage(
+        address sender,
+        address target,
+        uint256 value,
+        uint256 messageNonce,
+        bytes message
+    );
+
+    #[derive(Debug)]
+    function finalizeDepositERC20(
+        address token,
+        address l2Token,
+        address from,
+        address to,
+        uint256 amount,
+        bytes l2Data
+    );
+
+    #[derive(Debug)]
+    function finalizeDepositERC20Encrypted(
+        address token,
+        address l2Token,
+        address from,
+        bytes to,
+        uint256 amount,
+        bytes l2Data
+    );
+
+}
 
 const LEGACY_DA_HEADER_LEN: usize = size_of::<u64>() // block number
         + size_of::<u64>() // timestamp
