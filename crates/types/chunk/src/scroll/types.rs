@@ -1,5 +1,4 @@
-use super::types::validium::SecretKey;
-use super::witness::ValidiumInputs;
+use super::{types::validium::SecretKey, witness::ValidiumInputs};
 use alloy_primitives::keccak256;
 use itertools::Itertools;
 use sbv_helpers::manually_drop_on_zkvm;

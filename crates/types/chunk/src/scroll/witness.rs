@@ -188,7 +188,7 @@ impl TryFrom<ChunkWitness> for ChunkInfo {
     type Error = String;
 
     fn try_from(value: ChunkWitness) -> Result<Self, Self::Error> {
-        crate::execute(value)
+        super::execute(value)
     }
 }
 

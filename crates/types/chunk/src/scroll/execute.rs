@@ -1,4 +1,4 @@
-use crate::{ChunkWitness, scroll::types::ChunkExt};
+use super::{ChunkWitness, types::ChunkExt};
 use ecies::SecretKey;
 use sbv_core::verifier::{self, VerifyResult};
 use sbv_helpers::manually_drop_on_zkvm;
