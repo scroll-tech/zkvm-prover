@@ -11,6 +11,7 @@ sol! {
     ) external;
 }
 
+/// FIXME: replace with actual Moat contract address
 pub const MOAT_CONTRACT_ADDRESS: Address = address!("0xcccccccccccccccccccccccccccccccccccccccc");
 
 #[cfg(test)]
