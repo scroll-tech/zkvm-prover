@@ -247,7 +247,7 @@ dependencies = [
  "op-alloy-consensus 0.22.1",
  "op-alloy-rpc-types-engine",
  "op-revm",
- "revm 30.1.1",
+ "revm 30.2.0",
  "thiserror 2.0.17",
 ]
 
@@ -635,7 +635,7 @@ checksum = "fe215a2f9b51d5f1aa5c8cf22c8be8cdb354934de09c9a4e37aefb79b77552fd"
 dependencies = [
  "alloy-json-rpc",
  "auto_impl",
- "base64",
+ "base64 0.22.1",
  "derive_more 2.0.1",
  "futures",
  "futures-utils-wasm",
@@ -1219,6 +1219,12 @@ checksum = "4c7f02d4ea65f2c1853089ffd8d2787bdbc63de2f0d29dedbcf8ccdfa0ccd4cf"
 
 [[package]]
 name = "base64"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9e1b586273c5702936fe7b7d6896644d8be71e6314cfe09d3167c95f712589e8"
+
+[[package]]
+name = "base64"
 version = "0.22.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
@@ -1228,6 +1234,12 @@ name = "base64ct"
 version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "55248b47b0caf0546f7988906588779981c43bb1bc9d0c44087278f80cdb44ba"
+
+[[package]]
+name = "bech32"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d86b93f97252c47b41663388e6d155714a9d0c398b99f1005cbc5f978b29f445"
 
 [[package]]
 name = "bincode"
@@ -1302,6 +1314,27 @@ name = "bitcoin-io"
 version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b47c4ab7a93edb0c7198c5535ed9b52b63095f4e9b45279c6736cec4b856baf"
+
+[[package]]
+name = "bitcoin-private"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "73290177011694f38ec25e165d0387ab7ea749a4b81cd4c80dae5988229f7a57"
+
+[[package]]
+name = "bitcoin-private"
+version = "0.1.0"
+source = "git+https://github.com/DogeOS69/rust-dogecoin.git?branch=dogeos#ea3c4f9891fa061696b96c91147ab1ef2fe0705d"
+
+[[package]]
+name = "bitcoin_hashes"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5d7066118b13d4b20b23645932dfb3a81ce7e29f95726c2036fa33cd7b092501"
+dependencies = [
+ "bitcoin-private 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde",
+]
 
 [[package]]
 name = "bitcoin_hashes"
@@ -1472,6 +1505,64 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.110",
+]
+
+[[package]]
+name = "bridge_adapters_zk"
+version = "0.3.0"
+dependencies = [
+ "bincode 2.0.1",
+ "bridge_core",
+ "bridge_protocol",
+ "openvm",
+ "serde",
+]
+
+[[package]]
+name = "bridge_core"
+version = "0.3.0"
+dependencies = [
+ "bincode 2.0.1",
+ "thiserror 2.0.17",
+]
+
+[[package]]
+name = "bridge_protocol"
+version = "0.3.0"
+dependencies = [
+ "bincode 2.0.1",
+ "bridge_core",
+ "serde",
+ "serde_bytes",
+]
+
+[[package]]
+name = "bridge_steps_deposit"
+version = "0.3.0"
+dependencies = [
+ "bitcoin_hashes 0.12.0",
+ "bridge_core",
+ "bridge_protocol",
+ "bridge_transforms",
+ "byteorder",
+ "common_types",
+ "hex",
+ "nintondo-dogecoin",
+ "tracing",
+ "tracing-subscriber 0.3.20",
+ "url",
+]
+
+[[package]]
+name = "bridge_transforms"
+version = "0.3.0"
+dependencies = [
+ "alloy-primitives",
+ "alloy-sol-types",
+ "bridge_protocol",
+ "common_types",
+ "hex",
+ "thiserror 2.0.17",
 ]
 
 [[package]]
@@ -1776,6 +1867,20 @@ checksum = "117725a109d387c937a1533ce01b450cbde6b88abceea8473c4d7a85853cda3c"
 dependencies = [
  "lazy_static",
  "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "common_types"
+version = "0.3.0"
+dependencies = [
+ "alloy-primitives",
+ "hex",
+ "nintondo-dogecoin",
+ "prost",
+ "prost-build",
+ "serde",
+ "thiserror 2.0.17",
+ "tracing",
 ]
 
 [[package]]
@@ -2346,6 +2451,55 @@ dependencies = [
 ]
 
 [[package]]
+name = "dogeos-zkvm-batch-circuit"
+version = "0.7.1"
+dependencies = [
+ "alloy-primitives",
+ "bincode 2.0.1",
+ "openvm",
+ "openvm-algebra-guest",
+ "openvm-ecc-guest",
+ "openvm-keccak256-guest",
+ "openvm-pairing",
+ "openvm-sha256-guest",
+ "scroll-zkvm-types-batch",
+ "scroll-zkvm-types-circuit",
+]
+
+[[package]]
+name = "dogeos-zkvm-bundle-circuit"
+version = "0.7.1"
+dependencies = [
+ "alloy-primitives",
+ "bincode 2.0.1",
+ "openvm",
+ "openvm-keccak256-guest",
+ "scroll-zkvm-types-bundle",
+ "scroll-zkvm-types-circuit",
+]
+
+[[package]]
+name = "dogeos-zkvm-chunk-circuit"
+version = "0.7.1"
+dependencies = [
+ "bincode 2.0.1",
+ "k256 0.13.4 (git+https://github.com/openvm-org/openvm.git?tag=v1.4.1)",
+ "openvm",
+ "openvm-algebra-complex-macros",
+ "openvm-algebra-guest",
+ "openvm-bigint-guest",
+ "openvm-ecc-guest",
+ "openvm-keccak256-guest",
+ "openvm-pairing",
+ "openvm-pairing-guest",
+ "openvm-rv32im-guest",
+ "openvm-sha2",
+ "p256 0.13.2 (git+https://github.com/openvm-org/openvm.git?tag=v1.4.1)",
+ "scroll-zkvm-types-chunk",
+ "scroll-zkvm-types-circuit",
+]
+
+[[package]]
 name = "dotenvy"
 version = "0.15.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2727,6 +2881,12 @@ dependencies = [
  "rustc-hex",
  "static_assertions",
 ]
+
+[[package]]
+name = "fixedbitset"
+version = "0.5.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d674e81391d1e1ab681a28d99df07927c6d4aa5b027d7da16ba32d1d21ecd99"
 
 [[package]]
 name = "flate2"
@@ -3306,6 +3466,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6fe2267d4ed49bc07b63801559be28c718ea06c4738b7a03c94df7386d2cde46"
 
 [[package]]
+name = "hex_lit"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3011d1213f159867b13cfd6ac92d2cd5f1345762c63be3554e84092d85a50bbd"
+
+[[package]]
 name = "hkdf"
 version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3432,7 +3598,7 @@ version = "0.1.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "52e9a2a24dc5c6821e71a7030e1e14b7b632acac55c40e9d2e082c621261bb56"
 dependencies = [
- "base64",
+ "base64 0.22.1",
  "bytes",
  "futures-channel",
  "futures-core",
@@ -3887,7 +4053,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e79019718125edc905a079a70cfa5f3820bc76139fc91d6f9abc27ea2a887139"
 dependencies = [
  "arrayref",
- "base64",
+ "base64 0.22.1",
  "digest 0.9.0",
  "libsecp256k1-core",
  "libsecp256k1-gen-ecmult",
@@ -4140,6 +4306,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "multimap"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d87ecb2933e8aeadb3e3a02b828fed80a7528047e68b4f424523a0981a3a084"
+
+[[package]]
 name = "munge"
 version = "0.4.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4183,6 +4355,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77a5d83df9f36fe23f0c3648c6bbb8b0298bb5f1939c8f2704431371f4b84d43"
 dependencies = [
  "smallvec",
+]
+
+[[package]]
+name = "nintondo-dogecoin"
+version = "0.30.7"
+source = "git+https://github.com/DogeOS69/rust-dogecoin.git?branch=dogeos#ea3c4f9891fa061696b96c91147ab1ef2fe0705d"
+dependencies = [
+ "base64 0.13.1",
+ "bech32",
+ "bitcoin-private 0.1.0 (git+https://github.com/DogeOS69/rust-dogecoin.git?branch=dogeos)",
+ "bitcoin_hashes 0.12.0",
+ "hex-conservative",
+ "hex_lit",
+ "secp256k1 0.27.0",
+ "serde",
 ]
 
 [[package]]
@@ -6127,6 +6314,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "petgraph"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3672b37090dbd86368a4145bc067582552b29c27377cad4e0a306c97f9bd7772"
+dependencies = [
+ "fixedbitset",
+ "indexmap 2.12.0",
+]
+
+[[package]]
 name = "phf"
 version = "0.11.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6415,6 +6612,58 @@ dependencies = [
 ]
 
 [[package]]
+name = "prost"
+version = "0.13.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2796faa41db3ec313a31f7624d9286acf277b52de526150b7e69f3debf891ee5"
+dependencies = [
+ "bytes",
+ "prost-derive",
+]
+
+[[package]]
+name = "prost-build"
+version = "0.13.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "be769465445e8c1474e9c5dac2018218498557af32d9ed057325ec9a41ae81bf"
+dependencies = [
+ "heck 0.5.0",
+ "itertools 0.14.0",
+ "log",
+ "multimap",
+ "once_cell",
+ "petgraph",
+ "prettyplease",
+ "prost",
+ "prost-types",
+ "regex",
+ "syn 2.0.110",
+ "tempfile",
+]
+
+[[package]]
+name = "prost-derive"
+version = "0.13.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8a56d757972c98b346a9b766e3f02746cde6dd1cd1d1d563472929fdd74bec4d"
+dependencies = [
+ "anyhow",
+ "itertools 0.14.0",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.110",
+]
+
+[[package]]
+name = "prost-types"
+version = "0.13.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "52c2c1bf36ddb1a1c396b3601a3cec27c2462e45f07c386894ec3ccf5332bd16"
+dependencies = [
+ "prost",
+]
+
+[[package]]
 name = "psm"
 version = "0.1.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6698,7 +6947,7 @@ version = "0.12.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9d0946410b9f7b082a427e4ef5c8ff541a88b357bc6c637c40db3a68ac70a36f"
 dependencies = [
- "base64",
+ "base64 0.22.1",
  "bytes",
  "encoding_rs",
  "futures-channel",
@@ -8530,7 +8779,7 @@ dependencies = [
  "alloy-rpc-client",
  "alloy-transport",
  "axiom-sdk",
- "base64",
+ "base64 0.22.1",
  "bincode 2.0.1",
  "bytesize",
  "cargo_metadata 0.23.1",
@@ -8573,7 +8822,7 @@ dependencies = [
 name = "scroll-zkvm-prover"
 version = "0.7.1"
 dependencies = [
- "base64",
+ "base64 0.22.1",
  "bincode 1.3.3",
  "cudarc",
  "eyre",
@@ -8600,7 +8849,7 @@ name = "scroll-zkvm-types"
 version = "0.7.1"
 dependencies = [
  "alloy-primitives",
- "base64",
+ "base64 0.22.1",
  "bincode 1.3.3",
  "eyre",
  "hex",
@@ -8667,6 +8916,10 @@ dependencies = [
  "alloy-consensus",
  "alloy-primitives",
  "alloy-sol-types",
+ "bridge_adapters_zk",
+ "bridge_core",
+ "bridge_steps_deposit",
+ "bridge_transforms",
  "ecies",
  "itertools 0.14.0",
  "k256 0.13.4 (git+https://github.com/openvm-org/openvm.git?tag=v1.4.1)",
@@ -8751,11 +9004,23 @@ dependencies = [
 
 [[package]]
 name = "secp256k1"
+version = "0.27.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "25996b82292a7a57ed3508f052cfff8640d38d32018784acd714758b43da9c8f"
+dependencies = [
+ "bitcoin_hashes 0.12.0",
+ "rand 0.8.5",
+ "secp256k1-sys 0.8.2",
+ "serde",
+]
+
+[[package]]
+name = "secp256k1"
 version = "0.30.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b50c5943d326858130af85e049f2661ba3c78b26589b8ab98e65e80ae44a1252"
 dependencies = [
- "bitcoin_hashes",
+ "bitcoin_hashes 0.14.0",
  "rand 0.8.5",
  "secp256k1-sys 0.10.1",
  "serde",
@@ -8767,9 +9032,18 @@ version = "0.31.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2c3c81b43dc2d8877c216a3fccf76677ee1ebccd429566d3e67447290d0c42b2"
 dependencies = [
- "bitcoin_hashes",
+ "bitcoin_hashes 0.14.0",
  "rand 0.9.2",
  "secp256k1-sys 0.11.0",
+]
+
+[[package]]
+name = "secp256k1-sys"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4473013577ec77b4ee3668179ef1186df3146e2cf2d927bd200974c6fe60fd99"
+dependencies = [
+ "cc",
 ]
 
 [[package]]
@@ -8892,6 +9166,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_bytes"
+version = "0.11.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a5d440709e79d88e51ac01c4b72fc6cb7314017bb7da9eeff678aa94c10e3ea8"
+dependencies = [
+ "serde",
+ "serde_core",
+]
+
+[[package]]
 name = "serde_core"
 version = "1.0.228"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8963,7 +9247,7 @@ version = "3.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "10574371d41b0d9b2cff89418eda27da52bcaff2cc8741db26382a77c29131f1"
 dependencies = [
- "base64",
+ "base64 0.22.1",
  "chrono",
  "hex",
  "indexmap 1.9.3",

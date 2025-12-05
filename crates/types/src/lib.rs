@@ -19,6 +19,23 @@ pub mod scroll {
     }
 }
 
+pub mod dogeos {
+    pub mod bundle {
+        pub use types_base::public_inputs::scroll::bundle::BundleInfo;
+        pub use types_bundle::*;
+    }
+
+    pub mod batch {
+        pub use types_base::public_inputs::scroll::batch::{BatchInfo, VersionedBatchInfo};
+        pub use types_batch::*;
+    }
+
+    pub mod chunk {
+        pub use types_base::public_inputs::dogeos::chunk::{DogeOsChunkInfo};
+        pub use types_chunk::dogeos::*;
+    }
+}
+
 pub use types_base::{aggregation as types_agg, public_inputs, version};
 
 pub mod proof;
