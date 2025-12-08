@@ -1,1 +1,1 @@
-../../../chunk-circuit/chunk_vm_commit.rs
+../../../../dogeos-circuits/chunk-circuit/chunk_vm_commit.rs

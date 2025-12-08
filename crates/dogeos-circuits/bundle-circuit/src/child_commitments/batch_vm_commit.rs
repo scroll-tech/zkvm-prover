@@ -1,1 +1,1 @@
-../../../batch-circuit/batch_vm_commit.rs
+../../../../dogeos-circuits/batch-circuit/batch_vm_commit.rs
