@@ -1,13 +1,13 @@
 use alloy_primitives::B256;
-use scroll_zkvm_types_bundle::BundleWitness;
+use scroll_zkvm_types_bundle::dogeos::DogeOsBundleWitness;
 use scroll_zkvm_types_circuit::{
     AggCircuit, AggregationInput, Circuit, ProgramCommitment,
     io::read_witnesses,
     public_inputs::{
         Version,
-        scroll::{
-            batch::VersionedBatchInfo,
-            bundle::{BundleInfo, VersionedBundleInfo},
+        dogeos::{
+            batch::{VersionedDogeOsBatchInfo, DogeOsBatchInfo},
+            bundle::{DogeOsBundleInfo, VersionedDogeOsBundleInfo},
         },
     },
 };
@@ -21,9 +21,9 @@ use openvm_keccak256_guest;
 pub struct BundleCircuit;
 
 impl Circuit for BundleCircuit {
-    type Witness = BundleWitness;
+    type Witness = DogeOsBundleWitness;
 
-    type PublicInputs = VersionedBundleInfo;
+    type PublicInputs = VersionedDogeOsBundleInfo;
 
     fn read_witness_bytes() -> Vec<u8> {
         read_witnesses()
@@ -38,15 +38,15 @@ impl Circuit for BundleCircuit {
     }
 
     fn validate(witness: Self::Witness) -> Self::PublicInputs {
-        let version = Version::from(witness.version);
-        assert_eq!(version.fork, witness.fork_name);
+        let version = Version::from(witness.inner.version);
+        assert_eq!(version.fork, witness.inner.fork_name);
 
-        (BundleInfo::from(&witness), version)
+        (DogeOsBundleInfo::from(&witness), version)
     }
 }
 
 impl AggCircuit for BundleCircuit {
-    type AggregatedPublicInputs = VersionedBatchInfo;
+    type AggregatedPublicInputs = VersionedDogeOsBatchInfo;
 
     fn verify_commitments(commitment: &ProgramCommitment) {
         assert_eq!(
@@ -66,11 +66,13 @@ impl AggCircuit for BundleCircuit {
     }
 
     fn aggregated_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs> {
-        let version = Version::from(witness.version);
+        let version = Version::from(witness.inner.version);
         witness
+            .inner
             .batch_infos
             .iter()
             .cloned()
+            .map(|inner| DogeOsBatchInfo { inner })
             .map(|batch_info| (batch_info, version))
             .collect()
     }

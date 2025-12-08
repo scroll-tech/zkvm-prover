@@ -18,6 +18,7 @@ openvm-ecc-guest = { workspace = true, features = ["halo2curves"] }
 
 alloy-primitives = { workspace = true, features = ["native-keccak"] }
 bincode.workspace = true
+itertools.workspace = true
 
 [features]
 default = []

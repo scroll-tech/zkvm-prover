@@ -4,7 +4,7 @@ use bridge_adapters_zk::{StepInputEnvelope, ZkVerifierExt};
 use bridge_steps_deposit::{HeaderVerifier, MidstateVerifier};
 use itertools::Itertools;
 use sbv_primitives::types::consensus::TxL1Message;
-use types_base::public_inputs::dogeos::chunk::DogeOsChunkInfo;
+use types_base::public_inputs::dogeos::chunk::{DogeOsChunkInfo, DogeOsChunkInfoExtras};
 use crate::dogeos::types::{handleL1MessageCall, MOAT_CONTRACT_ADDRESS};
 use crate::scroll::relayMessageCall;
 use super::witness::DogeOsChunkWitness;
@@ -38,9 +38,10 @@ pub fn execute(witness: DogeOsChunkWitness) -> Result<DogeOsChunkInfo, String>  
         .expect("end_blockhash must be present in header statement");
     Ok(DogeOsChunkInfo {
         inner: chunk_info,
-        // Other DogeOs-specific fields can be initialized here
-        start_blockhash,
-        end_blockhash,
+        extras: DogeOsChunkInfoExtras {
+            start_blockhash,
+            end_blockhash,
+        },
     })
 }
 

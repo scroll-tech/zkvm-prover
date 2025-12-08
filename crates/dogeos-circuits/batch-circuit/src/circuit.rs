@@ -1,16 +1,17 @@
 use alloy_primitives::B256;
-use scroll_zkvm_types_batch::BatchWitness;
+use scroll_zkvm_types_batch::dogeos::{DogeOsBatchWitness};
 use scroll_zkvm_types_circuit::{
     AggCircuit, AggregationInput, Circuit, ProgramCommitment,
     io::read_witnesses,
     public_inputs::{
         Version,
-        scroll::{
-            batch::{BatchInfo, VersionedBatchInfo},
-            chunk::VersionedChunkInfo,
+        dogeos::{
+            batch::{DogeOsBatchInfo, VersionedDogeOsBatchInfo},
+            chunk::VersionedDogeOsChunkInfo,
         },
     },
 };
+use itertools::Itertools;
 
 use crate::child_commitments;
 
@@ -22,15 +23,16 @@ use {
     openvm_pairing::bls12_381::{Bls12_381, Bls12_381G1Affine, Fp, Fp2},
     openvm_sha256_guest,
 };
+use scroll_zkvm_types_circuit::public_inputs::dogeos::chunk::DogeOsChunkInfo;
 
 openvm::init!();
 
 pub struct BatchCircuit;
 
 impl Circuit for BatchCircuit {
-    type Witness = BatchWitness;
+    type Witness = DogeOsBatchWitness;
 
-    type PublicInputs = VersionedBatchInfo;
+    type PublicInputs = VersionedDogeOsBatchInfo;
 
     fn read_witness_bytes() -> Vec<u8> {
         read_witnesses()
@@ -45,15 +47,15 @@ impl Circuit for BatchCircuit {
     }
 
     fn validate(witness: Self::Witness) -> Self::PublicInputs {
-        let version = Version::from(witness.version);
-        assert_eq!(version.fork, witness.fork_name);
+        let version = Version::from(witness.inner.version);
+        assert_eq!(version.fork, witness.inner.fork_name);
 
-        (BatchInfo::from(&witness), version)
+        (DogeOsBatchInfo::from(&witness), version)
     }
 }
 
 impl AggCircuit for BatchCircuit {
-    type AggregatedPublicInputs = VersionedChunkInfo;
+    type AggregatedPublicInputs = VersionedDogeOsChunkInfo;
 
     fn verify_commitments(commitment: &ProgramCommitment) {
         assert_eq!(
@@ -73,16 +75,19 @@ impl AggCircuit for BatchCircuit {
     }
 
     fn aggregated_public_inputs(witness: &Self::Witness) -> Vec<Self::AggregatedPublicInputs> {
-        let version = Version::from(witness.version);
+        let version = Version::from(witness.inner.version);
         witness
+            .inner
             .chunk_infos
             .iter()
             .cloned()
+            .zip_eq(witness.extras.chunk_info_extras.iter().cloned())
+            .map(DogeOsChunkInfo::from)
             .map(|chunk_info| (chunk_info, version))
             .collect()
     }
 
-    fn aggregated_pi_hashes(proofs: &[AggregationInput]) -> Vec<alloy_primitives::B256> {
+    fn aggregated_pi_hashes(proofs: &[AggregationInput]) -> Vec<B256> {
         proofs
             .iter()
             .map(|proof| {

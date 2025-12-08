@@ -1,5 +1,5 @@
 use alloy_primitives::{address, Address};
-use alloy_sol_types::{sol, SolCall};
+use alloy_sol_types::sol;
 
 sol! {
     /// Moat.handleL1Message function
