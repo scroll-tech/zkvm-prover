@@ -14,7 +14,7 @@ fn test_e2e_execute() -> eyre::Result<()> {
     let chunk_proof = prove_verify::<ChunkProverTester>(&mut chunk_prover, &chunk_witness, &[])?;
 
     let batch_witness = mock_batch_witness(&chunk_witness)?;
-    println!("batch witness = {batch_witness:#?}");
+
     let stdin = BatchProverTester::build_guest_input(
         &batch_witness,
         [chunk_proof.as_stark_proof().unwrap()].into_iter(),
