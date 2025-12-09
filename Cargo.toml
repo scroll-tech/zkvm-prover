@@ -153,6 +153,7 @@ scroll-zkvm-verifier = { path = "crates/verifier" }
 # dogeos crates
 bridge_core = { path = "../dogeos-core/crates/bridge_core", default-features = false }
 bridge_adapters_zk = { path = "../dogeos-core/crates/bridge_adapters_zk", default-features = false }
+bridge_steps_da = { path = "../dogeos-core/crates/bridge_steps_da", default-features = false }
 bridge_steps_deposit = { path = "../dogeos-core/crates/bridge_steps_deposit", default-features = false }
 bridge_transforms = { path = "../dogeos-core/crates/bridge_transforms", default-features = false }
 openvm-blobstream = { path = "../blobstream" }

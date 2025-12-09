@@ -26,6 +26,9 @@ halo2curves-axiom = "0.7.0"
 sbv-primitives = { workspace = true, optional = true }
 c-kzg = { workspace = true, optional = true }
 
+bridge_core = { workspace = true }
+bridge_adapters_zk = { workspace = true, features = ["verifier"] }
+bridge_steps_da = { workspace = true, features = ["verifier"] }
 openvm-blobstream = { workspace = true }
 
 [features]
