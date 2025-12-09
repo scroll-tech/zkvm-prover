@@ -1,0 +1,23 @@
+[package]
+name = "dogeos-zkvm-integration"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+scroll-zkvm-types.workspace = true
+scroll-zkvm-prover.workspace = true
+scroll-zkvm-integration = { workspace = true, default-features = false, features = ["scroll"] }
+
+sbv-primitives = { workspace = true }
+
+eyre.workspace = true
+serde_json.workspace = true
+
+bridge_core = { workspace = true }
+bridge_protocol = { workspace = true }
+bridge_adapters_zk = { workspace = true, features = ["verifier", "builder"] }
+bridge_steps_da = { workspace = true, features = ["verifier", "builder"] }

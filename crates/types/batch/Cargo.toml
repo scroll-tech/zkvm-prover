@@ -29,7 +29,6 @@ c-kzg = { workspace = true, optional = true }
 bridge_core = { workspace = true }
 bridge_adapters_zk = { workspace = true, features = ["verifier"] }
 bridge_steps_da = { workspace = true, features = ["verifier"] }
-openvm-blobstream = { workspace = true }
 
 [features]
 default = []
