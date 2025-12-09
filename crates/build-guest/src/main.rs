@@ -141,6 +141,7 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
     for project_name in projects_to_build {
         let project_path = workspace_dir
             .join("crates")
+            .join("dogeos")
             .join("circuits")
             .join(format!("{project_name}-circuit"));
 
@@ -176,15 +177,7 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
             "{LOG_PREFIX} Changed working directory to: {}",
             project_path.display()
         );
-        let guest_opts = GuestOptions {
-            features: if project_name == "chunk" && cfg!(feature = "scroll") {
-                vec!["scroll".to_string()]
-            } else {
-                vec![]
-            },
-            ..Default::default()
-        };
-        let guest_opts = guest_opts.with_profile("maxperf".to_string());
+        let guest_opts = GuestOptions::default().with_profile("maxperf".to_string());
         let sdk = Sdk::new(app_config)?;
         let elf = sdk
             .build(guest_opts, project_dir, &Default::default(), None)

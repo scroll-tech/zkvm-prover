@@ -22,4 +22,6 @@ pub use witness::{
     build_point_eval_witness,
 };
 
+pub mod dogeos;
+
 pub mod utils;

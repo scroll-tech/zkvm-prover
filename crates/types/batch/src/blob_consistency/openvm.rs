@@ -63,9 +63,9 @@ pub fn verify_kzg_proof(z: Scalar, y: Scalar, commitment: G1Affine, proof: G1Aff
         .expect("kzg proof not G1 identity");
     let p_minus_y = G1Affine::from_xy_nonidentity(commitment.x().clone(), commitment.y().clone())
         .expect("kzg commitment not G1 identity")
-        - msm(&[y], std::slice::from_ref(&G1Affine::GENERATOR));
+        - msm::<G1Affine, Scalar>(&[y], std::slice::from_ref(&G1Affine::GENERATOR));
     let g2_generator: &G2Affine = &G2_GENERATOR;
-    let x_minus_z = msm(&[z], std::slice::from_ref(g2_generator)) - KZG_G2_SETUP.clone();
+    let x_minus_z = msm::<G2Affine, Scalar>(&[z], std::slice::from_ref(g2_generator)) - KZG_G2_SETUP.clone();
 
     let p0_proof = AffinePoint::new(proof_q.x().clone(), proof_q.y().clone());
     let q0 = AffinePoint::new(p_minus_y.x().clone(), p_minus_y.y().clone());

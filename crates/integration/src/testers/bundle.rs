@@ -5,8 +5,8 @@ use scroll_zkvm_types::{
         batch::BatchInfo,
         bundle::{BundleInfo, BundleWitness, LegacyBundleWitness},
     },
+    dogeos::bundle::dogeos::DogeOsBundleWitness
 };
-
 // Only related to hardcoded commitments. Can be refactored later.
 use crate::{
     PROGRAM_COMMITMENTS, PartialProvingTask, ProverTester, TaskProver, prove_verify_single_evm,
@@ -31,6 +31,20 @@ impl PartialProvingTask for BundleWitness {
 
     fn fork_name(&self) -> ForkName {
         ForkName::from(self.fork_name.as_str())
+    }
+}
+
+impl PartialProvingTask for DogeOsBundleWitness {
+    fn identifier(&self) -> String {
+        self.inner.identifier()
+    }
+
+    fn legacy_rkyv_archive(&self) -> eyre::Result<Vec<u8>> {
+        unreachable!()
+    }
+
+    fn fork_name(&self) -> ForkName {
+        self.inner.fork_name()
     }
 }
 
