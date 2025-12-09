@@ -112,7 +112,7 @@ test-bundle-local:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test bundle_circuit setup_prove_verify_local_task -- --exact --nocapture
 
 test-e2e-bundle:
-	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test bundle_circuit e2e -- --exact --nocapture
+	@cargo test $(CARGO_CONFIG_FLAG) --release -p dogeos-zkvm-integration --test bundle_circuit e2e -- --exact --nocapture
 
 test-axiom-e2e-bundle:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test bundle_circuit axiom_e2e -- --exact --nocapture

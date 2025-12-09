@@ -3,7 +3,7 @@ use bridge_adapters_zk::{StepInputEnvelope, ZkVerifierExt};
 use bridge_core::VerifierContext;
 use bridge_steps_da::DaInclusionVerifier;
 use types_base::aggregation::{AggregationInput, ProofCarryingWitness};
-use types_base::public_inputs::dogeos::batch::DogeOsBatchInfo;
+use types_base::public_inputs::dogeos::batch::{DogeOsBatchInfo, DogeOsBatchInfoExtras};
 use types_base::public_inputs::dogeos::chunk::DogeOsChunkInfoExtras;
 use types_base::public_inputs::scroll;
 
@@ -38,6 +38,7 @@ impl From<&DogeOsBatchWitness> for DogeOsBatchInfo {
 
         DogeOsBatchInfo {
             inner: scroll_batch_info,
+            extras: DogeOsBatchInfoExtras {}
         }
     }
 }

@@ -1,16 +1,16 @@
 use types_base::aggregation::{AggregationInput, ProofCarryingWitness};
+use types_base::public_inputs::dogeos::batch::DogeOsBatchInfoExtras;
 use types_base::public_inputs::dogeos::bundle::DogeOsBundleInfo;
-use types_batch::dogeos::DogeOsBatchWitnessExtras;
 
 /// The witness for the bundle circuit.
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct DogeOsBundleWitness {
     pub inner: crate::BundleWitness,
-    pub batch_info_extras: Vec<DogeOsBatchWitnessExtras>,
+    pub batch_info_extras: Vec<DogeOsBatchInfoExtras>,
 }
 
-impl From<(crate::BundleWitness, Vec<DogeOsBatchWitnessExtras>)> for DogeOsBundleWitness {
-    fn from(value: (crate::BundleWitness, Vec<DogeOsBatchWitnessExtras>)) -> Self {
+impl From<(crate::BundleWitness, Vec<DogeOsBatchInfoExtras>)> for DogeOsBundleWitness {
+    fn from(value: (crate::BundleWitness, Vec<DogeOsBatchInfoExtras>)) -> Self {
         Self {
             inner: value.0,
             batch_info_extras: value.1,

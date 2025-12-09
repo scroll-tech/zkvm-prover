@@ -2,18 +2,15 @@ use crate::public_inputs::{MultiVersionPublicInputs, scroll};
 use crate::version::Version;
 
 /// Represents public-input values for a batch.
-#[derive(
-    Clone,
-    Debug,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    serde::Deserialize,
-    serde::Serialize,
-)]
-#[rkyv(derive(Debug))]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct DogeOsBatchInfo {
     pub inner: scroll::batch::BatchInfo,
+    pub extras: DogeOsBatchInfoExtras,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+pub struct DogeOsBatchInfoExtras {
+    // Add DogeOs-specific extra fields here if needed in the future
 }
 
 pub type VersionedDogeOsBatchInfo = (DogeOsBatchInfo, Version);
