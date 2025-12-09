@@ -1,4 +1,4 @@
-use crate::public_inputs::{scroll, MultiVersionPublicInputs, Version};
+use crate::public_inputs::{MultiVersionPublicInputs, Version, scroll};
 
 /// Represents fields required to compute the public-inputs digest of a bundle.
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]

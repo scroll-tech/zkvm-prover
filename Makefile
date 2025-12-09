@@ -64,7 +64,7 @@ export-onchain-verifier:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test onchain_verifier export_onchain_verifier -- --exact --nocapture
 
 test-execute-chunk:
-	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test chunk_circuit test_execute -- --exact --nocapture
+	@cargo test $(CARGO_CONFIG_FLAG) --release -p dogeos-zkvm-integration --test chunk_circuit test_execute -- --exact --nocapture
 
 test-execute-chunk-multi:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test chunk_circuit test_execute_multi -- --exact --nocapture
@@ -76,7 +76,7 @@ test-cycle:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test chunk_circuit test_cycle -- --exact --nocapture
 
 test-execute-batch:
-	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test batch_circuit test_e2e_execute -- --exact --nocapture
+	@cargo test $(CARGO_CONFIG_FLAG) --release -p dogeos-zkvm-integration --test batch_circuit test_e2e_execute -- --exact --nocapture
 
 test-execute-batch-fast:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test batch_circuit test_execute -- --exact --nocapture
@@ -100,7 +100,7 @@ test-single-batch:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test batch_circuit setup_prove_verify_single -- --exact --nocapture
 
 test-e2e-batch:
-	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test batch_circuit e2e -- --exact --nocapture
+	@cargo test $(CARGO_CONFIG_FLAG) --release -p dogeos-zkvm-integration --test batch_circuit e2e -- --exact --nocapture
 
 test-axiom-e2e-batch:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test batch_circuit axiom_e2e -- --exact --nocapture

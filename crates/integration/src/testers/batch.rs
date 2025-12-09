@@ -7,7 +7,7 @@ use scroll_zkvm_types::{
     },
     utils::serialize_vk,
 };
-
+use scroll_zkvm_types::dogeos::batch::dogeos::DogeOsBatchWitness;
 use crate::{
     PROGRAM_COMMITMENTS, PartialProvingTask, ProverTester, TaskProver, prove_verify,
     testers::chunk::{ChunkTaskGenerator, preset_chunk_multiple, preset_chunk_validium},
@@ -33,6 +33,20 @@ impl PartialProvingTask for BatchWitness {
 
     fn fork_name(&self) -> ForkName {
         ForkName::from(self.fork_name.as_str())
+    }
+}
+
+impl PartialProvingTask for DogeOsBatchWitness {
+    fn identifier(&self) -> String {
+        self.inner.identifier()
+    }
+
+    fn legacy_rkyv_archive(&self) -> eyre::Result<Vec<u8>> {
+        unreachable!()
+    }
+
+    fn fork_name(&self) -> ForkName {
+        self.inner.fork_name()
     }
 }
 

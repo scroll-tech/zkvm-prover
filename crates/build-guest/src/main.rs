@@ -141,7 +141,8 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
     for project_name in projects_to_build {
         let project_path = workspace_dir
             .join("crates")
-            .join("dogeos-circuits")
+            .join("dogeos")
+            .join("circuits")
             .join(format!("{project_name}-circuit"));
 
         println!("{LOG_PREFIX} Processing project: {project_name}");

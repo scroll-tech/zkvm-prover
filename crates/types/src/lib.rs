@@ -31,7 +31,7 @@ pub mod dogeos {
     }
 
     pub mod chunk {
-        pub use types_base::public_inputs::dogeos::chunk::{DogeOsChunkInfo};
+        pub use types_base::public_inputs::dogeos::chunk::DogeOsChunkInfo;
         pub use types_chunk::dogeos::*;
     }
 }

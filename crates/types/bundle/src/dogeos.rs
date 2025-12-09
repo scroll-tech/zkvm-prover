@@ -6,7 +6,7 @@ use types_batch::dogeos::DogeOsBatchWitnessExtras;
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct DogeOsBundleWitness {
     pub inner: crate::BundleWitness,
-    pub batch_info_extras: Vec<DogeOsBatchWitnessExtras>
+    pub batch_info_extras: Vec<DogeOsBatchWitnessExtras>,
 }
 
 impl From<(crate::BundleWitness, Vec<DogeOsBatchWitnessExtras>)> for DogeOsBundleWitness {
@@ -26,7 +26,8 @@ impl ProofCarryingWitness for DogeOsBundleWitness {
 
 impl From<&DogeOsBundleWitness> for DogeOsBundleInfo {
     fn from(witness: &DogeOsBundleWitness) -> Self {
-        let scroll_bundle_info = types_base::public_inputs::scroll::bundle::BundleInfo::from(&witness.inner);
+        let scroll_bundle_info =
+            types_base::public_inputs::scroll::bundle::BundleInfo::from(&witness.inner);
         DogeOsBundleInfo {
             inner: scroll_bundle_info,
         }

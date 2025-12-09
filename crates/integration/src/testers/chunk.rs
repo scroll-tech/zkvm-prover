@@ -8,6 +8,7 @@ use sbv_core::BlockWitness;
 use sbv_primitives::{B256, types::consensus::TxL1Message};
 use scroll_zkvm_prover::utils::read_json;
 use scroll_zkvm_prover::utils::vm::ExecutionResult;
+use scroll_zkvm_types::dogeos::chunk::DogeOsChunkWitness;
 use scroll_zkvm_types::{
     proof::ProofEnum,
     public_inputs::{ForkName, Version},
@@ -91,6 +92,20 @@ impl PartialProvingTask for ChunkWitness {
 
     fn fork_name(&self) -> ForkName {
         ForkName::from(self.fork_name.as_str())
+    }
+}
+
+impl PartialProvingTask for DogeOsChunkWitness {
+    fn identifier(&self) -> String {
+        self.inner.identifier()
+    }
+
+    fn fork_name(&self) -> ForkName {
+        self.inner.fork_name
+    }
+
+    fn legacy_rkyv_archive(&self) -> eyre::Result<Vec<u8>> {
+        unreachable!()
     }
 }
 

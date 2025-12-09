@@ -4,4 +4,4 @@ mod execute;
 pub use execute::execute;
 
 mod witness;
-pub use witness::DogeOsChunkWitness;
+pub use witness::{DogeOsChunkWitness, DogeOsChunkWitnessExtras};

@@ -1,4 +1,4 @@
-use crate::public_inputs::{scroll, MultiVersionPublicInputs};
+use crate::public_inputs::{MultiVersionPublicInputs, scroll};
 use crate::version::Version;
 
 /// Represents public-input values for a batch.
@@ -13,7 +13,7 @@ use crate::version::Version;
 )]
 #[rkyv(derive(Debug))]
 pub struct DogeOsBatchInfo {
-    pub inner: scroll::batch::BatchInfo
+    pub inner: scroll::batch::BatchInfo,
 }
 
 pub type VersionedDogeOsBatchInfo = (DogeOsBatchInfo, Version);
