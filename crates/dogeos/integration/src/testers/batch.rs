@@ -9,7 +9,10 @@ use scroll_zkvm_integration::utils::build_batch_witnesses;
 use scroll_zkvm_types::dogeos::batch::dogeos::{DogeOsBatchWitness, DogeOsBatchWitnessExtras};
 use scroll_zkvm_types::dogeos::chunk::{execute, DogeOsChunkWitness};
 use scroll_zkvm_types::public_inputs::dogeos::batch::DogeOsBatchInfo;
+use scroll_zkvm_types::public_inputs::MultiVersionPublicInputs;
+use scroll_zkvm_types::types_agg::AggregationInput;
 use scroll_zkvm_types::utils::serialize_vk;
+use scroll_zkvm_types::version::Version;
 
 pub struct BatchProverTester;
 
@@ -50,14 +53,25 @@ fn mock_inclusion_envelope() -> eyre::Result<StepInputEnvelope<DaInclusionVerifi
 
 pub fn mock_batch_witness(chunk_witness: &DogeOsChunkWitness) -> eyre::Result<DogeOsBatchWitness> {
     let last_info = execute(chunk_witness.clone()).expect("execute chunk");
-    // let chunks = vec![chunk_witness.clone()];
 
     let commitment = PROGRAM_COMMITMENTS["chunk"];
-    let inner = build_batch_witnesses(
-        &[chunk_witness.inner],
+    let mut inner = build_batch_witnesses(
+        &[chunk_witness.inner.clone()],
         &serialize_vk::serialize(&commitment),
         Default::default()
     )?;
+
+    inner.chunk_proofs = vec![
+        AggregationInput {
+            public_values: last_info.pi_hash_by_version(Version::feynman())
+                .as_slice()
+                .iter()
+                .map(|&b| b as u32)
+                .collect::<Vec<_>>(),
+            commitment,
+        }
+    ];
+
     let extras = DogeOsBatchWitnessExtras {
         chunk_info_extras: vec![last_info.extras],
         verifier_context: SerdeWrapper(Default::default()),
