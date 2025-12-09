@@ -7,7 +7,7 @@ use bridge_steps_da::{DaInclusionBuilder, DaInclusionVerifier, SyntheticBlobSour
 use scroll_zkvm_integration::{ProverTester, PROGRAM_COMMITMENTS};
 use scroll_zkvm_integration::utils::build_batch_witnesses;
 use scroll_zkvm_types::dogeos::batch::dogeos::{DogeOsBatchWitness, DogeOsBatchWitnessExtras};
-use scroll_zkvm_types::dogeos::chunk::execute;
+use scroll_zkvm_types::dogeos::chunk::{execute, DogeOsChunkWitness};
 use scroll_zkvm_types::public_inputs::dogeos::batch::DogeOsBatchInfo;
 use scroll_zkvm_types::utils::serialize_vk;
 
@@ -48,9 +48,7 @@ fn mock_inclusion_envelope() -> eyre::Result<StepInputEnvelope<DaInclusionVerifi
     })
 }
 
-pub fn mock_batch_witness() -> eyre::Result<DogeOsBatchWitness> {
-    let chunk_witness = super::chunk::mock_chunk_witness()?;
-
+pub fn mock_batch_witness(chunk_witness: &DogeOsChunkWitness) -> eyre::Result<DogeOsBatchWitness> {
     let last_info = execute(chunk_witness.clone()).expect("execute chunk");
     // let chunks = vec![chunk_witness.clone()];
 
