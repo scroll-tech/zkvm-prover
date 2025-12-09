@@ -16,6 +16,7 @@ use crate::child_commitments;
 
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use openvm_keccak256_guest;
+use scroll_zkvm_types_circuit::public_inputs::dogeos::batch::DogeOsBatchInfoExtras;
 
 #[derive(Default)]
 pub struct BundleCircuit;
@@ -72,7 +73,7 @@ impl AggCircuit for BundleCircuit {
             .batch_infos
             .iter()
             .cloned()
-            .map(|inner| DogeOsBatchInfo { inner })
+            .map(|inner| DogeOsBatchInfo { inner, extras: DogeOsBatchInfoExtras { } })
             .map(|batch_info| (batch_info, version))
             .collect()
     }
