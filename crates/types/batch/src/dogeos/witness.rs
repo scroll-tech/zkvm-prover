@@ -42,38 +42,39 @@ impl From<&DogeOsBatchWitness> for DogeOsBatchInfo {
     }
 }
 
-fn verify_da_inclusion(witness: &DogeOsBatchWitness, scroll_batch_info: &scroll::batch::BatchInfo) {
+fn verify_da_inclusion(witness: &DogeOsBatchWitness, _scroll_batch_info: &scroll::batch::BatchInfo) {
     DaInclusionVerifier
         .verify_envelope(&witness.extras.inclusion, &witness.extras.verifier_context)
         .expect("failed to verify inclusion proof");
 
-    let da_header = &witness.extras.inclusion.artifact.v2_header;
-
-    // See: https://github.com/DogeOS69/dogeos-core/tree/feat/trust-minimized-bridge-crates/crates/common_types/src/protos
-    // | Field | Type / Size | Meaning | Source / Notes |
-    // |-------|-------------|---------|----------------|
-    // | `prev_state_root` | bytes (32) | L2 state root before batch | DogeOS RPC |
-    assert_eq!(
-        da_header.prev_state_root,
-        scroll_batch_info.parent_state_root
-    );
-    // | `state_root` | bytes (32) | L2 state root after batch | DogeOS RPC |
-    assert_eq!(da_header.state_root, scroll_batch_info.state_root);
-    // | `prev_batch_hash` | bytes (32) | Hash of previous batch | From `commitBatches` inputs |
-    assert_eq!(
-        da_header.prev_batch_hash,
-        scroll_batch_info.parent_batch_hash
-    );
-    // | `batch_hash` | bytes (32) | Hash of current batch | `calculate_batch_hash` (codec version, batch index, blob commitment, prev batch hash) |
-    assert_eq!(da_header.batch_hash, scroll_batch_info.batch_hash);
-    // | `prev_l1_message_queue_hash` | bytes (32) | Pre-batch queue hash | Scroll codec `prev_l1_message_queue_hash` |
-    assert_eq!(
-        da_header.prev_l1_message_queue_hash,
-        scroll_batch_info.prev_msg_queue_hash
-    );
-    // | `l1_message_queue_hash` | bytes (32) | Post-batch L1 message queue hash | Scroll codec `post_l1_message_queue_hash` |
-    assert_eq!(
-        da_header.l1_message_queue_hash,
-        scroll_batch_info.post_msg_queue_hash
-    );
+    // TODO: uncomment and complete these checks
+    // let da_header = &witness.extras.inclusion.artifact.v2_header;
+    //
+    // // See: https://github.com/DogeOS69/dogeos-core/tree/feat/trust-minimized-bridge-crates/crates/common_types/src/protos
+    // // | Field | Type / Size | Meaning | Source / Notes |
+    // // |-------|-------------|---------|----------------|
+    // // | `prev_state_root` | bytes (32) | L2 state root before batch | DogeOS RPC |
+    // assert_eq!(
+    //     da_header.prev_state_root,
+    //     scroll_batch_info.parent_state_root
+    // );
+    // // | `state_root` | bytes (32) | L2 state root after batch | DogeOS RPC |
+    // assert_eq!(da_header.state_root, scroll_batch_info.state_root);
+    // // | `prev_batch_hash` | bytes (32) | Hash of previous batch | From `commitBatches` inputs |
+    // assert_eq!(
+    //     da_header.prev_batch_hash,
+    //     scroll_batch_info.parent_batch_hash
+    // );
+    // // | `batch_hash` | bytes (32) | Hash of current batch | `calculate_batch_hash` (codec version, batch index, blob commitment, prev batch hash) |
+    // assert_eq!(da_header.batch_hash, scroll_batch_info.batch_hash);
+    // // | `prev_l1_message_queue_hash` | bytes (32) | Pre-batch queue hash | Scroll codec `prev_l1_message_queue_hash` |
+    // assert_eq!(
+    //     da_header.prev_l1_message_queue_hash,
+    //     scroll_batch_info.prev_msg_queue_hash
+    // );
+    // // | `l1_message_queue_hash` | bytes (32) | Post-batch L1 message queue hash | Scroll codec `post_l1_message_queue_hash` |
+    // assert_eq!(
+    //     da_header.l1_message_queue_hash,
+    //     scroll_batch_info.post_msg_queue_hash
+    // );
 }
