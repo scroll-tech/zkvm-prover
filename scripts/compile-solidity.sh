@@ -1,3 +1,4 @@
-echo $1 -> $2
+#!/bin/bash
+echo "$1 -> $2"
 # version: solc-linux-amd64-v0.8.19+commit.7dd6d404
-cat $1 | solc --bin - | grep 6080 | xxd -r -p > $2
+solc --bin "$1" | grep 6080 | xxd -r -p > "$2"
