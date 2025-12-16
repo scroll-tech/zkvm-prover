@@ -61,7 +61,7 @@ openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", t
 openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false, features = [
   "parallel",
   "evm-prove",
-  "legacy-v1-3",
+  "legacy-v1-3-evm-verifier",
   "tco",
   "unprotected"
 ] }
