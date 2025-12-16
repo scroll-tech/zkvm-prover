@@ -95,9 +95,9 @@ impl TaskProver for AxiomProver {
         let mhz = cycles as f64 / duration / 1e6f64;
         tracing::info!("Proof generated in {duration:.2} seconds: {mhz:.2} MHz");
 
-        let proof_bytes =
-            self.sdk
-                .get_generated_proof(&status.id, &proof_type, None)?;
+        let proof_bytes = self
+            .sdk
+            .get_generated_proof(&status.id, &proof_type, None)?;
 
         match proof_type {
             ProofType::Stark => {
