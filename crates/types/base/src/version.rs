@@ -56,6 +56,8 @@ pub enum STFVersion {
     V8 = 8,
     /// Scroll@v9.
     V9 = 9,
+    /// Scroll@v10.
+    V10 = 10,
 }
 
 impl From<u8> for STFVersion {
@@ -66,6 +68,7 @@ impl From<u8> for STFVersion {
             7 => Self::V7,
             8 => Self::V8,
             9 => Self::V9,
+            10 => Self::V10,
             value => unreachable!("unsupported stf-version={value}"),
         }
     }
@@ -153,6 +156,15 @@ impl Version {
         }
     }
 
+    pub const fn galileo_v2() -> Self {
+        Self {
+            domain: Domain::Scroll,
+            stf_version: STFVersion::V10,
+            fork: ForkName::GalileoV2,
+            codec: Codec::V7,
+        }
+    }
+
     pub const fn validium_v1() -> Self {
         Self {
             domain: Domain::Validium,
@@ -187,6 +199,7 @@ impl From<u8> for Version {
             (Domain::Scroll, STFVersion::V7) => Self::euclid_v2(),
             (Domain::Scroll, STFVersion::V8) => Self::feynman(),
             (Domain::Scroll, STFVersion::V9) => Self::galileo(),
+            (Domain::Scroll, STFVersion::V10) => Self::galileo_v2(),
             (Domain::Validium, STFVersion::V1) => Self::validium_v1(),
             (domain, stf_version) => {
                 unreachable!("unsupported version=({domain:?}, {stf_version:?})")
@@ -200,3 +213,6 @@ pub const VALIDIUM_V1: u8 = Version::validium_v1().as_version_byte();
 
 /// Version byte for Galileo @ v9.
 pub const SCROLL_GALILEO: u8 = Version::galileo().as_version_byte();
+
+/// Version byte for GalileoV2 @ v10.
+pub const SCROLL_GALILEO_V2: u8 = Version::galileo_v2().as_version_byte();

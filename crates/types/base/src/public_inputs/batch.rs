@@ -119,6 +119,13 @@ impl BatchInfo {
         )
     }
 
+    /// Public input hash for a batch (galileo or da-codec@v9) is defined as
+    ///
+    /// Same as galileo.
+    pub fn pi_hash_galileo_v2(&self, version: Version) -> B256 {
+        self.pi_hash_galileo(version)
+    }
+
     /// Public input hash for a L3 validium @ v1.
     ///
     /// keccak(
@@ -161,6 +168,7 @@ impl MultiVersionPublicInputs for BatchInfo {
             (Domain::Scroll, STFVersion::V7) => self.pi_hash_euclidv2(),
             (Domain::Scroll, STFVersion::V8) => self.pi_hash_feynman(),
             (Domain::Scroll, STFVersion::V9) => self.pi_hash_galileo(version),
+            (Domain::Scroll, STFVersion::V10) => self.pi_hash_galileo_v2(version),
             (Domain::Validium, STFVersion::V1) => self.pi_hash_validium(version),
             (domain, stf_version) => {
                 unreachable!("unsupported version=({domain:?}, {stf_version:?})")
