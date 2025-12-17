@@ -1,6 +1,5 @@
 mod crypto;
 pub use crypto::Crypto;
-//pub use witness::{ChunkWitness, LegacyChunkWitness, ValidiumInputs};
 
 #[cfg(feature = "scroll")]
 mod scroll;

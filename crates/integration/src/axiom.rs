@@ -3,7 +3,7 @@ use axiom_sdk::build::BuildSdk;
 use axiom_sdk::config::ConfigSdk;
 use axiom_sdk::input::Input;
 use axiom_sdk::prove::{ProveArgs, ProveSdk};
-use axiom_sdk::{AxiomConfig, AxiomSdk, ProgressCallback, ProofType, SaveOption};
+use axiom_sdk::{AxiomConfig, AxiomSdk, ProgressCallback, ProofType};
 use chrono::DateTime;
 use openvm_sdk::commit::CommitBytes;
 use openvm_sdk::types::{EvmProof, VersionedVmStarkProof};
@@ -95,9 +95,9 @@ impl TaskProver for AxiomProver {
         let mhz = cycles as f64 / duration / 1e6f64;
         tracing::info!("Proof generated in {duration:.2} seconds: {mhz:.2} MHz");
 
-        let proof_bytes =
-            self.sdk
-                .get_generated_proof(&status.id, &proof_type, SaveOption::DoNotSave)?;
+        let proof_bytes = self
+            .sdk
+            .get_generated_proof(&status.id, &proof_type, None)?;
 
         match proof_type {
             ProofType::Stark => {
