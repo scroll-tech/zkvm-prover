@@ -64,7 +64,7 @@ fn main() -> eyre::Result<()> {
             .arg(metrics_path)
             .arg("--guest-symbols")
             .arg(symbol_path)
-            .current_dir(&output)
+            .current_dir(output)
             .status()?
             .exit_ok()?;
     }
