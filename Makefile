@@ -72,6 +72,9 @@ test-execute-chunk-multi:
 test-execute-validium-chunk:
 	@cargo test --release -p scroll-zkvm-integration --test chunk_circuit test_execute_validium -- --exact --nocapture
 
+bench-execute-chunk:
+	@cargo run --release -p scroll-zkvm-integration --bin chunk-benchmark --features perf-metrics -- --profiling
+
 test-cycle:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test chunk_circuit test_cycle -- --exact --nocapture
 
