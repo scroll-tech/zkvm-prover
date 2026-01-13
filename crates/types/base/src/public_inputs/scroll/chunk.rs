@@ -10,17 +10,7 @@ pub const SIZE_BLOCK_CTX: usize = 52;
 /// Represents the version 2 of block context.
 ///
 /// The difference between v2 and v1 is that the block number field has been removed since v2.
-#[derive(
-    Debug,
-    Clone,
-    PartialEq,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    serde::Deserialize,
-    serde::Serialize,
-)]
-#[rkyv(derive(Debug))]
+#[derive(Debug, Clone, PartialEq, serde::Deserialize, serde::Serialize)]
 pub struct BlockContextV2 {
     /// The timestamp of the block.
     pub timestamp: u64,
@@ -32,18 +22,6 @@ pub struct BlockContextV2 {
     pub num_txs: u16,
     /// The number of L1 msg txs in the block.
     pub num_l1_msgs: u16,
-}
-
-impl From<&ArchivedBlockContextV2> for BlockContextV2 {
-    fn from(archived: &ArchivedBlockContextV2) -> Self {
-        Self {
-            timestamp: archived.timestamp.into(),
-            base_fee: archived.base_fee.into(),
-            gas_limit: archived.gas_limit.into(),
-            num_txs: archived.num_txs.into(),
-            num_l1_msgs: archived.num_l1_msgs.into(),
-        }
-    }
 }
 
 impl From<&[u8]> for BlockContextV2 {
@@ -114,54 +92,6 @@ pub struct ChunkInfo {
     pub encryption_key: Option<Box<[u8]>>,
 }
 
-/// Represents header-like information for the chunk.
-#[derive(
-    Debug,
-    Clone,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    serde::Deserialize,
-    serde::Serialize,
-)]
-#[rkyv(derive(Debug))]
-pub struct LegacyChunkInfo {
-    /// The EIP-155 chain ID for all txs in the chunk.
-    #[rkyv()]
-    pub chain_id: u64,
-    /// The state root before applying the chunk.
-    #[rkyv()]
-    pub prev_state_root: B256,
-    /// The state root after applying the chunk.
-    #[rkyv()]
-    pub post_state_root: B256,
-    /// The withdrawals root after applying the chunk.
-    #[rkyv()]
-    pub withdraw_root: B256,
-    /// Digest of L1 message txs force included in the chunk.
-    /// It is a legacy field and can be omitted in new defination
-    #[rkyv()]
-    #[serde(default)]
-    pub data_hash: B256,
-    /// Digest of L2 tx data flattened over all L2 txs in the chunk.
-    #[rkyv()]
-    pub tx_data_digest: B256,
-    /// The L1 msg queue hash at the end of the previous chunk.
-    #[rkyv()]
-    pub prev_msg_queue_hash: B256,
-    /// The L1 msg queue hash at the end of the current chunk.
-    #[rkyv()]
-    pub post_msg_queue_hash: B256,
-    /// The length of rlp encoded L2 tx bytes flattened over all L2 txs in the chunk.
-    #[rkyv()]
-    pub tx_data_length: u64,
-    /// The block number of the first block in the chunk.
-    #[rkyv()]
-    pub initial_block_number: u64,
-    /// The block contexts of the blocks in the chunk.
-    #[rkyv()]
-    pub block_ctxs: Vec<BlockContextV2>,
-}
 impl std::fmt::Display for ChunkInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Create a wrapper struct that implements Debug
@@ -189,24 +119,6 @@ impl std::fmt::Display for ChunkInfo {
 
         // Use the Debug implementation with pretty formatting
         write!(f, "{:#?}", DisplayWrapper(self))
-    }
-}
-
-impl From<ChunkInfo> for LegacyChunkInfo {
-    fn from(value: ChunkInfo) -> Self {
-        Self {
-            chain_id: value.chain_id,
-            prev_state_root: value.prev_state_root,
-            post_state_root: value.post_state_root,
-            withdraw_root: value.withdraw_root,
-            data_hash: value.data_hash,
-            tx_data_digest: value.tx_data_digest,
-            prev_msg_queue_hash: value.prev_msg_queue_hash,
-            post_msg_queue_hash: value.post_msg_queue_hash,
-            tx_data_length: value.tx_data_length,
-            initial_block_number: value.initial_block_number,
-            block_ctxs: value.block_ctxs,
-        }
     }
 }
 

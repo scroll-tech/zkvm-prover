@@ -1,7 +1,7 @@
 use crate::axiom::AxiomProver;
 use cargo_metadata::MetadataCommand;
 use once_cell::sync::OnceCell;
-use openvm_sdk::StdIn;
+use openvm_sdk::{Sdk, StdIn};
 use scroll_zkvm_prover::{
     Prover,
     setup::{read_app_config, read_app_exe},
@@ -121,18 +121,13 @@ pub trait PartialProvingTask: serde::Serialize {
     fn identifier(&self) -> String;
     fn fork_name(&self) -> ForkName;
 
-    fn legacy_rkyv_archive(&self) -> eyre::Result<Vec<u8>>;
-
     fn archive(&self) -> eyre::Result<Vec<u8>>
     where
         Self: Sized,
     {
-        let bytes: Vec<u8> = match GUEST_VERSION.as_ref() {
-            "0.5.2" => self.legacy_rkyv_archive()?,
-            _ => {
-                let config = bincode::config::standard();
-                bincode::serde::encode_to_vec(self, config)?
-            }
+        let bytes: Vec<u8> = {
+            let config = bincode::config::standard();
+            bincode::serde::encode_to_vec(self, config)?
         };
         Ok(bytes)
     }
@@ -211,7 +206,6 @@ pub trait ProverTester {
         let config = scroll_zkvm_prover::ProverConfig {
             path_app_exe,
             path_app_config,
-            is_openvm_v13: *GUEST_VERSION == "0.5.2",
             ..Default::default()
         };
         let prover = Prover::setup(config, Some(Self::NAME))?;
@@ -363,8 +357,8 @@ pub fn tester_execute<T: ProverTester>(
             .map(|p| p.as_stark_proof().expect("must be stark proof")),
     )?;
 
-    let ret =
-        scroll_zkvm_prover::utils::vm::execute_guest(app_config.app_vm_config, &app_exe, &stdin)?;
+    let sdk = Sdk::new(app_config)?;
+    let ret = scroll_zkvm_prover::utils::vm::execute_guest(&sdk, app_exe, &stdin)?;
     Ok(ret)
 }
 

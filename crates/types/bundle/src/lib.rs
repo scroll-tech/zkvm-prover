@@ -1,4 +1,4 @@
 mod witness;
-pub use witness::{ArchivedLegacyBundleWitness, BundleWitness, LegacyBundleWitness};
+pub use witness::BundleWitness;
 
 pub mod dogeos;

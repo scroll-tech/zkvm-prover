@@ -1,7 +1,7 @@
 use crate::{
-    GUEST_VERSION, PartialProvingTask, ProverTester, TaskProver, prove_verify,
-    testdata_fork_directory, tester_execute, testers::PATH_TESTDATA, testing_hardfork,
-    testing_version, utils::metadata_from_chunk_witnesses,
+    PartialProvingTask, ProverTester, TaskProver, prove_verify, testdata_fork_directory,
+    tester_execute, testers::PATH_TESTDATA, testing_hardfork, testing_version,
+    utils::metadata_from_chunk_witnesses,
 };
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use sbv_core::BlockWitness;
@@ -13,7 +13,7 @@ use scroll_zkvm_types::{
     proof::ProofEnum,
     public_inputs::{ForkName, Version},
     scroll::chunk::{
-        ChunkInfo, ChunkWitness, ChunkWitnessUpgradeCompact, LegacyChunkWitness, SecretKey,
+        ChunkInfo, ChunkWitness, SecretKey,
     },
 };
 use std::{
@@ -63,29 +63,13 @@ impl PartialProvingTask for ChunkWitness {
         format!("{first}-{last}")
     }
 
-    fn legacy_rkyv_archive(&self) -> eyre::Result<Vec<u8>> {
-        let witness_legacy = LegacyChunkWitness::from(self.clone());
-        let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(&witness_legacy)?;
-        Ok(bytes.to_vec())
-    }
-
     fn archive(&self) -> eyre::Result<Vec<u8>>
     where
         Self: Sized,
     {
-        let bytes: Vec<u8> = match GUEST_VERSION.as_ref() {
-            "0.5.2" => self.legacy_rkyv_archive()?,
-            "0.6.0-rc.6" => {
-                let config = bincode::config::standard();
-                bincode::serde::encode_to_vec(
-                    ChunkWitnessUpgradeCompact::from(self.clone()),
-                    config,
-                )?
-            }
-            _ => {
-                let config = bincode::config::standard();
-                bincode::serde::encode_to_vec(self, config)?
-            }
+        let bytes: Vec<u8> = {
+            let config = bincode::config::standard();
+            bincode::serde::encode_to_vec(self, config)?
         };
         Ok(bytes)
     }
@@ -231,13 +215,34 @@ pub fn get_witness_from_env_or_builder(
 
 /// preset examples for single task
 pub fn preset_chunk() -> ChunkTaskGenerator {
-    let (version, block_range) = match testing_hardfork() {
+    let (version, mut block_range) = match testing_hardfork() {
         ForkName::EuclidV1 => (Version::euclid_v1(), 12508460u64..=12508463u64),
         ForkName::EuclidV2 => (Version::euclid_v2(), 1u64..=4u64),
         ForkName::Feynman => (Version::feynman(), 16525000u64..=16525003u64),
         ForkName::Galileo => (Version::galileo(), 20239156..=20239235),
         ForkName::GalileoV2 => (Version::galileo_v2(), 20239240..=20239245),
     };
+
+    // If the BLOCK_RANGE env var is set, use that instead.
+    if let Ok(r) = std::env::var("BLOCK_RANGE") {
+        if r.contains("..=") {
+            let parts: Vec<&str> = r.split("..=").collect();
+            if parts.len() != 2 {
+                panic!("invalid BLOCK_RANGE, expect start..=end, found = {r}");
+            }
+            let start = parts[0]
+                .trim()
+                .parse::<u64>()
+                .expect("BLOCK_RANGE start not a number");
+            let end = parts[1]
+                .trim()
+                .parse::<u64>()
+                .expect("BLOCK_RANGE end not a number");
+            block_range = start..=end;
+        } else {
+            panic!("invalid BLOCK_RANGE, expect start..=end, found = {r}");
+        }
+    }
 
     ChunkTaskGenerator {
         version,
@@ -273,52 +278,66 @@ pub fn create_canonical_tasks(
 
 /// preset examples for multiple task
 pub fn preset_chunk_multiple() -> Vec<ChunkTaskGenerator> {
-    static PRESET_RESULT: std::sync::OnceLock<Vec<ChunkTaskGenerator>> = std::sync::OnceLock::new();
-
-    PRESET_RESULT
-        .get_or_init(|| {
-            let (block_range, version) = match testing_hardfork() {
-                ForkName::EuclidV1 => (
-                    vec![
-                        12508460u64..=12508460u64,
-                        12508461u64..=12508461u64,
-                        12508462u64..=12508463u64,
-                    ],
-                    Version::euclid_v1(),
-                ),
-                ForkName::EuclidV2 => (
-                    vec![1u64..=1u64, 2u64..=2u64, 3u64..=4u64],
-                    Version::euclid_v2(),
-                ),
-                ForkName::Feynman => (
-                    vec![
-                        16525000u64..=16525000u64,
-                        16525001u64..=16525001u64,
-                        16525002u64..=16525003u64,
-                    ],
-                    Version::feynman(),
-                ),
-                ForkName::Galileo => (
-                    vec![
-                        20239220..=20239220,
-                        20239221..=20239221,
-                        20239222..=20239222,
-                    ],
-                    Version::galileo(),
-                ),
-                ForkName::GalileoV2 => (
-                    vec![
-                        20239240..=20239240,
-                        20239241..=20239241,
-                        20239242..=20239242,
-                    ],
-                    Version::galileo_v2(),
-                ),
-            };
-            create_canonical_tasks(version, block_range.into_iter())
-                .expect("must success for preset collections")
-        })
-        .clone()
+    let (mut block_range, version) = match testing_hardfork() {
+        ForkName::EuclidV1 => (
+            vec![
+                12508460u64..=12508460u64,
+                12508461u64..=12508461u64,
+                12508462u64..=12508463u64,
+            ],
+            Version::euclid_v1(),
+        ),
+        ForkName::EuclidV2 => (
+            vec![1u64..=1u64, 2u64..=2u64, 3u64..=4u64],
+            Version::euclid_v2(),
+        ),
+        ForkName::Feynman => (
+            vec![
+                16525000u64..=16525000u64,
+                16525001u64..=16525001u64,
+                16525002u64..=16525003u64,
+            ],
+            Version::feynman(),
+        ),
+        ForkName::Galileo => (
+            vec![
+                20239220..=20239220,
+                20239221..=20239221,
+                20239222..=20239222,
+            ],
+            Version::galileo(),
+        ),
+        ForkName::GalileoV2 => (
+            vec![
+                20239240..=20239240,
+                20239241..=20239241,
+                20239242..=20239242,
+            ],
+            Version::galileo_v2(),
+        ),
+    };
+    // If the BLOCK_RANGE env var has been set, use that instead.
+    if let Ok(r) = std::env::var("BLOCK_RANGE") {
+        block_range = r
+            .split(",")
+            .map(|part| {
+                let p = part.trim();
+                if let Some(idx) = p.find("..=") {
+                    let start = &p[..idx].trim();
+                    let end = &p[idx + 3..].trim();
+                    let a = start
+                        .parse::<u64>()
+                        .expect("BLOCK_RANGE start not a number");
+                    let b = end.parse::<u64>().expect("BLOCK_RANGE end not a number");
+                    a..=b
+                } else {
+                    panic!("invalid range syntax: {}", p);
+                }
+            })
+            .collect();
+    }
+    create_canonical_tasks(version, block_range.into_iter())
+        .expect("must success for preset collections")
 }
 
 pub fn preset_chunk_validium() -> Vec<ChunkTaskGenerator> {
@@ -362,5 +381,56 @@ pub fn execute_multi(
                     (gas1 + gas2, cycle1 + cycle2)
                 },
             )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::testers::chunk::{preset_chunk, preset_chunk_multiple};
+
+    #[test]
+    fn test_presets() {
+        let single = preset_chunk();
+        assert_eq!(
+            single.block_range,
+            (20239240u64..=20239245).collect::<Vec<u64>>(),
+        );
+        let multiple = preset_chunk_multiple();
+        assert_eq!(
+            multiple[0].block_range,
+            (20239240..=20239240).collect::<Vec<u64>>(),
+        );
+        assert_eq!(
+            multiple[1].block_range,
+            (20239241..=20239241).collect::<Vec<u64>>(),
+        );
+        assert_eq!(
+            multiple[2].block_range,
+            (20239242..=20239242).collect::<Vec<u64>>(),
+        );
+
+        // After setting env var.
+        std::env::set_var("BLOCK_RANGE", "123..=321");
+        assert_eq!(
+            preset_chunk().block_range,
+            (123..=321).collect::<Vec<u64>>()
+        );
+        std::env::set_var(
+            "BLOCK_RANGE",
+            "20239240..=20239241,20239242..=20239243,20239244..=20239245",
+        );
+        let multiple = preset_chunk_multiple();
+        assert_eq!(
+            multiple[0].block_range,
+            (20239240u64..=20239241u64).collect::<Vec<u64>>()
+        );
+        assert_eq!(
+            multiple[1].block_range,
+            (20239242u64..=20239243u64).collect::<Vec<u64>>()
+        );
+        assert_eq!(
+            multiple[2].block_range,
+            (20239244u64..=20239245u64).collect::<Vec<u64>>()
+        );
     }
 }

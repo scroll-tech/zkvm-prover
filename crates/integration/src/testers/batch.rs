@@ -2,7 +2,7 @@ use scroll_zkvm_types::{
     proof::ProofEnum,
     public_inputs::{ForkName, Version},
     scroll::{
-        batch::{BatchHeader, BatchInfo, BatchWitness, LegacyBatchWitness, ReferenceHeader},
+        batch::{BatchHeader, BatchInfo, BatchWitness, ReferenceHeader},
         chunk::ChunkInfo,
     },
     utils::serialize_vk,
@@ -23,12 +23,6 @@ impl PartialProvingTask for BatchWitness {
             ReferenceHeader::Validium(h) => h.batch_hash(),
         };
         header_hash.to_string()
-    }
-
-    fn legacy_rkyv_archive(&self) -> eyre::Result<Vec<u8>> {
-        let witness_legacy = LegacyBatchWitness::from(self.clone());
-        let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(&witness_legacy)?;
-        Ok(bytes.to_vec())
     }
 
     fn fork_name(&self) -> ForkName {

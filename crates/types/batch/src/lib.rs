@@ -1,8 +1,8 @@
 mod header;
 pub use header::{
-    ArchivedReferenceHeader, BatchHeader, ReferenceHeader,
-    v6::{ArchivedBatchHeaderV6, BatchHeaderV6},
-    v7::{ArchivedBatchHeaderV7, BatchHeaderV7},
+    BatchHeader, ReferenceHeader,
+    v6::BatchHeaderV6,
+    v7::BatchHeaderV7,
     validium::{BatchHeaderValidium, BatchHeaderValidiumV1},
 };
 
@@ -17,10 +17,7 @@ pub mod blob_consistency;
 mod builder;
 
 mod witness;
-pub use witness::{
-    ArchivedLegacyBatchWitness, BatchWitness, Bytes48, LegacyBatchWitness, PointEvalWitness,
-    build_point_eval_witness,
-};
+pub use witness::{BatchWitness, Bytes48, PointEvalWitness, build_point_eval_witness};
 
 pub mod dogeos;
 
