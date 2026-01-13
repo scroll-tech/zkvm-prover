@@ -88,7 +88,7 @@ test-execute-validium-e2e:
 	@cargo test --release -p scroll-zkvm-integration --test bundle_circuit test_execute_validium -- --exact --nocapture
 
 test-single-chunk:
-	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test chunk_circuit setup_prove_verify_single -- --exact --nocapture
+	@cargo test $(CARGO_CONFIG_FLAG) --release -p dogeos-zkvm-integration --test chunk_circuit setup_prove_verify_single -- --exact --nocapture
 
 test-axiom-single-chunk:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test chunk_circuit setup_axiom_prove_verify_single -- --exact --nocapture
