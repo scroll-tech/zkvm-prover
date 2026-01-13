@@ -30,7 +30,7 @@ pub fn mock_chunk_witness() -> eyre::Result<DogeOsChunkWitness> {
     let block_witness_path = DOGEOS_TESTDATA_ROOT
         .join("mock")
         .join("witnesses")
-        .join("1161273.json");
+        .join("1954897.json");
     let block_witness = read_block_witness(block_witness_path)?;
 
     let inner = ChunkWitness::new_scroll(
