@@ -23,3 +23,23 @@ fn test_e2e_execute() -> eyre::Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn e2e() -> eyre::Result<()> {
+    BatchProverTester::setup(true)?;
+
+    let mut prover = BatchProverTester::load_prover(false)?;
+    let mut chunk_prover = ChunkProverTester::load_prover(false)?;
+
+    let chunk_witness = mock_chunk_witness()?;
+    let chunk_proof = prove_verify::<ChunkProverTester>(&mut chunk_prover, &chunk_witness, &[])?;
+
+    let batch_witness = mock_batch_witness(&chunk_witness)?;
+    prove_verify::<BatchProverTester>(
+        &mut prover,
+        &batch_witness,
+        &[chunk_proof],
+    )?;
+
+    Ok(())
+}
