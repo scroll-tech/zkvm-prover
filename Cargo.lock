@@ -1645,6 +1645,7 @@ dependencies = [
 [[package]]
 name = "bridge_adapters_zk"
 version = "0.3.0"
+source = "git+https://github.com/DogeOS69/dogeos-core?branch=scroll%2Fopenvm%2Fupgrade#177a521452107f87099dabb7e0fdb50ecb13d0c8"
 dependencies = [
  "bincode 2.0.1",
  "bridge_core",
@@ -1657,6 +1658,7 @@ dependencies = [
 [[package]]
 name = "bridge_core"
 version = "0.3.0"
+source = "git+https://github.com/DogeOS69/dogeos-core?branch=scroll%2Fopenvm%2Fupgrade#177a521452107f87099dabb7e0fdb50ecb13d0c8"
 dependencies = [
  "bincode 2.0.1",
  "thiserror 2.0.17",
@@ -1665,6 +1667,7 @@ dependencies = [
 [[package]]
 name = "bridge_integrity"
 version = "0.2.0"
+source = "git+https://github.com/DogeOS69/dogeos-core?branch=scroll%2Fopenvm%2Fupgrade#177a521452107f87099dabb7e0fdb50ecb13d0c8"
 dependencies = [
  "common_types",
  "hex",
@@ -1675,6 +1678,7 @@ dependencies = [
 [[package]]
 name = "bridge_protocol"
 version = "0.3.0"
+source = "git+https://github.com/DogeOS69/dogeos-core?branch=scroll%2Fopenvm%2Fupgrade#177a521452107f87099dabb7e0fdb50ecb13d0c8"
 dependencies = [
  "bincode 2.0.1",
  "bridge_core",
@@ -1685,6 +1689,7 @@ dependencies = [
 [[package]]
 name = "bridge_steps_da"
 version = "0.3.0"
+source = "git+https://github.com/DogeOS69/dogeos-core?branch=scroll%2Fopenvm%2Fupgrade#177a521452107f87099dabb7e0fdb50ecb13d0c8"
 dependencies = [
  "bincode 2.0.1",
  "bridge_core",
@@ -1704,6 +1709,7 @@ dependencies = [
 [[package]]
 name = "bridge_steps_deposit"
 version = "0.3.0"
+source = "git+https://github.com/DogeOS69/dogeos-core?branch=scroll%2Fopenvm%2Fupgrade#177a521452107f87099dabb7e0fdb50ecb13d0c8"
 dependencies = [
  "bitcoin_hashes 0.12.0",
  "bridge_core",
@@ -1721,6 +1727,7 @@ dependencies = [
 [[package]]
 name = "bridge_transforms"
 version = "0.3.0"
+source = "git+https://github.com/DogeOS69/dogeos-core?branch=scroll%2Fopenvm%2Fupgrade#177a521452107f87099dabb7e0fdb50ecb13d0c8"
 dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
@@ -2088,6 +2095,7 @@ dependencies = [
 [[package]]
 name = "common_types"
 version = "0.3.0"
+source = "git+https://github.com/DogeOS69/dogeos-core?branch=scroll%2Fopenvm%2Fupgrade#177a521452107f87099dabb7e0fdb50ecb13d0c8"
 dependencies = [
  "alloy-primitives",
  "hex",
@@ -2466,6 +2474,7 @@ dependencies = [
 [[package]]
 name = "da_codec"
 version = "0.3.0"
+source = "git+https://github.com/DogeOS69/dogeos-core?branch=scroll%2Fopenvm%2Fupgrade#177a521452107f87099dabb7e0fdb50ecb13d0c8"
 dependencies = [
  "alloy",
  "common_types",

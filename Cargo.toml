@@ -149,12 +149,18 @@ scroll-zkvm-prover = { path = "crates/prover" }
 scroll-zkvm-verifier = { path = "crates/verifier" }
 
 # dogeos crates
-bridge_core = { path = "../dogeos-core/crates/bridge_core", default-features = false }
-bridge_protocol = { path = "../dogeos-core/crates/bridge_protocol", default-features = false }
-bridge_adapters_zk = { path = "../dogeos-core/crates/bridge_adapters_zk", default-features = false }
-bridge_steps_da = { path = "../dogeos-core/crates/bridge_steps_da", default-features = false }
-bridge_steps_deposit = { path = "../dogeos-core/crates/bridge_steps_deposit", default-features = false }
-bridge_transforms = { path = "../dogeos-core/crates/bridge_transforms", default-features = false }
+#bridge_core = { path = "../dogeos-core/crates/bridge_core", default-features = false }
+#bridge_protocol = { path = "../dogeos-core/crates/bridge_protocol", default-features = false }
+#bridge_adapters_zk = { path = "../dogeos-core/crates/bridge_adapters_zk", default-features = false }
+#bridge_steps_da = { path = "../dogeos-core/crates/bridge_steps_da", default-features = false }
+#bridge_steps_deposit = { path = "../dogeos-core/crates/bridge_steps_deposit", default-features = false }
+#bridge_transforms = { path = "../dogeos-core/crates/bridge_transforms", default-features = false }
+bridge_core = { git = "https://github.com/DogeOS69/dogeos-core", branch = "scroll/openvm/upgrade", default-features = false }
+bridge_protocol = { git = "https://github.com/DogeOS69/dogeos-core", branch = "scroll/openvm/upgrade", default-features = false }
+bridge_adapters_zk = { git = "https://github.com/DogeOS69/dogeos-core", branch = "scroll/openvm/upgrade", default-features = false }
+bridge_steps_da = { git = "https://github.com/DogeOS69/dogeos-core", branch = "scroll/openvm/upgrade", default-features = false }
+bridge_steps_deposit = { git = "https://github.com/DogeOS69/dogeos-core", branch = "scroll/openvm/upgrade", default-features = false }
+bridge_transforms = { git = "https://github.com/DogeOS69/dogeos-core", branch = "scroll/openvm/upgrade", default-features = false }
 
 [patch.crates-io]
 revm = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
