@@ -1,12 +1,5 @@
-//! To get flamegraphs, following instructions are needed:
-//!
-//! 1. run in `crates/integration` dir:
-//!
-//!   `OPENVM_RUST_TOOLCHAIN=nightly-2025-08-18 cargo run --release --bin chunk-benchmark --features perf-metrics -- --profiling`
-//! 2. run in `.output/chunk-tests-*_*`:
-//!
-//!   `python <path to openvm repo>/ci/scripts/metric_unify/flamegraph.py metrics.json --guest-symbols guest.syms`
-//! 3. get flamegraphs in `.bench_metrics/flamegraphs`
+#![feature(exit_status_error)]
+//! Run `make bench-execute-chunk` to execute this benchmark.
 use clap::Parser;
 use openvm_benchmarks_prove::util::BenchmarkCli;
 use openvm_benchmarks_utils::build_elf;
@@ -16,6 +9,7 @@ use scroll_zkvm_integration::testers::chunk::{
     ChunkProverTester, get_witness_from_env_or_builder, preset_chunk,
 };
 use scroll_zkvm_integration::{DIR_TESTRUN, ProverTester, WORKSPACE_ROOT};
+use std::process::Command;
 use std::{env, fs};
 
 fn main() -> eyre::Result<()> {
@@ -23,9 +17,11 @@ fn main() -> eyre::Result<()> {
 
     let output = DIR_TESTRUN.get().unwrap();
     fs::create_dir_all(output)?;
+    let metrics_path = output.join("metrics.json");
+    let symbol_path = output.join("guest.syms");
     unsafe {
-        env::set_var("OUTPUT_PATH", output.join("metrics.json"));
-        env::set_var("GUEST_SYMBOLS_PATH", output.join("guest.syms"));
+        env::set_var("OUTPUT_PATH", &metrics_path);
+        env::set_var("GUEST_SYMBOLS_PATH", &symbol_path);
     }
 
     let args: BenchmarkCli = BenchmarkCli::parse();
@@ -33,6 +29,7 @@ fn main() -> eyre::Result<()> {
     let app_vm_config =
         SdkVmConfig::from_toml(include_str!("../../../circuits/chunk-circuit/openvm.toml"))?
             .app_vm_config;
+
     let project_path = WORKSPACE_ROOT
         .join("crates")
         .join("circuits")
@@ -58,5 +55,19 @@ fn main() -> eyre::Result<()> {
             elf,
             ChunkProverTester::build_guest_input(&wit, std::iter::empty())?,
         )
-    })
+    })?;
+
+    // exec flamegraph generation script
+    if args.profiling {
+        Command::new("python3")
+            .arg(WORKSPACE_ROOT.join("scripts").join("flamegraph.py"))
+            .arg(metrics_path)
+            .arg("--guest-symbols")
+            .arg(symbol_path)
+            .current_dir(output)
+            .status()?
+            .exit_ok()?;
+    }
+
+    Ok(())
 }
