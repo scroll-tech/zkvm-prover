@@ -34,10 +34,6 @@ impl PartialProvingTask for DogeOsBundleWitness {
         self.inner.identifier()
     }
 
-    fn legacy_rkyv_archive(&self) -> eyre::Result<Vec<u8>> {
-        unreachable!()
-    }
-
     fn fork_name(&self) -> ForkName {
         self.inner.fork_name()
     }

@@ -85,10 +85,6 @@ impl PartialProvingTask for DogeOsChunkWitness {
     fn fork_name(&self) -> ForkName {
         self.inner.fork_name
     }
-
-    fn legacy_rkyv_archive(&self) -> eyre::Result<Vec<u8>> {
-        unreachable!()
-    }
 }
 
 impl ProverTester for ChunkProverTester {
