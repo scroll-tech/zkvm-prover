@@ -1,9 +1,11 @@
+use dogeos_zkvm_integration::testers::batch::{BatchProverTester, mock_batch_witness};
+use dogeos_zkvm_integration::testers::bundle::{BundleProverTester, mock_bundle_witness};
+use dogeos_zkvm_integration::testers::chunk::{ChunkProverTester, mock_chunk_witness};
 use sbv_primitives::alloy_primitives;
-use dogeos_zkvm_integration::testers::batch::{mock_batch_witness, BatchProverTester};
-use dogeos_zkvm_integration::testers::bundle::{mock_bundle_witness, BundleProverTester};
-use dogeos_zkvm_integration::testers::chunk::{mock_chunk_witness, ChunkProverTester};
-use scroll_zkvm_integration::{prove_verify, prove_verify_single_evm, testing_version, ProverTester, TaskProver};
 use scroll_zkvm_integration::utils::metadata_from_bundle_witnesses;
+use scroll_zkvm_integration::{
+    ProverTester, TaskProver, prove_verify, prove_verify_single_evm, testing_version,
+};
 use scroll_zkvm_types::proof::OpenVmEvmProof;
 use scroll_zkvm_types::public_inputs::dogeos::bundle::DogeOsBundleInfo;
 use scroll_zkvm_types::public_inputs::{ForkName, MultiVersionPublicInputs};
@@ -33,9 +35,13 @@ fn e2e_inner(
     let expected_pi_hash = bundle_info.pi_hash_by_version(Version::feynman());
 
     let chunk_proof = prove_verify::<ChunkProverTester>(chunk_prover, &chunk_witness, &[])?;
-    let batch_proof = prove_verify::<BatchProverTester>(batch_prover, &batch_witness, &[chunk_proof])?;
-    let bundle_proof = prove_verify_single_evm::<BundleProverTester>(bundle_prover, &bundle_witness, &[batch_proof])?;
-
+    let batch_proof =
+        prove_verify::<BatchProverTester>(batch_prover, &batch_witness, &[chunk_proof])?;
+    let bundle_proof = prove_verify_single_evm::<BundleProverTester>(
+        bundle_prover,
+        &bundle_witness,
+        &[batch_proof],
+    )?;
 
     let evm_proof: OpenVmEvmProof = bundle_proof.into_evm_proof().unwrap().into();
 

@@ -1,10 +1,7 @@
 use types_base::{
     aggregation::{AggregationInput, ProofCarryingWitness},
     fork_name::ForkName,
-    public_inputs::scroll::{
-        batch::BatchInfo,
-        bundle::BundleInfo,
-    },
+    public_inputs::scroll::{batch::BatchInfo, bundle::BundleInfo},
 };
 
 /// The witness for the bundle circuit.

@@ -1,5 +1,6 @@
 use alloy_primitives::B256;
-use scroll_zkvm_types_batch::dogeos::{DogeOsBatchWitness};
+use itertools::Itertools;
+use scroll_zkvm_types_batch::dogeos::DogeOsBatchWitness;
 use scroll_zkvm_types_circuit::{
     AggCircuit, AggregationInput, Circuit, ProgramCommitment,
     io::read_witnesses,
@@ -11,10 +12,10 @@ use scroll_zkvm_types_circuit::{
         },
     },
 };
-use itertools::Itertools;
 
 use crate::child_commitments;
 
+use scroll_zkvm_types_circuit::public_inputs::dogeos::chunk::DogeOsChunkInfo;
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use {
     openvm_algebra_guest::{IntMod, field::FieldExtension},
@@ -23,7 +24,6 @@ use {
     openvm_pairing::bls12_381::{Bls12_381, Bls12_381G1Affine, Fp, Fp2},
     openvm_sha256_guest,
 };
-use scroll_zkvm_types_circuit::public_inputs::dogeos::chunk::DogeOsChunkInfo;
 
 openvm::init!();
 

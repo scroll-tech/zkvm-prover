@@ -12,9 +12,7 @@ use scroll_zkvm_types::dogeos::chunk::DogeOsChunkWitness;
 use scroll_zkvm_types::{
     proof::ProofEnum,
     public_inputs::{ForkName, Version},
-    scroll::chunk::{
-        ChunkInfo, ChunkWitness, SecretKey,
-    },
+    scroll::chunk::{ChunkInfo, ChunkWitness, SecretKey},
 };
 use std::{
     fs::File,

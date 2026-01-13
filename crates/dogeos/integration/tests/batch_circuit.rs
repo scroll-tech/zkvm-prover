@@ -1,6 +1,6 @@
-use dogeos_zkvm_integration::testers::batch::{mock_batch_witness, BatchProverTester};
-use dogeos_zkvm_integration::testers::chunk::{mock_chunk_witness, ChunkProverTester};
-use scroll_zkvm_integration::{prove_verify, ProverTester};
+use dogeos_zkvm_integration::testers::batch::{BatchProverTester, mock_batch_witness};
+use dogeos_zkvm_integration::testers::chunk::{ChunkProverTester, mock_chunk_witness};
+use scroll_zkvm_integration::{ProverTester, prove_verify};
 
 #[test]
 fn test_e2e_execute() -> eyre::Result<()> {
@@ -8,7 +8,6 @@ fn test_e2e_execute() -> eyre::Result<()> {
 
     let prover = BatchProverTester::load_prover(false)?;
     let mut chunk_prover = ChunkProverTester::load_prover(false)?;
-
 
     let chunk_witness = mock_chunk_witness()?;
     let chunk_proof = prove_verify::<ChunkProverTester>(&mut chunk_prover, &chunk_witness, &[])?;

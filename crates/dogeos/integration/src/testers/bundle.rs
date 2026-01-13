@@ -1,5 +1,5 @@
-use scroll_zkvm_integration::{ProverTester, PROGRAM_COMMITMENTS};
 use scroll_zkvm_integration::utils::metadata_from_batch_witnesses;
+use scroll_zkvm_integration::{PROGRAM_COMMITMENTS, ProverTester};
 use scroll_zkvm_types::dogeos::batch::dogeos::DogeOsBatchWitness;
 use scroll_zkvm_types::dogeos::bundle::BundleWitness;
 use scroll_zkvm_types::dogeos::bundle::dogeos::DogeOsBundleWitness;
@@ -23,9 +23,8 @@ impl ProverTester for BundleProverTester {
     const DIR_ASSETS: &str = "bundle";
 }
 
-
 pub fn mock_bundle_witness(
-    batch_witness: &DogeOsBatchWitness
+    batch_witness: &DogeOsBatchWitness,
 ) -> eyre::Result<DogeOsBundleWitness> {
     let commitment = PROGRAM_COMMITMENTS["batch"];
 
@@ -55,6 +54,6 @@ pub fn mock_bundle_witness(
 
     Ok(DogeOsBundleWitness {
         inner: bundle_witness,
-        batch_info_extras: vec![info.extras]
+        batch_info_extras: vec![info.extras],
     })
 }

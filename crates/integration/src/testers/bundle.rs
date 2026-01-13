@@ -1,11 +1,11 @@
 use scroll_zkvm_types::{
+    dogeos::bundle::dogeos::DogeOsBundleWitness,
     proof::ProofEnum,
     public_inputs::ForkName,
     scroll::{
         batch::BatchInfo,
         bundle::{BundleInfo, BundleWitness},
     },
-    dogeos::bundle::dogeos::DogeOsBundleWitness
 };
 // Only related to hardcoded commitments. Can be refactored later.
 use crate::{

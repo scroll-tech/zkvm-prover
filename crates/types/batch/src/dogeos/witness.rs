@@ -38,12 +38,15 @@ impl From<&DogeOsBatchWitness> for DogeOsBatchInfo {
 
         DogeOsBatchInfo {
             inner: scroll_batch_info,
-            extras: DogeOsBatchInfoExtras {}
+            extras: DogeOsBatchInfoExtras {},
         }
     }
 }
 
-fn verify_da_inclusion(witness: &DogeOsBatchWitness, _scroll_batch_info: &scroll::batch::BatchInfo) {
+fn verify_da_inclusion(
+    witness: &DogeOsBatchWitness,
+    _scroll_batch_info: &scroll::batch::BatchInfo,
+) {
     DaInclusionVerifier
         .verify_envelope(&witness.extras.inclusion, &witness.extras.verifier_context)
         .expect("failed to verify inclusion proof");

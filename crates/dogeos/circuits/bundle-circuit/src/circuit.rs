@@ -6,7 +6,7 @@ use scroll_zkvm_types_circuit::{
     public_inputs::{
         Version,
         dogeos::{
-            batch::{VersionedDogeOsBatchInfo, DogeOsBatchInfo},
+            batch::{DogeOsBatchInfo, VersionedDogeOsBatchInfo},
             bundle::{DogeOsBundleInfo, VersionedDogeOsBundleInfo},
         },
     },
@@ -73,7 +73,10 @@ impl AggCircuit for BundleCircuit {
             .batch_infos
             .iter()
             .cloned()
-            .map(|inner| DogeOsBatchInfo { inner, extras: DogeOsBatchInfoExtras { } })
+            .map(|inner| DogeOsBatchInfo {
+                inner,
+                extras: DogeOsBatchInfoExtras {},
+            })
             .map(|batch_info| (batch_info, version))
             .collect()
     }
