@@ -7,6 +7,7 @@ use scroll_zkvm_types::{
         bundle::{BundleInfo, BundleWitness},
     },
 };
+
 // Only related to hardcoded commitments. Can be refactored later.
 use crate::{
     PROGRAM_COMMITMENTS, PartialProvingTask, ProverTester, TaskProver, prove_verify_single_evm,

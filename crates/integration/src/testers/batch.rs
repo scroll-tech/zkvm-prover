@@ -1,9 +1,3 @@
-use crate::{
-    PROGRAM_COMMITMENTS, PartialProvingTask, ProverTester, TaskProver, prove_verify,
-    testers::chunk::{ChunkTaskGenerator, preset_chunk_multiple, preset_chunk_validium},
-    utils::{build_batch_witnesses, build_batch_witnesses_validium},
-};
-use scroll_zkvm_types::dogeos::batch::dogeos::DogeOsBatchWitness;
 use scroll_zkvm_types::{
     proof::ProofEnum,
     public_inputs::{ForkName, Version},
@@ -12,6 +6,13 @@ use scroll_zkvm_types::{
         chunk::ChunkInfo,
     },
     utils::serialize_vk,
+    dogeos::batch::dogeos::DogeOsBatchWitness,
+};
+
+use crate::{
+    PROGRAM_COMMITMENTS, PartialProvingTask, ProverTester, TaskProver, prove_verify,
+    testers::chunk::{ChunkTaskGenerator, preset_chunk_multiple, preset_chunk_validium},
+    utils::{build_batch_witnesses, build_batch_witnesses_validium},
 };
 
 impl PartialProvingTask for BatchWitness {

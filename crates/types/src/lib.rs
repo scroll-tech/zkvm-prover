@@ -1,5 +1,6 @@
 // re-export for a compatible interface with old circuit/types for prover
 
+#[cfg(feature = "scroll")]
 pub mod scroll {
     pub mod bundle {
         pub use types_base::public_inputs::scroll::bundle::BundleInfo;
@@ -19,6 +20,7 @@ pub mod scroll {
     }
 }
 
+#[cfg(feature = "scroll")]
 pub mod dogeos {
     pub mod bundle {
         pub use types_base::public_inputs::scroll::bundle::BundleInfo;
