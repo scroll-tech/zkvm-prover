@@ -11,9 +11,7 @@ use scroll_zkvm_prover::utils::vm::ExecutionResult;
 use scroll_zkvm_types::{
     proof::ProofEnum,
     public_inputs::{ForkName, Version},
-    scroll::chunk::{
-        ChunkInfo, ChunkWitness, SecretKey,
-    },
+    scroll::chunk::{ChunkInfo, ChunkWitness, SecretKey},
 };
 use std::{
     fs::File,

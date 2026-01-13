@@ -3,10 +3,7 @@ use types_base::{
     aggregation::{AggregationInput, ProofCarryingWitness},
     public_inputs::{
         ForkName,
-        scroll::{
-            batch::BatchInfo,
-            chunk::ChunkInfo,
-        },
+        scroll::{batch::BatchInfo, chunk::ChunkInfo},
     },
 };
 
