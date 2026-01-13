@@ -5,4 +5,4 @@ mod execute;
 pub use execute::execute;
 
 mod witness;
-pub use witness::{ChunkWitness, ChunkWitnessUpgradeCompact, LegacyChunkWitness, ValidiumInputs};
+pub use witness::{ChunkWitness, ValidiumInputs};

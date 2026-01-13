@@ -4,56 +4,29 @@ use types_base::utils::keccak256;
 use super::{BatchHeader, ValidiumBatchHeader};
 
 /// Batch header used in L3 validium.
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    serde::Deserialize,
-    serde::Serialize,
-)]
-#[rkyv(derive(Debug))]
+#[derive(Clone, Copy, Debug, serde::Deserialize, serde::Serialize)]
 pub enum BatchHeaderValidium {
     /// L3 validium @ v1 batch header.
     V1(BatchHeaderValidiumV1),
 }
 
 /// Represents the batch header summarising a L3 validium batch.
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Default,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    serde::Deserialize,
-    serde::Serialize,
-)]
-#[rkyv(derive(Debug))]
+#[derive(Clone, Copy, Debug, Default, serde::Deserialize, serde::Serialize)]
 pub struct BatchHeaderValidiumV1 {
     /// The DA-codec version for the batch.
-    #[rkyv()]
     pub version: u8,
     /// The index of the batch
-    #[rkyv()]
     pub batch_index: u64,
     /// The parent batch hash
-    #[rkyv()]
     pub parent_batch_hash: B256,
     /// The state root after applying the batch.
-    #[rkyv()]
     pub post_state_root: B256,
     /// The withdraw root post the batch.
-    #[rkyv()]
     pub withdraw_root: B256,
     /// A commitment that binds the batch to its payload. It also serves provability based on the
     /// finalised L2 data.
     ///
     /// We utilise the last L3 block's blockhash as commitment.
-    #[rkyv()]
     pub commitment: B256,
 }
 

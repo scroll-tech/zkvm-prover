@@ -5,12 +5,11 @@ use scroll_zkvm_types::proof::OpenVmEvmProof;
 use scroll_zkvm_types::{proof::StarkProof, utils::serialize_vk};
 use std::path::Path;
 
-pub use scroll_zkvm_types::zkvm::{AGG_STARK_PROVING_KEY, AGG_STARK_PROVING_KEY_V13};
+pub use scroll_zkvm_types::zkvm::AGG_STARK_PROVING_KEY;
 
 pub struct UniversalVerifier {
     pub evm_verifier: Vec<u8>,
     pub loaded_agg_vk: AggVerifyingKey,
-    pub is_openvm_v13: bool,
 }
 
 impl UniversalVerifier {
@@ -49,34 +48,16 @@ impl UniversalVerifier {
         let path_agg_vk = path_verifier.as_ref().join("root_verifier_vk");
         let evm_verifier = std::fs::read(path_verifier_code)?;
 
-        // TODO: clean this after we get rid of openvm v1.3.
-        let is_openvm_v13 = {
-            let hash = sha256::digest(&evm_verifier);
-            // from 0.5.2 and 0.5.6 release files
-            let is_openvm_v13 = hash
-                == ("4f1b70db9fade2ce7425924dc662d75c5a315f3a611ed8cadd68b516407a4cf1")
-                || hash == ("d1f7a8066bd45c1bb82b73c7a7138d5793589fb8c6b2eb3c74b94db63109501d");
-            println!(
-                "is_openvm_v13: {}, verifier.bin sha256sum: {}",
-                is_openvm_v13, hash
-            );
-            is_openvm_v13
-        };
         let loaded_agg_vk = openvm_sdk::fs::read_object_from_file(path_agg_vk).unwrap_or_else(
             |_|{
                 tracing::warn!("root_Verifier_vk is not avaliable in disk, try to calculate it on-the-fly, which may be time consuming ...");
-                if is_openvm_v13 {
-                    AGG_STARK_PROVING_KEY_V13.get_agg_vk()
-                } else {
-                    AGG_STARK_PROVING_KEY.get_agg_vk()
-                }
+                AGG_STARK_PROVING_KEY.get_agg_vk()
             }
         );
 
         Ok(Self {
             evm_verifier,
             loaded_agg_vk,
-            is_openvm_v13,
         })
     }
 

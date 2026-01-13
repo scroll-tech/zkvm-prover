@@ -6,43 +6,25 @@ use crate::{
 };
 
 /// Represents public-input values for a batch.
-#[derive(
-    Clone,
-    Debug,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    serde::Deserialize,
-    serde::Serialize,
-)]
-#[rkyv(derive(Debug))]
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct BatchInfo {
     /// The state root before applying the batch.
-    #[rkyv()]
     pub parent_state_root: B256,
     /// The batch hash of the parent batch.
-    #[rkyv()]
     pub parent_batch_hash: B256,
     /// The state root after applying txs in the batch.
-    #[rkyv()]
     pub state_root: B256,
     /// The batch header hash of the batch.
-    #[rkyv()]
     pub batch_hash: B256,
     /// The EIP-155 chain ID of all txs in the batch.
-    #[rkyv()]
     pub chain_id: u64,
     /// The withdraw root of the last block in the last chunk in the batch.
-    #[rkyv()]
     pub withdraw_root: B256,
     /// The L1 msg queue hash at the end of the previous batch.
-    #[rkyv()]
     pub prev_msg_queue_hash: B256,
     /// The L1 msg queue hash at the end of the current batch.
-    #[rkyv()]
     pub post_msg_queue_hash: B256,
     /// Optional encryption key, used in case of domain=Validium.
-    #[rkyv()]
     pub encryption_key: Option<Box<[u8]>>,
 }
 
@@ -207,59 +189,6 @@ impl MultiVersionPublicInputs for BatchInfo {
         if version.domain == Domain::Validium {
             assert!(self.encryption_key.is_some());
             assert_eq!(self.encryption_key, prev_pi.encryption_key);
-        }
-    }
-}
-
-/// Represents public-input values for a legacy batch, i.e. pre-validium support.
-#[derive(
-    Clone,
-    Debug,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    serde::Deserialize,
-    serde::Serialize,
-)]
-#[rkyv(derive(Debug))]
-pub struct LegacyBatchInfo {
-    /// The state root before applying the batch.
-    #[rkyv()]
-    pub parent_state_root: B256,
-    /// The batch hash of the parent batch.
-    #[rkyv()]
-    pub parent_batch_hash: B256,
-    /// The state root after applying txs in the batch.
-    #[rkyv()]
-    pub state_root: B256,
-    /// The batch header hash of the batch.
-    #[rkyv()]
-    pub batch_hash: B256,
-    /// The EIP-155 chain ID of all txs in the batch.
-    #[rkyv()]
-    pub chain_id: u64,
-    /// The withdraw root of the last block in the last chunk in the batch.
-    #[rkyv()]
-    pub withdraw_root: B256,
-    /// The L1 msg queue hash at the end of the previous batch.
-    #[rkyv()]
-    pub prev_msg_queue_hash: B256,
-    /// The L1 msg queue hash at the end of the current batch.
-    #[rkyv()]
-    pub post_msg_queue_hash: B256,
-}
-
-impl From<BatchInfo> for LegacyBatchInfo {
-    fn from(value: BatchInfo) -> Self {
-        Self {
-            parent_state_root: value.parent_state_root,
-            parent_batch_hash: value.parent_batch_hash,
-            state_root: value.state_root,
-            batch_hash: value.batch_hash,
-            chain_id: value.chain_id,
-            withdraw_root: value.withdraw_root,
-            prev_msg_queue_hash: value.prev_msg_queue_hash,
-            post_msg_queue_hash: value.post_msg_queue_hash,
         }
     }
 }

@@ -3,7 +3,7 @@ use scroll_zkvm_types::{
     public_inputs::ForkName,
     scroll::{
         batch::BatchInfo,
-        bundle::{BundleInfo, BundleWitness, LegacyBundleWitness},
+        bundle::{BundleInfo, BundleWitness},
     },
 };
 
@@ -21,12 +21,6 @@ impl PartialProvingTask for BundleWitness {
         );
 
         format!("{first}-{last}")
-    }
-
-    fn legacy_rkyv_archive(&self) -> eyre::Result<Vec<u8>> {
-        let witness_legacy = LegacyBundleWitness::from(self.clone());
-        let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(&witness_legacy)?;
-        Ok(bytes.to_vec())
     }
 
     fn fork_name(&self) -> ForkName {
