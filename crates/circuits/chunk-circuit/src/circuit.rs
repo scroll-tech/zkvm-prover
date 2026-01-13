@@ -1,11 +1,11 @@
 use openvm::init;
-use scroll_zkvm_types_chunk::ChunkWitness;
+use scroll_zkvm_types_chunk::scroll::ChunkWitness;
 use scroll_zkvm_types_circuit::{
     Circuit,
     io::read_witnesses,
     public_inputs::{
         Version,
-        chunk::{ChunkInfo, VersionedChunkInfo},
+        scroll::chunk::{ChunkInfo, VersionedChunkInfo},
     },
 };
 

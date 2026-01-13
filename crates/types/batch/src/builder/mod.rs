@@ -6,7 +6,7 @@ pub use v7::BatchInfoBuilderV7;
 
 pub mod validium;
 
-use types_base::public_inputs::{batch::BatchInfo, chunk::ChunkInfo};
+use types_base::public_inputs::scroll::{batch::BatchInfo, chunk::ChunkInfo};
 
 use crate::{BatchHeader, BatchHeaderV6, BatchHeaderV7, PointEvalWitness, payload::Payload};
 

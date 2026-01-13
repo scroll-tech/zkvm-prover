@@ -1,5 +1,5 @@
 use alloy_primitives::B256;
-use types_base::public_inputs::batch::BatchInfo;
+use types_base::public_inputs::scroll::batch::BatchInfo;
 
 use crate::{
     BatchHeader, PayloadV6,

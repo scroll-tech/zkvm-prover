@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use alloy_primitives::B256;
-use types_base::public_inputs::batch::BatchInfo;
+use types_base::public_inputs::scroll::batch::BatchInfo;
 use types_base::version::Version;
 
 use crate::PointEvalWitness;

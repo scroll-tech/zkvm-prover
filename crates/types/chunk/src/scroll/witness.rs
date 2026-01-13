@@ -5,7 +5,7 @@ use sbv_primitives::types::consensus::TxL1Message;
 use sbv_primitives::types::evm::ScrollTxCompressionInfos;
 use std::collections::HashSet;
 use types_base::version::Version;
-use types_base::{fork_name::ForkName, public_inputs::chunk::ChunkInfo};
+use types_base::{fork_name::ForkName, public_inputs::scroll::chunk::ChunkInfo};
 
 /// The witness type accepted by the chunk-circuit.
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
@@ -146,6 +146,6 @@ impl TryFrom<ChunkWitness> for ChunkInfo {
     type Error = String;
 
     fn try_from(value: ChunkWitness) -> Result<Self, Self::Error> {
-        crate::execute(value)
+        super::execute(value)
     }
 }

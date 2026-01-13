@@ -1,5 +1,5 @@
 use types_base::{
-    public_inputs::{batch::BatchInfo, chunk::ChunkInfo},
+    public_inputs::scroll::{batch::BatchInfo, chunk::ChunkInfo},
     version::Version,
 };
 

@@ -10,7 +10,7 @@ use scroll_zkvm_integration::{
     ProverTester,
     testers::chunk::{ChunkProverTester, exec_chunk},
 };
-use scroll_zkvm_types::{chunk::ChunkWitness, version};
+use scroll_zkvm_types::{scroll::chunk::ChunkWitness, version};
 use std::collections::HashMap;
 use std::{fs::File, path::PathBuf, slice};
 use url::Url;

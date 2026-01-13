@@ -1,5 +1,8 @@
 mod types;
-pub use types::validium::SecretKey;
+pub use types::{
+    finalizeDepositERC20Call, finalizeDepositERC20EncryptedCall, relayMessageCall,
+    validium::SecretKey,
+};
 
 mod execute;
 pub use execute::execute;

@@ -1,8 +1,10 @@
 use scroll_zkvm_types::{
-    batch::BatchInfo,
-    bundle::{BundleInfo, BundleWitness},
     proof::ProofEnum,
     public_inputs::ForkName,
+    scroll::{
+        batch::BatchInfo,
+        bundle::{BundleInfo, BundleWitness},
+    },
 };
 
 // Only related to hardcoded commitments. Can be refactored later.

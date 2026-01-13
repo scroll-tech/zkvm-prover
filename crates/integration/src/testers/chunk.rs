@@ -9,9 +9,9 @@ use sbv_primitives::{B256, types::consensus::TxL1Message};
 use scroll_zkvm_prover::utils::read_json;
 use scroll_zkvm_prover::utils::vm::ExecutionResult;
 use scroll_zkvm_types::{
-    chunk::{ChunkInfo, ChunkWitness, SecretKey},
     proof::ProofEnum,
     public_inputs::{ForkName, Version},
+    scroll::chunk::{ChunkInfo, ChunkWitness, SecretKey},
 };
 use std::{
     fs::File,

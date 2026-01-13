@@ -1,7 +1,10 @@
 use halo2curves_axiom::CurveAffine;
 use types_base::{
     aggregation::{AggregationInput, ProofCarryingWitness},
-    public_inputs::{ForkName, batch::BatchInfo, chunk::ChunkInfo},
+    public_inputs::{
+        ForkName,
+        scroll::{batch::BatchInfo, chunk::ChunkInfo},
+    },
 };
 
 use crate::{

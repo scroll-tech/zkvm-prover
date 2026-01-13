@@ -1,8 +1,10 @@
 use scroll_zkvm_types::{
-    batch::{BatchHeader, BatchInfo, BatchWitness, ReferenceHeader},
-    chunk::ChunkInfo,
     proof::ProofEnum,
     public_inputs::{ForkName, Version},
+    scroll::{
+        batch::{BatchHeader, BatchInfo, BatchWitness, ReferenceHeader},
+        chunk::ChunkInfo,
+    },
     utils::serialize_vk,
 };
 
