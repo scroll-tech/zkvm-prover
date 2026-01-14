@@ -19,4 +19,6 @@ mod builder;
 mod witness;
 pub use witness::{BatchWitness, Bytes48, PointEvalWitness, build_point_eval_witness};
 
+pub mod dogeos;
+
 pub mod utils;

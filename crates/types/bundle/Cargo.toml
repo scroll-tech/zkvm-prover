@@ -11,6 +11,7 @@ version.workspace = true
 serde.workspace = true
 
 types-base = { path = "../base", package = "scroll-zkvm-types-base"}
+types-batch = { path = "../batch", package = "scroll-zkvm-types-batch" }
 
 [features]
 default = []

@@ -3,6 +3,8 @@ use alloy_primitives::B256;
 
 pub mod scroll;
 
+pub mod dogeos;
+
 pub use crate::{fork_name::ForkName, version::Version};
 
 /// Defines behaviour to be implemented by types representing the public-input values of a circuit.

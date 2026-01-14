@@ -6,6 +6,7 @@ use scroll_zkvm_types::{
         chunk::ChunkInfo,
     },
     utils::serialize_vk,
+    dogeos::batch::dogeos::DogeOsBatchWitness,
 };
 
 use crate::{
@@ -27,6 +28,16 @@ impl PartialProvingTask for BatchWitness {
 
     fn fork_name(&self) -> ForkName {
         ForkName::from(self.fork_name.as_str())
+    }
+}
+
+impl PartialProvingTask for DogeOsBatchWitness {
+    fn identifier(&self) -> String {
+        self.inner.identifier()
+    }
+
+    fn fork_name(&self) -> ForkName {
+        self.inner.fork_name()
     }
 }
 

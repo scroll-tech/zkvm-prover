@@ -1,4 +1,5 @@
 use scroll_zkvm_types::{
+    dogeos::bundle::dogeos::DogeOsBundleWitness,
     proof::ProofEnum,
     public_inputs::ForkName,
     scroll::{
@@ -25,6 +26,16 @@ impl PartialProvingTask for BundleWitness {
 
     fn fork_name(&self) -> ForkName {
         ForkName::from(self.fork_name.as_str())
+    }
+}
+
+impl PartialProvingTask for DogeOsBundleWitness {
+    fn identifier(&self) -> String {
+        self.inner.identifier()
+    }
+
+    fn fork_name(&self) -> ForkName {
+        self.inner.fork_name()
     }
 }
 
