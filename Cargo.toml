@@ -31,48 +31,48 @@ version = "0.7.1"
 
 [workspace.dependencies]
 # openvm guest libs
-openvm = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1" }
-openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
-openvm-custom-insn = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
-openvm-sha2 = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1" }
-openvm-sha256-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
-openvm-p256 = { git = "https://github.com/openvm-org/openvm.git", package = "p256", tag = "v1.4.1", features = [
+openvm = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2" }
+openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2", default-features = false }
+openvm-custom-insn = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2", default-features = false }
+openvm-sha2 = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2" }
+openvm-sha256-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2", default-features = false }
+openvm-p256 = { git = "https://github.com/openvm-org/openvm.git", package = "p256", tag = "v1.4.2", features = [
   "std",
 ] }
-openvm-k256 = { git = "https://github.com/openvm-org/openvm.git", package = "k256", tag = "v1.4.1", features = [
+openvm-k256 = { git = "https://github.com/openvm-org/openvm.git", package = "k256", tag = "v1.4.2", features = [
   "std",
 ] }
-openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1" }
-openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
-openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
-openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
-openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
-openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
-openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
+openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2" }
+openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2", default-features = false }
+openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2", default-features = false }
+openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2", default-features = false }
+openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2", default-features = false }
+openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2", default-features = false }
+openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2", default-features = false }
 
 # openvm host libs
-openvm-benchmarks-prove = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
-openvm-benchmarks-utils = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
-openvm-build = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
-openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
-openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
-openvm-instructions = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
-openvm-native-circuit = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
-openvm-native-compiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
-openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
-openvm-native-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
-openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
-openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false, features = [
+openvm-benchmarks-prove = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2", default-features = false }
+openvm-benchmarks-utils = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2", default-features = false }
+openvm-build = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2", default-features = false }
+openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2", default-features = false }
+openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2", default-features = false }
+openvm-instructions = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2", default-features = false }
+openvm-native-circuit = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2", default-features = false }
+openvm-native-compiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2", default-features = false }
+openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2", default-features = false }
+openvm-native-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2", default-features = false }
+openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2", default-features = false }
+openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2", default-features = false, features = [
   "parallel",
   "evm-prove",
   "legacy-v1-3-evm-verifier",
   "tco",
   "unprotected"
 ] }
-openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
+openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2", default-features = false }
 
 # more openvm related libs
-openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.1" }
+openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.2" }
 
 sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", tag = "scroll-v91.2" }
 sbv-helpers = { git = "https://github.com/scroll-tech/stateless-block-verifier", tag = "scroll-v91.2", features = ["dev"] }
@@ -152,12 +152,12 @@ scroll-zkvm-prover = { path = "crates/prover" }
 scroll-zkvm-verifier = { path = "crates/verifier" }
 
 # dogeos crates
-bridge_core = { git = "ssh://git@github.com/DogeOS69/dogeos-core.git", branch = "feat/trust-minimized-bridge-crates", default-features = false }
-bridge_protocol = { git = "ssh://git@github.com/DogeOS69/dogeos-core.git", branch = "feat/trust-minimized-bridge-crates", default-features = false }
-bridge_adapters_zk = { git = "ssh://git@github.com/DogeOS69/dogeos-core.git", branch = "feat/trust-minimized-bridge-crates", default-features = false }
-bridge_steps_da = { git = "ssh://git@github.com/DogeOS69/dogeos-core.git", branch = "feat/trust-minimized-bridge-crates", default-features = false }
-bridge_steps_deposit = { git = "ssh://git@github.com/DogeOS69/dogeos-core.git", branch = "feat/trust-minimized-bridge-crates", default-features = false }
-bridge_transforms = { git = "ssh://git@github.com/DogeOS69/dogeos-core.git", branch = "feat/trust-minimized-bridge-crates", default-features = false }
+bridge_core = { git = "ssh://git@github.com/DogeOS69/dogeos-core.git", branch = "scroll/openvm/upgrade", default-features = false }
+bridge_protocol = { git = "ssh://git@github.com/DogeOS69/dogeos-core.git", branch = "scroll/openvm/upgrade", default-features = false }
+bridge_adapters_zk = { git = "ssh://git@github.com/DogeOS69/dogeos-core.git", branch = "scroll/openvm/upgrade", default-features = false }
+bridge_steps_da = { git = "ssh://git@github.com/DogeOS69/dogeos-core.git", branch = "scroll/openvm/upgrade", default-features = false }
+bridge_steps_deposit = { git = "ssh://git@github.com/DogeOS69/dogeos-core.git", branch = "scroll/openvm/upgrade", default-features = false }
+bridge_transforms = { git = "ssh://git@github.com/DogeOS69/dogeos-core.git", branch = "scroll/openvm/upgrade", default-features = false }
 
 [patch.crates-io]
 revm = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
