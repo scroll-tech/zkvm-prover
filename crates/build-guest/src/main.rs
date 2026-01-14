@@ -200,7 +200,7 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
             .join("target")
             .join("riscv32im-risc0-zkvm-elf")
             .join("maxperf")
-            .join(format!("scroll-zkvm-{project_name}-circuit"));
+            .join(format!("dogeos-zkvm-{project_name}-circuit"));
         let path_app_elf: PathBuf = path_assets.join("app.elf");
         fs::copy(&elf_src, &path_app_elf)?;
         println!("{LOG_PREFIX} elf written to {path_app_elf:?}");
