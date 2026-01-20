@@ -65,7 +65,7 @@ pub fn read_app_exe<P: AsRef<Path>>(path: P) -> Result<VmExe<F>, Error> {
         path: path.as_ref().into(),
         src: e.to_string(),
     })?;
-    use openvm_stark_sdk::openvm_stark_backend::p3_field::FieldAlgebra;
+    use openvm_stark_sdk::openvm_stark_backend::p3_field::integers::QuotientMap;
     use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
     let exe = VmExe::<F> {
         program: Program::<F> {
@@ -77,7 +77,7 @@ pub fn read_app_exe<P: AsRef<Path>>(path: P) -> Result<VmExe<F>, Error> {
             .init_memory
             .into_iter()
             .map(|(k, v)| {
-                assert!(v < F::from_canonical_u32(256u32));
+                assert!(v < F::from_int(256u32));
                 (k, v.as_canonical_u32() as u8)
             })
             .collect(),

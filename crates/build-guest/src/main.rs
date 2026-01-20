@@ -45,7 +45,7 @@ use openvm_sdk::{
     fs::write_object_to_file,
     prover::AppProver,
 };
-use openvm_stark_sdk::p3_bn254_fr::Bn254Fr;
+use openvm_stark_sdk::{p3_bn254::Bn254 as Bn254Fr, openvm_stark_backend::p3_field::RawDataSerializable};
 use scroll_zkvm_types::zkvm::AGG_STARK_PROVING_KEY;
 use snark_verifier_sdk::snark_verifier::loader::evm::compile_solidity;
 use std::{
@@ -106,8 +106,7 @@ fn write_commitment_as_evm_hex(
     commitment: [u32; DIGEST_SIZE],
 ) -> Result<()> {
     let digest_bytes = compress_commitment(&commitment)
-        .value
-        .to_bytes()
+        .into_bytes()
         .into_iter()
         .rev() // To big endian
         .collect::<Vec<u8>>();
