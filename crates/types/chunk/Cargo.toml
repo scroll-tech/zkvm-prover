@@ -29,6 +29,7 @@ types-base = { path = "../base", package = "scroll-zkvm-types-base"}
 
 [dev-dependencies]
 serde_json.workspace = true
+hex-literal.workspace = true
 
 [features]
 default = []
