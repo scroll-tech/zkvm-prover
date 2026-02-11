@@ -181,3 +181,45 @@ pub(super) fn pairing_check(pairs: &[(&[u8], &[u8])]) -> Result<bool, Precompile
 
     Ok(Bn254::pairing_check(&g1_points, &g2_points).is_ok())
 }
+
+
+// contract PairingMismatchTest is Test {
+//     // On-curve but not-in-subgroup G2 point (same bytes used in prover regression tests)
+//     bytes constant G2_NON_SUBGROUP = hex"263e2979dbc2fa0e7c73e38ccc6890b84f4191abb9cba88ed36e9e3726f5142d21f24401109878b0eee42d80f405a63c5912bcdfd4aa49ee1e7abf9b41bc3f932173aec93d1b4f8542cbf320eb5b3e7bf495f3a9b3288c9384e91b54c2bff96923c6f9d2be4bdaabb95148a8d78a725db01fc6d66c2bc2b0a964511b778e4238";
+
+//     function test_pairing_rejects_non_subgroup_g2() public {
+//         // G1 = infinity (64 zero bytes) || G2 = non-subgroup point (128 bytes)
+//         bytes memory input = abi.encodePacked(uint256(0), uint256(0), G2_NON_SUBGROUP);
+
+//         (bool ok, ) = address(0x08).staticcall(input);
+
+//         // Geth / revm / any correct EVM: precompile FAILS for non-subgroup G2
+//         assertFalse(ok, "precompile should reject non-subgroup G2");
+//     }
+
+//     function test_state_divergence_via_branch() public {
+//         bytes memory input = abi.encodePacked(uint256(0), uint256(0), G2_NON_SUBGROUP);
+//         (bool ok, ) = address(0x08).staticcall(input);
+
+//         // Geth takes the else branch (marker = 2).
+//         // The prover would take the if branch (marker = 1) — state root mismatch.
+//         uint256 marker = ok ? 1 : 2;
+//         assertEq(marker, 2, "geth must set marker = 2");
+//     }
+// }
+
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use hex_literal::hex;
+
+    #[test]
+    fn test_pairing_rejects_non_subgroup_g2(){
+        const G2_NON_SUBGROUP: [u8; 128] = hex!("263e2979dbc2fa0e7c73e38ccc6890b84f4191abb9cba88ed36e9e3726f5142d21f24401109878b0eee42d80f405a63c5912bcdfd4aa49ee1e7abf9b41bc3f932173aec93d1b4f8542cbf320eb5b3e7bf495f3a9b3288c9384e91b54c2bff96923c6f9d2be4bdaabb95148a8d78a725db01fc6d66c2bc2b0a964511b778e4238");
+        let p = read_g2_point(&G2_NON_SUBGROUP).unwrap();
+        // TODO: mul p with prefer subgroup factor (order): 65000549695646603732796438742359905742570406053903786389881062969044166799969
+        //let test_p = Fp2::ONE * p;
+    }    
+}
+

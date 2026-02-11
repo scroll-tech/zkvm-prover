@@ -8668,6 +8668,7 @@ dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
  "ecies",
+ "hex-literal",
  "itertools 0.14.0",
  "k256 0.13.4 (git+https://github.com/openvm-org/openvm.git?tag=v1.4.1)",
  "openvm-ecc-guest",
