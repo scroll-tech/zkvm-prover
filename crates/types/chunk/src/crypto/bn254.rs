@@ -182,7 +182,6 @@ pub(super) fn pairing_check(pairs: &[(&[u8], &[u8])]) -> Result<bool, Precompile
     Ok(Bn254::pairing_check(&g1_points, &g2_points).is_ok())
 }
 
-
 // contract PairingMismatchTest is Test {
 //     // On-curve but not-in-subgroup G2 point (same bytes used in prover regression tests)
 //     bytes constant G2_NON_SUBGROUP = hex"263e2979dbc2fa0e7c73e38ccc6890b84f4191abb9cba88ed36e9e3726f5142d21f24401109878b0eee42d80f405a63c5912bcdfd4aa49ee1e7abf9b41bc3f932173aec93d1b4f8542cbf320eb5b3e7bf495f3a9b3288c9384e91b54c2bff96923c6f9d2be4bdaabb95148a8d78a725db01fc6d66c2bc2b0a964511b778e4238";
@@ -208,18 +207,109 @@ pub(super) fn pairing_check(pairs: &[(&[u8], &[u8])]) -> Result<bool, Precompile
 //     }
 // }
 
-
 #[cfg(test)]
 mod test {
     use super::*;
     use hex_literal::hex;
+    use sbv_primitives::{
+        B256,
+        types::{reth::evm::revm, revm::precompile::PrecompileOutput},
+    };
+
+    const G1_IDENTITY: [u8; 64] = [0u8; 64];
+
+    const G2_NON_SUBGROUP: [u8; 128] = hex!(
+        "263e2979dbc2fa0e7c73e38ccc6890b84f4191abb9cba88ed36e9e3726f5142d21f24401109878b0eee42d80f405a63c5912bcdfd4aa49ee1e7abf9b41bc3f932173aec93d1b4f8542cbf320eb5b3e7bf495f3a9b3288c9384e91b54c2bff96923c6f9d2be4bdaabb95148a8d78a725db01fc6d66c2bc2b0a964511b778e4238"
+    );
+
+    const G1_POINT_1: [u8; 64] = hex!(
+        "1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41"
+    );
+    const G1_POINT_2: [u8; 64] = hex!(
+        "111e129f1cf1097710d41c4ac70fcdfa5ba2023c6ff1cbeac322de49d1b6df7c2032c61a830e3c17286de9462bf242fca2883585b93870a73853face6a6bf411"
+    );
+
+    const G2_POINT_1: [u8; 128] = hex!(
+        "209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550"
+    );
+    const G2_POINT_2: [u8; 128] = hex!(
+        "198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c21800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa"
+    );
 
     #[test]
-    fn test_pairing_rejects_non_subgroup_g2(){
-        const G2_NON_SUBGROUP: [u8; 128] = hex!("263e2979dbc2fa0e7c73e38ccc6890b84f4191abb9cba88ed36e9e3726f5142d21f24401109878b0eee42d80f405a63c5912bcdfd4aa49ee1e7abf9b41bc3f932173aec93d1b4f8542cbf320eb5b3e7bf495f3a9b3288c9384e91b54c2bff96923c6f9d2be4bdaabb95148a8d78a725db01fc6d66c2bc2b0a964511b778e4238");
-        let p = read_g2_point(&G2_NON_SUBGROUP).unwrap();
+    fn test_pairing_check_non_matching() {
+        // 1. pairing check in zkVM.
+        let zkvm_res = super::pairing_check(&[(&G1_IDENTITY, &G2_NON_SUBGROUP)]);
+
+        // 2. pairing check in revm.
+        let revm_res = {
+            let provider = revm_scroll::precompile::ScrollPrecompileProvider::new_with_spec(
+                revm_scroll::ScrollSpecId::GALILEO,
+            );
+            let precompile = provider
+                .precompiles()
+                .get(&revm::precompile::bn254::pair::ADDRESS)
+                .expect("should be ok");
+            let input = std::iter::empty()
+                .chain(G1_IDENTITY)
+                .chain(G2_NON_SUBGROUP)
+                .collect::<Vec<u8>>();
+            precompile.execute(input.as_slice(), 500_000)
+        };
+
+        // G1 is identity element, however G2 is point on curve that is *not* in subgroup.
+        //
+        // Initial decoding of input bytes should fail in the execution client.
+        //
+        // However, zkVM skips the check for *point in subgroup* and hence pairing check output is
+        // 1, due to the fact that G1 is identity element.
+        assert_eq!(zkvm_res.ok(), Some(true));
+        assert_eq!(revm_res, Err(PrecompileError::Bn254AffineGFailedToCreate));
+    }
+
+    #[test]
+    fn test_pairing_check_matching() {
+        // 1. pairing check in zkVM.
+        let zkvm_res =
+            super::pairing_check(&[(&G1_POINT_1, &G2_POINT_1), (&G1_POINT_2, &G2_POINT_2)]);
+
+        // 2. pairing check in revm.
+        let revm_res = {
+            let provider = revm_scroll::precompile::ScrollPrecompileProvider::new_with_spec(
+                revm_scroll::ScrollSpecId::GALILEO,
+            );
+            let precompile = provider
+                .precompiles()
+                .get(&revm::precompile::bn254::pair::ADDRESS)
+                .expect("should be ok");
+            let input = std::iter::empty()
+                .chain(G1_POINT_1)
+                .chain(G2_POINT_1)
+                .chain(G1_POINT_2)
+                .chain(G2_POINT_2)
+                .collect::<Vec<u8>>();
+            precompile.execute(input.as_slice(), 500_000)
+        };
+
+        // Here we have both G1 and G2 points valid, i.e. on curve and in the subgroup.
+        //
+        // We expect zkVM and revm impls to compute matching results.
+        assert_eq!(zkvm_res.ok(), Some(true));
+        let Some(PrecompileOutput {
+            gas_used: _gas_used,
+            bytes,
+            reverted: _reverted,
+        }) = revm_res.ok()
+        else {
+            panic!("revm pairing check should have succeeded");
+        };
+        assert_eq!(bytes, B256::with_last_byte(1).to_vec());
+    }
+
+    #[test]
+    fn test_pairing_rejects_non_subgroup_g2() {
+        let _p = read_g2_point(&G2_NON_SUBGROUP).unwrap();
         // TODO: mul p with prefer subgroup factor (order): 65000549695646603732796438742359905742570406053903786389881062969044166799969
         //let test_p = Fp2::ONE * p;
-    }    
+    }
 }
-
