@@ -238,7 +238,7 @@ pub(super) fn pairing_check(pairs: &[(&[u8], &[u8])]) -> Result<bool, Precompile
     Ok(Bn254::pairing_check(&g1_points, &g2_points).is_ok())
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "scroll", feature = "host"))]
 mod test {
     use super::*;
     use hex_literal::hex;
@@ -268,14 +268,21 @@ mod test {
     );
 
     #[test]
+    fn test_pairing_rejects_non_subgroup_g2() {
+        assert!(read_g2_point(&G2_NON_SUBGROUP).is_err());
+        assert!(read_g2_point(&G2_POINT_1).is_ok());
+        assert!(read_g2_point(&G2_POINT_2).is_ok());
+    }
+
+    #[test]
     fn test_pairing_check_non_matching() {
         // 1. pairing check in zkVM.
         let zkvm_res = super::pairing_check(&[(&G1_IDENTITY, &G2_NON_SUBGROUP)]);
 
         // 2. pairing check in revm.
         let revm_res = {
-            let provider = revm_scroll::precompile::ScrollPrecompileProvider::new_with_spec(
-                revm_scroll::ScrollSpecId::GALILEO,
+            let provider = sbv_primitives::types::revm::ScrollPrecompileProvider::new_with_spec(
+                sbv_primitives::types::revm::SpecId::GALILEO,
             );
             let precompile = provider
                 .precompiles()
@@ -306,8 +313,8 @@ mod test {
 
         // 2. pairing check in revm.
         let revm_res = {
-            let provider = revm_scroll::precompile::ScrollPrecompileProvider::new_with_spec(
-                revm_scroll::ScrollSpecId::GALILEO,
+            let provider = sbv_primitives::types::revm::ScrollPrecompileProvider::new_with_spec(
+                sbv_primitives::types::revm::SpecId::GALILEO,
             );
             let precompile = provider
                 .precompiles()

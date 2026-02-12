@@ -38,10 +38,10 @@ types-base = { path = "../base", package = "scroll-zkvm-types-base" }
 ark-bn254 = "0.5.0"
 ark-ff = "0.5.0"
 ark-serialize = "0.5.0"
+serde_json.workspace = true
 openvm-pairing = { workspace = true, features = ["bn254", "halo2curves"] }
 openvm-pairing-guest = { workspace = true, features = ["bn254", "halo2curves"] }
-revm-scroll = { git = "https://github.com/scroll-tech/scroll-revm", tag = "scroll-v91" }
-serde_json.workspace = true
+
 
 [features]
 default = []
