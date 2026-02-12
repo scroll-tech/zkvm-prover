@@ -117,6 +117,20 @@ pub(super) fn encode_g1_point(point: G1Affine) -> [u8; G1_LEN] {
     output
 }
 
+fn g2_point_6x_squared_scalar_mul(mut point: G2Affine) -> G2Affine {
+    let mut result = <G2Affine as WeierstrassPoint>::IDENTITY;
+    for limb in SIX_X_SQUARED {
+        for bit_idx in 0..64u32 {
+            if (limb >> bit_idx) & 1 == 1 {
+                result.add_assign_impl::<false>(&point);
+            }
+            point.double_assign_impl::<false>();
+        }
+    }
+
+    result
+}
+
 /// Reads a G2 point from the input slice.
 ///
 /// Parses a G2 point from a byte slice by reading four consecutive Fq field elements
@@ -142,19 +156,7 @@ pub(super) fn read_g2_point(input: &[u8]) -> Result<G2Affine, PrecompileError> {
     // https://github.com/arkworks-rs/algebra/blob/598a5fbabc1903c7bab6668ef8812bfdf2158723/curves/bn254/src/curves/g2.rs#L60-L68
     let subgroup_check = {
         // 1. Compute [6X^2]P using double-and-add.
-        let x_times_point = {
-            let mut result = <G2Affine as WeierstrassPoint>::IDENTITY;
-            let mut temp = point.clone();
-            for limb in SIX_X_SQUARED {
-                for bit_idx in 0..64u32 {
-                    if (limb >> bit_idx) & 1 == 1 {
-                        result.add_assign_impl::<false>(&temp);
-                    }
-                    temp.double_assign_impl::<false>();
-                }
-            }
-            result
-        };
+        let x_times_point = g2_point_6x_squared_scalar_mul(point.clone());
 
         // 2. Compute psi(P), i.e. "untwist-Frobenius-twist".
         let p_times_point = {
@@ -377,5 +379,96 @@ mod test {
             .expect("should not fail");
         assert_eq!(coeff_0_bytes, P_POWER_ENDOMORPHISM_COEFF_0.to_bytes());
         assert_eq!(coeff_1_bytes, P_POWER_ENDOMORPHISM_COEFF_1.to_bytes());
+    }
+
+    mod arkworks_bn254_helper {
+        use super::{FQ_LEN, FQ2_LEN, PrecompileError};
+        use ark_bn254::*;
+        use ark_serialize::CanonicalDeserialize;
+
+        #[inline]
+        fn read_fq(input_be: &[u8]) -> Result<Fq, PrecompileError> {
+            assert_eq!(input_be.len(), FQ_LEN, "input must be {FQ_LEN} bytes");
+
+            let mut input_le = [0u8; FQ_LEN];
+            input_le.copy_from_slice(input_be);
+
+            // Reverse in-place to convert from big-endian to little-endian.
+            input_le.reverse();
+
+            Fq::deserialize_uncompressed(&input_le[..])
+                .map_err(|_| PrecompileError::Bn254FieldPointNotAMember)
+        }
+
+        #[inline]
+        fn read_fq2(input: &[u8]) -> Result<Fq2, PrecompileError> {
+            let y = read_fq(&input[..FQ_LEN])?;
+            let x = read_fq(&input[FQ_LEN..2 * FQ_LEN])?;
+
+            Ok(Fq2::new(x, y))
+        }
+
+        #[inline]
+        pub(super) fn read_g2_point_unchecked(input: &[u8]) -> Result<G2Affine, PrecompileError> {
+            let ba = read_fq2(&input[0..FQ2_LEN])?;
+            let bb = read_fq2(&input[FQ2_LEN..2 * FQ2_LEN])?;
+            Ok(G2Affine::new_unchecked(ba, bb))
+        }
+    }
+
+    #[test]
+    fn test_6x_squared_mul() {
+        use ark_ec::AffineRepr;
+        use ark_serialize::CanonicalSerialize;
+
+        let mut ark_g2_x_bytes = Vec::with_capacity(64);
+        let mut ark_g2_y_bytes = Vec::with_capacity(64);
+
+        for point_rep in &[G2_NON_SUBGROUP, G2_POINT_1, G2_POINT_2] {
+            let ark_g2_point = arkworks_bn254_helper::read_g2_point_unchecked(point_rep).unwrap();
+
+            let g2_point = {
+                let ba = read_fq2(&point_rep[0..FQ2_LEN]).unwrap();
+                let bb = read_fq2(&point_rep[FQ2_LEN..2 * FQ2_LEN]).unwrap();
+                G2Affine::from_xy(ba, bb).unwrap()
+            };
+
+            // the input points from ark and ours are identify
+            ark_g2_point
+                .x
+                .serialize_uncompressed(&mut ark_g2_x_bytes)
+                .expect("should not fail");
+
+            ark_g2_point
+                .y
+                .serialize_uncompressed(&mut ark_g2_y_bytes)
+                .expect("should not fail");
+
+            assert_eq!(ark_g2_x_bytes, g2_point.x().to_bytes());
+            assert_eq!(ark_g2_y_bytes, g2_point.y().to_bytes());
+
+            let ark_result = ark_g2_point.mul_bigint(SIX_X_SQUARED);
+            let ark_g2_result = ark_bn254::G2Affine::from(ark_result);
+            let g2_result = g2_point_6x_squared_scalar_mul(g2_point);
+
+            ark_g2_x_bytes.clear();
+            ark_g2_y_bytes.clear();
+
+            ark_g2_result
+                .x
+                .serialize_uncompressed(&mut ark_g2_x_bytes)
+                .expect("should not fail");
+
+            ark_g2_result
+                .y
+                .serialize_uncompressed(&mut ark_g2_y_bytes)
+                .expect("should not fail");
+
+            assert_eq!(ark_g2_x_bytes, g2_result.x().to_bytes());
+            assert_eq!(ark_g2_y_bytes, g2_result.y().to_bytes());
+
+            ark_g2_x_bytes.clear();
+            ark_g2_y_bytes.clear();
+        }
     }
 }
