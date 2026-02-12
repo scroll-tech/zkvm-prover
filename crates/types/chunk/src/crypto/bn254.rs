@@ -35,6 +35,26 @@ const FQ2_LEN: usize = 2 * FQ_LEN;
 /// Note: A G1 element contains 2 Fq elements.
 const G1_LEN: usize = 2 * FQ_LEN;
 
+const SIX_X_SQUARED: [u64; 2] = [17887900258952609094, 8020209761171036667];
+
+const P_POWER_ENDOMORPHISM_COEFF_0: Fp2 = Fp2::new(
+    Fp::from_const_bytes(hex!(
+        "3d556f175795e3990c33c3c210c38cb743b159f53cec0b4cf711794f9847b32f"
+    )),
+    Fp::from_const_bytes(hex!(
+        "a2cb0f641cd56516ce9d7c0b1d2aae3294075ad78bcca44b20aeeb6150e5c916"
+    )),
+);
+
+const P_POWER_ENDOMORPHISM_COEFF_1: Fp2 = Fp2::new(
+    Fp::from_const_bytes(hex!(
+        "5a13a071460154dc9859c9a9ede0aadbb9f9e2b698c65edcdcf59a4805f33c06"
+    )),
+    Fp::from_const_bytes(hex!(
+        "e3b02326637fd382d25ba28fc97d80212b6f79eca7b504079a0441acbc3cc007"
+    )),
+);
+
 #[inline]
 fn read_fq(input: &[u8]) -> Result<Fp, PrecompileError> {
     if input.len() < FQ_LEN {
@@ -120,23 +140,6 @@ pub(super) fn read_g2_point(input: &[u8]) -> Result<G2Affine, PrecompileError> {
     //
     // Referenced from the arkworks source code:
     // https://github.com/arkworks-rs/algebra/blob/598a5fbabc1903c7bab6668ef8812bfdf2158723/curves/bn254/src/curves/g2.rs#L60-L68
-    const SIX_X_SQUARED: [u64; 2] = [17887900258952609094, 8020209761171036667];
-    const P_POWER_ENDOMORPHISM_COEFF_0: Fp2 = Fp2::new(
-        Fp::from_const_bytes(hex!(
-            "3d556f175795e3990c33c3c210c38cb743b159f53cec0b4cf711794f9847b32f"
-        )),
-        Fp::from_const_bytes(hex!(
-            "a2cb0f641cd56516ce9d7c0b1d2aae3294075ad78bcca44b20aeeb6150e5c916"
-        )),
-    );
-    const P_POWER_ENDOMORPHISM_COEFF_1: Fp2 = Fp2::new(
-        Fp::from_const_bytes(hex!(
-            "5a13a071460154dc9859c9a9ede0aadbb9f9e2b698c65edcdcf59a4805f33c06"
-        )),
-        Fp::from_const_bytes(hex!(
-            "e3b02326637fd382d25ba28fc97d80212b6f79eca7b504079a0441acbc3cc007"
-        )),
-    );
     let subgroup_check = {
         // 1. Compute [6X^2]P using double-and-add.
         let x_times_point = {
@@ -335,9 +338,37 @@ mod test {
     }
 
     #[test]
-    fn test_pairing_rejects_non_subgroup_g2() {
-        let _p = read_g2_point(&G2_NON_SUBGROUP).unwrap();
-        // TODO: mul p with prefer subgroup factor (order): 65000549695646603732796438742359905742570406053903786389881062969044166799969
-        //let test_p = Fp2::ONE * p;
+    fn test_const_values() {
+        use ark_serialize::CanonicalSerialize;
+
+        // Refer arkworks definitions:
+        // - https://github.com/arkworks-rs/algebra/blob/598a5fbabc1903c7bab6668ef8812bfdf2158723/curves/bn254/src/curves/g2.rs#L123-L127
+        // - https://github.com/arkworks-rs/algebra/blob/598a5fbabc1903c7bab6668ef8812bfdf2158723/curves/bn254/src/curves/g2.rs#L129-L133
+        let ark_coeff_0 = ark_bn254::Fq2::new(
+            ark_ff::MontFp!(
+                "21575463638280843010398324269430826099269044274347216827212613867836435027261"
+            ),
+            ark_ff::MontFp!(
+                "10307601595873709700152284273816112264069230130616436755625194854815875713954"
+            ),
+        );
+        let ark_coeff_1 = ark_bn254::Fq2::new(
+            ark_ff::MontFp!(
+                "2821565182194536844548159561693502659359617185244120367078079554186484126554"
+            ),
+            ark_ff::MontFp!(
+                "3505843767911556378687030309984248845540243509899259641013678093033130930403"
+            ),
+        );
+        let mut coeff_0_bytes = Vec::with_capacity(64);
+        ark_coeff_0
+            .serialize_uncompressed(&mut coeff_0_bytes)
+            .expect("should not fail");
+        let mut coeff_1_bytes = Vec::with_capacity(64);
+        ark_coeff_1
+            .serialize_uncompressed(&mut coeff_1_bytes)
+            .expect("should not fail");
+        assert_eq!(coeff_0_bytes, P_POWER_ENDOMORPHISM_COEFF_0.to_bytes());
+        assert_eq!(coeff_1_bytes, P_POWER_ENDOMORPHISM_COEFF_1.to_bytes());
     }
 }
