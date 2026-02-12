@@ -35,6 +35,9 @@ openvm-pairing = { workspace = true, features = ["bn254"] }
 types-base = { path = "../base", package = "scroll-zkvm-types-base" }
 
 [dev-dependencies]
+ark-bn254 = "0.5.0"
+ark-ff = "0.5.0"
+ark-serialize = "0.5.0"
 openvm-pairing = { workspace = true, features = ["bn254", "halo2curves"] }
 openvm-pairing-guest = { workspace = true, features = ["bn254", "halo2curves"] }
 revm-scroll = { git = "https://github.com/scroll-tech/scroll-revm", tag = "scroll-v91" }
