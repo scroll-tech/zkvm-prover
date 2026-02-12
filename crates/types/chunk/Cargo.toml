@@ -12,6 +12,7 @@ alloy-primitives = { workspace = true, features = ["native-keccak"] }
 alloy-consensus = { workspace = true, features = ["crypto-backend"] }
 alloy-sol-types.workspace = true
 ecies.workspace = true
+hex-literal.workspace = true
 itertools.workspace = true
 sbv-helpers.workspace = true
 sbv-core = { workspace = true, features = [] }
@@ -29,17 +30,13 @@ openvm-k256 = { workspace = true }
 openvm-p256 = { workspace = true }
 openvm-sha2 = { workspace = true }
 openvm-pairing = { workspace = true, features = ["bn254"] }
-
 types-base = { path = "../base", package = "scroll-zkvm-types-base" }
 
 [dev-dependencies]
-serde_json.workspace = true
-hex-literal.workspace = true
-
-revm-scroll = { git = "https://github.com/scroll-tech/scroll-revm", tag = "scroll-v91" }
-
 openvm-pairing = { workspace = true, features = ["bn254", "halo2curves"] }
 openvm-pairing-guest = { workspace = true, features = ["bn254", "halo2curves"] }
+revm-scroll = { git = "https://github.com/scroll-tech/scroll-revm", tag = "scroll-v91" }
+serde_json.workspace = true
 
 [features]
 default = []

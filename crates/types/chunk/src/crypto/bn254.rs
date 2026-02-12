@@ -2,9 +2,10 @@
 use sbv_primitives::types::revm::precompile::PrecompileError;
 use std::vec::Vec;
 
+use hex_literal::hex;
 use openvm_ecc_guest::{
     AffinePoint,
-    algebra::IntMod,
+    algebra::{IntMod, field::FieldExtension},
     weierstrass::{IntrinsicCurve, WeierstrassPoint},
 };
 use openvm_pairing::{
@@ -60,11 +61,6 @@ fn read_fq2(input: &[u8]) -> Result<Fp2, PrecompileError> {
     Ok(Fp2::new(x, y))
 }
 
-#[inline]
-fn new_g1_affine_point(px: Fp, py: Fp) -> Result<G1Affine, PrecompileError> {
-    G1Affine::from_xy(px, py).ok_or(PrecompileError::Bn254AffineGFailedToCreate)
-}
-
 /// Reads a G1 point from the input slice.
 ///
 /// Parses a G1 point from a byte slice by reading two consecutive field elements
@@ -77,7 +73,7 @@ fn new_g1_affine_point(px: Fp, py: Fp) -> Result<G1Affine, PrecompileError> {
 pub(super) fn read_g1_point(input: &[u8]) -> Result<G1Affine, PrecompileError> {
     let px = read_fq(&input[0..FQ_LEN])?;
     let py = read_fq(&input[FQ_LEN..2 * FQ_LEN])?;
-    new_g1_affine_point(px, py)
+    G1Affine::from_xy(px, py).ok_or(PrecompileError::Bn254AffineGFailedToCreate)
 }
 
 /// Encodes a G1 point into a byte array.
@@ -114,7 +110,64 @@ pub(super) fn read_g2_point(input: &[u8]) -> Result<G2Affine, PrecompileError> {
     let ba = read_fq2(&input[0..FQ2_LEN])?;
     let bb = read_fq2(&input[FQ2_LEN..2 * FQ2_LEN])?;
 
-    G2Affine::from_xy(ba, bb).ok_or(PrecompileError::Bn254AffineGFailedToCreate)
+    // [`G2Affine::from_xy`] checks that the point is on the curve, but does not check if the point
+    // is in the correct subgroup.
+    let point = G2Affine::from_xy(ba, bb).ok_or(PrecompileError::Bn254AffineGFailedToCreate)?;
+
+    // Perform the subgroup check.
+    //
+    // Implementation is based on section 4.3 of https://eprint.iacr.org/2022/352.pdf.
+    //
+    // Referenced from the arkworks source code:
+    // https://github.com/arkworks-rs/algebra/blob/598a5fbabc1903c7bab6668ef8812bfdf2158723/curves/bn254/src/curves/g2.rs#L60-L68
+    const SIX_X_SQUARED: [u64; 2] = [17887900258952609094, 8020209761171036667];
+    const P_POWER_ENDOMORPHISM_COEFF_0: Fp2 = Fp2::new(
+        Fp::from_const_bytes(hex!(
+            "3d556f175795e3990c33c3c210c38cb743b159f53cec0b4cf711794f9847b32f"
+        )),
+        Fp::from_const_bytes(hex!(
+            "a2cb0f641cd56516ce9d7c0b1d2aae3294075ad78bcca44b20aeeb6150e5c916"
+        )),
+    );
+    const P_POWER_ENDOMORPHISM_COEFF_1: Fp2 = Fp2::new(
+        Fp::from_const_bytes(hex!(
+            "5a13a071460154dc9859c9a9ede0aadbb9f9e2b698c65edcdcf59a4805f33c06"
+        )),
+        Fp::from_const_bytes(hex!(
+            "e3b02326637fd382d25ba28fc97d80212b6f79eca7b504079a0441acbc3cc007"
+        )),
+    );
+    let subgroup_check = {
+        // 1. Compute [6X^2]P using double-and-add.
+        let x_times_point = {
+            let mut result = <G2Affine as WeierstrassPoint>::IDENTITY;
+            let mut temp = point.clone();
+            for limb in SIX_X_SQUARED {
+                for bit_idx in 0..64u32 {
+                    if (limb >> bit_idx) & 1 == 1 {
+                        result.add_assign_impl::<false>(&temp);
+                    }
+                    temp.double_assign_impl::<false>();
+                }
+            }
+            result
+        };
+
+        // 2. Compute psi(P), i.e. "untwist-Frobenius-twist".
+        let p_times_point = {
+            let psi_x = point.x().frobenius_map(1) * &P_POWER_ENDOMORPHISM_COEFF_0;
+            let psi_y = point.y().frobenius_map(1) * &P_POWER_ENDOMORPHISM_COEFF_1;
+            G2Affine::from_xy_unchecked(psi_x, psi_y)
+        };
+
+        x_times_point.eq(&p_times_point)
+    };
+
+    if subgroup_check {
+        Ok(point)
+    } else {
+        Err(PrecompileError::Bn254AffineGFailedToCreate)
+    }
 }
 
 /// Reads a scalar from the input slice
@@ -182,31 +235,6 @@ pub(super) fn pairing_check(pairs: &[(&[u8], &[u8])]) -> Result<bool, Precompile
     Ok(Bn254::pairing_check(&g1_points, &g2_points).is_ok())
 }
 
-// contract PairingMismatchTest is Test {
-//     // On-curve but not-in-subgroup G2 point (same bytes used in prover regression tests)
-//     bytes constant G2_NON_SUBGROUP = hex"263e2979dbc2fa0e7c73e38ccc6890b84f4191abb9cba88ed36e9e3726f5142d21f24401109878b0eee42d80f405a63c5912bcdfd4aa49ee1e7abf9b41bc3f932173aec93d1b4f8542cbf320eb5b3e7bf495f3a9b3288c9384e91b54c2bff96923c6f9d2be4bdaabb95148a8d78a725db01fc6d66c2bc2b0a964511b778e4238";
-
-//     function test_pairing_rejects_non_subgroup_g2() public {
-//         // G1 = infinity (64 zero bytes) || G2 = non-subgroup point (128 bytes)
-//         bytes memory input = abi.encodePacked(uint256(0), uint256(0), G2_NON_SUBGROUP);
-
-//         (bool ok, ) = address(0x08).staticcall(input);
-
-//         // Geth / revm / any correct EVM: precompile FAILS for non-subgroup G2
-//         assertFalse(ok, "precompile should reject non-subgroup G2");
-//     }
-
-//     function test_state_divergence_via_branch() public {
-//         bytes memory input = abi.encodePacked(uint256(0), uint256(0), G2_NON_SUBGROUP);
-//         (bool ok, ) = address(0x08).staticcall(input);
-
-//         // Geth takes the else branch (marker = 2).
-//         // The prover would take the if branch (marker = 1) — state root mismatch.
-//         uint256 marker = ok ? 1 : 2;
-//         assertEq(marker, 2, "geth must set marker = 2");
-//     }
-// }
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -263,7 +291,7 @@ mod test {
         //
         // However, zkVM skips the check for *point in subgroup* and hence pairing check output is
         // 1, due to the fact that G1 is identity element.
-        assert_eq!(zkvm_res.ok(), Some(true));
+        assert_eq!(zkvm_res, Err(PrecompileError::Bn254AffineGFailedToCreate));
         assert_eq!(revm_res, Err(PrecompileError::Bn254AffineGFailedToCreate));
     }
 
