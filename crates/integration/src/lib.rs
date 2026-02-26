@@ -357,8 +357,8 @@ pub fn tester_execute<T: ProverTester>(
             .map(|p| p.as_stark_proof().expect("must be stark proof")),
     )?;
 
-    let sdk = Sdk::new(app_config)?;
-    let ret = scroll_zkvm_prover::utils::vm::execute_guest(&sdk, app_exe, &stdin)?;
+    let sdk = Sdk::new(app_config.clone())?;
+    let ret = scroll_zkvm_prover::utils::vm::execute_guest(&sdk, app_config.app_vm_config.as_ref(), app_exe, &stdin)?;
     Ok(ret)
 }
 
