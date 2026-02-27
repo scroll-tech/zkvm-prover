@@ -358,7 +358,12 @@ pub fn tester_execute<T: ProverTester>(
     )?;
 
     let sdk = Sdk::new(app_config.clone())?;
-    let ret = scroll_zkvm_prover::utils::vm::execute_guest(&sdk, app_config.app_vm_config.as_ref(), app_exe, &stdin)?;
+    let ret = scroll_zkvm_prover::utils::vm::execute_guest(
+        &sdk,
+        app_config.app_vm_config.as_ref(),
+        app_exe,
+        &stdin,
+    )?;
     Ok(ret)
 }
 
