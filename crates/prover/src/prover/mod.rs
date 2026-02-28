@@ -10,10 +10,16 @@ use openvm_native_circuit::NativeGpuBuilder as NativeBuilder;
 
 use openvm_circuit::arch::instructions::exe::VmExe;
 use openvm_sdk::{DefaultStarkEngine, config::SdkVmBuilder};
-use openvm_sdk::{F, Sdk, StdIn, prover::StarkProver};
+use openvm_sdk::{
+    F, Sdk, StdIn,
+    config::{AppConfig, SdkVmConfig},
+    prover::StarkProver,
+};
 use scroll_zkvm_types::{proof::OpenVmEvmProof, types_agg::ProgramCommitment, utils::serialize_vk};
 use scroll_zkvm_verifier::verifier::{AGG_STARK_PROVING_KEY, UniversalVerifier};
 use tracing::instrument;
+
+type SDKAppConfig = AppConfig<SdkVmConfig>;
 
 // Re-export from openvm_sdk.
 pub use openvm_sdk::{self};
@@ -31,6 +37,8 @@ pub struct Prover {
     pub app_exe: Arc<VmExe<F>>,
     /// Prover configuration.
     pub config: ProverConfig,
+    /// SDKConfig
+    app_config: SDKAppConfig,
     /// Lazily initialized SDK
     sdk: OnceLock<Sdk>,
     /// Lazily initialized stark prover
@@ -54,11 +62,18 @@ impl Prover {
     /// Setup the [`Prover`] given paths to the application's exe and proving key.
     #[instrument("Prover::setup")]
     pub fn setup(config: ProverConfig, name: Option<&str>) -> Result<Self, Error> {
+        let mut app_config = read_app_config(&config.path_app_config)?;
+        let segment_len = config.segment_len.unwrap_or(DEFAULT_SEGMENT_SIZE);
+        let segmentation_limits = &mut app_config.app_vm_config.system.config.segmentation_limits;
+        segmentation_limits.max_trace_height = segment_len as u32;
+        segmentation_limits.max_cells = 1_200_000_000_usize; // For 24G vram
+
         let app_exe = read_app_exe(&config.path_app_exe)?;
         Ok(Self {
             app_exe: Arc::new(app_exe),
             config,
             prover_name: name.unwrap_or("universal").to_string(),
+            app_config,
             sdk: OnceLock::new(),
             prover: OnceLock::new(),
         })
@@ -74,14 +89,7 @@ impl Prover {
     fn get_sdk(&self) -> Result<&Sdk, Error> {
         self.sdk.get_or_try_init(|| {
             tracing::info!("Lazy initializing SDK...");
-            let mut app_config = read_app_config(&self.config.path_app_config)?;
-            let segment_len = self.config.segment_len.unwrap_or(DEFAULT_SEGMENT_SIZE);
-            let segmentation_limits =
-                &mut app_config.app_vm_config.system.config.segmentation_limits;
-            segmentation_limits.max_trace_height = segment_len as u32;
-            segmentation_limits.max_cells = 1_200_000_000_usize; // For 24G vram
-
-            let sdk = Sdk::new(app_config).expect("sdk init failed");
+            let sdk = Sdk::new(self.app_config.clone()).expect("sdk init failed");
 
             // 45s for first time
             let sdk = sdk.with_agg_pk(AGG_STARK_PROVING_KEY.clone());
@@ -157,7 +165,13 @@ impl Prover {
     ) -> Result<crate::utils::vm::ExecutionResult, Error> {
         let sdk = self.get_sdk()?;
         let t = std::time::Instant::now();
-        let exec_result = crate::utils::vm::execute_guest(sdk, self.app_exe.clone(), stdin)?;
+        let exec_result = crate::utils::vm::execute_guest(
+            sdk,
+            self.app_config.app_vm_config.as_ref(),
+            self.app_exe.clone(),
+            stdin,
+        )
+        .map_err(|e| Error::GenProof(e.to_string()))?;
         let execution_time_mills = t.elapsed().as_millis() as u64;
         let execution_time_s = execution_time_mills as f32 / 1000.0f32;
         let exec_speed = (exec_result.total_cycle as f32 / 1_000_000.0f32) / execution_time_s; // MHz
