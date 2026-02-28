@@ -12,11 +12,17 @@ alloy-primitives = { workspace = true, features = ["native-keccak"] }
 alloy-consensus = { workspace = true, features = ["crypto-backend"] }
 alloy-sol-types.workspace = true
 ecies.workspace = true
+hex-literal.workspace = true
 itertools.workspace = true
 sbv-helpers.workspace = true
 sbv-core = { workspace = true, features = [] }
 sbv-trie = { workspace = true }
-sbv-primitives = { workspace = true, features = ["hardforks", "evm-types", "revm-types", "reth-evm-types"] }
+sbv-primitives = { workspace = true, features = [
+  "hardforks",
+  "evm-types",
+  "revm-types",
+  "reth-evm-types",
+] }
 serde.workspace = true
 thiserror.workspace = true
 openvm-ecc-guest = { workspace = true }
@@ -24,20 +30,25 @@ openvm-k256 = { workspace = true }
 openvm-p256 = { workspace = true }
 openvm-sha2 = { workspace = true }
 openvm-pairing = { workspace = true, features = ["bn254"] }
-
-types-base = { path = "../base", package = "scroll-zkvm-types-base"}
+types-base = { path = "../base", package = "scroll-zkvm-types-base" }
 
 [dev-dependencies]
-serde_json.workspace = true
+ark-bn254 = "0.5.0"
+ark-ff = "0.5.0"
+ark-serialize = "0.5.0"
+ark-ec = "0.5.0"
+openvm-pairing = { workspace = true, features = ["bn254", "halo2curves"] }
+openvm-pairing-guest = { workspace = true, features = ["bn254", "halo2curves"] }
+
 
 [features]
 default = []
 host = ["scroll-compress-info", "alloy-primitives/tiny-keccak"]
 scroll = [
-    "sbv-core/scroll",
-    "sbv-primitives/scroll-evm-types",
-    "sbv-primitives/scroll-hardforks",
-    "sbv-primitives/scroll-revm-types",
-    "sbv-primitives/scroll-reth-evm-types"
+  "sbv-core/scroll",
+  "sbv-primitives/scroll-evm-types",
+  "sbv-primitives/scroll-hardforks",
+  "sbv-primitives/scroll-revm-types",
+  "sbv-primitives/scroll-reth-evm-types",
 ]
 scroll-compress-info = ["sbv-core/scroll-compress-info"]

@@ -2,9 +2,10 @@
 use sbv_primitives::types::revm::precompile::PrecompileError;
 use std::vec::Vec;
 
+use hex_literal::hex;
 use openvm_ecc_guest::{
     AffinePoint,
-    algebra::IntMod,
+    algebra::{IntMod, field::FieldExtension},
     weierstrass::{IntrinsicCurve, WeierstrassPoint},
 };
 use openvm_pairing::{
@@ -34,6 +35,26 @@ const FQ2_LEN: usize = 2 * FQ_LEN;
 /// Note: A G1 element contains 2 Fq elements.
 const G1_LEN: usize = 2 * FQ_LEN;
 
+const SIX_X_SQUARED: [u64; 2] = [17887900258952609094, 8020209761171036667];
+
+const P_POWER_ENDOMORPHISM_COEFF_0: Fp2 = Fp2::new(
+    Fp::from_const_bytes(hex!(
+        "3d556f175795e3990c33c3c210c38cb743b159f53cec0b4cf711794f9847b32f"
+    )),
+    Fp::from_const_bytes(hex!(
+        "a2cb0f641cd56516ce9d7c0b1d2aae3294075ad78bcca44b20aeeb6150e5c916"
+    )),
+);
+
+const P_POWER_ENDOMORPHISM_COEFF_1: Fp2 = Fp2::new(
+    Fp::from_const_bytes(hex!(
+        "5a13a071460154dc9859c9a9ede0aadbb9f9e2b698c65edcdcf59a4805f33c06"
+    )),
+    Fp::from_const_bytes(hex!(
+        "e3b02326637fd382d25ba28fc97d80212b6f79eca7b504079a0441acbc3cc007"
+    )),
+);
+
 #[inline]
 fn read_fq(input: &[u8]) -> Result<Fp, PrecompileError> {
     if input.len() < FQ_LEN {
@@ -60,11 +81,6 @@ fn read_fq2(input: &[u8]) -> Result<Fp2, PrecompileError> {
     Ok(Fp2::new(x, y))
 }
 
-#[inline]
-fn new_g1_affine_point(px: Fp, py: Fp) -> Result<G1Affine, PrecompileError> {
-    G1Affine::from_xy(px, py).ok_or(PrecompileError::Bn254AffineGFailedToCreate)
-}
-
 /// Reads a G1 point from the input slice.
 ///
 /// Parses a G1 point from a byte slice by reading two consecutive field elements
@@ -77,7 +93,7 @@ fn new_g1_affine_point(px: Fp, py: Fp) -> Result<G1Affine, PrecompileError> {
 pub(super) fn read_g1_point(input: &[u8]) -> Result<G1Affine, PrecompileError> {
     let px = read_fq(&input[0..FQ_LEN])?;
     let py = read_fq(&input[FQ_LEN..2 * FQ_LEN])?;
-    new_g1_affine_point(px, py)
+    G1Affine::from_xy(px, py).ok_or(PrecompileError::Bn254AffineGFailedToCreate)
 }
 
 /// Encodes a G1 point into a byte array.
@@ -101,6 +117,20 @@ pub(super) fn encode_g1_point(point: G1Affine) -> [u8; G1_LEN] {
     output
 }
 
+fn g2_point_6x_squared_scalar_mul(mut point: G2Affine) -> G2Affine {
+    let mut result = <G2Affine as WeierstrassPoint>::IDENTITY;
+    for limb in SIX_X_SQUARED {
+        for bit_idx in 0..64u32 {
+            if (limb >> bit_idx) & 1 == 1 {
+                result.add_assign_impl::<false>(&point);
+            }
+            point.double_assign_impl::<false>();
+        }
+    }
+
+    result
+}
+
 /// Reads a G2 point from the input slice.
 ///
 /// Parses a G2 point from a byte slice by reading four consecutive Fq field elements
@@ -114,7 +144,35 @@ pub(super) fn read_g2_point(input: &[u8]) -> Result<G2Affine, PrecompileError> {
     let ba = read_fq2(&input[0..FQ2_LEN])?;
     let bb = read_fq2(&input[FQ2_LEN..2 * FQ2_LEN])?;
 
-    G2Affine::from_xy(ba, bb).ok_or(PrecompileError::Bn254AffineGFailedToCreate)
+    // [`G2Affine::from_xy`] checks that the point is on the curve, but does not check if the point
+    // is in the correct subgroup.
+    let point = G2Affine::from_xy(ba, bb).ok_or(PrecompileError::Bn254AffineGFailedToCreate)?;
+
+    // Perform the subgroup check.
+    //
+    // Implementation is based on section 4.3 of https://eprint.iacr.org/2022/352.pdf.
+    //
+    // Referenced from the arkworks source code:
+    // https://github.com/arkworks-rs/algebra/blob/598a5fbabc1903c7bab6668ef8812bfdf2158723/curves/bn254/src/curves/g2.rs#L60-L68
+    let subgroup_check = {
+        // 1. Compute [6X^2]P using double-and-add.
+        let x_times_point = g2_point_6x_squared_scalar_mul(point.clone());
+
+        // 2. Compute psi(P), i.e. "untwist-Frobenius-twist".
+        let p_times_point = {
+            let psi_x = point.x().frobenius_map(1) * &P_POWER_ENDOMORPHISM_COEFF_0;
+            let psi_y = point.y().frobenius_map(1) * &P_POWER_ENDOMORPHISM_COEFF_1;
+            G2Affine::from_xy_unchecked(psi_x, psi_y)
+        };
+
+        x_times_point.eq(&p_times_point)
+    };
+
+    if subgroup_check {
+        Ok(point)
+    } else {
+        Err(PrecompileError::Bn254AffineGFailedToCreate)
+    }
 }
 
 /// Reads a scalar from the input slice
@@ -180,4 +238,237 @@ pub(super) fn pairing_check(pairs: &[(&[u8], &[u8])]) -> Result<bool, Precompile
     }
 
     Ok(Bn254::pairing_check(&g1_points, &g2_points).is_ok())
+}
+
+#[cfg(all(test, feature = "scroll", feature = "host"))]
+mod test {
+    use super::*;
+    use hex_literal::hex;
+    use sbv_primitives::{
+        B256,
+        types::{reth::evm::revm, revm::precompile::PrecompileOutput},
+    };
+
+    const G1_IDENTITY: [u8; 64] = [0u8; 64];
+
+    const G2_NON_SUBGROUP: [u8; 128] = hex!(
+        "263e2979dbc2fa0e7c73e38ccc6890b84f4191abb9cba88ed36e9e3726f5142d21f24401109878b0eee42d80f405a63c5912bcdfd4aa49ee1e7abf9b41bc3f932173aec93d1b4f8542cbf320eb5b3e7bf495f3a9b3288c9384e91b54c2bff96923c6f9d2be4bdaabb95148a8d78a725db01fc6d66c2bc2b0a964511b778e4238"
+    );
+
+    const G1_POINT_1: [u8; 64] = hex!(
+        "1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41"
+    );
+    const G1_POINT_2: [u8; 64] = hex!(
+        "111e129f1cf1097710d41c4ac70fcdfa5ba2023c6ff1cbeac322de49d1b6df7c2032c61a830e3c17286de9462bf242fca2883585b93870a73853face6a6bf411"
+    );
+
+    const G2_POINT_1: [u8; 128] = hex!(
+        "209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550"
+    );
+    const G2_POINT_2: [u8; 128] = hex!(
+        "198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c21800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa"
+    );
+
+    #[test]
+    fn test_pairing_rejects_non_subgroup_g2() {
+        assert!(read_g2_point(&G2_NON_SUBGROUP).is_err());
+        assert!(read_g2_point(&G2_POINT_1).is_ok());
+        assert!(read_g2_point(&G2_POINT_2).is_ok());
+    }
+
+    #[test]
+    fn test_pairing_check_non_matching() {
+        // 1. pairing check in zkVM.
+        let zkvm_res = super::pairing_check(&[(&G1_IDENTITY, &G2_NON_SUBGROUP)]);
+
+        // 2. pairing check in revm.
+        let revm_res = {
+            let provider = sbv_primitives::types::revm::ScrollPrecompileProvider::new_with_spec(
+                sbv_primitives::types::revm::SpecId::GALILEO,
+            );
+            let precompile = provider
+                .precompiles()
+                .get(&revm::precompile::bn254::pair::ADDRESS)
+                .expect("should be ok");
+            let input = std::iter::empty()
+                .chain(G1_IDENTITY)
+                .chain(G2_NON_SUBGROUP)
+                .collect::<Vec<u8>>();
+            precompile.execute(input.as_slice(), 500_000)
+        };
+
+        // G1 is identity element, however G2 is point on curve that is *not* in subgroup.
+        //
+        // Initial decoding of input bytes should fail in the execution client.
+        //
+        // However, zkVM skips the check for *point in subgroup* and hence pairing check output is
+        // 1, due to the fact that G1 is identity element.
+        assert_eq!(zkvm_res, Err(PrecompileError::Bn254AffineGFailedToCreate));
+        assert_eq!(revm_res, Err(PrecompileError::Bn254AffineGFailedToCreate));
+    }
+
+    #[test]
+    fn test_pairing_check_matching() {
+        // 1. pairing check in zkVM.
+        let zkvm_res =
+            super::pairing_check(&[(&G1_POINT_1, &G2_POINT_1), (&G1_POINT_2, &G2_POINT_2)]);
+
+        // 2. pairing check in revm.
+        let revm_res = {
+            let provider = sbv_primitives::types::revm::ScrollPrecompileProvider::new_with_spec(
+                sbv_primitives::types::revm::SpecId::GALILEO,
+            );
+            let precompile = provider
+                .precompiles()
+                .get(&revm::precompile::bn254::pair::ADDRESS)
+                .expect("should be ok");
+            let input = std::iter::empty()
+                .chain(G1_POINT_1)
+                .chain(G2_POINT_1)
+                .chain(G1_POINT_2)
+                .chain(G2_POINT_2)
+                .collect::<Vec<u8>>();
+            precompile.execute(input.as_slice(), 500_000)
+        };
+
+        // Here we have both G1 and G2 points valid, i.e. on curve and in the subgroup.
+        //
+        // We expect zkVM and revm impls to compute matching results.
+        assert_eq!(zkvm_res.ok(), Some(true));
+        let Some(PrecompileOutput {
+            gas_used: _gas_used,
+            bytes,
+            reverted: _reverted,
+        }) = revm_res.ok()
+        else {
+            panic!("revm pairing check should have succeeded");
+        };
+        assert_eq!(bytes, B256::with_last_byte(1).to_vec());
+    }
+
+    #[test]
+    fn test_const_values() {
+        use ark_serialize::CanonicalSerialize;
+
+        // Refer arkworks definitions:
+        // - https://github.com/arkworks-rs/algebra/blob/598a5fbabc1903c7bab6668ef8812bfdf2158723/curves/bn254/src/curves/g2.rs#L123-L127
+        // - https://github.com/arkworks-rs/algebra/blob/598a5fbabc1903c7bab6668ef8812bfdf2158723/curves/bn254/src/curves/g2.rs#L129-L133
+        let ark_coeff_0 = ark_bn254::Fq2::new(
+            ark_ff::MontFp!(
+                "21575463638280843010398324269430826099269044274347216827212613867836435027261"
+            ),
+            ark_ff::MontFp!(
+                "10307601595873709700152284273816112264069230130616436755625194854815875713954"
+            ),
+        );
+        let ark_coeff_1 = ark_bn254::Fq2::new(
+            ark_ff::MontFp!(
+                "2821565182194536844548159561693502659359617185244120367078079554186484126554"
+            ),
+            ark_ff::MontFp!(
+                "3505843767911556378687030309984248845540243509899259641013678093033130930403"
+            ),
+        );
+        let mut coeff_0_bytes = Vec::with_capacity(64);
+        ark_coeff_0
+            .serialize_uncompressed(&mut coeff_0_bytes)
+            .expect("should not fail");
+        let mut coeff_1_bytes = Vec::with_capacity(64);
+        ark_coeff_1
+            .serialize_uncompressed(&mut coeff_1_bytes)
+            .expect("should not fail");
+        assert_eq!(coeff_0_bytes, P_POWER_ENDOMORPHISM_COEFF_0.to_bytes());
+        assert_eq!(coeff_1_bytes, P_POWER_ENDOMORPHISM_COEFF_1.to_bytes());
+    }
+
+    mod arkworks_bn254_helper {
+        use super::{FQ_LEN, FQ2_LEN, PrecompileError};
+        use ark_bn254::*;
+        use ark_serialize::CanonicalDeserialize;
+
+        #[inline]
+        fn read_fq(input_be: &[u8]) -> Result<Fq, PrecompileError> {
+            assert_eq!(input_be.len(), FQ_LEN, "input must be {FQ_LEN} bytes");
+
+            let mut input_le = [0u8; FQ_LEN];
+            input_le.copy_from_slice(input_be);
+
+            // Reverse in-place to convert from big-endian to little-endian.
+            input_le.reverse();
+
+            Fq::deserialize_uncompressed(&input_le[..])
+                .map_err(|_| PrecompileError::Bn254FieldPointNotAMember)
+        }
+
+        #[inline]
+        fn read_fq2(input: &[u8]) -> Result<Fq2, PrecompileError> {
+            let y = read_fq(&input[..FQ_LEN])?;
+            let x = read_fq(&input[FQ_LEN..2 * FQ_LEN])?;
+
+            Ok(Fq2::new(x, y))
+        }
+
+        #[inline]
+        pub(super) fn read_g2_point_unchecked(input: &[u8]) -> Result<G2Affine, PrecompileError> {
+            let ba = read_fq2(&input[0..FQ2_LEN])?;
+            let bb = read_fq2(&input[FQ2_LEN..2 * FQ2_LEN])?;
+            Ok(G2Affine::new_unchecked(ba, bb))
+        }
+    }
+
+    #[test]
+    fn test_6x_squared_mul() {
+        use ark_ec::AffineRepr;
+        use ark_serialize::CanonicalSerialize;
+
+        let mut ark_g2_x_bytes = Vec::with_capacity(64);
+        let mut ark_g2_y_bytes = Vec::with_capacity(64);
+
+        for point_rep in &[G2_NON_SUBGROUP, G2_POINT_1, G2_POINT_2] {
+            let ark_g2_point = arkworks_bn254_helper::read_g2_point_unchecked(point_rep).unwrap();
+
+            let g2_point = {
+                let ba = read_fq2(&point_rep[0..FQ2_LEN]).unwrap();
+                let bb = read_fq2(&point_rep[FQ2_LEN..2 * FQ2_LEN]).unwrap();
+                G2Affine::from_xy(ba, bb).unwrap()
+            };
+
+            // the input points from ark and ours are identify
+            ark_g2_point
+                .x
+                .serialize_uncompressed(&mut ark_g2_x_bytes)
+                .expect("should not fail");
+
+            ark_g2_point
+                .y
+                .serialize_uncompressed(&mut ark_g2_y_bytes)
+                .expect("should not fail");
+
+            assert_eq!(ark_g2_x_bytes, g2_point.x().to_bytes());
+            assert_eq!(ark_g2_y_bytes, g2_point.y().to_bytes());
+
+            let ark_result = ark_g2_point.mul_bigint(SIX_X_SQUARED);
+            let ark_g2_result = ark_bn254::G2Affine::from(ark_result);
+            let g2_result = g2_point_6x_squared_scalar_mul(g2_point);
+
+            ark_g2_x_bytes.clear();
+            ark_g2_y_bytes.clear();
+
+            ark_g2_result
+                .x
+                .serialize_uncompressed(&mut ark_g2_x_bytes)
+                .expect("should not fail");
+
+            ark_g2_result
+                .y
+                .serialize_uncompressed(&mut ark_g2_y_bytes)
+                .expect("should not fail");
+
+            assert_eq!(ark_g2_x_bytes, g2_result.x().to_bytes());
+            assert_eq!(ark_g2_y_bytes, g2_result.y().to_bytes());
+
+            ark_g2_x_bytes.clear();
+            ark_g2_y_bytes.clear();
+        }
+    }
 }
