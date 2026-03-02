@@ -10,6 +10,14 @@ pub struct ExecutionResult {
     pub public_values: Vec<u8>,
 }
 
+// the 100* current cost / ratio for chunk circuit, use to estimated the max cycles
+// which an metered execution can handle
+const COST_CYCLE_RATIO: u64 = 87u64;
+
+// Execute the guest program using the metered executor first to measure actual cycles.
+// If the execution exceeds the maximum cost allowed by the metered executor,
+// we re-execute the program using the normal executor (execute_e1), which has no limitations
+// on the size of the execution process.
 pub fn execute_guest(
     sdk: &Sdk,
     sys_config: &SystemConfig,
@@ -22,9 +30,10 @@ pub fn execute_guest(
     let exe = app_prover.exe();
 
     let ctx = vm.build_metered_cost_ctx();
-    let preset_max_cost = ctx.max_execution_cost;
-    tracing::info!("Double preset max cost ({preset_max_cost}) for metering execution");
-    let ctx = ctx.with_max_execution_cost(preset_max_cost * 2);
+    let preset_max_cost = ctx.max_execution_cost * 2;
+    let estimated_max_cycles = preset_max_cost / COST_CYCLE_RATIO;
+    tracing::info!("Double preset max cost to ({preset_max_cost}) for metering execution");
+    let ctx = ctx.with_max_execution_cost(preset_max_cost);
     let interpreter = vm
         .metered_cost_interpreter(&exe)
         .map_err(VirtualMachineError::from)?;
@@ -45,7 +54,7 @@ pub fn execute_guest(
         }
 
         tracing::warn!(
-            "Large execution exceed limit of metered execution, cycle is expected to >2.4B"
+            "Large execution exceed limit of metered execution, cycle is expected to >{estimated_max_cycles}"
         );
         let exe = sdk.convert_to_exe(exe)?;
         let instance = vm.interpreter(&exe).map_err(VirtualMachineError::from)?;
@@ -54,10 +63,13 @@ pub fn execute_guest(
             .map_err(VirtualMachineError::from)?
             .memory;
         public_values = extract_public_values(sys_config.num_public_values, &final_memory.memory);
-        total_cycle = 2_400_000_000_u64;
+        total_cycle = estimated_max_cycles;
 
-        // there should be no other reason to get PI with all 0
-        assert!(!public_values.iter().all(|x| *x == 0));
+        if public_values.iter().all(|x| *x == 0) {
+            return Err(SdkError::Other(eyre::eyre!(
+                "public_values are all 0s upon execute_e1"
+            )));
+        }
     }
 
     tracing::debug!(name: "public_values after guest execution: {:?}", ?public_values);

@@ -19,7 +19,7 @@ use scroll_zkvm_types::{proof::OpenVmEvmProof, types_agg::ProgramCommitment, uti
 use scroll_zkvm_verifier::verifier::{AGG_STARK_PROVING_KEY, UniversalVerifier};
 use tracing::instrument;
 
-type SDKAppConfig = AppConfig<SdkVmConfig>;
+type SdkAppConfig = AppConfig<SdkVmConfig>;
 
 // Re-export from openvm_sdk.
 pub use openvm_sdk::{self};
@@ -38,7 +38,7 @@ pub struct Prover {
     /// Prover configuration.
     pub config: ProverConfig,
     /// SDKConfig
-    app_config: SDKAppConfig,
+    app_config: SdkAppConfig,
     /// Lazily initialized SDK
     sdk: OnceLock<Sdk>,
     /// Lazily initialized stark prover
