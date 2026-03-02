@@ -169,7 +169,7 @@ impl Version {
         Self {
             domain: Domain::Validium,
             stf_version: STFVersion::V1,
-            fork: ForkName::Feynman,
+            fork: ForkName::GalileoV2,
             codec: Codec::V7,
         }
     }
