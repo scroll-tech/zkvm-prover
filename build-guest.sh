@@ -20,8 +20,13 @@ cleanup() {
 # set trap to cleanup on exit
 trap cleanup EXIT
 
+ssh_args=()
+if [ -n "${SSH_AUTH_SOCK:-}" ] && [ -S "${SSH_AUTH_SOCK}" ]; then
+  ssh_args=(-v "$SSH_AUTH_SOCK:/tmp/ssh-agent.sock" -e SSH_AUTH_SOCK=/tmp/ssh-agent.sock)
+fi
+
 # run docker image
-docker run --cidfile ./build-guest.cid --platform linux/amd64 -v "$SSH_AUTH_SOCK:/tmp/ssh-agent.sock" -e SSH_AUTH_SOCK=/tmp/ssh-agent.sock build-guest:local make build-guest-local
+docker run --cidfile ./build-guest.cid --platform linux/amd64 "${ssh_args[@]}" build-guest:local make build-guest-local
 container_id=$(cat ./build-guest.cid)
 
 # copy vm commitments from container to local
