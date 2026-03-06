@@ -27,24 +27,24 @@ version = "0.7.1"
 
 [workspace.dependencies]
 # openvm guest libs
-openvm = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1" }
-openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
-openvm-custom-insn = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
-openvm-sha2 = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1" }
-openvm-sha256-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
-openvm-p256 = { git = "https://github.com/openvm-org/openvm.git", package = "p256", tag = "v1.4.1", features = [
+openvm = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.4.1" }
+openvm-algebra-complex-macros = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.4.1", default-features = false }
+openvm-custom-insn = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.4.1", default-features = false }
+openvm-sha2 = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.4.1" }
+openvm-sha256-guest = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.4.1", default-features = false }
+openvm-p256 = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.4.1", package = "p256", features = [
   "std",
 ] }
-openvm-k256 = { git = "https://github.com/openvm-org/openvm.git", package = "k256", tag = "v1.4.1", features = [
+openvm-k256 = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.4.1", package = "k256", features = [
   "std",
 ] }
-openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1" }
-openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
-openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
-openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
-openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
-openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
-openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
+openvm-pairing = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.4.1" }
+openvm-keccak256-guest = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.4.1", default-features = false }
+openvm-algebra-guest = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.4.1", default-features = false }
+openvm-ecc-guest = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.4.1", default-features = false }
+openvm-bigint-guest = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.4.1", default-features = false }
+openvm-pairing-guest = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.4.1", default-features = false }
+openvm-rv32im-guest = { git = "ssh://git@github.com/scroll-tech/openvm-private.git", branch = "patch-v1.4.1", default-features = false }
 
 # openvm host libs
 openvm-benchmarks-prove = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
