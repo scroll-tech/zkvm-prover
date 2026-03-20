@@ -471,4 +471,251 @@ mod test {
             ark_g2_y_bytes.clear();
         }
     }
+
+    // ================================================================
+    // Differential tests: zkVM crypto vs revm for edge case inputs
+    // ================================================================
+
+    const P_MINUS_2: [u8; 32] = hex!(
+        "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd45"
+    );
+    const CURVE_ORDER: [u8; 32] = hex!(
+        "30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001"
+    );
+
+    fn revm_ecadd(input: &[u8]) -> Result<Vec<u8>, String> {
+        let provider = sbv_primitives::types::revm::ScrollPrecompileProvider::new_with_spec(
+            sbv_primitives::types::revm::SpecId::GALILEO,
+        );
+        let addr = revm::precompile::bn254::add::ADDRESS;
+        let precompile = provider.precompiles().get(&addr).expect("ecAdd exists");
+        precompile.execute(input, u64::MAX)
+            .map(|o| o.bytes.to_vec())
+            .map_err(|e| format!("{:?}", e))
+    }
+
+    fn revm_ecmul(input: &[u8]) -> Result<Vec<u8>, String> {
+        let provider = sbv_primitives::types::revm::ScrollPrecompileProvider::new_with_spec(
+            sbv_primitives::types::revm::SpecId::GALILEO,
+        );
+        let addr = revm::precompile::bn254::mul::ADDRESS;
+        let precompile = provider.precompiles().get(&addr).expect("ecMul exists");
+        precompile.execute(input, u64::MAX)
+            .map(|o| o.bytes.to_vec())
+            .map_err(|e| format!("{:?}", e))
+    }
+
+    fn zkvm_ecadd(p1: &[u8; 64], p2: &[u8; 64]) -> Result<Vec<u8>, String> {
+        let p1 = super::read_g1_point(p1).map_err(|e| format!("{:?}", e))?;
+        let p2 = super::read_g1_point(p2).map_err(|e| format!("{:?}", e))?;
+        let result = super::g1_point_add(p1, p2);
+        Ok(super::encode_g1_point(result).to_vec())
+    }
+
+    fn zkvm_ecmul(point: &[u8; 64], scalar: &[u8; 32]) -> Result<Vec<u8>, String> {
+        let p = super::read_g1_point(point).map_err(|e| format!("{:?}", e))?;
+        let s = super::read_scalar(scalar);
+        let result = super::g1_point_mul(p, s);
+        Ok(super::encode_g1_point(result).to_vec())
+    }
+
+    #[test]
+    fn differential_ecadd_inf_plus_inf() {
+        let input = [0u8; 128];
+        let revm = revm_ecadd(&input).unwrap();
+        let zkvm = zkvm_ecadd(&[0u8; 64], &[0u8; 64]).unwrap();
+        assert_eq!(revm, zkvm, "inf+inf divergence");
+    }
+
+    #[test]
+    fn differential_ecadd_p_plus_zero() {
+        let mut p1 = [0u8; 64]; p1[31] = 1; p1[63] = 2;
+        let p2 = [0u8; 64];
+        let mut input = Vec::new();
+        input.extend_from_slice(&p1);
+        input.extend_from_slice(&p2);
+        let revm = revm_ecadd(&input).unwrap();
+        let zkvm = zkvm_ecadd(&p1, &p2).unwrap();
+        assert_eq!(revm, zkvm, "P+O divergence");
+    }
+
+    #[test]
+    fn differential_ecadd_p_plus_neg_p() {
+        let mut p1 = [0u8; 64]; p1[31] = 1; p1[63] = 2;
+        let mut p2 = [0u8; 64]; p2[31] = 1; p2[32..64].copy_from_slice(&P_MINUS_2);
+        let mut input = Vec::new();
+        input.extend_from_slice(&p1);
+        input.extend_from_slice(&p2);
+        let revm = revm_ecadd(&input).unwrap();
+        let zkvm = zkvm_ecadd(&p1, &p2).unwrap();
+        assert_eq!(revm, zkvm, "P+(-P) divergence");
+    }
+
+    #[test]
+    fn differential_ecadd_p_plus_p() {
+        let mut p = [0u8; 64]; p[31] = 1; p[63] = 2;
+        let mut input = Vec::new();
+        input.extend_from_slice(&p);
+        input.extend_from_slice(&p);
+        let revm = revm_ecadd(&input).unwrap();
+        let zkvm = zkvm_ecadd(&p, &p).unwrap();
+        assert_eq!(revm, zkvm, "P+P divergence");
+    }
+
+    #[test]
+    fn differential_ecmul_p_times_zero() {
+        let mut p = [0u8; 64]; p[31] = 1; p[63] = 2;
+        let s = [0u8; 32];
+        let mut input = Vec::new();
+        input.extend_from_slice(&p);
+        input.extend_from_slice(&s);
+        let revm = revm_ecmul(&input).unwrap();
+        let zkvm = zkvm_ecmul(&p, &s).unwrap();
+        assert_eq!(revm, zkvm, "P*0 divergence");
+    }
+
+    #[test]
+    fn differential_ecmul_p_times_one() {
+        let mut p = [0u8; 64]; p[31] = 1; p[63] = 2;
+        let mut s = [0u8; 32]; s[31] = 1;
+        let mut input = Vec::new();
+        input.extend_from_slice(&p);
+        input.extend_from_slice(&s);
+        let revm = revm_ecmul(&input).unwrap();
+        let zkvm = zkvm_ecmul(&p, &s).unwrap();
+        assert_eq!(revm, zkvm, "P*1 divergence");
+    }
+
+    #[test]
+    fn differential_ecmul_p_times_order() {
+        let mut p = [0u8; 64]; p[31] = 1; p[63] = 2;
+        let mut input = Vec::new();
+        input.extend_from_slice(&p);
+        input.extend_from_slice(&CURVE_ORDER);
+        let revm = revm_ecmul(&input).unwrap();
+        let zkvm = zkvm_ecmul(&p, &CURVE_ORDER).unwrap();
+        assert_eq!(revm, zkvm, "P*r divergence");
+    }
+
+    #[test]
+    fn differential_ecmul_zero_times_scalar() {
+        let p = [0u8; 64];
+        let mut s = [0u8; 32]; s[31] = 5;
+        let mut input = Vec::new();
+        input.extend_from_slice(&p);
+        input.extend_from_slice(&s);
+        let revm = revm_ecmul(&input).unwrap();
+        let zkvm = zkvm_ecmul(&p, &s).unwrap();
+        assert_eq!(revm, zkvm, "O*5 divergence");
+    }
+
+    #[test]
+    fn differential_ecmul_p_times_max() {
+        let mut p = [0u8; 64]; p[31] = 1; p[63] = 2;
+        let s = [0xFF; 32];
+        let mut input = Vec::new();
+        input.extend_from_slice(&p);
+        input.extend_from_slice(&s);
+        let revm = revm_ecmul(&input).unwrap();
+        let zkvm = zkvm_ecmul(&p, &s).unwrap();
+        assert_eq!(revm, zkvm, "P*max divergence");
+    }
+
+    #[test]
+    fn differential_ecmul_random_scalars() {
+        // Fuzz ecMul with 100 random scalars on the generator point
+        use rand::{Rng, SeedableRng, rngs::StdRng};
+        let mut rng = StdRng::seed_from_u64(0xDEADBEEF);
+
+        let mut gen = [0u8; 64];
+        gen[31] = 1; gen[63] = 2;
+
+        for i in 0..100 {
+            let mut scalar = [0u8; 32];
+            rng.fill(&mut scalar[..]);
+
+            let mut input = Vec::new();
+            input.extend_from_slice(&gen);
+            input.extend_from_slice(&scalar);
+
+            let revm = revm_ecmul(&input).unwrap();
+            let zkvm = zkvm_ecmul(&gen, &scalar).unwrap();
+            assert_eq!(revm, zkvm, "Random ecMul divergence at iteration {i}, scalar={scalar:02x?}");
+        }
+        println!("  100 random ecMul tests passed");
+    }
+
+    #[test]
+    fn differential_ecadd_random_points() {
+        // Generate random points by multiplying generator by random scalars,
+        // then test ecAdd on those points
+        use rand::{Rng, SeedableRng, rngs::StdRng};
+        let mut rng = StdRng::seed_from_u64(0xCAFEBABE);
+
+        let mut gen = [0u8; 64];
+        gen[31] = 1; gen[63] = 2;
+
+        for i in 0..50 {
+            // Generate two random points
+            let mut s1 = [0u8; 32];
+            let mut s2 = [0u8; 32];
+            rng.fill(&mut s1[..]);
+            rng.fill(&mut s2[..]);
+
+            let p1_bytes = zkvm_ecmul(&gen, &s1).unwrap();
+            let p2_bytes = zkvm_ecmul(&gen, &s2).unwrap();
+
+            let mut p1 = [0u8; 64];
+            let mut p2 = [0u8; 64];
+            p1.copy_from_slice(&p1_bytes);
+            p2.copy_from_slice(&p2_bytes);
+
+            let mut input = Vec::new();
+            input.extend_from_slice(&p1);
+            input.extend_from_slice(&p2);
+
+            let revm = revm_ecadd(&input).unwrap();
+            let zkvm = zkvm_ecadd(&p1, &p2).unwrap();
+            assert_eq!(revm, zkvm, "Random ecAdd divergence at iteration {i}");
+        }
+        println!("  50 random ecAdd tests passed");
+    }
+
+    #[test]
+    fn differential_pairing_random() {
+        // Test ecPairing with valid G1/G2 point pairs
+        // Use the known valid test points
+        let pairs_input: Vec<u8> = G1_POINT_1.iter()
+            .chain(G2_POINT_1.iter())
+            .chain(G1_POINT_2.iter())
+            .chain(G2_POINT_2.iter())
+            .copied()
+            .collect();
+
+        let provider = sbv_primitives::types::revm::ScrollPrecompileProvider::new_with_spec(
+            sbv_primitives::types::revm::SpecId::GALILEO,
+        );
+        let addr = revm::precompile::bn254::pair::ADDRESS;
+        let precompile = provider.precompiles().get(&addr).expect("ecPairing exists");
+        let revm_result = precompile.execute(&pairs_input, u64::MAX);
+
+        let zkvm_result = super::pairing_check(&[
+            (&G1_POINT_1[..], &G2_POINT_1[..]),
+            (&G1_POINT_2[..], &G2_POINT_2[..]),
+        ]);
+
+        match (revm_result, zkvm_result) {
+            (Ok(revm_out), Ok(zkvm_out)) => {
+                let revm_true = revm_out.bytes == B256::with_last_byte(1).to_vec();
+                assert_eq!(revm_true, zkvm_out, "Pairing check divergence");
+                println!("  Pairing check: both return {zkvm_out}");
+            }
+            (Err(e1), Err(e2)) => {
+                println!("  Pairing check: both error ({e1:?}, {e2:?})");
+            }
+            _ => {
+                panic!("Pairing check DIVERGENCE: one succeeded, one failed");
+            }
+        }
+    }
 }
