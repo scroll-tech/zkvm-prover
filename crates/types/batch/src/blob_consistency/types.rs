@@ -27,7 +27,7 @@ impl ToIntrinsic for Bls12_381_G1 {
     type IntrinsicType = G1Affine;
 
     fn to_intrinsic(&self) -> Self::IntrinsicType {
-        G1Affine::from_xy_unchecked(self.x.to_intrinsic(), self.y.to_intrinsic())
+        unsafe { G1Affine::from_xy_unchecked(self.x.to_intrinsic(), self.y.to_intrinsic()) }
     }
 }
 
@@ -35,9 +35,11 @@ impl ToIntrinsic for Bls12_381_G2 {
     type IntrinsicType = G2Affine;
 
     fn to_intrinsic(&self) -> Self::IntrinsicType {
-        G2Affine::from_xy_unchecked(
-            Fp2::new(self.x.c0.to_intrinsic(), self.x.c1.to_intrinsic()),
-            Fp2::new(self.y.c0.to_intrinsic(), self.y.c1.to_intrinsic()),
-        )
+        unsafe {
+            G2Affine::from_xy_unchecked(
+                Fp2::new(self.x.c0.to_intrinsic(), self.x.c1.to_intrinsic()),
+                Fp2::new(self.y.c0.to_intrinsic(), self.y.c1.to_intrinsic()),
+            )
+        }
     }
 }

@@ -59,11 +59,14 @@ const VERSIONED_HASH_VERSION_KZG: u8 = 1;
 ///
 /// We use [`openvm_pairing_guest`] extension to implement this in guest program.
 pub fn verify_kzg_proof(z: Scalar, y: Scalar, commitment: G1Affine, proof: G1Affine) -> bool {
-    let proof_q = G1Affine::from_xy_nonidentity(proof.x().clone(), proof.y().clone())
-        .expect("kzg proof not G1 identity");
-    let p_minus_y = G1Affine::from_xy_nonidentity(commitment.x().clone(), commitment.y().clone())
-        .expect("kzg commitment not G1 identity")
-        - msm(&[y], std::slice::from_ref(&G1Affine::GENERATOR));
+    let proof_q = unsafe {
+        G1Affine::from_xy_nonidentity(proof.x().clone(), proof.y().clone())
+            .expect("kzg proof not G1 identity")
+    };
+    let p_minus_y = unsafe {
+        G1Affine::from_xy_nonidentity(commitment.x().clone(), commitment.y().clone())
+            .expect("kzg commitment not G1 identity")
+    } - msm(&[y], std::slice::from_ref(&G1Affine::GENERATOR));
     let g2_generator: &G2Affine = &G2_GENERATOR;
     let x_minus_z = msm(&[z], std::slice::from_ref(g2_generator)) - KZG_G2_SETUP.clone();
 
