@@ -20,14 +20,30 @@ cleanup() {
 # set trap to cleanup on exit
 trap cleanup EXIT
 
+docker_extra_args=()
+if [[ -v RECOMPUTE_MODE ]]; then
+  srs_file="$HOME/.openvm/params/kzg_bn254_23.srs"
+  if [ ! -f "$srs_file" ]; then
+    echo "Error: RECOMPUTE_MODE is defined, but required file is missing: $srs_file" >&2
+    exit 1
+  fi
+
+  docker_extra_args+=(
+    -v "$HOME/.openvm/params:/root/.openvm/params"
+    -e RECOMPUTE_MODE=yes
+  )
+fi
+
 # run docker image
 if [ -n "${SSH_AUTH_SOCK:-}" ] && [ -S "${SSH_AUTH_SOCK}" ]; then
   docker run --cidfile ./build-guest.cid --platform linux/amd64 \
     -v "$SSH_AUTH_SOCK:/tmp/ssh-agent.sock" \
     -e SSH_AUTH_SOCK=/tmp/ssh-agent.sock \
+    "${docker_extra_args[@]}" \
     build-guest:local make build-guest-local
 else
   docker run --cidfile ./build-guest.cid --platform linux/amd64 \
+    "${docker_extra_args[@]}" \
     build-guest:local make build-guest-local
 fi
 container_id=$(cat ./build-guest.cid)

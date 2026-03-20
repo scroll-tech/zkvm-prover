@@ -49,8 +49,11 @@ clippy:
 clean-guest:
 	docker rmi build-guest:local
 
+clean-root-verifier:
+	rm -f crates/build-guest/root_verifier.asm
+
 build-guest:
-	sh build-guest.sh
+	bash build-guest.sh
 
 build-guest-local:
 	cargo run --release -p scroll-zkvm-build-guest

@@ -11,7 +11,9 @@ Dockerfile.backup
 
 docs
 
-#releases
+#never use local root verifier cache
+crates/build-guest/root_verifier.asm
+releases/dev/verifier/root_verifier_vk
 
 *.yml
 
