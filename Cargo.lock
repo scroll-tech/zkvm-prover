@@ -1827,7 +1827,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "117725a109d387c937a1533ce01b450cbde6b88abceea8473c4d7a85853cda3c"
 dependencies = [
  "lazy_static",
- "windows-sys 0.59.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -2631,7 +2631,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -3846,7 +3846,7 @@ dependencies = [
  "portable-atomic",
  "portable-atomic-util",
  "serde_core",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -3927,7 +3927,7 @@ dependencies = [
 [[package]]
 name = "k256"
 version = "0.13.4"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
@@ -4677,7 +4677,7 @@ dependencies = [
 [[package]]
 name = "openvm"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "bytemuck",
  "getrandom 0.2.16",
@@ -4692,7 +4692,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-circuit"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "blstrs",
  "cfg-if",
@@ -4725,7 +4725,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-complex-macros"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -4735,7 +4735,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-guest"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "halo2curves-axiom 0.7.2 (git+https://github.com/axiom-crypto/halo2curves.git?tag=v0.7.2)",
  "num-bigint 0.4.6",
@@ -4751,7 +4751,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-moduli-macros"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "num-bigint 0.4.6",
  "num-prime",
@@ -4763,7 +4763,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-transpiler"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "openvm-algebra-guest",
  "openvm-instructions",
@@ -4777,7 +4777,7 @@ dependencies = [
 [[package]]
 name = "openvm-benchmarks-prove"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "clap",
  "derive_more 1.0.0",
@@ -4804,7 +4804,7 @@ dependencies = [
 [[package]]
 name = "openvm-benchmarks-utils"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "cargo_metadata 0.18.1",
  "clap",
@@ -4819,7 +4819,7 @@ dependencies = [
 [[package]]
 name = "openvm-bigint-circuit"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "cfg-if",
  "derive-new 0.6.0",
@@ -4845,7 +4845,7 @@ dependencies = [
 [[package]]
 name = "openvm-bigint-guest"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "openvm-platform 1.4.3 (git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3)",
  "strum_macros 0.26.4",
@@ -4854,7 +4854,7 @@ dependencies = [
 [[package]]
 name = "openvm-bigint-transpiler"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "openvm-bigint-guest",
  "openvm-instructions",
@@ -4881,7 +4881,7 @@ dependencies = [
 [[package]]
 name = "openvm-build"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "cargo_metadata 0.18.1",
  "eyre",
@@ -4893,7 +4893,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "abi_stable",
  "backtrace",
@@ -4933,7 +4933,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit-derive"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "itertools 0.14.0",
  "proc-macro2",
@@ -4944,7 +4944,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit-primitives"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "derive-new 0.6.0",
  "itertools 0.14.0",
@@ -4962,7 +4962,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit-primitives-derive"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "itertools 0.14.0",
  "quote",
@@ -4972,7 +4972,7 @@ dependencies = [
 [[package]]
 name = "openvm-continuations"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "derivative",
  "openvm-circuit",
@@ -5052,7 +5052,7 @@ dependencies = [
 [[package]]
 name = "openvm-custom-insn"
 version = "0.1.0"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5062,7 +5062,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-circuit"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "blstrs",
  "cfg-if",
@@ -5095,7 +5095,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-guest"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
@@ -5114,7 +5114,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-sw-macros"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -5124,7 +5124,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-transpiler"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "openvm-ecc-guest",
  "openvm-instructions",
@@ -5138,7 +5138,7 @@ dependencies = [
 [[package]]
 name = "openvm-instructions"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "backtrace",
  "derive-new 0.6.0",
@@ -5155,7 +5155,7 @@ dependencies = [
 [[package]]
 name = "openvm-instructions-derive"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "quote",
  "syn 2.0.110",
@@ -5164,7 +5164,7 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-circuit"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "cfg-if",
  "derive-new 0.6.0",
@@ -5192,7 +5192,7 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-guest"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "openvm-platform 1.4.3 (git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3)",
 ]
@@ -5200,7 +5200,7 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-transpiler"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "openvm-instructions",
  "openvm-instructions-derive",
@@ -5214,7 +5214,7 @@ dependencies = [
 [[package]]
 name = "openvm-macros-common"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "syn 2.0.110",
 ]
@@ -5222,7 +5222,7 @@ dependencies = [
 [[package]]
 name = "openvm-mod-circuit-builder"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "cuda-runtime-sys",
  "itertools 0.14.0",
@@ -5243,7 +5243,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-circuit"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "cfg-if",
  "derive-new 0.6.0",
@@ -5274,7 +5274,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-compiler"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "backtrace",
  "itertools 0.14.0",
@@ -5297,7 +5297,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-compiler-derive"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "quote",
  "syn 2.0.110",
@@ -5306,7 +5306,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-recursion"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "cfg-if",
  "itertools 0.14.0",
@@ -5333,7 +5333,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-transpiler"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "openvm-instructions",
  "openvm-transpiler",
@@ -5343,7 +5343,7 @@ dependencies = [
 [[package]]
 name = "openvm-pairing"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "group 0.13.0",
  "halo2curves-axiom 0.7.2 (git+https://github.com/axiom-crypto/halo2curves.git?tag=v0.7.2)",
@@ -5368,7 +5368,7 @@ dependencies = [
 [[package]]
 name = "openvm-pairing-circuit"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "cfg-if",
  "derive-new 0.6.0",
@@ -5399,7 +5399,7 @@ dependencies = [
 [[package]]
 name = "openvm-pairing-guest"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "blstrs",
  "halo2curves-axiom 0.7.2 (git+https://github.com/axiom-crypto/halo2curves.git?tag=v0.7.2)",
@@ -5421,7 +5421,7 @@ dependencies = [
 [[package]]
 name = "openvm-pairing-transpiler"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "openvm-instructions",
  "openvm-pairing-guest",
@@ -5443,7 +5443,7 @@ dependencies = [
 [[package]]
 name = "openvm-platform"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "libm",
  "openvm-custom-insn 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3)",
@@ -5453,7 +5453,7 @@ dependencies = [
 [[package]]
 name = "openvm-poseidon2-air"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "derivative",
  "lazy_static",
@@ -5471,7 +5471,7 @@ dependencies = [
 [[package]]
 name = "openvm-rv32-adapters"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "derive-new 0.6.0",
  "itertools 0.14.0",
@@ -5488,7 +5488,7 @@ dependencies = [
 [[package]]
 name = "openvm-rv32im-circuit"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "cfg-if",
  "derive-new 0.6.0",
@@ -5525,7 +5525,7 @@ dependencies = [
 [[package]]
 name = "openvm-rv32im-guest"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "openvm-custom-insn 0.1.0 (git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3)",
  "p3-field",
@@ -5535,7 +5535,7 @@ dependencies = [
 [[package]]
 name = "openvm-rv32im-transpiler"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "openvm-instructions",
  "openvm-instructions-derive",
@@ -5551,7 +5551,7 @@ dependencies = [
 [[package]]
 name = "openvm-sdk"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "bitcode",
  "bon",
@@ -5608,7 +5608,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha2"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "openvm-sha256-guest",
  "sha2 0.10.9",
@@ -5617,7 +5617,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-air"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "openvm-circuit-primitives",
  "openvm-stark-backend",
@@ -5628,7 +5628,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-circuit"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "cfg-if",
  "derive-new 0.6.0",
@@ -5654,7 +5654,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-guest"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "openvm-platform 1.4.3 (git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3)",
 ]
@@ -5662,7 +5662,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-transpiler"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "openvm-instructions",
  "openvm-instructions-derive",
@@ -5741,7 +5741,7 @@ dependencies = [
 [[package]]
 name = "openvm-transpiler"
 version = "1.4.3"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "elf",
  "eyre",
@@ -5798,7 +5798,7 @@ dependencies = [
 [[package]]
 name = "p256"
 version = "0.13.2"
-source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#b2991891b75ad24238d42a1de880de1ef5ff3a75"
+source = "git+ssh://git@github.com/scroll-tech/openvm-private.git?branch=patch-v1.4.3#7c74e581f343d2a4092d7a9f96a5f1a9a7016169"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
@@ -8267,7 +8267,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -9332,6 +9332,7 @@ dependencies = [
  "cfg-if",
  "libc",
  "psm",
+ "windows-sys 0.52.0",
  "windows-sys 0.59.0",
 ]
 
@@ -9536,7 +9537,7 @@ dependencies = [
  "getrandom 0.3.4",
  "once_cell",
  "rustix",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -10349,7 +10350,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
