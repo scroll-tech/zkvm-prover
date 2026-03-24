@@ -39,6 +39,11 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+            ssh-private-key: ${{ secrets.OPENVM_PRIVATE_DEPLOY_KEY }}
+
       - name: Build guest and check diff
         run: |
           make build-guest     
