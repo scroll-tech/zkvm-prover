@@ -27,7 +27,6 @@ pub mod testers;
 
 pub mod utils;
 
-
 /// Directory to store proofs on disc.
 const DIR_PROOFS: &str = "proofs";
 
