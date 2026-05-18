@@ -58,7 +58,6 @@ regex = "1.11.1"
 sysinfo = { workspace = true, features = ["system"] }
 bytesize.workspace = true
 url.workspace = true
-axiom-sdk.workspace = true
 dotenvy.workspace = true
 
 [dev-dependencies]

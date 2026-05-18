@@ -1,4 +1,3 @@
-use crate::axiom::AxiomProver;
 use cargo_metadata::MetadataCommand;
 use once_cell::sync::OnceCell;
 use openvm_sdk::{Sdk, StdIn};
@@ -7,7 +6,6 @@ use scroll_zkvm_prover::{
     setup::{read_app_config, read_app_exe},
     utils::{read_json, vm::ExecutionResult, write_json},
 };
-use scroll_zkvm_types::axiom::AxiomProgram;
 use scroll_zkvm_types::{
     ProvingTask as UniversalProvingTask,
     proof::{EvmProof, ProofEnum, StarkProof},
@@ -29,7 +27,6 @@ pub mod testers;
 
 pub mod utils;
 
-mod axiom;
 
 /// Directory to store proofs on disc.
 const DIR_PROOFS: &str = "proofs";
@@ -99,15 +96,6 @@ pub static PROGRAM_COMMITMENTS: LazyLock<HashMap<String, ProgramCommitment>> =
         eprintln!("PROGRAM_COMMITMENTS = {commitments:#?}");
         commitments
     });
-
-pub static AXIOM_PROGRAM_IDS: LazyLock<HashMap<String, AxiomProgram>> = LazyLock::new(|| {
-    let axiom_program_ids = ASSET_BASE_DIR.join("axiom_program_ids.json");
-    let mut program_ids: HashMap<String, AxiomProgram> =
-        read_json(&axiom_program_ids).expect("failed to read axiom program ids");
-    program_ids.shrink_to_fit();
-    eprintln!("AXIOM_PROGRAM_IDS = {program_ids:#?}");
-    program_ids
-});
 
 /// Every test run will write assets to a new directory.
 ///
@@ -210,18 +198,6 @@ pub trait ProverTester {
         };
         let prover = Prover::setup(config, Some(Self::NAME))?;
 
-        Ok(prover)
-    }
-
-    /// Load the axiom program prover
-    fn load_axiom_prover() -> eyre::Result<AxiomProver> {
-        let mut prover = Self::load_prover(false)?;
-        let vk = prover.get_app_commitment();
-        let vk = hex::encode(serialize_vk::serialize(&vk));
-        let program = AXIOM_PROGRAM_IDS
-            .get(&vk)
-            .ok_or_else(|| eyre::eyre!("missing axiom program id for {}: {}", Self::NAME, vk))?;
-        let prover = AxiomProver::from_env(Self::NAME.to_string(), program);
         Ok(prover)
     }
 

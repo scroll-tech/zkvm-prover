@@ -93,7 +93,7 @@ fn read_fq2(input: &[u8]) -> Result<Fp2, PrecompileError> {
 pub(super) fn read_g1_point(input: &[u8]) -> Result<G1Affine, PrecompileError> {
     let px = read_fq(&input[0..FQ_LEN])?;
     let py = read_fq(&input[FQ_LEN..2 * FQ_LEN])?;
-    G1Affine::from_xy(px, py).ok_or(PrecompileError::Bn254AffineGFailedToCreate)
+    unsafe { G1Affine::from_xy(px, py).ok_or(PrecompileError::Bn254AffineGFailedToCreate) }
 }
 
 /// Encodes a G1 point into a byte array.
@@ -146,7 +146,8 @@ pub(super) fn read_g2_point(input: &[u8]) -> Result<G2Affine, PrecompileError> {
 
     // [`G2Affine::from_xy`] checks that the point is on the curve, but does not check if the point
     // is in the correct subgroup.
-    let point = G2Affine::from_xy(ba, bb).ok_or(PrecompileError::Bn254AffineGFailedToCreate)?;
+    let point =
+        unsafe { G2Affine::from_xy(ba, bb).ok_or(PrecompileError::Bn254AffineGFailedToCreate)? };
 
     // Perform the subgroup check.
     //
@@ -162,7 +163,7 @@ pub(super) fn read_g2_point(input: &[u8]) -> Result<G2Affine, PrecompileError> {
         let p_times_point = {
             let psi_x = point.x().frobenius_map(1) * &P_POWER_ENDOMORPHISM_COEFF_0;
             let psi_y = point.y().frobenius_map(1) * &P_POWER_ENDOMORPHISM_COEFF_1;
-            G2Affine::from_xy_unchecked(psi_x, psi_y)
+            unsafe { G2Affine::from_xy_unchecked(psi_x, psi_y) }
         };
 
         x_times_point.eq(&p_times_point)
@@ -430,7 +431,7 @@ mod test {
             let g2_point = {
                 let ba = read_fq2(&point_rep[0..FQ2_LEN]).unwrap();
                 let bb = read_fq2(&point_rep[FQ2_LEN..2 * FQ2_LEN]).unwrap();
-                G2Affine::from_xy(ba, bb).unwrap()
+                unsafe { G2Affine::from_xy(ba, bb).unwrap() }
             };
 
             // the input points from ark and ours are identify

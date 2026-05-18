@@ -48,7 +48,7 @@ pub fn generate_evm_verifier() -> Result<String> {
 }
 
 pub fn download_evm_verifier() -> Result<String> {
-    let openvm_version = "v1.4";
+    let openvm_version = "v1.6";
     let verifier_url = format!(
         "https://github.com/openvm-org/openvm-solidity-sdk/raw/refs/heads/main/src/{openvm_version}/Halo2Verifier.sol"
     );
