@@ -89,8 +89,8 @@ impl Prover {
     fn get_sdk(&self) -> Result<&Sdk, Error> {
         self.sdk.get_or_try_init(|| {
             tracing::info!("Lazy initializing SDK...");
-            let sdk = Sdk::new(self.app_config.clone()).expect("sdk init failed");
-
+            let mut sdk = Sdk::new(self.app_config.clone()).expect("sdk init failed");
+            sdk.agg_tree_config_mut().num_children_internal = 2;
             // 45s for first time
             let sdk = sdk.with_agg_pk(AGG_STARK_PROVING_KEY.clone());
             Ok(sdk)

@@ -45,7 +45,9 @@ use openvm_sdk::{
     fs::write_object_to_file,
     prover::AppProver,
 };
-use openvm_stark_sdk::p3_bn254_fr::Bn254Fr;
+use openvm_stark_sdk::{
+    openvm_stark_backend::p3_field::RawDataSerializable, p3_bn254::Bn254 as Bn254Fr,
+};
 use scroll_zkvm_types::zkvm::AGG_STARK_PROVING_KEY;
 use snark_verifier_sdk::snark_verifier::loader::evm::compile_solidity;
 use std::{
@@ -106,8 +108,7 @@ fn write_commitment_as_evm_hex(
     commitment: [u32; DIGEST_SIZE],
 ) -> Result<()> {
     let digest_bytes = compress_commitment(&commitment)
-        .value
-        .to_bytes()
+        .into_bytes()
         .into_iter()
         .rev() // To big endian
         .collect::<Vec<u8>>();
@@ -359,7 +360,12 @@ fn generate_openvm_assets(
     env::set_current_dir(workspace_dir)?;
 
     generate_root_verifier(workspace_dir, force_overwrite)?;
-    generate_evm_verifier(&release_output_dir.join("verifier"), false, force_overwrite)?;
+    let recompute_mode = env::var("RECOMPUTE_MODE").is_ok_and(|value| value == "yes");
+    generate_evm_verifier(
+        &release_output_dir.join("verifier"),
+        recompute_mode,
+        force_overwrite,
+    )?;
     Ok(())
 }
 

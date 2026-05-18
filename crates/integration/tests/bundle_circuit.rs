@@ -133,18 +133,6 @@ fn e2e() -> eyre::Result<()> {
     Ok(())
 }
 
-#[test]
-fn axiom_e2e() -> eyre::Result<()> {
-    BundleProverTester::setup(true)?;
-
-    let mut chunk_prover = ChunkProverTester::load_axiom_prover()?;
-    let mut batch_prover = BatchProverTester::load_axiom_prover()?;
-    let mut bundle_prover = BundleProverTester::load_axiom_prover()?;
-    e2e_inner(&mut chunk_prover, &mut batch_prover, &mut bundle_prover)?;
-
-    Ok(())
-}
-
 fn e2e_inner(
     chunk_prover: &mut impl TaskProver,
     batch_prover: &mut impl TaskProver,

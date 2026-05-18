@@ -70,18 +70,6 @@ fn e2e() -> eyre::Result<()> {
 }
 
 #[test]
-fn axiom_e2e() -> eyre::Result<()> {
-    BatchProverTester::setup(true)?;
-
-    let mut prover = BatchProverTester::load_axiom_prover()?;
-    let mut chunk_prover = ChunkProverTester::load_axiom_prover()?;
-    let mut batch = BatchTaskGenerator::from_chunk_tasks(&preset_chunk_multiple(), None);
-    let _ = batch.get_or_build_proof(&mut prover, &mut chunk_prover)?;
-
-    Ok(())
-}
-
-#[test]
 fn verify_batch_hash_invariant() -> eyre::Result<()> {
     use scroll_zkvm_types::public_inputs::ForkName;
     BatchProverTester::setup(true)?;

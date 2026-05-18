@@ -2,7 +2,8 @@
 log_blowup = 1
 log_final_poly_len = 0
 num_queries = 100
-proof_of_work_bits = 16
+commit_proof_of_work_bits = 16
+query_proof_of_work_bits = 16
 
 [app_vm_config.rv32i]
 

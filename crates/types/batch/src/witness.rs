@@ -74,7 +74,7 @@ pub fn build_intrinsic_point(
     use openvm_pairing::bls12_381::{Fp, G1Affine};
     let x = Fp::from_be_bytes(&x)?;
     let y = Fp::from_be_bytes(&y)?;
-    G1Affine::from_xy(x, y)
+    unsafe { G1Affine::from_xy(x, y) }
 }
 
 pub fn build_point(x: Bytes48, y: Bytes48) -> Option<halo2curves_axiom::bls12_381::G1Affine> {
