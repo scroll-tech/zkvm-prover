@@ -1,5 +1,3 @@
-use openvm_native_recursion::hints::Hintable;
-use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
 use serde::{Deserialize, Serialize};
 
 /// Input structure for OpenVM input json
@@ -28,18 +26,13 @@ impl super::ProvingTask {
             input.push(format!("0x{}", hex::encode(&buf)));
         }
 
-        // Encode proof fields (0x02 | u32_le_bytes...)
-        for field in self
-            .aggregated_proofs
-            .iter()
-            .flat_map(|proof| proof.proofs[0].write())
-        {
-            let mut buf = Vec::with_capacity(1 + 4 * field.len());
+        // Encode proof bytes using v2 Encode trait
+        use openvm_stark_sdk::openvm_stark_backend::codec::Encode;
+        for proof in &self.aggregated_proofs {
+            let encoded = proof.proof.encode_to_vec().expect("proof encode failed");
+            let mut buf = Vec::with_capacity(1 + encoded.len());
             buf.push(0x02);
-            for f in field {
-                let v: u32 = f.as_canonical_u32();
-                buf.extend_from_slice(&v.to_le_bytes());
-            }
+            buf.extend_from_slice(&encoded);
             input.push(format!("0x{}", hex::encode(&buf)));
         }
 

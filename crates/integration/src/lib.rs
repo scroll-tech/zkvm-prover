@@ -1,6 +1,10 @@
 use cargo_metadata::MetadataCommand;
 use once_cell::sync::OnceCell;
-use openvm_sdk::{Sdk, StdIn};
+use openvm_circuit::arch::deferral::DeferralState;
+use openvm_sdk::{DeferralInput, Sdk, StdIn};
+use openvm_stark_sdk::openvm_stark_backend::codec::Decode;
+use openvm_verify_stark_circuit::extension::{get_deferral_state, get_raw_deferral_results};
+use openvm_verify_stark_host::{vk::VmStarkVerifyingKey, VmStarkProof};
 use scroll_zkvm_prover::{
     Prover,
     setup::{read_app_config, read_app_exe},
@@ -16,6 +20,7 @@ use scroll_zkvm_types::{
 use scroll_zkvm_verifier::verifier::{AGG_STARK_PROVING_KEY, UniversalVerifier};
 use std::collections::HashMap;
 use std::{
+    io::Cursor,
     path::{Path, PathBuf},
     process,
     sync::LazyLock,
@@ -210,6 +215,7 @@ pub trait ProverTester {
     fn build_universal_task<'a>(
         witness: &Self::Witness,
         aggregated_proofs: impl Iterator<Item = &'a StarkProof>,
+        input_commits: Vec<[u8; 32]>,
     ) -> eyre::Result<UniversalProvingTask> {
         Ok(UniversalProvingTask {
             serialized_witness: vec![witness.archive()?],
@@ -217,6 +223,7 @@ pub trait ProverTester {
             fork_name: witness.fork_name().as_str().to_string(),
             identifier: witness.identifier(),
             vk: Default::default(),
+            input_commits,
         })
     }
 
@@ -225,14 +232,27 @@ pub trait ProverTester {
         aggregated_proofs: impl Iterator<Item = &'a StarkProof>,
     ) -> eyre::Result<StdIn> {
         use scroll_zkvm_prover::task::ProvingTask;
-        Ok(Self::build_universal_task(witness, aggregated_proofs)?.build_guest_input())
+        Ok(Self::build_universal_task(witness, aggregated_proofs, vec![])?.build_guest_input())
     }
 }
 
 pub trait TaskProver {
     fn name(&self) -> &str;
     fn prove_task(&mut self, t: &UniversalProvingTask, gen_snark: bool) -> eyre::Result<ProofEnum>;
+    fn prove_task_with_deferral(
+        &mut self,
+        t: &UniversalProvingTask,
+        gen_snark: bool,
+        def_inputs: &[DeferralInput],
+        def_states: &[DeferralState],
+    ) -> eyre::Result<ProofEnum> {
+        // Default: ignore deferral inputs for backward compatibility.
+        let _ = def_inputs;
+        let _ = def_states;
+        self.prove_task(t, gen_snark)
+    }
     fn get_vk(&mut self) -> eyre::Result<Vec<u8>>;
+    fn get_agg_vk(&self) -> eyre::Result<openvm_stark_sdk::openvm_stark_backend::keygen::types::MultiStarkVerifyingKey<openvm_sdk::SC>>;
 }
 
 impl TaskProver for Prover {
@@ -245,15 +265,37 @@ impl TaskProver for Prover {
         let stdin = t.build_guest_input();
         if !gen_snark {
             // gen stark proof
-            Ok(self.gen_proof_stark(stdin)?.into())
+            Ok(self.gen_proof_stark(stdin, &[])?.into())
         } else {
-            let proof: EvmProof = self.gen_proof_snark(stdin)?.into();
+            let proof: EvmProof = self.gen_proof_snark(stdin, &[])?.into();
+            Ok(proof.into())
+        }
+    }
+
+    fn prove_task_with_deferral(
+        &mut self,
+        t: &UniversalProvingTask,
+        gen_snark: bool,
+        def_inputs: &[DeferralInput],
+        def_states: &[DeferralState],
+    ) -> eyre::Result<ProofEnum> {
+        use scroll_zkvm_prover::task::ProvingTask;
+        let mut stdin = t.build_guest_input();
+        stdin.deferrals = def_states.to_vec();
+        if !gen_snark {
+            Ok(self.gen_proof_stark(stdin, def_inputs)?.into())
+        } else {
+            let proof: EvmProof = self.gen_proof_snark(stdin, def_inputs)?.into();
             Ok(proof.into())
         }
     }
 
     fn get_vk(&mut self) -> eyre::Result<Vec<u8>> {
         Ok(self.get_app_vk())
+    }
+
+    fn get_agg_vk(&self) -> eyre::Result<openvm_stark_sdk::openvm_stark_backend::keygen::types::MultiStarkVerifyingKey<openvm_sdk::SC>> {
+        Ok((*self.sdk()?.agg_vk()).clone())
     }
 }
 
@@ -333,7 +375,11 @@ pub fn tester_execute<T: ProverTester>(
     )?;
 
     let app_vm_config = app_config.app_vm_config.clone();
-    let sdk = Sdk::new(app_config)?;
+    let sdk = Sdk::builder()
+        .app_config(app_config)
+        .agg_pk(AGG_STARK_PROVING_KEY.clone())
+        .build()
+        .map_err(|e| eyre::eyre!("sdk build failed: {e}"))?;
     let ret = scroll_zkvm_prover::utils::vm::execute_guest(
         &sdk,
         app_vm_config.as_ref(),
@@ -343,12 +389,82 @@ pub fn tester_execute<T: ProverTester>(
     Ok(ret)
 }
 
+/// Decode a [`StarkProof`] into a [`VmStarkProof`].
+fn decode_stark_proof(proof: &StarkProof) -> eyre::Result<VmStarkProof> {
+    use openvm_circuit::system::memory::merkle::public_values::UserPublicValuesProof;
+
+    let inner = openvm_stark_sdk::openvm_stark_backend::proof::Proof::decode_from_bytes(&proof.proof)
+        .map_err(|e| eyre::eyre!("decode proof failed: {e}"))?;
+    let user_pvs_proof =
+        UserPublicValuesProof::decode::<openvm_sdk::SC, _>(&mut Cursor::new(&proof.user_pvs_proof))
+            .map_err(|e| eyre::eyre!("decode user_pvs_proof failed: {e}"))?;
+    let deferral_merkle_proofs = if proof.deferral_merkle_proofs.is_empty() {
+        None
+    } else {
+        Some(openvm_verify_stark_host::deferral::DeferralMerkleProofs::decode(
+            &mut Cursor::new(&proof.deferral_merkle_proofs),
+        ).map_err(|e| eyre::eyre!("decode deferral_merkle_proofs failed: {e}"))?)
+    };
+    Ok(VmStarkProof {
+        inner,
+        user_pvs_proof,
+        deferral_merkle_proofs,
+    })
+}
+
+/// Compute deferral inputs and states from child proofs.
+pub fn compute_deferral_data(
+    child_prover: &Prover,
+    proofs: &[&StarkProof],
+) -> eyre::Result<(Vec<[u8; 32]>, Vec<DeferralInput>, Vec<DeferralState>)> {
+    let sdk = child_prover
+        .sdk()
+        .map_err(|e| eyre::eyre!("failed to get child sdk: {e}"))?;
+    let mvk = (*sdk.agg_vk()).clone();
+    let stark_prover = sdk
+        .prover(child_prover.app_exe.clone())
+        .map_err(|e| eyre::eyre!("failed to create stark prover: {e}"))?;
+    let baseline = stark_prover.generate_baseline();
+    let vk = VmStarkVerifyingKey { mvk, baseline };
+
+    let vm_proofs: Vec<VmStarkProof> = proofs
+        .iter()
+        .map(|p| decode_stark_proof(p))
+        .collect::<eyre::Result<Vec<_>>>()?;
+
+    let raw_results = get_raw_deferral_results(&vk, &vm_proofs)
+        .map_err(|e| eyre::eyre!("get_raw_deferral_results failed: {e}"))?;
+
+    let input_commits: Vec<[u8; 32]> = raw_results
+        .iter()
+        .map(|r| r.input.as_slice().try_into().expect("input commit must be 32 bytes"))
+        .collect();
+
+    let deferral_inputs = vec![DeferralInput::from_inputs(&vm_proofs)];
+
+    let deferral_state = get_deferral_state(&vk, &vm_proofs, 0)
+        .map_err(|e| eyre::eyre!("get_deferral_state failed: {e}"))?;
+
+    Ok((input_commits, deferral_inputs, vec![deferral_state]))
+}
+
 /// End-to-end test for proving witnesses of the same prover.
 #[instrument(name = "prove_verify", skip_all, fields(task_id, prover_name = prover.name()))]
 pub fn prove_verify<T: ProverTester>(
     prover: &mut impl TaskProver,
     witness: &T::Witness,
     proofs: &[ProofEnum],
+) -> eyre::Result<ProofEnum> {
+    prove_verify_with_deferral::<T>(prover, witness, proofs, None)
+}
+
+/// End-to-end test with deferred STARK verification (v2).
+#[instrument(name = "prove_verify_with_deferral", skip_all, fields(task_id, prover_name = prover.name()))]
+pub fn prove_verify_with_deferral<T: ProverTester>(
+    prover: &mut impl TaskProver,
+    witness: &T::Witness,
+    proofs: &[ProofEnum],
+    child_prover: Option<&Prover>,
 ) -> eyre::Result<ProofEnum> {
     // Setup prover.
     let cache_dir = DIR_TESTRUN
@@ -369,23 +485,38 @@ pub fn prove_verify<T: ProverTester>(
         tracing::debug!(name: "early_return_proof", ?task_id);
         proof
     } else {
+        let stark_proofs: Vec<&StarkProof> = proofs
+            .iter()
+            .map(|p| p.as_stark_proof().expect("must be stark proof"))
+            .collect();
+
+        let (input_commits, def_inputs, def_states) = if let Some(child) = child_prover {
+            compute_deferral_data(child, &stark_proofs)?
+        } else {
+            (vec![], vec![], vec![])
+        };
+
         let task = T::build_universal_task(
             witness,
-            proofs
-                .iter()
-                .map(|p| p.as_stark_proof().expect("must be stark proof")),
+            stark_proofs.into_iter(),
+            input_commits,
         )?;
         // Construct stark proof for the circuit.
-        let proof = prover.prove_task(&task, false)?;
+        let proof = if def_inputs.is_empty() {
+            prover.prove_task(&task, false)?
+        } else {
+            prover.prove_task_with_deferral(&task, false, &def_inputs, &def_states)?
+        };
         write_json(&path_proof, &proof)?;
         tracing::debug!(name: "cached_proof", ?task_id);
 
         proof
     };
 
-    // Verify proof.
+    // Verify proof using the prover's own aggregation VK (required for deferral-enabled circuits).
+    let agg_vk = prover.get_agg_vk()?;
     UniversalVerifier::verify_stark_proof_with_vk(
-        &AGG_STARK_PROVING_KEY.get_agg_vk(),
+        &agg_vk,
         proof.as_stark_proof().expect("should be stark proof"),
         &vk,
     )?;
@@ -399,6 +530,20 @@ pub fn prove_verify_single_evm<T>(
     prover: &mut impl TaskProver,
     witness: &T::Witness,
     proofs: &[ProofEnum],
+) -> eyre::Result<ProofEnum>
+where
+    T: ProverTester,
+{
+    prove_verify_single_evm_with_deferral::<T>(prover, witness, proofs, None)
+}
+
+/// End-to-end EVM proof with deferred STARK verification (v2).
+#[instrument(name = "prove_verify_single_evm_with_deferral", skip_all)]
+pub fn prove_verify_single_evm_with_deferral<T>(
+    prover: &mut impl TaskProver,
+    witness: &T::Witness,
+    proofs: &[ProofEnum],
+    child_prover: Option<&Prover>,
 ) -> eyre::Result<ProofEnum>
 where
     T: ProverTester,
@@ -425,14 +570,28 @@ where
         tracing::debug!(name: "early_return_evm_proof", ?task_id);
         proof
     } else {
+        let stark_proofs: Vec<&StarkProof> = proofs
+            .iter()
+            .map(|p| p.as_stark_proof().expect("must be stark proof"))
+            .collect();
+
+        let (input_commits, def_inputs, def_states) = if let Some(child) = child_prover {
+            compute_deferral_data(child, &stark_proofs)?
+        } else {
+            (vec![], vec![], vec![])
+        };
+
         let task = T::build_universal_task(
             witness,
-            proofs
-                .iter()
-                .map(|p| p.as_stark_proof().expect("must be stark proof")),
+            stark_proofs.into_iter(),
+            input_commits,
         )?;
         // Construct stark proof for the circuit.
-        let proof = prover.prove_task(&task, true)?;
+        let proof = if def_inputs.is_empty() {
+            prover.prove_task(&task, true)?
+        } else {
+            prover.prove_task_with_deferral(&task, true, &def_inputs, &def_states)?
+        };
         write_json(&path_proof, &proof)?;
         tracing::debug!(name: "cached_evm_proof", ?task_id);
         proof

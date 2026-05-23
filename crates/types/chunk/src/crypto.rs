@@ -28,7 +28,8 @@ impl Crypto {
 impl precompile::Crypto for Crypto {
     #[inline]
     fn sha256(&self, input: &[u8]) -> [u8; 32] {
-        openvm_sha2::sha256(input)
+        use openvm_sha2::Digest;
+        openvm_sha2::Sha256::digest(input).into()
     }
 
     #[inline]
