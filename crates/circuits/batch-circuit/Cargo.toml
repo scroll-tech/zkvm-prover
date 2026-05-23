@@ -12,8 +12,8 @@ scroll-zkvm-types-batch.workspace = true
 openvm = { workspace = true, features = ["std"] }
 openvm-algebra-guest.workspace = true
 openvm-pairing = { workspace = true, features = ["bls12_381"] }
-openvm-keccak256-guest.workspace = true
-openvm-sha256-guest.workspace = true
+openvm-keccak256 = { workspace = true }
+openvm-sha2-guest.workspace = true
 openvm-ecc-guest = { workspace = true, features = ["halo2curves"] }
 
 alloy-primitives = { workspace = true, features = ["native-keccak"] }

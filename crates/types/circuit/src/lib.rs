@@ -39,6 +39,7 @@ pub trait Circuit {
     }
 }
 
+#[allow(dead_code)]
 const NUM_PUBLIC_VALUES: usize = 32;
 
 /// Circuit that additional aggregates proofs from other [`Circuits`][Circuit].
@@ -59,9 +60,27 @@ where
     fn verify_proofs(witness: &Self::Witness) -> Vec<AggregationInput> {
         let proofs = witness.get_proofs();
 
-        for proof in proofs.iter() {
-            Self::verify_commitments(&proof.commitment);
-            verify_proof(&proof.commitment, proof.public_values.as_slice());
+        #[cfg(all(target_os = "zkvm", target_arch = "riscv32"))]
+        {
+            let input_commits: Vec<[u8; 32]> = openvm::io::read();
+            assert_eq!(
+                proofs.len(),
+                input_commits.len(),
+                "mismatch between proofs and input commits"
+            );
+
+            for (proof, input_commit) in proofs.iter().zip(input_commits.iter()) {
+                Self::verify_commitments(&proof.commitment);
+                verify_proof(&proof.commitment, proof.public_values.as_slice(), input_commit);
+            }
+        }
+
+        #[cfg(not(all(target_os = "zkvm", target_arch = "riscv32")))]
+        {
+            for proof in proofs.iter() {
+                Self::verify_commitments(&proof.commitment);
+                verify_proof(&proof.commitment, proof.public_values.as_slice(), &[0u8; 32]);
+            }
         }
 
         proofs
@@ -97,33 +116,36 @@ where
     }
 }
 
-/// Verify a root proof. The real "proof" will be loaded from StdIn.
-fn verify_proof(commitment: &ProgramCommitment, public_inputs: &[u32]) {
+/// Convert a [u32; 8] commitment array to a 32-byte commit.
+#[allow(dead_code)]
+fn u32_array_to_commit(arr: &[u32; 8]) -> [u8; 32] {
+    let mut bytes = [0u8; 32];
+    for (i, &w) in arr.iter().enumerate() {
+        bytes[i * 4..(i + 1) * 4].copy_from_slice(&w.to_le_bytes());
+    }
+    bytes
+}
+
+/// Verify a root proof using deferred STARK verification (v2).
+#[cfg(all(target_os = "zkvm", target_arch = "riscv32"))]
+fn verify_proof(commitment: &ProgramCommitment, public_inputs: &[u32], input_commit: &[u8; 32]) {
+    use openvm_verify_stark_guest::{verify_stark, ProofOutput};
+
     // Sanity check for the number of public-input values.
     assert_eq!(public_inputs.len(), NUM_PUBLIC_VALUES);
 
-    const HEAP_START_ADDRESS: u32 = 1 << 24;
-    const FIELDS_PER_U32: u32 = 4;
+    let expected = ProofOutput {
+        app_exe_commit: u32_array_to_commit(&commitment.exe),
+        app_vm_commit: u32_array_to_commit(&commitment.vm),
+        user_public_values: public_inputs.iter().flat_map(|&w| w.to_le_bytes()).collect(),
+    };
 
-    // Store the expected public values into the beginning of the native heap.
-    // Copied from https://github.com/openvm-org/openvm/blob/4973d38cb3f2e14ebdd59e03802e65bb657ee422/guest-libs/verify_stark/src/lib.rs#L37
-    let mut native_addr = HEAP_START_ADDRESS;
-    for &x in &commitment.exe {
-        openvm::io::store_u32_to_native(native_addr, x);
-        native_addr += FIELDS_PER_U32;
-    }
-    for &x in &commitment.vm {
-        openvm::io::store_u32_to_native(native_addr, x);
-        native_addr += FIELDS_PER_U32;
-    }
-    for &x in public_inputs {
-        openvm::io::store_u32_to_native(native_addr, x);
-        native_addr += FIELDS_PER_U32;
-    }
-    #[cfg(all(target_os = "zkvm", target_arch = "riscv32"))]
-    unsafe {
-        std::arch::asm!(include_str!("../../../build-guest/root_verifier.asm"),)
-    }
+    verify_stark::<0>(input_commit, &expected);
+}
+
+#[cfg(not(all(target_os = "zkvm", target_arch = "riscv32")))]
+fn verify_proof(_commitment: &ProgramCommitment, _public_inputs: &[u32], _input_commit: &[u8; 32]) {
+    panic!("verify_proof should only be called on zkvm target");
 }
 
 /// This macro is used to manually drop an expression on zkvm (non x86/aarch64 targets).

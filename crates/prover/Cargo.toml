@@ -12,10 +12,14 @@ scroll-zkvm-verifier.workspace = true
 bincode_v1.workspace = true
 tracing.workspace = true
 openvm-circuit = { workspace = true }
-openvm-native-circuit = { workspace = true, default-features = false }
-openvm-native-recursion = { workspace = true }
 openvm-sdk = { workspace = true }
+openvm-sdk-config = { workspace = true }
+openvm-static-verifier = { workspace = true }
+openvm-deferral-circuit = { workspace = true }
+openvm-verify-stark-circuit = { workspace = true }
+openvm-verify-stark-host = { workspace = true }
 openvm-stark-sdk = { workspace = true, default-features = false }
+openvm-cuda-backend = { workspace = true, optional = true }
 
 base64 = "0.22"
 eyre.workspace = true
@@ -33,6 +37,6 @@ cudarc = { version = "0.9", optional = true }
 
 [features]
 default = []
-cuda = ["openvm-sdk/cuda", "dep:cudarc"]
+cuda = ["openvm-sdk/cuda", "dep:cudarc", "openvm-verify-stark-circuit/cuda", "dep:openvm-cuda-backend"]
 
 

@@ -1,7 +1,6 @@
 use crate::utils::{as_base64, vec_as_base64};
-use openvm_native_recursion::halo2::RawEvmProof;
+use openvm_static_verifier::keygen::RawEvmProof;
 use openvm_sdk::SC;
-use openvm_sdk::codec::Decode;
 use openvm_stark_sdk::{
     openvm_stark_backend::{p3_field::PrimeField32, proof::Proof},
     p3_baby_bear::BabyBear,
@@ -51,15 +50,18 @@ pub struct StarkProofStat {
 /// Helper to modify serde implementations on the remote [`RootProof`] type.
 #[derive(Clone, Serialize, Deserialize)]
 pub struct StarkProof {
-    /// The proofs. The length is always 1
-    /// Vec is used for old data compatibility.
+    /// The encoded proof (single proof, Vec for old data compatibility).
     #[serde(with = "as_base64")]
-    pub proofs: Vec<Proof<SC>>,
-    /// The public values for the proof.
+    pub proof: Vec<u8>,
+    /// The encoded user public values proof.
     #[serde(with = "as_base64")]
-    pub public_values: Vec<BabyBear>,
-    //pub exe_commitment: [u32; 8],
-    //pub vm_commitment: [u32; 8],
+    pub user_pvs_proof: Vec<u8>,
+    /// Verification baseline for the proof (v2+).
+    #[serde(with = "as_base64", default)]
+    pub baseline: Vec<u8>,
+    /// Deferral Merkle proofs for deferred STARK verification (v2+).
+    #[serde(with = "as_base64", default)]
+    pub deferral_merkle_proofs: Vec<u8>,
     #[serde(default)]
     pub stat: StarkProofStat,
 }
@@ -77,19 +79,11 @@ impl TryFrom<OpenVmVersionedVmStarkProof> for StarkProof {
     type Error = io::Error;
 
     fn try_from(proof: OpenVmVersionedVmStarkProof) -> io::Result<Self> {
-        let inner_proof = Proof::<SC>::decode_from_bytes(&proof.proof)?;
-        let mut pv_reader = Cursor::new(proof.user_public_values);
-        // decode_vec is not pub so we have to use the detail inside it ...
-        let len = usize::decode(&mut pv_reader)?;
-        let mut public_values = Vec::with_capacity(len);
-
-        for _ in 0..len {
-            public_values.push(BabyBear::decode(&mut pv_reader)?);
-        }
-
         Ok(Self {
-            proofs: vec![inner_proof],
-            public_values,
+            proof: proof.proof,
+            user_pvs_proof: proof.user_pvs_proof,
+            baseline: Vec::new(),
+            deferral_merkle_proofs: Vec::new(),
             stat: Default::default(),
         })
     }
@@ -106,7 +100,7 @@ impl From<OpenVmEvmProof> for EvmProof {
         let instances = raw_proof
             .instances
             .iter()
-            .flat_map(|fr| {
+            .flat_map(|fr: &Fr| {
                 let mut be_bytes = fr.to_bytes();
                 be_bytes.reverse();
                 be_bytes
@@ -209,11 +203,19 @@ impl ProofEnum {
     /// Derive public inputs from the proof.
     pub fn public_values(&self) -> Vec<u32> {
         match self {
-            Self::Stark(stark_proof) => stark_proof
-                .public_values
-                .iter()
-                .map(|x| x.as_canonical_u32())
-                .collect::<Vec<u32>>(),
+            Self::Stark(stark_proof) => {
+                // Decode user_pvs_proof to extract public values
+                use openvm_circuit::system::memory::merkle::public_values::UserPublicValuesProof;
+                use openvm_stark_sdk::config::baby_bear_poseidon2::{DIGEST_SIZE, F};
+                let proof: UserPublicValuesProof<DIGEST_SIZE, F> =
+                    UserPublicValuesProof::decode::<SC, _>(&mut Cursor::new(&stark_proof.user_pvs_proof))
+                        .expect("decode user_pvs_proof failed");
+                proof
+                    .public_values
+                    .iter()
+                    .map(|x: &F| x.as_canonical_u32())
+                    .collect::<Vec<u32>>()
+            }
             Self::Evm(evm_proof) => {
                 // The first 12 scalars are accumulators.
                 // The next 2 scalars are digests.
