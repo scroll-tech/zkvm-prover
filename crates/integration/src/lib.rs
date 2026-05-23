@@ -599,7 +599,7 @@ where
 
     let vk = prover.get_vk()?;
     // Verify proof.
-    verifier.verify_evm_proof(
+    let gas = verifier.verify_evm_proof(
         &proof
             .clone()
             .into_evm_proof()
@@ -607,6 +607,7 @@ where
             .into(),
         &vk,
     )?;
+    tracing::info!("evm verify gas cost = {gas}");
 
     Ok(proof)
 }

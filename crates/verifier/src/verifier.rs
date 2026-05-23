@@ -112,7 +112,7 @@ impl UniversalVerifier {
     /// Before running the EVM bytecode, we check that the proof's app commitments
     /// (`app_exe_commit`, `app_vm_commit`) match the expected values encoded in `vk`.
     /// This prevents verifying a proof generated for a different circuit version.
-    pub fn verify_evm_proof(&self, evm_proof: &OpenVmEvmProof, vk: &[u8]) -> eyre::Result<()> {
+    pub fn verify_evm_proof(&self, evm_proof: &OpenVmEvmProof, vk: &[u8]) -> eyre::Result<u64> {
         let prog_commit = serialize_vk::deserialize(vk);
 
         let evm_exe_commit: [openvm_sdk::F; 8] = evm_proof.app_commit.app_exe_commit.into();
@@ -128,10 +128,10 @@ impl UniversalVerifier {
             eyre::bail!("evm: mismatch VM commitment");
         }
 
-        crate::evm::verify_evm_proof(&self.evm_verifier, evm_proof)
+        let gas = crate::evm::verify_evm_proof(&self.evm_verifier, evm_proof)
             .map_err(|e| eyre::eyre!("evm execution failed: {e}"))?;
 
-        Ok(())
+        Ok(gas)
     }
 }
 

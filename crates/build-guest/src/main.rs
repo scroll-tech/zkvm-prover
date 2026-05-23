@@ -456,8 +456,25 @@ fn generate_evm_verifier(
     } else {
         verifier::download_evm_verifier()?
     };
+
+    // In v2, the EVM verifier is split into multiple Solidity files.
+    // We save the full set so external tools (Foundry, etc.) can recompile.
+    if !verifier.halo2_verifier_code.is_empty() {
+        let path_halo2 = verifier_output_dir.join("Halo2Verifier.sol");
+        fs::write(&path_halo2, &verifier.halo2_verifier_code)?;
+        println!("{LOG_PREFIX} Halo2Verifier.sol written to {path_halo2:?}");
+    }
+    if !verifier.openvm_verifier_interface.is_empty() {
+        let path_interfaces = verifier_output_dir.join("interfaces");
+        fs::create_dir_all(&path_interfaces)?;
+        let path_interface = path_interfaces.join("IOpenVmHalo2Verifier.sol");
+        fs::write(&path_interface, &verifier.openvm_verifier_interface)?;
+        println!("{LOG_PREFIX} IOpenVmHalo2Verifier.sol written to {path_interface:?}");
+    }
+
+    // Backwards-compatible names used by the Rust verifier.
     fs::write(&path_verifier_sol, &verifier.openvm_verifier_code)?;
-    println!("{LOG_PREFIX} verifier_sol written to {path_verifier_sol:?}");
+    println!("{LOG_PREFIX} verifier_sol (OpenVmHalo2Verifier) written to {path_verifier_sol:?}");
 
     fs::write(&path_verifier_bin, &verifier.artifact.bytecode)?;
     println!("{LOG_PREFIX} verifier_bin written to {path_verifier_bin:?}");
