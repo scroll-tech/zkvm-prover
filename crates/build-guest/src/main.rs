@@ -357,8 +357,8 @@ fn generate_root_verifier(_workspace_dir: &Path, _force_overwrite: bool) -> Resu
 ///
 /// Must stay in sync with [`Prover::get_sdk`](crates/prover/src/prover/mod.rs).
 const DEFAULT_AGG_TREE_CONFIG: AggregationTreeConfig = AggregationTreeConfig {
-    num_children_internal: 2,
-    num_children_leaf: 2,
+    num_children_internal: 3,
+    num_children_leaf: 4,
 };
 
 /// Generate the EVM verifier Solidity contract and its deployment bytecode.

@@ -50,8 +50,8 @@ fn default_agg_params() -> AggregationSystemParams {
 ///
 /// Must stay in sync with [`generate_evm_verifier`](crates/build-guest/src/main.rs).
 const DEFAULT_AGG_TREE_CONFIG: AggregationTreeConfig = AggregationTreeConfig {
-    num_children_internal: 2,
-    num_children_leaf: 2,
+    num_children_internal: 3,
+    num_children_leaf: 4,
 };
 
 use crate::setup::read_app_exe;
@@ -100,7 +100,6 @@ impl Prover {
         let segment_len = config.segment_len.unwrap_or(DEFAULT_SEGMENT_SIZE);
         let segmentation_limits = &mut app_config.app_vm_config.system.config.segmentation_config.limits;
         segmentation_limits.max_trace_height = segment_len as u32;
-        segmentation_limits.max_memory = 1_200_000_000_usize; // For 24G vram
 
         let app_exe = read_app_exe(&config.path_app_exe)?;
         Ok(Self {
