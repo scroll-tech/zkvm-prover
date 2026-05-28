@@ -38,8 +38,23 @@ pub mod as_base64 {
     }
 }
 
+/// Serialization helpers for program commitments (exe + VM digests).
+///
+/// # Byte-order convention
+///
+/// `serialize` writes each `u32` as **4 little-endian bytes** (total 64 bytes).
+/// `deserialize` reads 32 bytes for `exe` and 32 bytes for `vm`, interpreting
+/// every 4-byte chunk as a little-endian `u32`.
+///
+/// This matches OpenVM's `CommitBytes` -> `[u32; 8]` conversion used by the
+/// verifier when comparing EVM / STARK proof commitments.
 pub mod serialize_vk {
     use types_base::aggregation::ProgramCommitment;
+
+    /// Deserialize a 64-byte slice into [`ProgramCommitment`].
+    ///
+    /// # Panics
+    /// Panics if `commitment_bytes` is shorter than 64 bytes.
     pub fn deserialize(commitment_bytes: &[u8]) -> ProgramCommitment {
         let mut exe: [u32; 8] = [0; 8];
         for (i, bytes4) in commitment_bytes[..32].chunks(4).enumerate() {
@@ -55,6 +70,10 @@ pub mod serialize_vk {
         ProgramCommitment { exe, vm }
     }
 
+    /// Serialize [`ProgramCommitment`] into a 64-byte `Vec<u8>`.
+    ///
+    /// Bytes 0..32  = `exe[0..8]` as little-endian u32s  
+    /// Bytes 32..64 = `vm[0..8]` as little-endian u32s
     pub fn serialize(commit: &ProgramCommitment) -> Vec<u8> {
         commit
             .exe

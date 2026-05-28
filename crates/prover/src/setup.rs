@@ -6,10 +6,9 @@ use openvm_circuit::arch::instructions::{
     program::Program,
 };
 use openvm_sdk::fs::read_object_from_file;
-use openvm_sdk::{
-    F,
-    config::{AppConfig, SdkVmConfig},
-};
+use openvm_sdk::F;
+use openvm_sdk::config::AppConfig;
+use openvm_sdk_config::SdkVmConfig;
 
 use crate::Error;
 

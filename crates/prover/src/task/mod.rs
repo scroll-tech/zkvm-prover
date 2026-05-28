@@ -1,4 +1,3 @@
-use openvm_native_recursion::hints::Hintable;
 use openvm_sdk::StdIn;
 use scroll_zkvm_types::{public_inputs::ForkName, task::ProvingTask as UniversalProvingTask};
 
@@ -30,11 +29,11 @@ impl ProvingTask for UniversalProvingTask {
             stdin.write_bytes(witness);
         }
 
-        for proof in &self.aggregated_proofs {
-            let streams = proof.proofs[0].write();
-            for s in &streams {
-                stdin.write_field(s);
-            }
+        // Write input commits for deferred STARK verification (v2).
+        // The guest reads these via openvm::io::read() before calling deferred_compute.
+        // Must use stdin.write (openvm serde) to match guest deserialization format.
+        if !self.input_commits.is_empty() {
+            stdin.write(&self.input_commits);
         }
     }
 

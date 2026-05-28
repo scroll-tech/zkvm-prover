@@ -18,9 +18,9 @@ use crate::child_commitments;
 use {
     openvm_algebra_guest::{IntMod, field::FieldExtension},
     openvm_ecc_guest::AffinePoint,
-    openvm_keccak256_guest, // trigger extern native-keccak256
+    openvm_keccak256, // trigger extern native-keccak256
     openvm_pairing::bls12_381::{Bls12_381, Bls12_381G1Affine, Fp, Fp2},
-    openvm_sha256_guest,
+    openvm_sha2_guest,
 };
 
 openvm::init!();
