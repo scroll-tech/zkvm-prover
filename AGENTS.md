@@ -21,6 +21,22 @@ This project uses **OpenVM v2.0.0-beta.2** as its ZKVM. Guest executables (`.vme
 - Field algebra APIs
 - ECC constructor signatures
 
+### How to update OpenVM dependencies correctly
+
+OpenVM is declared as a **git dependency** (`branch = "develop-v2.1.0-rvr"`) in `Cargo.toml`, but the exact commit is pinned in `Cargo.lock`. Running a bare `cargo update` will **not** move the git branch forward; instead it will only bump unrelated crates.io packages (e.g. `alloy`, `revm`) which often break compatibility with the `scroll-tech/reth` and `sbv` forks.
+
+**Do NOT run a global `cargo update` unless you are prepared to upgrade the entire `alloy`/`revm`/`reth`/`sbv` dependency chain together.**
+
+To check whether the branch actually has new commits:
+```bash
+git ls-remote https://github.com/openvm-org/openvm.git develop-v2.1.0-rvr
+```
+If the returned SHA differs from the one recorded in `Cargo.lock`, update only the OpenVM packages:
+```bash
+cargo update -p openvm
+```
+Then rebuild guests and run tests as described below.
+
 ### After ANY OpenVM version upgrade, you MUST:
 
 1. **Update the hardcoded version string** in `crates/build-guest/src/verifier.rs`:
@@ -84,6 +100,11 @@ This happens when:
 ```bash
 RECOMPUTE_MODE=yes cargo run --release -p scroll-zkvm-build-guest -- --mode force
 ```
+
+### `cargo update` breaks compilation with alloy/revm type mismatches
+**Symptoms**: Errors like `missing verify_and_compute_signer_unchecked in implementation` (alloy) or `mismatched types` between `revm_primitives::hardfork::SpecId` and `SpecId` (revm).
+**Cause**: A global `cargo update` bumps `alloy` to 1.8.x and `revm` to 30.2.0, but the `scroll-tech/reth` and `sbv` forks were built against older versions. The `[patch.crates-io]` table pins `revm` to `scroll-v91` (30.1.1), which no longer satisfies the newer `alloy-evm` requirements, leading to duplicate registry versions of `revm-handler` / `revm-primitives` in the dependency graph.
+**Fix**: Restore the original `Cargo.lock` (`git checkout HEAD -- Cargo.lock`) and update only what you actually need (e.g. `cargo update -p openvm`).
 
 ### Docker build fails with stale CID
 The `build-guest.sh` script may fail if a stale `build-guest.cid` file exists. Use local build (`cargo run -p scroll-zkvm-build-guest`) as fallback.
