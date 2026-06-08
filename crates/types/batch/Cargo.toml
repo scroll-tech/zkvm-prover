@@ -31,3 +31,4 @@ host = ["dep:sbv-primitives", "dep:c-kzg"]
 
 [dev-dependencies]
 c-kzg = { workspace = true }
+rand = { version = "0.9" }

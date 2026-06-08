@@ -1,12 +1,13 @@
 use std::ops::{AddAssign, MulAssign};
+use std::slice;
 use std::sync::LazyLock;
 
 use algebra::{Field, IntMod};
-use alloy_primitives::U256;
+use alloy_primitives::{U256, hex};
 use halo2curves_axiom::bls12_381::G2Affine as Bls12_381_G2;
 use itertools::Itertools;
 use openvm_ecc_guest::{AffinePoint, CyclicGroup, msm, weierstrass::WeierstrassPoint};
-use openvm_pairing::bls12_381::{Bls12_381, G1Affine, G2Affine, Scalar};
+use openvm_pairing::bls12_381::{Bls12_381, Fp, G1Affine, G2Affine, Scalar};
 use openvm_pairing_guest::{algebra, pairing::PairingCheck};
 
 use super::types::ToIntrinsic;
@@ -50,6 +51,16 @@ static KZG_G2_SETUP: LazyLock<G2Affine> = LazyLock::new(|| {
         .expect("kzg G2 setup bytes")
         .to_intrinsic()
 });
+
+// Nontrivial BLS12-381 Fp cube root of unity used by the G1 endomorphism;
+// bytes are little-endian.
+static BETA: Fp = Fp::from_const_bytes(hex!(
+    "fefffeffffff012e02000a6213d817de8896f8e63ba9b3ddea770f6a07c669ba51ce76df2f67195f0000000000000000"
+));
+// BLS_X^2 in the BLS12-381 scalar field; bytes are little-endian.
+static X_SQUARE: Scalar = Scalar::from_const_bytes(hex!(
+    "000000000100000002a4010001a445ac00000000000000000000000000000000"
+));
 
 /// The version for KZG as per EIP-4844.
 const VERSIONED_HASH_VERSION_KZG: u8 = 1;
@@ -145,6 +156,17 @@ fn interpolate(z: &Scalar, coefficients: &[Scalar; BLOB_WIDTH]) -> Scalar {
         * Scalar::from_u64(blob_width).invert()
 }
 
+pub fn is_in_g1_subgroup(p: &G1Affine) -> bool {
+    let expected_x = p.x() * &BETA;
+    let expected_y = -p.y();
+
+    // [x^2] * P
+    let actual_point = msm(slice::from_ref(&X_SQUARE), slice::from_ref(p));
+
+    // [x^2]P == (BETA * x, -y)
+    actual_point.x() == &expected_x && actual_point.y() == &expected_y
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -191,5 +213,70 @@ mod test {
             .to_intrinsic();
         let proof_ok = verify_kzg_proof(z, y, commitment, proof);
         assert!(proof_ok, "verify failed");
+    }
+
+    /// BETA is a nontrivial cube root of unity mod p
+    #[test]
+    fn test_beta() {
+        use halo2curves_axiom::bls12_381::Fq;
+        let beta = Fq::from_bytes_be(&BETA.to_be_bytes()).unwrap();
+
+        // BETA != 1
+        assert_ne!(beta, Fq::one(), "BETA != 1");
+        // BETA^3 mod p == 1
+        let beta_cubed = &beta * &beta * &beta;
+        assert_eq!(beta_cubed, Fq::one(), "BETA^3 == 1");
+        // BETA^2 + BETA + 1 mod p == 0
+        assert_eq!(
+            &beta * &beta + beta + Fq::one(),
+            Fq::zero(),
+            "BETA^2 + BETA + 1 == 0"
+        );
+    }
+
+    #[test]
+    fn test_x_square() {
+        use halo2curves_axiom::bls12_381::BLS_X;
+        let x = -Scalar::from_u64(BLS_X);
+        let x_square = &x * &x;
+        assert_eq!(x_square, X_SQUARE);
+    }
+
+    #[test]
+    fn test_g1_generator_is_in_subgroup() {
+        assert!(is_in_g1_subgroup(&G1Affine::GENERATOR));
+    }
+
+    #[test]
+    fn test_point_on_curve_but_not_in_subgroup() {
+        use halo2curves_axiom::{CurveAffine, bls12_381::Fq};
+
+        let four = Fq::one() + Fq::one() + Fq::one() + Fq::one();
+
+        for _ in 0..1024 {
+            let x_bytes: [u8; 48] = rand::random();
+            let Some(x) = Fq::from_bytes(&x_bytes).into_option() else {
+                continue;
+            };
+            let x3 = x.square() * x.clone();
+            let x3_plus_4 = x3 + four.clone();
+
+            let Some(y) = x3_plus_4.sqrt().into_option() else {
+                continue;
+            };
+
+            let point_axiom = Bls12_381_G1::from_xy(x, y).unwrap();
+
+            // point in group
+            let is_torsion_free: bool = point_axiom.is_torsion_free().into();
+            if is_torsion_free {
+                continue;
+            }
+
+            assert!(!is_in_g1_subgroup(&point_axiom.to_intrinsic()));
+            return;
+        }
+
+        panic!("failed to find a non-subgroup curve point");
     }
 }
