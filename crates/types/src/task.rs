@@ -17,4 +17,7 @@ pub struct ProvingTask {
     /// An identifier assigned by coordinator, it should be kept identify for the
     /// same task (for example, using chunk, batch and bundle hashes)
     pub identifier: String,
+    /// Input commits for deferred STARK verification (v2).
+    /// Each commit is a 32-byte array.
+    pub input_commits: Vec<[u8; 32]>,
 }

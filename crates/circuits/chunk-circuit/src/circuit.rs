@@ -15,7 +15,7 @@ use {
     openvm_algebra_guest::IntMod,
     openvm_bigint_guest, // trigger extern u256 (this may be unneeded)
     openvm_k256::Secp256k1Point,
-    openvm_keccak256_guest, // trigger extern native-keccak256
+    openvm_keccak256, // trigger extern native-keccak256
     openvm_p256::P256Point,
     openvm_pairing::bn254::Bn254G1Affine,
 };
