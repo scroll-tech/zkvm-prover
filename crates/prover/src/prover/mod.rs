@@ -98,7 +98,7 @@ impl Prover {
     pub fn setup(config: ProverConfig, name: Option<&str>) -> Result<Self, Error> {
         let mut app_config = read_app_config(&config.path_app_config)?;
         let segment_len = config.segment_len.unwrap_or(DEFAULT_SEGMENT_SIZE);
-        let segmentation_limits = &mut app_config.app_vm_config.system.config.segmentation_config.limits;
+        let segmentation_limits = &mut app_config.app_vm_config.system.config.segmentation_limits;
         segmentation_limits.max_trace_height = segment_len as u32;
 
         let app_exe = read_app_exe(&config.path_app_exe)?;
@@ -271,13 +271,8 @@ impl Prover {
     ) -> Result<crate::utils::vm::ExecutionResult, Error> {
         let sdk = self.get_sdk()?;
         let t = std::time::Instant::now();
-        let exec_result = crate::utils::vm::execute_guest(
-            sdk,
-            self.app_config.app_vm_config.as_ref(),
-            self.app_exe.clone(),
-            stdin,
-        )
-        .map_err(|e| Error::GenProof(e.to_string()))?;
+        let exec_result = crate::utils::vm::execute_guest(sdk, self.app_exe.clone(), stdin)
+            .map_err(|e| Error::GenProof(e.to_string()))?;
         let execution_time_mills = t.elapsed().as_millis() as u64;
         let execution_time_s = execution_time_mills as f32 / 1000.0f32;
         let exec_speed = (exec_result.total_cycle as f32 / 1_000_000.0f32) / execution_time_s; // MHz
