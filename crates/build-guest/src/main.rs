@@ -46,7 +46,8 @@ use openvm_sdk::{
     prover::AppProver,
 };
 use openvm_stark_sdk::{
-    openvm_stark_backend::p3_field::RawDataSerializable, p3_bn254::Bn254 as Bn254Fr,
+    openvm_stark_backend::p3_field::{PrimeField, RawDataSerializable},
+    p3_bn254::Bn254 as Bn254Fr,
 };
 use scroll_zkvm_types::zkvm::AGG_STARK_PROVING_KEY;
 use snark_verifier_sdk::snark_verifier::loader::evm::compile_solidity;
@@ -102,8 +103,33 @@ fn write_commitment(output_path: &PathBuf, commitment: [u32; DIGEST_SIZE]) -> Re
     Ok(())
 }
 
-/// Writes a commitment array as hex
+/// Writes a commitment array as canonical-form hex.
+///
+/// The EVM verifier constructor (`ZkEvmVerifierPostFeynman`) expects digests in
+/// canonical form (big-endian). The proof instances also contain canonical
+/// digests, so this file can be used directly without Montgomery conversion.
 fn write_commitment_as_evm_hex(
+    output_path: &PathBuf,
+    commitment: [u32; DIGEST_SIZE],
+) -> Result<()> {
+    let digest_bytes = compress_commitment_to_canonical_bytes(&commitment);
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    fs::write(output_path, hex::encode(digest_bytes))?;
+    println!(
+        "{LOG_PREFIX} Wrote canonical commitment to {}",
+        output_path.display()
+    );
+    Ok(())
+}
+
+/// Writes a commitment array as Montgomery-form hex.
+///
+/// Kept for backward compatibility with tooling that expects the legacy
+/// Montgomery representation. Most callers should use `digest_1.hex` /
+/// `digest_2.hex` (canonical) instead.
+fn write_commitment_as_evm_hex_montgomery(
     output_path: &PathBuf,
     commitment: [u32; DIGEST_SIZE],
 ) -> Result<()> {
@@ -116,9 +142,26 @@ fn write_commitment_as_evm_hex(
         fs::create_dir_all(parent)?;
     }
     fs::write(output_path, hex::encode(digest_bytes))?;
-    println!("{LOG_PREFIX} Wrote commitment to {}", output_path.display());
+    println!(
+        "{LOG_PREFIX} Wrote Montgomery commitment to {}",
+        output_path.display()
+    );
     Ok(())
 }
+
+/// Compresses an 8-element u32 commitment into a single canonical Fr element.
+///
+/// Returns big-endian canonical bytes, matching the format expected by the
+/// on-chain `ZkEvmVerifierPostFeynman` wrapper and the proof instances.
+fn compress_commitment_to_canonical_bytes(commitment: &[u32; DIGEST_SIZE]) -> [u8; 32] {
+    let bn254 = CommitBytes::from_u32_digest(commitment).to_bn254();
+    let biguint = bn254.as_canonical_biguint();
+    let be_bytes = biguint.to_bytes_be();
+    let mut bytes = [0u8; 32];
+    bytes[32 - be_bytes.len()..].copy_from_slice(&be_bytes);
+    bytes
+}
+
 /// Compresses an 8-element u32 commitment into a single Fr element.
 /// Used for generating digests compatible with on-chain verifiers.
 fn compress_commitment(commitment: &[u32; DIGEST_SIZE]) -> Bn254Fr {
@@ -244,10 +287,21 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
 
         // Special handling for bundle project
         if project_name == "bundle" {
+            // Primary files: canonical form, usable directly by EVM verifier constructors.
             let output_path = release_output_dir.join(project_name).join("digest_1.hex");
             write_commitment_as_evm_hex(&output_path, exe_commit_u32)?;
             let output_path = release_output_dir.join(project_name).join("digest_2.hex");
             write_commitment_as_evm_hex(&output_path, vm_commit_u32)?;
+
+            // Backup files: Montgomery form, kept for backward compatibility.
+            let output_path = release_output_dir
+                .join(project_name)
+                .join("digest_1.montgomery.hex");
+            write_commitment_as_evm_hex_montgomery(&output_path, exe_commit_u32)?;
+            let output_path = release_output_dir
+                .join(project_name)
+                .join("digest_2.montgomery.hex");
+            write_commitment_as_evm_hex_montgomery(&output_path, vm_commit_u32)?;
         }
 
         use scroll_zkvm_types::{types_agg::ProgramCommitment, utils::serialize_vk};
