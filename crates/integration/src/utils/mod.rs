@@ -2,9 +2,10 @@ use crate::{testing_hardfork, testing_version, testing_version_validium};
 use bytesize::ByteSize;
 use sbv_core::BlockWitness;
 use sbv_primitives::types::consensus::ScrollTransaction;
+use alloy_primitives::U256;
 use sbv_primitives::{B256, types::eips::Encodable2718};
 use scroll_zkvm_types::{
-    public_inputs::{ForkName, MultiVersionPublicInputs},
+    public_inputs::{ForkName, MultiVersionPublicInputs, Version},
     scroll::{
         batch::{
             BatchHeader, BatchHeaderV6, BatchHeaderV7, BatchHeaderValidium, BatchHeaderValidiumV1,
@@ -70,10 +71,7 @@ impl From<&ReferenceHeader> for LastHeader {
     fn from(value: &ReferenceHeader) -> Self {
         match value {
             ReferenceHeader::V6(h) => h.into(),
-            ReferenceHeader::V7_V8_V9(h) => h.into(),
-            ReferenceHeader::V8(_) => {
-                unreachable!("Unexpected ReferenceHeader::V8 from 0.7.0 onwards")
-            }
+            ReferenceHeader::V7_V8_V9(h) | ReferenceHeader::V8(h) => h.into(),
             ReferenceHeader::Validium(h) => h.into(),
         }
     }
@@ -126,9 +124,147 @@ pub fn metadata_from_bundle_witnesses(witness: &BundleWitness) -> eyre::Result<B
     Ok(witness.into())
 }
 
+/// Result of folding chunk transaction data.
+struct ChunkFoldResult {
+    meta_chunk_sizes: Vec<usize>,
+    chunk_digests: Vec<B256>,
+    chunk_tx_bytes: Vec<u8>,
+}
+
+/// Collect tx data from chunks: sizes, keccak digests, and raw bytes.
+fn fold_chunk_data(chunks: &[ChunkWitness]) -> ChunkFoldResult {
+    chunks.iter().fold(
+        ChunkFoldResult {
+            meta_chunk_sizes: Vec::new(),
+            chunk_digests: Vec::new(),
+            chunk_tx_bytes: Vec::new(),
+        },
+        |mut acc, chunk_wit| {
+            let tx_bytes = blks_tx_bytes(chunk_wit.blocks.iter());
+            acc.meta_chunk_sizes.push(tx_bytes.len());
+            acc.chunk_digests.push(keccak256(&tx_bytes));
+            acc.chunk_tx_bytes.extend(tx_bytes);
+            acc
+        },
+    )
+}
+
+/// Verify that chunk tx_data digests match the expected values in chunk_infos.
+fn verify_chunk_digests(chunk_digests: &[B256], chunk_infos: &[ChunkInfo]) {
+    for (digest, chunk_info) in chunk_digests.iter().zip(chunk_infos) {
+        assert_eq!(digest, &chunk_info.tx_data_digest);
+    }
+}
+
+/// Build AggregationInput list from chunk_infos and the prover verification key.
+fn build_chunk_agg_inputs(
+    chunk_infos: &[ChunkInfo],
+    prover_vk: &[u8],
+    version: Version,
+) -> Vec<AggregationInput> {
+    let commitment = serialize_vk::deserialize(prover_vk);
+    chunk_infos
+        .iter()
+        .map(|chunk_info| {
+            let pi_hash = chunk_info.pi_hash_by_version(version);
+            AggregationInput {
+                public_values: pi_hash.as_slice().iter().map(|&b| b as u32).collect(),
+                commitment,
+            }
+        })
+        .collect()
+}
+
+// ---------------------------------------------------------------------------
+// EuclidV1 batch header builder
+// ---------------------------------------------------------------------------
+fn build_v6_ref_header(
+    chunks: &[ChunkWitness],
+    chunk_infos: &[ChunkInfo],
+    last_header: &LastHeader,
+    x: U256,
+    z: U256,
+    blob_versioned_hash: B256,
+) -> ReferenceHeader {
+    let last_l1_message_index: u64 = chunks
+        .iter()
+        .flat_map(|t| &t.blocks)
+        .map(final_l1_index)
+        .reduce(|last, cur| if cur == 0 { last } else { cur })
+        .expect("at least one chunk");
+    let last_l1_message_index = if last_l1_message_index == 0 {
+        last_header.l1_message_index
+    } else {
+        last_l1_message_index
+    };
+
+    let last_block_timestamp = chunks.last().map_or(0u64, |t| {
+        t.blocks.last().map_or(0, |trace| trace.header.timestamp)
+    });
+
+    let point_evaluations = [x, z];
+    let data_hash = keccak256(
+        chunk_infos
+            .iter()
+            .map(|c| &c.data_hash)
+            .fold(Vec::new(), |mut bytes, h| {
+                bytes.extend_from_slice(&h.0);
+                bytes
+            }),
+    );
+
+    ReferenceHeader::V6(BatchHeaderV6 {
+        version: last_header.version,
+        batch_index: last_header.batch_index + 1,
+        l1_message_popped: last_l1_message_index - last_header.l1_message_index,
+        last_block_timestamp,
+        total_l1_message_popped: last_l1_message_index,
+        parent_batch_hash: last_header.batch_hash,
+        data_hash,
+        blob_versioned_hash,
+        blob_data_proof: point_evaluations.map(|u| B256::new(u.to_be_bytes())),
+    })
+}
+
+// ---------------------------------------------------------------------------
+// V2+ batch header builder (EuclidV2 and later forks)
+// ---------------------------------------------------------------------------
+fn build_v7_ref_header(
+    last_header: &LastHeader,
+    blob_versioned_hash: B256,
+) -> ReferenceHeader {
+    ReferenceHeader::V7_V8_V9(BatchHeaderV7 {
+        version: last_header.version,
+        batch_index: last_header.batch_index + 1,
+        parent_batch_hash: last_header.batch_hash,
+        blob_versioned_hash,
+    })
+}
+
+// ---------------------------------------------------------------------------
+// Builder for legacy chunk-size metadata bytes
+// ---------------------------------------------------------------------------
+fn build_meta_chunk_bytes(meta_chunk_sizes: &[usize], num_chunks: usize) -> Vec<u8> {
+    const LEGACY_MAX_CHUNKS: usize = 45;
+    let valid_chunk_size = num_chunks as u16;
+    meta_chunk_sizes
+        .iter()
+        .copied()
+        .chain(std::iter::repeat(0))
+        .take(LEGACY_MAX_CHUNKS)
+        .fold(
+            Vec::from(valid_chunk_size.to_be_bytes()),
+            |mut bytes, len| {
+                bytes.extend_from_slice(&(len as u32).to_be_bytes());
+                bytes
+            },
+        )
+}
+
+/// Build a scroll (non-validium) batch witness.
 pub fn build_batch_witnesses(
     chunks: &[ChunkWitness],
-    prover_vk: &[u8], // notice we supppose all proof is (would be) generated from the same prover
+    prover_vk: &[u8],
     last_header: LastHeader,
 ) -> eyre::Result<BatchWitness> {
     let chunk_infos = chunks
@@ -137,49 +273,14 @@ pub fn build_batch_witnesses(
         .map(metadata_from_chunk_witnesses)
         .collect::<eyre::Result<Vec<_>>>()?;
 
-    // collect tx bytes from chunk tasks
-    let (meta_chunk_sizes, chunk_digests, chunk_tx_bytes) = chunks.iter().fold(
-        (Vec::new(), Vec::new(), Vec::new()),
-        |(mut meta_chunk_sizes, mut chunk_digests, mut payload_bytes), chunk_wit| {
-            let tx_bytes = blks_tx_bytes(chunk_wit.blocks.iter());
-            meta_chunk_sizes.push(tx_bytes.len());
-            chunk_digests.push(keccak256(&tx_bytes));
-            payload_bytes.extend(tx_bytes);
-            (meta_chunk_sizes, chunk_digests, payload_bytes)
-        },
-    );
-
-    // sanity check, verify the correction of execute
-    for (digest, chunk_info) in chunk_digests.iter().zip(chunk_infos.as_slice()) {
-        assert_eq!(digest, &chunk_info.tx_data_digest);
-    }
-
-    const LEGACY_MAX_CHUNKS: usize = 45;
-
-    let meta_chunk_bytes = {
-        let valid_chunk_size = chunks.len() as u16;
-        meta_chunk_sizes
-            .into_iter()
-            .chain(std::iter::repeat(0))
-            .take(LEGACY_MAX_CHUNKS)
-            .fold(
-                Vec::from(valid_chunk_size.to_be_bytes()),
-                |mut bytes, len| {
-                    bytes.extend_from_slice(&(len as u32).to_be_bytes());
-                    bytes
-                },
-            )
-    };
-
-    // collect all data together for payload
-    let mut payload = if testing_hardfork() >= ForkName::EuclidV2 {
-        Vec::new()
-    } else {
-        meta_chunk_bytes.clone()
-    };
+    let fold = fold_chunk_data(chunks);
+    verify_chunk_digests(&fold.chunk_digests, &chunk_infos);
 
     let version = testing_version();
-    if version.fork >= ForkName::EuclidV2 {
+    let is_v2_plus = version.fork >= ForkName::EuclidV2;
+
+    // Build payload header for V2+ forks
+    let mut payload = if is_v2_plus {
         let num_blocks = chunks.iter().map(|w| w.blocks.len()).sum::<usize>() as u16;
         let prev_msg_queue_hash = chunks[0].prev_msg_queue_hash;
         let initial_block_number = chunks[0].blocks[0].header.number;
@@ -188,23 +289,25 @@ pub fn build_batch_witnesses(
             .expect("at least one chunk")
             .post_msg_queue_hash;
 
-        payload.extend_from_slice(prev_msg_queue_hash.as_slice());
-        payload.extend_from_slice(post_msg_queue_hash.as_slice());
-        payload.extend(initial_block_number.to_be_bytes());
-        payload.extend(num_blocks.to_be_bytes());
-        assert_eq!(payload.len(), 74);
+        let mut p = Vec::new();
+        p.extend_from_slice(prev_msg_queue_hash.as_slice());
+        p.extend_from_slice(post_msg_queue_hash.as_slice());
+        p.extend(initial_block_number.to_be_bytes());
+        p.extend(num_blocks.to_be_bytes());
+        assert_eq!(p.len(), 74);
         for chunk_info in &chunk_infos {
             for ctx in &chunk_info.block_ctxs {
-                payload.extend(ctx.to_bytes());
+                p.extend(ctx.to_bytes());
             }
         }
-        assert_eq!(payload.len(), 74 + 52 * num_blocks as usize);
-    }
-    payload.extend(chunk_tx_bytes);
-    // compress ...
-    let compressed_payload = zstd_encode(&payload);
+        assert_eq!(p.len(), 74 + 52 * num_blocks as usize);
+        p
+    } else {
+        build_meta_chunk_bytes(&fold.meta_chunk_sizes, chunks.len())
+    };
+    payload.extend(fold.chunk_tx_bytes);
 
-    // 5 bytes are utilised by version (1), compressed_len (3) and is_encoded (1).
+    let compressed_payload = zstd_encode(&payload);
     if compressed_payload.len() > N_BLOB_BYTES - 5 {
         return Err(eyre::eyre!(
             "compression payload of batch too big: len={}",
@@ -213,123 +316,67 @@ pub fn build_batch_witnesses(
     }
 
     let heading = compressed_payload.len() as u32 + ((version.stf_version as u32) << 24);
-
-    let blob_bytes = if version.fork >= ForkName::EuclidV2 {
-        let mut blob_bytes = Vec::from(heading.to_be_bytes());
-        blob_bytes.push(1u8); // compressed flag
-        blob_bytes.extend(compressed_payload);
-        blob_bytes.resize(4096 * 31, 0);
-        blob_bytes
+    let blob_bytes = if is_v2_plus {
+        let mut b = Vec::from(heading.to_be_bytes());
+        b.push(1u8);
+        b.extend(compressed_payload);
+        b.resize(4096 * 31, 0);
+        b
     } else {
-        let mut blob_bytes = vec![1];
-        blob_bytes.extend(compressed_payload);
-        blob_bytes
+        let mut b = heading.to_be_bytes().to_vec();
+        b.push(1u8);
+        b.extend(compressed_payload);
+        b
     };
 
     let kzg_blob = point_eval::to_blob(&blob_bytes);
     let kzg_commitment = point_eval::blob_to_kzg_commitment(&kzg_blob);
     let blob_versioned_hash = point_eval::get_versioned_hash(&kzg_commitment);
 
-    // preimage = keccak(payload) + blob_versioned_hash
-    let challenge_preimage = if testing_hardfork() >= ForkName::EuclidV2 {
-        let mut challenge_preimage = keccak256(&blob_bytes).to_vec();
-        challenge_preimage.extend(blob_versioned_hash.0);
-        challenge_preimage
+    let challenge_preimage = if is_v2_plus {
+        let mut preimage = keccak256(&blob_bytes).to_vec();
+        preimage.extend(blob_versioned_hash.0);
+        preimage
     } else {
-        let mut challenge_preimage = Vec::from(keccak256(&meta_chunk_bytes).0);
-        let last_digest = chunk_digests.last().expect("at least we have one");
-        challenge_preimage.extend(
-            chunk_digests
+        let meta_chunk_bytes = build_meta_chunk_bytes(&fold.meta_chunk_sizes, chunks.len());
+        let mut preimage = Vec::from(keccak256(&meta_chunk_bytes).0);
+        let last_digest = fold.chunk_digests.last().expect("at least one chunk");
+        preimage.extend(
+            fold.chunk_digests
                 .iter()
                 .chain(std::iter::repeat(last_digest))
-                .take(LEGACY_MAX_CHUNKS)
+                .take(45)
                 .fold(Vec::new(), |mut ret, digest| {
                     ret.extend_from_slice(&digest.0);
                     ret
                 }),
         );
-        challenge_preimage.extend_from_slice(blob_versioned_hash.as_slice());
-        challenge_preimage
+        preimage.extend_from_slice(blob_versioned_hash.as_slice());
+        preimage
     };
     let challenge_digest = keccak256(&challenge_preimage);
 
     let x = point_eval::get_x_from_challenge(challenge_digest);
     let (kzg_proof, z) = point_eval::get_kzg_proof(&kzg_blob, challenge_digest);
 
-    let reference_header: ReferenceHeader = match testing_hardfork() {
-        ForkName::EuclidV1 => {
-            // collect required fields for batch header
-            let last_l1_message_index: u64 = chunks
-                .iter()
-                .flat_map(|t| &t.blocks)
-                .map(final_l1_index)
-                .reduce(|last, cur| if cur == 0 { last } else { cur })
-                .expect("at least one chunk");
-            let last_l1_message_index = if last_l1_message_index == 0 {
-                last_header.l1_message_index
-            } else {
-                last_l1_message_index
-            };
-
-            let last_block_timestamp = chunks.last().map_or(0u64, |t| {
-                t.blocks.last().map_or(0, |trace| trace.header.timestamp)
-            });
-
-            let point_evaluations = [x, z];
-
-            let data_hash = keccak256(
-                chunk_infos
-                    .iter()
-                    .map(|chunk_info| &chunk_info.data_hash)
-                    .fold(Vec::new(), |mut bytes, h| {
-                        bytes.extend_from_slice(&h.0);
-                        bytes
-                    }),
-            );
-
-            ReferenceHeader::V6(BatchHeaderV6 {
-                version: last_header.version,
-                batch_index: last_header.batch_index + 1,
-                l1_message_popped: last_l1_message_index - last_header.l1_message_index,
-                last_block_timestamp,
-                total_l1_message_popped: last_l1_message_index,
-                parent_batch_hash: last_header.batch_hash,
-                data_hash,
-                blob_versioned_hash,
-                blob_data_proof: point_evaluations.map(|u| B256::new(u.to_be_bytes())),
-            })
-        }
-        ForkName::EuclidV2 | ForkName::Feynman | ForkName::Galileo | ForkName::GalileoV2 => {
-            use scroll_zkvm_types::scroll::batch::BatchHeaderV7;
-            ReferenceHeader::V7_V8_V9(BatchHeaderV7 {
-                version: last_header.version,
-                batch_index: last_header.batch_index + 1,
-                parent_batch_hash: last_header.batch_hash,
-                blob_versioned_hash,
-            })
-        }
+    let reference_header = match testing_hardfork() {
+        ForkName::EuclidV1 => build_v6_ref_header(
+            chunks,
+            &chunk_infos,
+            &last_header,
+            x,
+            z,
+            blob_versioned_hash,
+        ),
+        _ => build_v7_ref_header(&last_header, blob_versioned_hash),
     };
 
-    let commitment = serialize_vk::deserialize(prover_vk);
-    let chunk_proofs = chunk_infos
-        .iter()
-        .map(|chunk_info| {
-            let pi_hash = chunk_info.pi_hash_by_version(version);
-            AggregationInput {
-                public_values: pi_hash
-                    .as_slice()
-                    .iter()
-                    .map(|&b| b as u32)
-                    .collect::<Vec<_>>(),
-                commitment,
-            }
-        })
-        .collect::<Vec<_>>();
-
+    let chunk_proofs = build_chunk_agg_inputs(&chunk_infos, prover_vk, version);
     let point_eval_witness = build_point_eval_witness(
         *kzg_commitment.to_bytes().as_ref(),
         *kzg_proof.to_bytes().as_ref(),
     );
+
     Ok(BatchWitness {
         version: version.as_version_byte(),
         chunk_proofs,
@@ -341,9 +388,10 @@ pub fn build_batch_witnesses(
     })
 }
 
+/// Build a validium batch witness (no blob or KZG).
 pub fn build_batch_witnesses_validium(
     chunks: &[ChunkWitness],
-    prover_vk: &[u8], // notice we supppose all proof is (would be) generated from the same prover
+    prover_vk: &[u8],
     last_header: LastHeader,
 ) -> eyre::Result<BatchWitness> {
     let chunk_infos = chunks
@@ -352,26 +400,10 @@ pub fn build_batch_witnesses_validium(
         .map(metadata_from_chunk_witnesses)
         .collect::<eyre::Result<Vec<_>>>()?;
 
-    // collect tx bytes from chunk tasks
-    let (_, chunk_digests, _) = chunks.iter().fold(
-        (Vec::new(), Vec::new(), Vec::new()),
-        |(mut meta_chunk_sizes, mut chunk_digests, mut payload_bytes), chunk_wit| {
-            let tx_bytes = blks_tx_bytes(chunk_wit.blocks.iter());
-            meta_chunk_sizes.push(tx_bytes.len());
-            chunk_digests.push(keccak256(&tx_bytes));
-            payload_bytes.extend(tx_bytes);
-            (meta_chunk_sizes, chunk_digests, payload_bytes)
-        },
-    );
+    let fold = fold_chunk_data(chunks);
+    verify_chunk_digests(&fold.chunk_digests, &chunk_infos);
 
-    // sanity check, verify the correction of execute
-    for (digest, chunk_info) in chunk_digests.iter().zip(chunk_infos.as_slice()) {
-        assert_eq!(digest, &chunk_info.tx_data_digest);
-    }
-
-    // collect all data together for payload
     let version = testing_version_validium();
-
     let last_chunk = chunk_infos.last().expect("at least 1 chunk in batch");
     let reference_header =
         ReferenceHeader::Validium(BatchHeaderValidium::V1(BatchHeaderValidiumV1 {
@@ -383,21 +415,7 @@ pub fn build_batch_witnesses_validium(
             commitment: last_chunk.post_blockhash,
         }));
 
-    let commitment = serialize_vk::deserialize(prover_vk);
-    let chunk_proofs = chunk_infos
-        .iter()
-        .map(|chunk_info| {
-            let pi_hash = chunk_info.pi_hash_by_version(version);
-            AggregationInput {
-                public_values: pi_hash
-                    .as_slice()
-                    .iter()
-                    .map(|&b| b as u32)
-                    .collect::<Vec<_>>(),
-                commitment,
-            }
-        })
-        .collect::<Vec<_>>();
+    let chunk_proofs = build_chunk_agg_inputs(&chunk_infos, prover_vk, version);
 
     Ok(BatchWitness {
         version: version.as_version_byte(),
@@ -458,7 +476,10 @@ fn test_build_and_parse_batch_task() -> eyre::Result<()> {
             let enveloped = batch::EnvelopeV7::from_slice(&task_wit.blob_bytes);
             <batch::PayloadV7 as Payload>::from_envelope(&enveloped).validate(h, infos);
         }
-        ReferenceHeader::V8(_) => unreachable!("Unexpected ReferenceHeader::V8 from 0.7.0 onwards"),
+        ReferenceHeader::V8(h) => {
+            let enveloped = batch::EnvelopeV7::from_slice(&task_wit.blob_bytes);
+            <batch::PayloadV7 as Payload>::from_envelope(&enveloped).validate(h, infos);
+        }
         ReferenceHeader::Validium(_h) => {
             todo!()
         }

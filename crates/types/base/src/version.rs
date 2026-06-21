@@ -178,8 +178,31 @@ impl Version {
         self.domain == Domain::Validium
     }
 
-    pub fn codec(&self) -> u8 {
+    /// The codec version byte.
+    pub fn codec_byte(&self) -> u8 {
         self.codec.into()
+    }
+
+    /// Derive the fork name from domain and stf_version.
+    pub fn derive_fork(&self) -> ForkName {
+        match (self.domain, self.stf_version) {
+            (Domain::Scroll, STFVersion::V6) => ForkName::EuclidV1,
+            (Domain::Scroll, STFVersion::V7) => ForkName::EuclidV2,
+            (Domain::Scroll, STFVersion::V8) => ForkName::Feynman,
+            (Domain::Scroll, STFVersion::V9) => ForkName::Galileo,
+            (Domain::Scroll, STFVersion::V10) => ForkName::GalileoV2,
+            (Domain::Validium, STFVersion::V1) => ForkName::GalileoV2,
+            _ => unreachable!(),
+        }
+    }
+
+    /// Derive the codec from domain and stf_version.
+    pub fn derive_codec(&self) -> Codec {
+        match (self.domain, self.stf_version) {
+            (Domain::Scroll, STFVersion::V6) => Codec::V6,
+            (Domain::Validium, STFVersion::V1) => Codec::V7,
+            _ => Codec::V7,
+        }
     }
 }
 

@@ -139,8 +139,18 @@ impl From<&BatchWitness> for BatchInfo {
                 };
                 BatchInfoBuilderV7::build(witness.version, args)
             }
-            ReferenceHeader::V8(_) => {
-                unreachable!("Unexpected ReferenceHeader::V8 from 0.7.0 onwards");
+            ReferenceHeader::V8(header) => {
+                let point_eval_witness = witness
+                    .point_eval_witness
+                    .as_ref()
+                    .expect("point_eval_witness missing for header::v8");
+                let args = BuilderArgsV7 {
+                    header: *header,
+                    chunk_infos,
+                    blob_bytes: witness.blob_bytes.to_vec(),
+                    point_eval_witness: Some(point_eval_witness.clone()),
+                };
+                BatchInfoBuilderV7::build(witness.version, args)
             }
             ReferenceHeader::Validium(header) => ValidiumBatchInfoBuilder::build(
                 ValidiumBuilderArgs::new(witness.version, *header, chunk_infos),

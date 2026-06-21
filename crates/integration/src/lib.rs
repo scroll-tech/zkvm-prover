@@ -17,7 +17,6 @@ use scroll_zkvm_verifier::verifier::{AGG_STARK_PROVING_KEY, UniversalVerifier};
 use std::collections::HashMap;
 use std::{
     path::{Path, PathBuf},
-    process,
     sync::LazyLock,
 };
 use tracing::instrument;
@@ -30,16 +29,16 @@ pub mod utils;
 /// Directory to store proofs on disc.
 const DIR_PROOFS: &str = "proofs";
 
-/// File descriptor for app openvm config.
-const FD_APP_CONFIG: &str = "openvm.toml";
+/// App config filename.
+const APP_CONFIG_FILE: &str = "openvm.toml";
 
-/// File descriptor for app exe.
-const FD_APP_EXE: &str = "app.vmexe";
+/// App executable filename.
+const APP_EXE_FILE: &str = "app.vmexe";
 
 /// Environment variable used to set the test-run's output directory for assets.
 const ENV_OUTPUT_DIR: &str = "OUTPUT_DIR";
 
-/// Enviroment settings for test: fork
+/// Test environment: fork
 pub fn testing_hardfork() -> ForkName {
     testing_version().fork
 }
@@ -150,8 +149,7 @@ pub trait ProverTester {
         let dir_testrun = if let Ok(env_dir) = std::env::var(ENV_OUTPUT_DIR) {
             let dir = Path::new(&env_dir);
             if std::fs::exists(dir).is_err() {
-                tracing::error!("OUTPUT_DIR={dir:?} not found");
-                process::exit(1);
+                return Err(eyre::eyre!("OUTPUT_DIR={dir:?} not found"));
             }
             dir.into()
         } else {
@@ -174,8 +172,8 @@ pub trait ProverTester {
 
     /// Load the app config.
     fn load() -> eyre::Result<(PathBuf, PathBuf)> {
-        let path_app_config = ASSET_BASE_DIR.join(Self::NAME).join(FD_APP_CONFIG);
-        let path_app_exe = ASSET_BASE_DIR.join(Self::NAME).join(FD_APP_EXE);
+        let path_app_config = ASSET_BASE_DIR.join(Self::NAME).join(APP_CONFIG_FILE);
+        let path_app_exe = ASSET_BASE_DIR.join(Self::NAME).join(APP_EXE_FILE);
         Ok((path_app_config, path_app_exe))
     }
 
@@ -257,8 +255,8 @@ impl TaskProver for Prover {
     }
 }
 
-/// Enviroment settings for test: fork dir
-pub fn testdata_fork_directory() -> String {
+/// Test environment: fork name as string.
+pub fn testdata_fork_name() -> String {
     testing_hardfork().to_string()
 }
 
@@ -343,53 +341,56 @@ pub fn tester_execute<T: ProverTester>(
     Ok(ret)
 }
 
-/// End-to-end test for proving witnesses of the same prover.
+/// Shared core: get-or-build a proof with disk caching.
+fn get_or_build_cached_proof<T: ProverTester>(
+    prover: &mut impl TaskProver,
+    witness: &T::Witness,
+    proofs: &[ProofEnum],
+    gen_snark: bool,
+) -> eyre::Result<ProofEnum> {
+    let cache_dir = DIR_TESTRUN
+        .get()
+        .ok_or(eyre::eyre!("missing testrun dir"))?
+        .join(T::DIR_ASSETS)
+        .join(DIR_PROOFS);
+    std::fs::create_dir_all(&cache_dir)?;
+
+    let path_proof = cache_dir.join(T::fd_proof(witness));
+    let task_id = witness.identifier();
+    tracing::debug!(?task_id, ?path_proof, "trying cached proof");
+
+    if let Ok(proof) = read_json::<_, ProofEnum>(&path_proof) {
+        tracing::debug!(?task_id, "proof found in cache");
+        return Ok(proof);
+    }
+
+    let task = T::build_universal_task(
+        witness,
+        proofs
+            .iter()
+            .map(|p| p.as_stark_proof().expect("must be stark proof")),
+    )?;
+    let proof = prover.prove_task(&task, gen_snark)?;
+    write_json(&path_proof, &proof)?;
+    tracing::debug!(?task_id, "proof generated and cached");
+    Ok(proof)
+}
+
+/// End-to-end test for proving witnesses of the same prover (STARK proof).
 #[instrument(name = "prove_verify", skip_all, fields(task_id, prover_name = prover.name()))]
 pub fn prove_verify<T: ProverTester>(
     prover: &mut impl TaskProver,
     witness: &T::Witness,
     proofs: &[ProofEnum],
 ) -> eyre::Result<ProofEnum> {
-    // Setup prover.
-    let cache_dir = DIR_TESTRUN
-        .get()
-        .ok_or(eyre::eyre!("missing assets dir"))?
-        .join(T::DIR_ASSETS)
-        .join(DIR_PROOFS);
-    std::fs::create_dir_all(&cache_dir)?;
     let vk = prover.get_vk()?;
+    let proof = get_or_build_cached_proof::<T>(prover, witness, proofs, false)?;
 
-    // Try reading proof from cache if available, and early return in that case.
-    let task_id = witness.identifier();
-
-    let path_proof = cache_dir.join(T::fd_proof(witness));
-    tracing::debug!(name: "try_read_proof", ?task_id, ?path_proof);
-
-    let proof = if let Ok(proof) = read_json::<_, ProofEnum>(&path_proof) {
-        tracing::debug!(name: "early_return_proof", ?task_id);
-        proof
-    } else {
-        let task = T::build_universal_task(
-            witness,
-            proofs
-                .iter()
-                .map(|p| p.as_stark_proof().expect("must be stark proof")),
-        )?;
-        // Construct stark proof for the circuit.
-        let proof = prover.prove_task(&task, false)?;
-        write_json(&path_proof, &proof)?;
-        tracing::debug!(name: "cached_proof", ?task_id);
-
-        proof
-    };
-
-    // Verify proof.
     UniversalVerifier::verify_stark_proof_with_vk(
         &AGG_STARK_PROVING_KEY.get_agg_vk(),
         proof.as_stark_proof().expect("should be stark proof"),
         &vk,
     )?;
-
     Ok(proof)
 }
 
@@ -403,43 +404,11 @@ pub fn prove_verify_single_evm<T>(
 where
     T: ProverTester,
 {
-    // Setup prover.
-    let path_assets = DIR_TESTRUN
-        .get()
-        .ok_or(eyre::eyre!("missing testrun dir"))?
-        .join(T::DIR_ASSETS);
-    let cache_dir = path_assets.join(DIR_PROOFS);
-    std::fs::create_dir_all(&cache_dir)?;
-
-    // Dump verifier-only assets to disk.
     let path_verifier_dir = ASSET_BASE_DIR.join("verifier");
     let verifier = UniversalVerifier::setup(&path_verifier_dir)?;
-
-    // Try reading proof from cache if available, and early return in that case.
-    let task_id = witness.identifier();
-
-    let path_proof = cache_dir.join(T::fd_proof(witness));
-    tracing::debug!(name: "try_read_evm_proof", ?task_id, ?path_proof);
-
-    let proof = if let Ok(proof) = read_json::<_, ProofEnum>(&path_proof) {
-        tracing::debug!(name: "early_return_evm_proof", ?task_id);
-        proof
-    } else {
-        let task = T::build_universal_task(
-            witness,
-            proofs
-                .iter()
-                .map(|p| p.as_stark_proof().expect("must be stark proof")),
-        )?;
-        // Construct stark proof for the circuit.
-        let proof = prover.prove_task(&task, true)?;
-        write_json(&path_proof, &proof)?;
-        tracing::debug!(name: "cached_evm_proof", ?task_id);
-        proof
-    };
-
     let vk = prover.get_vk()?;
-    // Verify proof.
+    let proof = get_or_build_cached_proof::<T>(prover, witness, proofs, true)?;
+
     verifier.verify_evm_proof(
         &proof
             .clone()
@@ -448,7 +417,6 @@ where
             .into(),
         &vk,
     )?;
-
     Ok(proof)
 }
 

@@ -84,8 +84,8 @@ struct Cli {
 
 const LOG_PREFIX: &str = "[build-guest]";
 
-/// File descriptor for app openvm config.
-const FD_APP_CONFIG: &str = "openvm.toml";
+/// App config filename.
+const APP_CONFIG_FILE: &str = "openvm.toml";
 
 /// Writes a commitment array to a Rust source file.
 fn write_commitment(output_path: &PathBuf, commitment: [u32; DIGEST_SIZE]) -> Result<()> {
@@ -152,7 +152,7 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
 
         let project_dir = project_path.to_str().expect("Invalid path");
         // First read the app config specified in the project's root directory.
-        let path_app_config = Path::new(project_dir).join(FD_APP_CONFIG);
+        let path_app_config = Path::new(project_dir).join(APP_CONFIG_FILE);
         let app_config: AppConfig<SdkVmConfig> =
             toml::from_str(&fs::read_to_string(&path_app_config)?)?;
         println!(
@@ -160,8 +160,8 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
             toml::to_string_pretty(&app_config)?
         );
 
-        // copy path_app_config as ${release_output_dir}/${project_name}/${FD_APP_CONFIG}
-        let output_path = release_output_dir.join(project_name).join(FD_APP_CONFIG);
+        // copy path_app_config as ${release_output_dir}/${project_name}/${APP_CONFIG_FILE}
+        let output_path = release_output_dir.join(project_name).join(APP_CONFIG_FILE);
         if let Some(parent) = output_path.parent() {
             fs::create_dir_all(parent)?;
         }

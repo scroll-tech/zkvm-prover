@@ -3,10 +3,10 @@
 use alloy_primitives::B256;
 
 pub mod v6;
-
 pub mod v7;
-
 pub mod validium;
+
+use v7::BatchHeaderV7;
 
 pub trait BatchHeader {
     /// The DA-codec version for the batch header.
@@ -59,7 +59,15 @@ impl ReferenceHeader {
     pub fn into_v8_feynman(self) -> Self {
         match self {
             Self::V7_V8_V9(h) => Self::V8(h),
-            _ => unreachable!("Expect ReferenceHeader::V7_V8_V9 from 0.7.0 onwards"),
+            _ => unreachable!("Expect ReferenceHeader::V7_V8_V9"),
+        }
+    }
+
+    /// Returns the inner `BatchHeaderV7` regardless of whether this is `V7_V8_V9` or `V8`.
+    pub fn as_v7(&self) -> &BatchHeaderV7 {
+        match self {
+            Self::V7_V8_V9(h) | Self::V8(h) => h,
+            _ => unreachable!("Expected V7/V8/V9 variant, got {:?}", std::mem::discriminant(self)),
         }
     }
 }

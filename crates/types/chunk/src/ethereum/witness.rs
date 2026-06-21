@@ -1,18 +1,13 @@
 use sbv_core::BlockWitness;
 use std::collections::HashSet;
 
+pub use crate::ChunkDetails;
+
 /// The witness type accepted by the chunk-circuit.
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct ChunkWitness {
     /// The block witness for each block in the chunk.
     pub blocks: Vec<BlockWitness>,
-}
-
-#[derive(Clone, Debug)]
-pub struct ChunkDetails {
-    pub num_blocks: usize,
-    pub num_txs: usize,
-    pub total_gas_used: u64,
 }
 
 impl ChunkWitness {

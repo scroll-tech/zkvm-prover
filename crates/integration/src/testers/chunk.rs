@@ -1,5 +1,5 @@
 use crate::{
-    PartialProvingTask, ProverTester, TaskProver, prove_verify, testdata_fork_directory,
+    PartialProvingTask, ProverTester, TaskProver, prove_verify, testdata_fork_name,
     tester_execute, testers::PATH_TESTDATA, testing_hardfork, testing_version,
     utils::metadata_from_chunk_witnesses,
 };
@@ -22,7 +22,7 @@ use std::{
 pub fn read_block_witness_from_testdata(block_n: usize) -> eyre::Result<BlockWitness> {
     read_block_witness(
         Path::new(PATH_TESTDATA)
-            .join(testdata_fork_directory())
+            .join(testdata_fork_name())
             .join("witnesses")
             .join(format!("{}.json", block_n)),
     )

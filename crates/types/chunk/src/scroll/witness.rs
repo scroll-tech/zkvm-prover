@@ -33,12 +33,7 @@ pub struct ValidiumInputs {
     pub secret_key: Box<[u8]>,
 }
 
-#[derive(Clone, Debug)]
-pub struct ChunkDetails {
-    pub num_blocks: usize,
-    pub num_txs: usize,
-    pub total_gas_used: u64,
-}
+pub use crate::ChunkDetails;
 
 impl ChunkWitness {
     pub fn new_scroll(

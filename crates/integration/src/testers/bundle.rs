@@ -80,14 +80,14 @@ impl BundleTaskGenerator {
         chunk_prover: &mut impl TaskProver,
     ) -> eyre::Result<Vec<ProofEnum>> {
         let mut proofs = Vec::new();
-        for chunk_gen in &mut self.batch_generators {
-            let proof = chunk_gen.get_or_build_proof(batch_prover, chunk_prover)?;
+        for batch_gen in &mut self.batch_generators {
+            let proof = batch_gen.get_or_build_proof(batch_prover, chunk_prover)?;
             proofs.push(proof);
         }
         Ok(proofs)
     }
 
-    /// accept a series of BatchTaskGenerator, must be validated in advanced (continuous)
+    /// Accept a series of BatchTaskGenerator, must be validated in advance (continuous).
     pub fn from_batch_tasks(batches: &[BatchTaskGenerator]) -> Self {
         Self {
             witness: None,

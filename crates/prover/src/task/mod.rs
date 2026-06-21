@@ -4,8 +4,6 @@ use scroll_zkvm_types::{public_inputs::ForkName, task::ProvingTask as UniversalP
 
 /// Every proving task must have an identifier. The identifier will be appended to a prefix while
 /// storing/reading proof to/from disc.
-/// Every proving task must have an identifier. The identifier will be appended to a prefix while
-/// storing/reading proof to/from disc.
 pub trait ProvingTask: serde::de::DeserializeOwned {
     fn identifier(&self) -> String;
 

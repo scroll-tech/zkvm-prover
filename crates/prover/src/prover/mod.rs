@@ -97,42 +97,46 @@ impl Prover {
         })
     }
 
-    /// Get or initialize the prover lazily
-    fn get_prover_mut(
-        &mut self,
-    ) -> Result<&mut StarkProver<DefaultStarkEngine, SdkVmBuilder, NativeBuilder>, Error> {
-        if self.prover.get().is_none() {
+    /// Get or initialize the prover lazily (immutable access).
+    fn get_prover(&self) -> Result<&StarkProver<DefaultStarkEngine, SdkVmBuilder, NativeBuilder>, Error> {
+        self.prover.get_or_try_init(|| {
             tracing::info!("Lazy initializing prover...");
             let sdk = self.get_sdk()?;
             // 5s
             let prover = sdk.prover(self.app_exe.clone()).unwrap();
-            let _ = self.prover.set(prover);
-        }
+            Ok(prover)
+        })
+    }
+
+    /// Get or initialize the prover lazily (mutable access).
+    fn get_prover_mut(
+        &mut self,
+    ) -> Result<&mut StarkProver<DefaultStarkEngine, SdkVmBuilder, NativeBuilder>, Error> {
+        self.get_prover()?;
         Ok(self.prover.get_mut().unwrap())
     }
-    /// Pick up loaded app commit, to distinguish from which circuit the proof comes
-    pub fn get_app_commitment(&mut self) -> ProgramCommitment {
-        let prover = self.get_prover_mut().expect("Failed to initialize prover");
+
+    /// Return the app commitment, to distinguish which circuit the proof comes from.
+    pub fn get_app_commitment(&self) -> ProgramCommitment {
+        let prover = self.get_prover().expect("Failed to initialize prover");
         let commits = prover.app_commit();
         let exe = commits.app_exe_commit.to_u32_digest();
         let vm = commits.app_vm_commit.to_u32_digest();
         ProgramCommitment { exe, vm }
     }
 
-    /// Pick up loaded app commit as "vk" in proof, to distinguish from which circuit the proof comes
-    pub fn get_app_vk(&mut self) -> Vec<u8> {
+    /// Return the serialized app commitment used as the verification key in proofs.
+    pub fn get_app_vk(&self) -> Vec<u8> {
         serialize_vk::serialize(&self.get_app_commitment())
     }
 
-    /// Pick up the actual vk (serialized) for evm proof, would be empty if prover
-    /// do not contain evm prover
+    /// Return the serialized EVM verification key, empty if no EVM prover is loaded.
     pub fn get_evm_vk(&self) -> Vec<u8> {
         let sdk = self.get_sdk().expect("Failed to initialize SDK");
         scroll_zkvm_verifier::evm::serialize_vk(sdk.halo2_pk().wrapper.pinning.pk.get_vk())
     }
 
-    /// Simple wrapper of gen_proof_stark/snark, Early-return if a proof is found in disc,
-    /// otherwise generate and return the proof after writing to disc.
+    /// Generate a STARK or SNARK proof for the given task.
     #[instrument("Prover::gen_proof_universal", skip_all, fields(task_id))]
     pub fn gen_proof_universal(
         &mut self,
@@ -246,7 +250,7 @@ impl Prover {
         let sdk = self.get_sdk()?;
         let evm_proof = sdk
             .prove_evm(self.app_exe.clone(), stdin)
-            .map_err(|e| Error::GenProof(format!("{}", e)))?;
+            .map_err(|e| Error::GenProof(e.to_string()))?;
 
         Ok(evm_proof)
     }
