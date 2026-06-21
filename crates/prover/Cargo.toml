@@ -12,6 +12,7 @@ scroll-zkvm-verifier.workspace = true
 bincode_v1.workspace = true
 tracing.workspace = true
 openvm-circuit = { workspace = true }
+openvm-continuations = { workspace = true }
 openvm-sdk = { workspace = true }
 openvm-sdk-config = { workspace = true }
 openvm-static-verifier = { workspace = true }
@@ -37,6 +38,10 @@ cudarc = { version = "0.9", optional = true }
 
 [features]
 default = []
-cuda = ["openvm-sdk/cuda", "dep:cudarc", "openvm-verify-stark-circuit/cuda", "dep:openvm-cuda-backend"]
+cuda = [
+  "dep:cudarc",
+  "dep:openvm-cuda-backend",
+  "openvm-sdk/cuda",
+]
 
 

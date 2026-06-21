@@ -21,9 +21,15 @@ contract OpenVmHalo2Verifier is Halo2Verifier, IOpenVmHalo2Verifier {
     /// @dev The length of the proof data, in bytes.
     uint256 private constant PROOF_DATA_LENGTH = (12 + 43) * 32;
 
-    /// @dev The length of the public values, in bytes. This value is set by
-    /// OpenVM and is guaranteed to be no larger than 8192.
+    /// @dev The number of public value limbs exposed by the Halo2 circuit.
+    /// This value is set by OpenVM and is guaranteed to be no larger than 8192.
     uint256 private constant PUBLIC_VALUES_LENGTH = 32;
+
+    /// @dev The byte width of each public value limb (1 for rv32, 2 for rv64).
+    uint256 private constant PUBLIC_VALUES_LIMB_SIZE = 2;
+
+    /// @dev The total byte length of the public values payload.
+    uint256 private constant PUBLIC_VALUES_BYTE_LENGTH = PUBLIC_VALUES_LENGTH * PUBLIC_VALUES_LIMB_SIZE;
 
     /// @dev The length of the full proof, in bytes
     uint256 private constant FULL_PROOF_LENGTH = (12 + 2 + PUBLIC_VALUES_LENGTH + 43) * 32;
@@ -38,10 +44,11 @@ contract OpenVmHalo2Verifier is Halo2Verifier, IOpenVmHalo2Verifier {
     /// proof[..12 * 32]: KZG accumulator
     /// proof[12 * 32..13 * 32]: app exe commit
     /// proof[13 * 32..14 * 32]: app vm commit
-    /// proof[14 * 32..(14 + PUBLIC_VALUES_LENGTH) * 32]: publicValues[0..PUBLIC_VALUES_LENGTH]
+    /// proof[14 * 32..(14 + PUBLIC_VALUES_LENGTH) * 32]: publicValue limbs[0..PUBLIC_VALUES_LENGTH]
     /// proof[(14 + PUBLIC_VALUES_LENGTH) * 32..]: Proof Suffix
     ///
-    /// @param publicValues The PVs revealed by the OpenVM guest program.
+    /// @param publicValues The PVs revealed by the OpenVM guest program. Each
+    /// public-value limb occupies PUBLIC_VALUES_LIMB_SIZE bytes in little-endian.
     /// @param proofData All components of the proof except the public values and
     /// app exe and vm commits. The expected format is:
     /// `abi.encodePacked(kzgAccumulator, proofSuffix)`
@@ -49,7 +56,7 @@ contract OpenVmHalo2Verifier is Halo2Verifier, IOpenVmHalo2Verifier {
     /// is being verified.
     /// @param appVmCommit The commitment to the VM configuration.
     function verify(bytes calldata publicValues, bytes calldata proofData, bytes32 appExeCommit, bytes32 appVmCommit) external view {
-        if (publicValues.length != PUBLIC_VALUES_LENGTH) revert InvalidPublicValuesLength(PUBLIC_VALUES_LENGTH, publicValues.length);
+        if (publicValues.length != PUBLIC_VALUES_BYTE_LENGTH) revert InvalidPublicValuesLength(PUBLIC_VALUES_BYTE_LENGTH, publicValues.length);
         if (proofData.length != PROOF_DATA_LENGTH) revert InvalidProofDataLength(PROOF_DATA_LENGTH, proofData.length);
 
         // We will format the public values and construct the full proof payload
@@ -98,7 +105,7 @@ contract OpenVmHalo2Verifier is Halo2Verifier, IOpenVmHalo2Verifier {
         // proof[..0x180]: KZG accumulator
         // proof[0x180..0x1a0]: app exe commit
         // proof[0x1a0..0x1c0]: app vm commit
-        // proof[0x1c0..(0x1c0 + PUBLIC_VALUES_LENGTH * 32)]: publicValues[0..PUBLIC_VALUES_LENGTH]
+        // proof[0x1c0..(0x1c0 + PUBLIC_VALUES_LENGTH * 32)]: publicValue limbs[0..PUBLIC_VALUES_LENGTH]
         // proof[(0x1c0 + PUBLIC_VALUES_LENGTH * 32)..]: Proof Suffix
 
         /// @solidity memory-safe-assembly
@@ -124,11 +131,23 @@ contract OpenVmHalo2Verifier is Halo2Verifier, IOpenVmHalo2Verifier {
             let proofSuffixOffset := add(0x1c0, shl(5, PUBLIC_VALUES_LENGTH))
             calldatacopy(add(proofPtr, proofSuffixOffset), add(proofData.offset, 0x180), 0x560)
 
-            // Copy each byte of the public values into the proof. It copies the
-            // most significant bytes of public values first.
-            let publicValuesMemOffset := add(add(proofPtr, 0x1c0), 0x1f)
+            // Copy each public-value limb into the low bytes of the corresponding
+            // Fr slot. user_public_values stores limbs in little-endian, but each
+            // 32-byte word is interpreted by the EVM as big-endian, so we reverse
+            // the limb bytes as we copy them to the end of the word.
             for { let i := 0 } iszero(eq(i, PUBLIC_VALUES_LENGTH)) { i := add(i, 1) } {
-                calldatacopy(add(publicValuesMemOffset, shl(5, i)), add(publicValues.offset, i), 0x01)
+                let wordPtr := add(proofPtr, add(0x1c0, shl(5, i)))
+                // Clear the full word first; only the low bytes are overwritten.
+                mstore(wordPtr, 0)
+                for { let j := 0 } iszero(eq(j, PUBLIC_VALUES_LIMB_SIZE)) { j := add(j, 1) } {
+                    // publicValues[i*LIMB_SIZE + j] is copied to the j-th byte
+                    // from the end of the word, i.e. wordPtr + (0x1f - j).
+                    calldatacopy(
+                        add(wordPtr, sub(0x1f, j)),
+                        add(publicValues.offset, add(mul(i, PUBLIC_VALUES_LIMB_SIZE), j)),
+                        0x01
+                    )
+                }
             }
         }
     }

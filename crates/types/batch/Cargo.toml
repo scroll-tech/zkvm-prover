@@ -20,7 +20,7 @@ openvm-ecc-guest = { workspace = true, features = ["halo2curves"] }
 openvm-pairing-guest = { workspace = true, features = ["halo2curves"] }
 openvm-pairing = { workspace = true, features = ["bls12_381", "halo2curves"] }
 openvm-sha2.workspace = true
-halo2curves-axiom = "0.7.0"
+halo2curves-axiom.workspace = true
 
 sbv-primitives = { workspace = true, optional = true }
 c-kzg = { workspace = true, optional = true }
