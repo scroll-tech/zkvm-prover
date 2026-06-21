@@ -5,9 +5,9 @@ num_queries = 100
 commit_proof_of_work_bits = 16
 query_proof_of_work_bits = 16
 
-[app_vm_config.rv32i]
+[app_vm_config.rv64i]
 
-[app_vm_config.rv32m]
+[app_vm_config.rv64m]
 
 [app_vm_config.io]
 
@@ -23,7 +23,7 @@ supported_moduli = [
 [app_vm_config.native]
 [app_vm_config.pairing]
 supported_curves = ["Bls12_381"]
-[app_vm_config.sha256]
+[app_vm_config.sha2]
 [app_vm_config.fp2]
 supported_moduli = [
     ["Bls12_381Fp2","4002409555221667393417789825735904156556882819939007885332058136124031650490837864442687629129015664037894272559787"]
