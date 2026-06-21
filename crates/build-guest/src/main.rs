@@ -425,7 +425,7 @@ fn generate_evm_verifier(
         let batch_app_config: AppConfig<SdkVmConfig> = if batch_config_path.exists() {
             toml::from_str(&fs::read_to_string(&batch_config_path)?)?
         } else {
-            AppConfig::riscv32(app_params.clone())
+            AppConfig::riscv64(app_params.clone())
         };
         let batch_sdk = Sdk::builder()
             .app_config(batch_app_config)
@@ -439,7 +439,7 @@ fn generate_evm_verifier(
         let bundle_app_config: AppConfig<SdkVmConfig> = if bundle_config_path.exists() {
             toml::from_str(&fs::read_to_string(&bundle_config_path)?)?
         } else {
-            AppConfig::riscv32(app_params.clone())
+            AppConfig::riscv64(app_params.clone())
         };
         Sdk::builder()
             .app_config(bundle_app_config)
@@ -448,7 +448,7 @@ fn generate_evm_verifier(
             .deferral_prover(deferral_prover)
             .build()?
     } else {
-        Sdk::riscv32(app_params, agg_params)
+        Sdk::riscv64(app_params, agg_params)
     };
 
     let verifier = if recompute_mode {

@@ -19,5 +19,5 @@ fn build_agg_pk() -> AggProvingKey {
         leaf: leaf_params_with_100_bits_security(),
         internal: internal_params_with_100_bits_security(),
     };
-    Sdk::riscv32(app_params, agg_params).agg_pk().clone()
+    Sdk::riscv64(app_params, agg_params).agg_pk().clone()
 }
