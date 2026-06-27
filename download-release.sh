@@ -40,7 +40,7 @@ function download_by_http() {
   echo -e "$INFO_PREFIX download via http"
   for f in {chunk,bundle,batch}/{app.{vmexe,elf},openvm.toml} \
     verifier/{openVmVk.json,verifier.bin} \
-    bundle/{digest_1.hex,digest_2.hex} \
+    bundle/{digest_1.hex,digest_2.hex,digest_1.montgomery.hex,digest_2.montgomery.hex} \
     axiom_program_ids.json; do
     output_path="releases/$GUEST_VERSION/$f"
     mkdir -p "$(dirname "$output_path")"
