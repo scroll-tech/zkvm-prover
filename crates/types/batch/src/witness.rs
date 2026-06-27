@@ -8,6 +8,7 @@ use types_base::{
 };
 
 use crate::{
+    blob_consistency::{ToIntrinsic, is_in_g1_subgroup},
     builder::{
         BatchInfoBuilder, BatchInfoBuilderV6, BatchInfoBuilderV7, BuilderArgsV6, BuilderArgsV7,
         validium::{ValidiumBatchInfoBuilder, ValidiumBuilderArgs},
@@ -74,14 +75,23 @@ pub fn build_intrinsic_point(
     use openvm_pairing::bls12_381::{Fp, G1Affine};
     let x = Fp::from_be_bytes(&x)?;
     let y = Fp::from_be_bytes(&y)?;
-    unsafe { G1Affine::from_xy(x, y) }
+    // SAFETY: We have already verified the point is in the G1 subgroup via `is_in_g1_subgroup` check.
+    let p = unsafe { G1Affine::from_xy(x, y)? };
+    is_in_g1_subgroup(&p).then_some(p)
 }
 
 pub fn build_point(x: Bytes48, y: Bytes48) -> Option<halo2curves_axiom::bls12_381::G1Affine> {
     use halo2curves_axiom::bls12_381::{Fq, G1Affine};
     let x = Fq::from_bytes_be(&x).into_option()?;
     let y = Fq::from_bytes_be(&y).into_option()?;
-    G1Affine::from_xy(x, y).into_option()
+    let p = G1Affine::from_xy(x, y).into_option()?;
+
+    let is_in_g1_subgroup = is_in_g1_subgroup(&p.to_intrinsic());
+
+    #[cfg(feature = "host")]
+    assert_eq!(is_in_g1_subgroup, bool::from(p.is_torsion_free()));
+
+    is_in_g1_subgroup.then_some(p)
 }
 
 /// Witness to the batch circuit.
