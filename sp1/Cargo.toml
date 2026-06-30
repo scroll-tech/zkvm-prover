@@ -1,0 +1,66 @@
+[workspace]
+members = [
+  "types",
+  "circuits/chunk-circuit",
+  "circuits/batch-circuit",
+  "circuits/bundle-circuit",
+  "build-guest",
+  "prover-test",
+]
+resolver = "2"
+
+[workspace.package]
+authors = ["Scroll developers"]
+edition = "2021"
+homepage = "https://github.com/scroll-tech/zkvm-prover"
+readme = "../README.md"
+repository = "https://github.com/scroll-tech/zkvm-prover"
+version = "0.8.0"
+
+[workspace.dependencies]
+sp1-zkvm = { version = "=6.3.0", default-features = false }
+sp1-sdk = { version = "=6.3.0", default-features = false }
+sp1-build = { version = "=6.3.0" }
+
+scroll-zkvm-types-base = { path = "../crates/types/base" }
+scroll-zkvm-types-chunk = { path = "../crates/types/chunk", default-features = false }
+scroll-zkvm-types-batch = { path = "../crates/types/batch", default-features = false }
+scroll-zkvm-types-bundle = { path = "../crates/types/bundle", default-features = false }
+scroll-zkvm-types-sp1 = { path = "types" }
+
+alloy-primitives = { version = "1.4", default-features = false, features = ["std"] }
+alloy-consensus = "1.0"
+sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", tag = "scroll-v91.2" }
+sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", tag = "scroll-v91.2" }
+alloy-serde = { version = "1.0.13", default-features = false }
+serde = { version = "1", default-features = false, features = ["derive"] }
+serde_json = { version = "1.0" }
+clap = "4.5"
+hex = "0.4"
+tokio = { version = "1", features = ["rt-multi-thread"] }
+tracing = "0.1"
+tracing-subscriber = "0.3"
+bitcode = { version = "0.6.5", default-features = false, features = ["serde", "derive"] }
+bincode = { version = "2.0", features = ["serde"] }
+eyre = "0.6"
+vm-zstd = { git = "https://github.com/scroll-tech/rust-zstd-decompressor.git", rev = "b027327", features = ["zstd"] }
+
+[patch.crates-io]
+revm = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
+tiny-keccak = { git = "https://github.com/sp1-patches/tiny-keccak", tag = "patch-2.0.2-sp1-6.0.0" }
+sha2 = { git = "https://github.com/sp1-patches/RustCrypto-hashes", tag = "patch-sha2-0.10.9-sp1-6.2.0" }
+# `alloy-evm` >= 0.22.4 requires `revm` 30.2.0 / `op-revm` 11.3.0, which are newer than the
+# Scroll `revm` patch below. Pin to 0.22.2 so the patched `scroll-v91` revm can satisfy the
+# dependency and we do not end up with two conflicting `revm-handler` versions.
+alloy-evm = { git = "https://github.com/alloy-rs/alloy-evm", tag = "v0.22.2" }
+revm-bytecode = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
+revm-context = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
+revm-context-interface = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
+revm-database = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
+revm-database-interface = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
+revm-handler = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
+revm-inspector = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
+revm-interpreter = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
+revm-precompile = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
+revm-primitives = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
+revm-state = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }

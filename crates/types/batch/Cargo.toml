@@ -14,20 +14,35 @@ itertools.workspace = true
 vm-zstd = { workspace = true }
 
 types-base = { path = "../base", package = "scroll-zkvm-types-base" }
-openvm = { workspace = true, features = ["std"] }
-openvm-algebra-guest = { workspace = true }
-openvm-ecc-guest = { workspace = true, features = ["halo2curves"] }
-openvm-pairing-guest = { workspace = true, features = ["halo2curves"] }
-openvm-pairing = { workspace = true, features = ["bls12_381", "halo2curves"] }
-openvm-sha2.workspace = true
-halo2curves-axiom = "0.7.0"
+
+openvm = { workspace = true, features = ["std"], optional = true }
+openvm-algebra-guest = { workspace = true, optional = true }
+openvm-ecc-guest = { workspace = true, features = ["halo2curves"], optional = true }
+openvm-pairing-guest = { workspace = true, features = ["halo2curves"], optional = true }
+openvm-pairing = { workspace = true, features = ["bls12_381", "halo2curves"], optional = true }
+openvm-sha2 = { workspace = true, optional = true }
+halo2curves-axiom = { workspace = true, optional = true }
 
 sbv-primitives = { workspace = true, optional = true }
 c-kzg = { workspace = true, optional = true }
 
+kzg-rs = { git = "https://github.com/succinctlabs/kzg-rs", tag = "v0.2.8-sp1-6.2.0", default-features = false, optional = true }
+bls12_381 = { git = "https://github.com/sp1-patches/bls12_381", tag = "patch-0.8.0-sp1-6.2.0", default-features = false, features = ["groups", "pairings", "alloc"], optional = true }
+sha2 = { version = "0.10", default-features = false, optional = true }
+
 [features]
 default = []
-host = ["dep:sbv-primitives", "dep:c-kzg"]
+openvm = [
+  "dep:openvm",
+  "dep:openvm-algebra-guest",
+  "dep:openvm-ecc-guest",
+  "dep:openvm-pairing-guest",
+  "dep:openvm-pairing",
+  "dep:openvm-sha2",
+  "dep:halo2curves-axiom",
+]
+sp1 = ["dep:kzg-rs", "dep:bls12_381", "dep:sha2"]
+host = ["dep:sbv-primitives", "dep:c-kzg", "dep:sha2"]
 
 [dev-dependencies]
 c-kzg = { workspace = true }

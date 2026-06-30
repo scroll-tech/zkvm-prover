@@ -7,7 +7,7 @@ version = "0.7.1"
 
 [dependencies]
 scroll-zkvm-types-circuit.workspace = true
-scroll-zkvm-types-batch.workspace = true
+scroll-zkvm-types-batch = { workspace = true, features = ["openvm"] }
 
 openvm = { workspace = true, features = ["std"] }
 openvm-algebra-guest.workspace = true

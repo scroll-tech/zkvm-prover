@@ -8,10 +8,11 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
-alloy-primitives = { workspace = true, features = ["native-keccak"] }
+alloy-primitives = { workspace = true }
 alloy-consensus = { workspace = true, features = ["crypto-backend"] }
 alloy-sol-types.workspace = true
 ecies.workspace = true
+hashbrown = { workspace = true, default-features = false, features = ["default-hasher"] }
 hex-literal.workspace = true
 itertools.workspace = true
 sbv-helpers.workspace = true
@@ -25,11 +26,11 @@ sbv-primitives = { workspace = true, features = [
 ] }
 serde.workspace = true
 thiserror.workspace = true
-openvm-ecc-guest = { workspace = true }
-openvm-k256 = { workspace = true }
-openvm-p256 = { workspace = true }
-openvm-sha2 = { workspace = true }
-openvm-pairing = { workspace = true, features = ["bn254"] }
+openvm-ecc-guest = { workspace = true, optional = true }
+openvm-k256 = { workspace = true, optional = true }
+openvm-p256 = { workspace = true, optional = true }
+openvm-sha2 = { workspace = true, optional = true }
+openvm-pairing = { workspace = true, features = ["bn254"], optional = true }
 types-base = { path = "../base", package = "scroll-zkvm-types-base" }
 
 [dev-dependencies]
@@ -43,6 +44,14 @@ openvm-pairing-guest = { workspace = true, features = ["bn254", "halo2curves"] }
 
 [features]
 default = []
+openvm = [
+  "dep:openvm-ecc-guest",
+  "dep:openvm-k256",
+  "dep:openvm-p256",
+  "dep:openvm-sha2",
+  "dep:openvm-pairing",
+  "alloy-primitives/native-keccak",
+]
 host = ["scroll-compress-info", "alloy-primitives/tiny-keccak"]
 scroll = [
   "sbv-core/scroll",

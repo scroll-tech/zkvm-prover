@@ -1,9 +1,18 @@
 #[cfg(feature = "host")]
 pub mod point_eval {
-    use crate::blob_consistency::kzg_to_versioned_hash;
-
     use c_kzg;
     use sbv_primitives::{B256 as H256, U256, types::eips::eip4844::BLS_MODULUS};
+    use sha2::{Digest, Sha256};
+
+    /// The version byte for EIP-4844 versioned KZG hashes.
+    const VERSIONED_HASH_VERSION_KZG: u8 = 1;
+
+    /// Compute the versioned hash based on KZG scheme in EIP-4844.
+    fn kzg_to_versioned_hash(kzg_commitment: &[u8]) -> [u8; 32] {
+        let mut hash: [u8; 32] = Sha256::digest(kzg_commitment).into();
+        hash[0] = VERSIONED_HASH_VERSION_KZG;
+        hash
+    }
 
     /// Given the blob-envelope, translate it to a fixed size EIP-4844 blob.
     ///

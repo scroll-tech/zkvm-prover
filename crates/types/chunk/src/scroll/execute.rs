@@ -1,7 +1,9 @@
 use super::{ChunkWitness, types::ChunkExt};
+use alloc::format;
+use alloc::string::String;
+use alloc::vec::Vec;
 use ecies::SecretKey;
 use sbv_core::verifier::{self, VerifyResult};
-use sbv_helpers::manually_drop_on_zkvm;
 use sbv_primitives::{
     B256, U256,
     chainspec::{Chain, build_chain_spec_force_hardfork},
@@ -84,7 +86,7 @@ pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
         }),
     };
 
-    #[cfg(target_os = "zkvm")]
+    #[cfg(all(target_os = "zkvm", feature = "openvm"))]
     println!("chunk_info = {}", chunk_info);
 
     Ok(chunk_info)

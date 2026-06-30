@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use types_base::{
     public_inputs::scroll::{batch::BatchInfo, chunk::ChunkInfo},
     version::Version,

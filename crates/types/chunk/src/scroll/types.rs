@@ -1,8 +1,8 @@
 use super::{types::validium::SecretKey, witness::ValidiumInputs};
+use alloc::vec::Vec;
 use alloy_primitives::keccak256;
 use alloy_sol_types::sol;
 use itertools::Itertools;
-use sbv_helpers::manually_drop_on_zkvm;
 use sbv_primitives::{
     B256, U256,
     types::{
@@ -11,7 +11,7 @@ use sbv_primitives::{
         reth::primitives::{Block, RecoveredBlock, TransactionSigned},
     },
 };
-use std::ops::Deref;
+use core::ops::Deref;
 
 pub mod validium;
 

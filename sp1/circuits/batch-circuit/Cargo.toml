@@ -1,0 +1,14 @@
+[package]
+name = "scroll-zkvm-sp1-batch-circuit"
+edition.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+sp1-zkvm = { workspace = true, features = ["lib", "verify"] }
+scroll-zkvm-types-sp1 = { workspace = true }
+scroll-zkvm-types-base = { workspace = true }
+scroll-zkvm-types-batch = { workspace = true, default-features = false, features = ["sp1"] }
+alloy-primitives = { workspace = true }
+bincode = { workspace = true }

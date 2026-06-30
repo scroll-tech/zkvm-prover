@@ -52,6 +52,23 @@ build-guest:
 build-guest-local:
 	cargo run --release -p scroll-zkvm-build-guest
 
+build-guest-sp1:
+	cd sp1 && cargo run --release -p scroll-zkvm-build-guest-sp1
+	cd sp1 && cargo build --release -p scroll-zkvm-sp1-prover-test
+	mkdir -p sp1/releases/dev/sp1/verifier
+	cp -r sp1/verifier/lib/sp1-contracts/contracts/src/v6.1.0/* sp1/releases/dev/sp1/verifier/
+	@echo "SP1 verifier contract copied to sp1/releases/dev/sp1/verifier/"
+
+test-e2e-sp1-chunk:
+	cd sp1 && CUDA_VISIBLE_DEVICES=$(CUDA_VISIBLE_DEVICES) ./run-gpu-prover.sh --circuit chunk
+
+test-e2e-sp1-batch:
+	cd sp1 && CUDA_VISIBLE_DEVICES=$(CUDA_VISIBLE_DEVICES) ./run-gpu-prover.sh --circuit batch
+
+test-e2e-sp1-bundle:
+	cd sp1 && CUDA_VISIBLE_DEVICES=$(CUDA_VISIBLE_DEVICES) ./run-gpu-prover-e2e.sh
+	cd sp1/verifier && forge test --match-test testVerifyBundleProof
+
 clean-build-guest: clean-guest build-guest
 
 profile-chunk:
