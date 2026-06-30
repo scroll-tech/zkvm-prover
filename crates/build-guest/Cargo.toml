@@ -25,6 +25,7 @@ toml.workspace = true
 cargo_metadata.workspace = true
 dotenvy.workspace = true
 clap = { version = "4.0", features = ["derive"] }
+regex = "1.11"
 
 [features]
 default = ["scroll"]

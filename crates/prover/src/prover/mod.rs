@@ -384,10 +384,12 @@ impl Prover {
         self.execute_and_check(&stdin)?;
 
         let sdk = self.get_sdk()?;
+
         let evm_proof = sdk
             .prove_evm(self.app_exe.clone(), stdin, def_inputs)
             .map_err(|e| Error::GenProof(format!("{}", e)))?;
 
         Ok(evm_proof)
     }
+
 }

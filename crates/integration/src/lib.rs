@@ -44,6 +44,10 @@ const FD_APP_EXE: &str = "app.vmexe";
 /// Environment variable used to set the test-run's output directory for assets.
 const ENV_OUTPUT_DIR: &str = "OUTPUT_DIR";
 
+/// When set to "1", run STARK and SNARK proving in separate subprocesses so that
+/// the SNARK step starts with a clean CUDA context.
+const ENV_SPLIT_STARK_SNARK: &str = "SCROLL_ZKVM_SPLIT_STARK_SNARK";
+
 /// Enviroment settings for test: fork
 pub fn testing_hardfork() -> ForkName {
     testing_version().fork
@@ -532,6 +536,80 @@ where
     prove_verify_single_evm_with_deferral::<T>(prover, witness, proofs, None)
 }
 
+/// Locate the `prover-split` binary used to run STARK/SNARK in separate processes.
+/// The binary is expected next to the current test executable
+/// (`target/<profile>/prover-split`). The Makefile / CI must build it beforehand
+/// (`cargo build --release --bin prover-split`).
+fn prover_split_binary_path() -> eyre::Result<PathBuf> {
+    let mut path = std::env::current_exe()?;
+    path.pop(); // deps/
+    path.pop(); // <profile>/
+    path.push("prover-split");
+    if !path.exists() {
+        eyre::bail!("prover-split binary not found at {path:?}; run `cargo build --release --bin prover-split` first");
+    }
+    Ok(path)
+}
+
+/// Generate the final EVM proof in a fresh `prover-split` subprocess.
+///
+/// The parent test process already ran chunk/batch STARK proving, which leaves
+/// the CUDA context with a large memory footprint. Spawning a new process for
+/// the bundle STARK + SNARK steps gives the SNARK step a clean CUDA context and
+/// avoids the 24 GB GPU OOM that occurs when everything runs in one process.
+fn prove_evm_split<T>(
+    task: &UniversalProvingTask,
+    def_inputs: &[DeferralInput],
+    def_states: &[DeferralState],
+    task_id: &str,
+) -> eyre::Result<ProofEnum>
+where
+    T: ProverTester,
+{
+    let binary = prover_split_binary_path()?;
+    let work_dir = DIR_TESTRUN
+        .get()
+        .ok_or(eyre::eyre!("missing testrun dir"))?
+        .join("split")
+        .join(task_id);
+    std::fs::create_dir_all(&work_dir)?;
+
+    // Use bincode (not JSON) because DeferralState contains HashMap keys that
+    // are not valid JSON strings.
+    let task_file = work_dir.join("task.bin");
+    let def_inputs_file = work_dir.join("def_inputs.bin");
+    let def_states_file = work_dir.join("def_states.bin");
+    let proof_file = work_dir.join("proof.json");
+
+    std::fs::write(&task_file, bincode_v1::serialize(task)?)?;
+    std::fs::write(&def_inputs_file, bincode_v1::serialize(def_inputs)?)?;
+    std::fs::write(&def_states_file, bincode_v1::serialize(def_states)?)?;
+
+    tracing::info!("spawning EVM proof subprocess");
+    let status = std::process::Command::new(&binary)
+        .arg("evm")
+        .arg("--asset-base-dir")
+        .arg(ASSET_BASE_DIR.as_path())
+        .arg("--circuit")
+        .arg(T::NAME)
+        .arg("--task")
+        .arg(&task_file)
+        .arg("--def-inputs")
+        .arg(&def_inputs_file)
+        .arg("--def-states")
+        .arg(&def_states_file)
+        .arg("--output")
+        .arg(&proof_file)
+        .status()?;
+    if !status.success() {
+        eyre::bail!("EVM proof subprocess failed");
+    }
+
+    let proof: ProofEnum = read_json(&proof_file)
+        .map_err(|e| eyre::eyre!("failed to read EVM proof: {e}"))?;
+    Ok(proof)
+}
+
 /// End-to-end EVM proof with deferred STARK verification (v2).
 #[instrument(name = "prove_verify_single_evm_with_deferral", skip_all)]
 pub fn prove_verify_single_evm_with_deferral<T>(
@@ -581,11 +659,15 @@ where
             stark_proofs.into_iter(),
             input_commits,
         )?;
-        // Construct stark proof for the circuit.
+        // Construct the final EVM proof. For circuits that use deferral (bundle),
+        // default to a fresh subprocess so the Halo2 SNARK step starts with a clean
+        // CUDA context. Set SCROLL_ZKVM_SPLIT_STARK_SNARK=0 to run in-process.
         let proof = if def_inputs.is_empty() {
             prover.prove_task(&task, true)?
-        } else {
+        } else if std::env::var(ENV_SPLIT_STARK_SNARK).as_deref() == Ok("0") {
             prover.prove_task_with_deferral(&task, true, &def_inputs, &def_states)?
+        } else {
+            prove_evm_split::<T>(&task, &def_inputs, &def_states, &task_id)?
         };
         write_json(&path_proof, &proof)?;
         tracing::debug!(name: "cached_evm_proof", ?task_id);

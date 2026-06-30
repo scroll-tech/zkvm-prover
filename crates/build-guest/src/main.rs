@@ -34,6 +34,7 @@
 use clap::{Parser, ValueEnum};
 use dotenvy::dotenv;
 use eyre::Result;
+use serde_json::json;
 use openvm_build::GuestOptions;
 use openvm_instructions::exe::VmExe;
 use openvm_circuit::arch::instructions::DEFERRAL_AS;
@@ -46,7 +47,7 @@ use openvm_sdk::{
 use openvm_sdk_config::SdkVmConfig;
 use openvm_stark_sdk::{
     config::{app_params_with_100_bits_security, internal_params_with_100_bits_security, leaf_params_with_100_bits_security, root_params_with_100_bits_security},
-    openvm_stark_backend::p3_field::PrimeField32,
+    openvm_stark_backend::{codec::Encode, p3_field::PrimeField32},
 };
 use openvm_continuations::CommitBytes;
 use openvm_deferral_circuit::DeferralFn;
@@ -59,11 +60,14 @@ use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2CpuEngine as
 use scroll_zkvm_types::zkvm::AGG_STARK_PROVING_KEY;
 use std::{
     env, fs,
+    io::Write,
     path::{Path, PathBuf},
+    process::{Command, Stdio},
     sync::Arc,
     time::Instant,
 };
 
+mod post_process;
 mod verifier;
 
 const DIGEST_SIZE: usize = 8;
@@ -473,13 +477,108 @@ fn generate_evm_verifier(
     }
 
     // Backwards-compatible names used by the Rust verifier.
-    fs::write(&path_verifier_sol, &verifier.openvm_verifier_code)?;
+    // OpenVM upstream emits an rv32-oriented wrapper. Post-process it so the
+    // on-chain verifier understands rv64's 2-byte little-endian public-value
+    // limbs. This avoids patching openvm-sdk itself.
+    let openvm_verifier_code =
+        post_process::post_process_openvm_verifier_for_rv64(&verifier.openvm_verifier_code)?;
+    fs::write(&path_verifier_sol, openvm_verifier_code)?;
     println!("{LOG_PREFIX} verifier_sol (OpenVmHalo2Verifier) written to {path_verifier_sol:?}");
 
-    fs::write(&path_verifier_bin, &verifier.artifact.bytecode)?;
+    // OpenVM SDK compiled the wrapper before we post-processed it, so the
+    // artifact bytecode still expects rv32 public values. Recompile the
+    // post-processed verifier.sol with the same solc settings to obtain an
+    // rv64-aware bytecode.
+    let verifier_bytecode = compile_post_processed_verifier_bytecode(verifier_output_dir)?;
+    fs::write(&path_verifier_bin, verifier_bytecode)?;
     println!("{LOG_PREFIX} verifier_bin written to {path_verifier_bin:?}");
 
+    // Persist the Halo2 proving key so the SNARK step can run in a separate
+    // process with a fresh CUDA context (no OpenVM STARK GPU state).
+    let halo2_pk = sdk.halo2_pk();
+    let halo2_pk_bytes = halo2_pk.encode_to_vec()?;
+    let path_halo2_pk = verifier_output_dir.join("halo2_pk.bin");
+    fs::write(&path_halo2_pk, halo2_pk_bytes)?;
+    println!("{LOG_PREFIX} halo2_pk written to {path_halo2_pk:?}");
+
     Ok(())
+}
+
+/// Compile the post-processed rv64 `verifier.sol` (and its imports) with the
+/// same solc settings OpenVM SDK uses internally. Returns the raw deployment
+/// bytecode for the `OpenVmHalo2Verifier` contract.
+fn compile_post_processed_verifier_bytecode(verifier_output_dir: &Path) -> Result<Vec<u8>> {
+    let interface = fs::read_to_string(
+        verifier_output_dir
+            .join("interfaces")
+            .join("IOpenVmHalo2Verifier.sol"),
+    )?;
+    let halo2_verifier = fs::read_to_string(verifier_output_dir.join("Halo2Verifier.sol"))?;
+    let openvm_verifier = fs::read_to_string(verifier_output_dir.join("verifier.sol"))?;
+
+    // Matches the solc invocation in openvm_sdk::solidity::generate_halo2_verifier_solidity.
+    let solc_input = json!({
+        "language": "Solidity",
+        "sources": {
+            "src/v2.0/interfaces/IOpenVmHalo2Verifier.sol": { "content": interface },
+            "src/v2.0/Halo2Verifier.sol": { "content": halo2_verifier },
+            "src/v2.0/OpenVmHalo2Verifier.sol": { "content": openvm_verifier }
+        },
+        "settings": {
+            "optimizer": {
+                "enabled": true,
+                "runs": 100000,
+                "details": { "constantOptimizer": false, "yul": false }
+            },
+            "evmVersion": "paris",
+            "viaIR": false,
+            "outputSelection": { "*": { "*": ["evm.bytecode.object"] } }
+        }
+    });
+
+    let mut child = Command::new("solc")
+        .arg("--standard-json")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("Failed to spawn solc");
+
+    child
+        .stdin
+        .take()
+        .unwrap()
+        .write_all(solc_input.to_string().as_bytes())?;
+    let output = child.wait_with_output()?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(eyre::eyre!("solc failed: {stderr}"));
+    }
+
+    let parsed: serde_json::Value = serde_json::from_slice(&output.stdout)?;
+    if let Some(errors) = parsed.get("errors") {
+        for err in errors.as_array().unwrap_or(&vec![]) {
+            if err.get("severity").and_then(|s| s.as_str()) == Some("error") {
+                return Err(eyre::eyre!("solc error: {err}"));
+            }
+        }
+    }
+
+    let bytecode_hex = parsed
+        .get("contracts")
+        .and_then(|c| c.get("src/v2.0/OpenVmHalo2Verifier.sol"))
+        .and_then(|c| c.get("OpenVmHalo2Verifier"))
+        .and_then(|c| c.get("evm"))
+        .and_then(|c| c.get("bytecode"))
+        .and_then(|c| c.get("object"))
+        .and_then(|s| s.as_str())
+        .ok_or_else(|| {
+            eyre::eyre!("failed to extract OpenVmHalo2Verifier bytecode from solc output")
+        })?;
+
+    hex::decode(bytecode_hex)
+        .map_err(|e| eyre::eyre!("solc returned invalid hex bytecode: {e}"))
 }
 
 fn generate_openvm_assets(

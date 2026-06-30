@@ -11,6 +11,10 @@ path = "src/bin/chunk-benchmark.rs"
 name = "chunk-scanner"
 path = "src/bin/chunk-scanner.rs"
 
+[[bin]]
+name = "prover-split"
+path = "src/bin/prover-split.rs"
+
 [dependencies]
 scroll-zkvm-types.workspace = true
 scroll-zkvm-prover.workspace = true
@@ -37,6 +41,7 @@ alloy-transport = { workspace = true, features = ["throttle"] }
 alloy-primitives.workspace = true
 base64.workspace = true
 bincode.workspace = true
+bincode_v1.workspace = true
 cargo_metadata.workspace = true
 clap.workspace = true
 csv.workspace = true

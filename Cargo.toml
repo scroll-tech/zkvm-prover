@@ -178,11 +178,11 @@ inherits = "profiling"
 
 # Patch openvm-static-verifier so its `cuda` feature does not forward
 # `snark-verifier-sdk/cuda`. This keeps OpenVM STARK proving on GPU while
-# forcing the final Halo2 SNARK step onto CPU (the GPU prover fails with
-# `cudaErrorInvalidConfiguration` on this machine).
+# forcing the final Halo2 SNARK step onto CPU (the upstream GPU prover fails
+# with `cudaErrorInvalidConfiguration` in halo2-gpu's quotient kernel on this
+# machine).
 #
-# Also patch openvm-sdk so the EVM verifier template receives the public-values
-# length in bytes (rv64 cells are 2 bytes), not in cell count.
+# openvm-sdk is intentionally NOT patched; rv64 public-value limb handling is
+# done by application-level post-processing of the generated verifier.sol.
 [patch."https://github.com/openvm-org/openvm.git"]
 openvm-static-verifier = { path = "patches/openvm-static-verifier" }
-openvm-sdk = { path = "patches/openvm-sdk" }
