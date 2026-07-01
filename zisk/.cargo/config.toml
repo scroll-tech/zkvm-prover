@@ -1,0 +1,14 @@
+# ZisK guests use the `riscv64ima-zisk-zkvm-elf` target via `cargo-zisk build`.
+# The sbv/revm graph pulls getrandom 0.3.x, whose "custom" backend needs the
+# `getrandom_backend="custom"` cfg (and an external `__getrandom_v03_custom` symbol,
+# provided by the chunk guest — see circuits/chunk-circuit/src/main.rs).
+#
+# ⚠️ IMPORTANT: `cargo-zisk build` sets the `RUSTFLAGS` env var itself
+# (cli/src/commands/build.rs: `command.env("RUSTFLAGS", flags.trim())`), which makes
+# cargo IGNORE the `[target.*].rustflags` below. So this cfg is actually injected via
+# the `RUSTFLAGS` env by `build-guest` (see build-guest/src/main.rs). The entry is kept
+# here for documentation and in case a future cargo-zisk stops clobbering RUSTFLAGS; to
+# run `cargo-zisk build` on the chunk guest by hand, export it yourself:
+#   RUSTFLAGS='--cfg getrandom_backend="custom"' cargo-zisk build --release
+[target.riscv64ima-zisk-zkvm-elf]
+rustflags = ["--cfg", "getrandom_backend=\"custom\""]

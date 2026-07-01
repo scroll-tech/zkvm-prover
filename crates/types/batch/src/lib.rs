@@ -13,10 +13,15 @@ pub use payload::{
     v7::{EnvelopeV7, PayloadV7},
 };
 
+#[cfg(any(feature = "openvm", feature = "sp1"))]
 pub mod blob_consistency;
+
+#[cfg(feature = "openvm")]
 mod builder;
 
 mod witness;
-pub use witness::{BatchWitness, Bytes48, PointEvalWitness, build_point_eval_witness};
+pub use witness::{BatchWitness, Bytes48, PointEvalWitness};
+#[cfg(any(feature = "openvm", feature = "sp1"))]
+pub use witness::build_point_eval_witness;
 
 pub mod utils;

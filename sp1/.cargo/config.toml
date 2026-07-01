@@ -1,0 +1,2 @@
+[target.riscv64im-succinct-zkvm-elf]
+rustflags = ["--cfg", "getrandom_backend=\"custom\""]

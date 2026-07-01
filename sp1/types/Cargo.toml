@@ -1,0 +1,16 @@
+[package]
+name = "scroll-zkvm-types-sp1"
+edition.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+sp1-zkvm = { workspace = true, features = ["lib"] }
+scroll-zkvm-types-base = { workspace = true }
+alloy-consensus = { workspace = true }
+alloy-primitives = { workspace = true }
+sbv-primitives = { workspace = true }
+
+[features]
+default = []

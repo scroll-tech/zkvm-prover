@@ -1,3 +1,5 @@
+#![cfg(feature = "openvm")]
+
 use std::ops::{AddAssign, MulAssign};
 use std::sync::LazyLock;
 
@@ -10,16 +12,14 @@ use openvm_pairing::bls12_381::{Bls12_381, G1Affine, G2Affine, Scalar};
 use openvm_pairing_guest::{algebra, pairing::PairingCheck};
 
 use super::types::ToIntrinsic;
-use crate::blob_consistency::constants::KZG_G2_SETUP_BYTES;
+use crate::blob_consistency::constants::{BLS_MODULUS, KZG_G2_SETUP_BYTES, VERSIONED_HASH_VERSION_KZG};
 
 use super::{BLOB_WIDTH, LOG_BLOB_WIDTH};
-
-static BLS_MODULUS: LazyLock<U256> = LazyLock::new(|| U256::from_le_bytes(Scalar::MODULUS));
 
 static ROOTS_OF_UNITY: LazyLock<Vec<Scalar>> = LazyLock::new(|| {
     // https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/polynomial-commitments.md#constants
     let primitive_root_of_unity = Scalar::from_u8(7);
-    let modulus = *BLS_MODULUS;
+    let modulus = BLS_MODULUS;
 
     let exponent = (modulus - U256::from(1)) / U256::from(4096);
     let root_of_unity = pow_bytes(&primitive_root_of_unity, &exponent.to_be_bytes::<32>());
@@ -50,9 +50,6 @@ static KZG_G2_SETUP: LazyLock<G2Affine> = LazyLock::new(|| {
         .expect("kzg G2 setup bytes")
         .to_intrinsic()
 });
-
-/// The version for KZG as per EIP-4844.
-const VERSIONED_HASH_VERSION_KZG: u8 = 1;
 
 /// Verify KZG `proof` that `P(z) == y` where `P` is the EIP-4844 blob polynomial in its evaluation
 /// form, and `commitment` is the KZG commitment to the polynomial `P`.
@@ -92,7 +89,7 @@ pub fn point_evaluation(
     let coefficients_as_scalars =
         coefficients.map(|coeff| Scalar::from_le_bytes_unchecked(coeff.as_le_slice()));
 
-    let challenge = challenge_digest % *BLS_MODULUS;
+    let challenge = challenge_digest % BLS_MODULUS;
     let challenge = Scalar::from_le_bytes_unchecked(challenge.as_le_slice());
 
     // y = P(z)

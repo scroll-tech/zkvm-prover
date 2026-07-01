@@ -9,17 +9,17 @@ version.workspace = true
 
 [dependencies]
 types-base = { path = "base", package = "scroll-zkvm-types-base" }
-types-chunk = { path = "chunk", package = "scroll-zkvm-types-chunk" }
-types-batch = { path = "batch", package = "scroll-zkvm-types-batch", features = ["host"] }
+types-chunk = { path = "chunk", package = "scroll-zkvm-types-chunk", default-features = false }
+types-batch = { path = "batch", package = "scroll-zkvm-types-batch", default-features = false }
 types-bundle = { path = "bundle", package = "scroll-zkvm-types-bundle" }
 
-openvm-sdk = { workspace = true }
-openvm-native-recursion.workspace = true
-openvm-stark-sdk = { workspace = true, default-features = false }
+openvm-sdk = { workspace = true, optional = true }
+openvm-native-recursion = { workspace = true, optional = true }
+openvm-stark-sdk = { workspace = true, default-features = false, optional = true }
 
 alloy-primitives = { workspace = true, features = ["tiny-keccak"] }
 once_cell = "1.20"
-snark-verifier-sdk.workspace = true
+snark-verifier-sdk = { workspace = true, optional = true }
 sbv-primitives.workspace = true
 serde.workspace = true
 serde_json.workspace = true
@@ -29,4 +29,15 @@ base64.workspace = true
 bincode_v1.workspace = true
 
 [features]
+default = ["openvm", "host"]
+openvm = [
+    "dep:openvm-sdk",
+    "dep:openvm-native-recursion",
+    "dep:openvm-stark-sdk",
+    "dep:snark-verifier-sdk",
+    "types-chunk/openvm",
+    "types-batch/openvm",
+]
+host = ["types-batch/host", "types-chunk/host"]
+sp1 = ["types-batch/sp1", "types-chunk/scroll"]
 scroll = ["types-chunk/scroll", "types-chunk/host"]

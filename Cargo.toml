@@ -5,7 +5,9 @@ members = [
   "crates/types/chunk",
   "crates/types/batch",
   "crates/types/bundle",
+  "crates/types/sp1",
   "crates/types",
+  "crates/backend",
   "crates/circuits/chunk-circuit",
   "crates/circuits/batch-circuit",
   "crates/circuits/bundle-circuit",
@@ -100,6 +102,7 @@ ecies = { git = "https://github.com/scroll-tech/ecies-rs" }
 eyre = "0.6"
 color-eyre = "0.6"
 futures = "0.3"
+hashbrown = { version = "0.15", default-features = false }
 halo2curves-axiom = { version = "0.7.2" }
 itertools = "0.14"
 hex-literal = { version = "0.4.1", default-features = false }
@@ -135,7 +138,7 @@ jiff = "0.2"
 scroll-zkvm-types = { path = "crates/types" }
 scroll-zkvm-types-base = { path = "crates/types/base" }
 scroll-zkvm-types-circuit = { path = "crates/types/circuit" }
-scroll-zkvm-types-chunk = { path = "crates/types/chunk" }
+scroll-zkvm-types-chunk = { path = "crates/types/chunk", default-features = false }
 scroll-zkvm-types-batch = { path = "crates/types/batch" }
 scroll-zkvm-types-bundle = { path = "crates/types/bundle" }
 scroll-zkvm-integration = { path = "crates/integration" }

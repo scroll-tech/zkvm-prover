@@ -9,7 +9,7 @@ version = "0.7.1"
 bincode = { workspace = true }
 ecies = { workspace = true }
 scroll-zkvm-types-circuit = { workspace = true }
-scroll-zkvm-types-chunk = { workspace = true }
+scroll-zkvm-types-chunk = { workspace = true, features = ["openvm"] }
 
 openvm = { workspace = true, features = ["std", "getrandom-unsupported"] }
 openvm-k256 = { workspace = true }

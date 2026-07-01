@@ -1,0 +1,30 @@
+[package]
+name = "scroll-zkvm-zisk-prover-test"
+edition.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[[bin]]
+name = "prove-zisk"
+path = "src/main.rs"
+
+# Host-side benchmark driver. Deliberately does NOT depend on `ziskos` (guest-only) or
+# the heavy `zisk-sdk`; it builds the witness, writes a ZisK-framed input file, and
+# shells out to `ziskemu` / `cargo-zisk` (robust across toolchain versions).
+[dependencies]
+scroll-zkvm-backend = { workspace = true }
+scroll-zkvm-types-base = { workspace = true }
+scroll-zkvm-types-chunk = { workspace = true, features = ["scroll", "scroll-compress-info"] }
+sbv-core = { workspace = true }
+sbv-primitives = { workspace = true, features = ["revm-types", "reth-evm-types"] }
+bincode = { workspace = true }
+clap = { workspace = true, features = ["derive"] }
+eyre = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+serde_json = { workspace = true }
+hex = { workspace = true }
+
+[features]
+default = []

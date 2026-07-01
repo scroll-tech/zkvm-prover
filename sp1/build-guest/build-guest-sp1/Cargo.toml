@@ -1,0 +1,26 @@
+[package]
+name = "scroll-zkvm-build-guest-sp1"
+edition.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[[bin]]
+name = "scroll-zkvm-build-guest-sp1"
+path = "src/main.rs"
+
+[dependencies]
+sp1-sdk = { workspace = true, features = ["blocking", "native-gnark"] }
+sp1-build = { workspace = true }
+scroll-zkvm-types-base = { workspace = true }
+clap = { workspace = true }
+serde_json = { workspace = true }
+serde = { workspace = true }
+hex = { workspace = true }
+tokio = { workspace = true, features = ["rt-multi-thread"] }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+[features]
+default = []
+cuda = ["sp1-sdk/cuda"]

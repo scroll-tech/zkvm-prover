@@ -1,0 +1,17 @@
+[package]
+name = "scroll-zkvm-zisk-bundle-circuit"
+edition.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[[bin]]
+name = "bundle"
+path = "src/main.rs"
+
+[dependencies]
+ziskos = { workspace = true }
+alloy-primitives = { workspace = true }
+
+[features]
+default = []

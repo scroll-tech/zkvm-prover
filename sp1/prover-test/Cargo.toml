@@ -1,0 +1,34 @@
+[package]
+name = "scroll-zkvm-sp1-prover-test"
+edition.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[[bin]]
+name = "prove-sp1"
+path = "src/main.rs"
+
+[dependencies]
+sp1-sdk = { workspace = true, features = ["blocking", "native-gnark", "cuda"] }
+sp1-build = { workspace = true }
+sp1-hypercube = "=6.3.0"
+sp1-primitives = "=6.3.0"
+scroll-zkvm-types-base = { workspace = true }
+scroll-zkvm-types-chunk = { workspace = true, features = ["scroll", "scroll-compress-info"] }
+scroll-zkvm-types-batch = { workspace = true, features = ["sp1", "host"] }
+scroll-zkvm-types-bundle = { workspace = true }
+vm-zstd = { workspace = true }
+sbv-core = { workspace = true }
+sbv-primitives = { workspace = true, features = ["revm-types", "reth-evm-types"] }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+eyre = { workspace = true }
+serde_json = { workspace = true }
+clap = { workspace = true }
+hex = { workspace = true }
+bincode = { workspace = true }
+
+[features]
+default = []

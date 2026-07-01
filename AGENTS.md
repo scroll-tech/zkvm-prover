@@ -11,6 +11,29 @@ Critical context for AI agents working on this repo. Read this before making cha
 - **Asset outputs**: `releases/dev/{chunk,batch,bundle,verifier}/`
 - **Test outputs**: `.output/` — cached proofs and intermediate artifacts
 
+## Multi-zkVM Backend Layout
+
+OpenVM is the production backend and lives in this main workspace. Additional zkVM
+backends are prototyped in **isolated sibling Cargo workspaces**, because each zkVM
+pulls an incompatible `revm`/`alloy` dependency graph:
+
+- `sp1/` — SP1 v6.3 backend (chunk→batch→bundle with recursion; see `sp1/AGENTS.md`).
+- `zisk/` — ZisK v0.18 backend, chunk tier only for now (see `zisk/AGENTS.md` and
+  `docs/zisk-backend-assessment.md`). batch/bundle are stubs pending ZisK recursion.
+
+Shared, backend-agnostic pieces (so adding the Nth backend is mechanical):
+
+- `crates/types/{base,chunk,batch,bundle}` — Scroll business logic. OpenVM-specific
+  crypto is behind the `openvm` feature; SP1/ZisK guests build these without it.
+- `crates/backend` (`scroll-zkvm-backend`) — a backend-neutral interface: the
+  `ZkvmBackend` trait plus neutral `ProofEnum`/`ProgramKey`/`ProofStat` (opaque bytes +
+  metadata, no zkVM SDK deps). Each backend implements this host-side contract.
+
+Speed comparisons: `docs/benchmark-sp1-vs-openvm.md`, `docs/benchmark-sp1-vs-zisk.md`.
+
+When editing the shared `crates/types/*`, keep them compiling for all backends: do not
+add an unconditional OpenVM dependency; gate it behind the `openvm` feature.
+
 ## OpenVM Version Sensitivity
 
 This project uses **OpenVM** as its ZKVM. Guest executables (`.vmexe`) and host code **must be built from the exact same OpenVM version**. Even a minor version bump can change:

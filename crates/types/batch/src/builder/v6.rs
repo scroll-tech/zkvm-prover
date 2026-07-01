@@ -1,3 +1,5 @@
+#![cfg(feature = "openvm")]
+
 use alloy_primitives::B256;
 use types_base::public_inputs::scroll::batch::BatchInfo;
 

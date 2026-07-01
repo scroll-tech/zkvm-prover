@@ -1,0 +1,18 @@
+[package]
+name = "scroll-zkvm-zisk-batch-circuit"
+edition.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[[bin]]
+name = "batch"
+path = "src/main.rs"
+
+[dependencies]
+ziskos = { workspace = true }
+alloy-primitives = { workspace = true }
+zisk-verifier = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.18.0", default-features = false }
+
+[features]
+default = []

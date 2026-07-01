@@ -1,0 +1,19 @@
+[package]
+name = "scroll-zkvm-types-sp1"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+base64.workspace = true
+serde = { workspace = true, features = ["std"] }
+thiserror.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+
+[features]
+default = []

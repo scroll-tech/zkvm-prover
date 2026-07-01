@@ -1,3 +1,5 @@
+#![cfg(feature = "openvm")]
+
 use halo2curves_axiom::bls12_381::{
     Fq as Bls12_381_Fq, G1Affine as Bls12_381_G1, G2Affine as Bls12_381_G2,
 };

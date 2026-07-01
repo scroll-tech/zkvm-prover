@@ -1,0 +1,6 @@
+/target
+**/target
+releases/dev/zisk/**/app
+releases/dev/zisk/prover-test/*.bin
+releases/dev/zisk/prover-test*/
+*.log

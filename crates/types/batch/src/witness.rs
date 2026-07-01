@@ -1,19 +1,11 @@
-use halo2curves_axiom::CurveAffine;
 use types_base::{
     aggregation::{AggregationInput, ProofCarryingWitness},
-    public_inputs::{
-        ForkName,
-        scroll::{batch::BatchInfo, chunk::ChunkInfo},
-    },
+    public_inputs::{ForkName, scroll::chunk::ChunkInfo},
 };
+#[cfg(feature = "openvm")]
+use types_base::public_inputs::scroll::batch::BatchInfo;
 
-use crate::{
-    builder::{
-        BatchInfoBuilder, BatchInfoBuilderV6, BatchInfoBuilderV7, BuilderArgsV6, BuilderArgsV7,
-        validium::{ValidiumBatchInfoBuilder, ValidiumBuilderArgs},
-    },
-    header::ReferenceHeader,
-};
+use crate::header::ReferenceHeader;
 
 /// Simply rewrap byte48 to avoid unnecessary dep
 pub type Bytes48 = [u8; 48];
@@ -52,6 +44,7 @@ pub struct PointEvalWitness {
     pub kzg_proof_y: Bytes48,
 }
 
+#[cfg(feature = "openvm")]
 pub fn build_point_eval_witness(kzg_commitment: Bytes48, kzg_proof: Bytes48) -> PointEvalWitness {
     use halo2curves_axiom::bls12_381::G1Affine;
     let kzg_commitment = G1Affine::from_compressed_be(&kzg_commitment).expect("invalid");
@@ -64,7 +57,25 @@ pub fn build_point_eval_witness(kzg_commitment: Bytes48, kzg_proof: Bytes48) -> 
     }
 }
 
+#[cfg(feature = "sp1")]
+pub fn build_point_eval_witness(kzg_commitment: Bytes48, kzg_proof: Bytes48) -> PointEvalWitness {
+    use bls12_381::G1Affine;
+    let commitment: G1Affine = Option::from(G1Affine::from_compressed(&kzg_commitment))
+        .expect("invalid kzg commitment");
+    let proof: G1Affine = Option::from(G1Affine::from_compressed(&kzg_proof))
+        .expect("invalid kzg proof");
+    let commitment_uncompressed = commitment.to_uncompressed();
+    let proof_uncompressed = proof.to_uncompressed();
+    PointEvalWitness {
+        kzg_commitment_x: commitment_uncompressed[..48].try_into().expect("x length"),
+        kzg_commitment_y: commitment_uncompressed[48..].try_into().expect("y length"),
+        kzg_proof_x: proof_uncompressed[..48].try_into().expect("x length"),
+        kzg_proof_y: proof_uncompressed[48..].try_into().expect("y length"),
+    }
+}
+
 #[allow(dead_code)]
+#[cfg(feature = "openvm")]
 pub fn build_intrinsic_point(
     x: Bytes48,
     y: Bytes48,
@@ -77,8 +88,9 @@ pub fn build_intrinsic_point(
     unsafe { G1Affine::from_xy(x, y) }
 }
 
+#[cfg(feature = "openvm")]
 pub fn build_point(x: Bytes48, y: Bytes48) -> Option<halo2curves_axiom::bls12_381::G1Affine> {
-    use halo2curves_axiom::bls12_381::{Fq, G1Affine};
+    use halo2curves_axiom::{CurveAffine, bls12_381::{Fq, G1Affine}};
     let x = Fq::from_bytes_be(&x).into_option()?;
     let y = Fq::from_bytes_be(&y).into_option()?;
     G1Affine::from_xy(x, y).into_option()
@@ -112,8 +124,15 @@ impl ProofCarryingWitness for BatchWitness {
     }
 }
 
+#[cfg(feature = "openvm")]
 impl From<&BatchWitness> for BatchInfo {
     fn from(witness: &BatchWitness) -> Self {
+        use crate::builder::{
+            BatchInfoBuilder, BatchInfoBuilderV6, BatchInfoBuilderV7,
+            validium::{ValidiumBatchInfoBuilder, ValidiumBuilderArgs},
+            BuilderArgsV6, BuilderArgsV7,
+        };
+
         let chunk_infos = witness.chunk_infos.to_vec();
 
         match &witness.reference_header {
