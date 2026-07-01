@@ -1,0 +1,71 @@
+# ZisK zkVM backend — isolated Cargo workspace.
+#
+# Mirrors the `sp1/` workspace: a self-contained backend prototype kept out of the
+# main (OpenVM) workspace because each zkVM pulls an incompatible revm/alloy graph.
+# Guests reuse the backend-agnostic `scroll-zkvm-types-*` crates from the main
+# workspace; the host reuses the same witness-building helpers as `sp1/prover-test`.
+#
+# Build discipline (do NOT `cargo build` the whole workspace):
+#   - guests: `cargo run -p scroll-zkvm-build-guest-zisk` (drives `cargo-zisk build`)
+#   - host:   `cargo build -p scroll-zkvm-zisk-prover-test`
+[workspace]
+members = [
+  "circuits/chunk-circuit",
+  "circuits/batch-circuit",
+  "circuits/bundle-circuit",
+  "build-guest",
+  "prover-test",
+  "recursion-test",
+]
+resolver = "2"
+
+[workspace.package]
+authors = ["Scroll developers"]
+edition = "2021"
+homepage = "https://github.com/scroll-tech/zkvm-prover"
+readme = "../README.md"
+repository = "https://github.com/scroll-tech/zkvm-prover"
+version = "0.8.0"
+
+[workspace.dependencies]
+# ZisK guest entrypoint + host SDK, pinned to the installed toolchain (cargo-zisk 0.18.0).
+ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.18.0" }
+
+scroll-zkvm-backend = { path = "../crates/backend" }
+scroll-zkvm-types-base = { path = "../crates/types/base" }
+scroll-zkvm-types-chunk = { path = "../crates/types/chunk", default-features = false }
+scroll-zkvm-types-batch = { path = "../crates/types/batch", default-features = false }
+scroll-zkvm-types-bundle = { path = "../crates/types/bundle", default-features = false }
+
+alloy-primitives = { version = "1.4", default-features = false, features = ["std"] }
+alloy-consensus = "1.0"
+sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", tag = "scroll-v91.2" }
+sbv-primitives = { git = "https://github.com/scroll-tech/stateless-block-verifier", tag = "scroll-v91.2" }
+alloy-serde = { version = "1.0.13", default-features = false }
+serde = { version = "1", default-features = false, features = ["derive"] }
+serde_json = { version = "1.0" }
+clap = "4.5"
+hex = "0.4"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+bincode = { version = "2.0", features = ["serde"] }
+eyre = "0.6"
+vm-zstd = { git = "https://github.com/scroll-tech/rust-zstd-decompressor.git", rev = "b027327", features = ["zstd"] }
+
+# Same Scroll revm graph the main + sp1 workspaces pin, so `sbv-*` resolves a single
+# consistent revm. ZisK guests use software keccak (no native-keccak feature) to keep
+# the build tractable; this trades ZisK's keccak syscall acceleration for portability.
+[patch.crates-io]
+revm = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
+alloy-evm = { git = "https://github.com/alloy-rs/alloy-evm", tag = "v0.22.2" }
+revm-bytecode = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
+revm-context = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
+revm-context-interface = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
+revm-database = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
+revm-database-interface = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
+revm-handler = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
+revm-inspector = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
+revm-interpreter = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
+revm-precompile = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
+revm-primitives = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
+revm-state = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }

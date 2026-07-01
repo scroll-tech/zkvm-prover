@@ -1,0 +1,20 @@
+[package]
+name = "scroll-zkvm-zisk-recursion-test"
+edition.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[[bin]]
+name = "recursion-test"
+path = "src/main.rs"
+
+# Host-side driver for the ZisK in-guest recursion PoC.
+# Builds a child proof with cargo-zisk, then feeds it to the batch guest which
+# verifies it via zisk-verifier inside the zkVM.
+[dependencies]
+zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.18.0" }
+clap = { workspace = true, features = ["derive"] }
+eyre = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }

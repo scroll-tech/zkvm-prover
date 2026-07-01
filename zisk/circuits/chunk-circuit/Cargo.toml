@@ -1,0 +1,25 @@
+[package]
+name = "scroll-zkvm-zisk-chunk-circuit"
+edition.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[[bin]]
+name = "chunk"
+path = "src/main.rs"
+
+[dependencies]
+ziskos = { workspace = true }
+alloy-primitives = { workspace = true }
+scroll-zkvm-types-base = { workspace = true }
+scroll-zkvm-types-chunk = { workspace = true, features = ["scroll"] }
+bincode = { workspace = true }
+# The sbv/revm graph pulls getrandom 0.3.x, whose "custom" backend expects an external
+# `__getrandom_v03_custom` symbol. ziskos only registers a getrandom 0.2 backend, so the
+# chunk guest provides the 0.3 symbol itself (see src/main.rs). default-features=false
+# keeps it from trying to auto-select an (unsupported) OS backend.
+getrandom03 = { package = "getrandom", version = "0.3", default-features = false }
+
+[features]
+default = []

@@ -8175,6 +8175,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "scroll-zkvm-backend"
+version = "0.8.0"
+dependencies = [
+ "base64",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.17",
+]
+
+[[package]]
 name = "scroll-zkvm-batch-circuit"
 version = "0.7.1"
 dependencies = [

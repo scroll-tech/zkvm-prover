@@ -1,0 +1,19 @@
+[package]
+name = "scroll-zkvm-backend"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+serde = { workspace = true, features = ["std", "derive"] }
+base64.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+
+[features]
+default = []

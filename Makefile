@@ -69,6 +69,37 @@ test-e2e-sp1-bundle:
 	cd sp1 && CUDA_VISIBLE_DEVICES=$(CUDA_VISIBLE_DEVICES) ./run-gpu-prover-e2e.sh
 	cd sp1/verifier && forge test --match-test testVerifyBundleProof
 
+# ---- ZisK backend (see zisk/AGENTS.md and docs/zisk-backend-assessment.md) ----
+# Requires the ZisK toolchain on PATH: export PATH="$$HOME/.zisk/bin:$$PATH"
+build-guest-zisk:
+	cd zisk && PATH="$$HOME/.zisk/bin:$$PATH" cargo run --release -p scroll-zkvm-build-guest-zisk
+	cd zisk && cargo build --release -p scroll-zkvm-zisk-prover-test -p scroll-zkvm-zisk-recursion-test
+
+bench-zisk-chunk:
+	cd zisk && PATH="$$HOME/.zisk/bin:$$PATH" cargo run --release -p scroll-zkvm-zisk-prover-test -- --circuit chunk
+
+# Attempt an actual proof (needs the STARK proving key: ziskup --provingkey).
+# Defaults to GPU on this machine; use --emulator for a CPU proof with the prebuilt emulator.
+prove-zisk-chunk:
+	cd zisk && PATH="$$HOME/.zisk/bin:$$PATH" cargo run --release -p scroll-zkvm-zisk-prover-test -- --circuit chunk --prove --gpu
+
+prove-zisk-chunk-cpu:
+	cd zisk && PATH="$$HOME/.zisk/bin:$$PATH" cargo run --release -p scroll-zkvm-zisk-prover-test -- --circuit chunk --prove --emulator
+
+# In-guest recursion PoC: prove the bundle stub, then verify that child proof inside
+# the batch recursion guest via zisk-verifier. We use the prebuilt emulator (`-l`) because
+# the ASM microservice path times out on this machine for tiny proofs.
+recursion-poc-zisk: build-guest-zisk
+	python3 -c "import struct; p=b'\\x00\\x01\\x02\\x03'; buf=struct.pack('<Q',len(p))+p; buf+=b'\\x00'*(-len(buf)%8); open('zisk/releases/dev/zisk/prover-test/bundle_input_framed.bin','wb').write(buf)"
+	cd zisk && PATH="$$HOME/.zisk/bin:$$PATH" cargo run --release -p scroll-zkvm-zisk-recursion-test -- prove-child \
+		--elf releases/dev/zisk/bundle/app \
+		--input releases/dev/zisk/prover-test/bundle_input_framed.bin \
+		--output releases/dev/zisk/prover-test/bundle_child_proof.bin \
+		--minimal --emulator
+	cd zisk && PATH="$$HOME/.zisk/bin:$$PATH" cargo run --release -p scroll-zkvm-zisk-recursion-test -- verify-in-guest \
+		--proof releases/dev/zisk/prover-test/bundle_child_proof.bin \
+		--batch-elf releases/dev/zisk/batch/app
+
 clean-build-guest: clean-guest build-guest
 
 profile-chunk:
