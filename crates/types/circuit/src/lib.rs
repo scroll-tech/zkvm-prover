@@ -134,10 +134,12 @@ fn verify_proof(commitment: &ProgramCommitment, public_inputs: &[u32], input_com
     // Sanity check for the number of public-input values.
     assert_eq!(public_inputs.len(), NUM_PUBLIC_VALUES);
 
+    // OpenVM stores each user public value byte as a 32-bit field element; the
+    // verify-stark guest helper collapses them back to dense bytes.
     let expected = ProofOutput {
         app_exe_commit: u32_array_to_commit(&commitment.exe),
         app_vm_commit: u32_array_to_commit(&commitment.vm),
-        user_public_values: public_inputs.iter().flat_map(|&w| w.to_le_bytes()).collect(),
+        user_public_values: public_inputs.iter().map(|&w| w as u8).collect(),
     };
 
     verify_stark::<0>(input_commit, &expected);

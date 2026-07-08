@@ -149,7 +149,10 @@ mod tests {
         /// test method to be compatible with euclid wrapped proofs
         pub fn verify_wrapped_proof(&self, proof: &WrappedProof) -> eyre::Result<()> {
             match &proof.proof {
-                ProofEnum::Evm(p) => self.verify_evm_proof(&p.clone().into(), &proof.vk),
+                ProofEnum::Evm(p) => {
+                    let _gas = self.verify_evm_proof(&p.clone().into(), &proof.vk)?;
+                    Ok(())
+                }
                 ProofEnum::Stark(p) => self.verify_stark_proof(p, &proof.vk),
             }
         }

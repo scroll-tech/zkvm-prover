@@ -4,7 +4,7 @@ use openvm_circuit::arch::deferral::DeferralState;
 use openvm_sdk::{DeferralInput, Sdk, StdIn};
 use openvm_stark_sdk::openvm_stark_backend::codec::Decode;
 use openvm_verify_stark_circuit::extension::{get_deferral_state, get_raw_deferral_results};
-use openvm_verify_stark_host::{vk::VmStarkVerifyingKey, VmStarkProof};
+use openvm_verify_stark_host::{vk::{VerificationBaseline, VmStarkVerifyingKey}, VmStarkProof};
 use scroll_zkvm_prover::{
     Prover,
     setup::{read_app_config, read_app_exe},
@@ -253,6 +253,8 @@ pub trait TaskProver {
     }
     fn get_vk(&mut self) -> eyre::Result<Vec<u8>>;
     fn get_agg_vk(&self) -> eyre::Result<openvm_stark_sdk::openvm_stark_backend::keygen::types::MultiStarkVerifyingKey<openvm_sdk::SC>>;
+    /// Returns the cached commit of the verify-stark deferral circuit (def_idx 0).
+    fn deferral_cached_commit(&self) -> eyre::Result<openvm_continuations::CommitBytes>;
 }
 
 impl TaskProver for Prover {
@@ -296,6 +298,19 @@ impl TaskProver for Prover {
 
     fn get_agg_vk(&self) -> eyre::Result<openvm_stark_sdk::openvm_stark_backend::keygen::types::MultiStarkVerifyingKey<openvm_sdk::SC>> {
         Ok((*self.sdk()?.agg_vk()).clone())
+    }
+
+    fn deferral_cached_commit(&self) -> eyre::Result<openvm_continuations::CommitBytes> {
+        let mut commits = self
+            .sdk()?
+            .deferral_circuit_cached_commits(0)
+            .map_err(|e| eyre::eyre!("failed to get deferral cached commits: {e}"))?;
+        eyre::ensure!(
+            commits.len() == 1,
+            "expected one deferral circuit, got {}",
+            commits.len()
+        );
+        Ok(commits.pop().unwrap())
     }
 }
 
@@ -384,8 +399,8 @@ pub fn tester_execute<T: ProverTester>(
     Ok(ret)
 }
 
-/// Decode a [`StarkProof`] into a [`VmStarkProof`].
-fn decode_stark_proof(proof: &StarkProof) -> eyre::Result<VmStarkProof> {
+/// Decode a [`StarkProof`] into a [`VmStarkProof`] and its stored [`VerificationBaseline`].
+fn decode_stark_proof(proof: &StarkProof) -> eyre::Result<(VmStarkProof, VerificationBaseline)> {
     use openvm_circuit::system::memory::merkle::public_values::UserPublicValuesProof;
 
     let inner = openvm_stark_sdk::openvm_stark_backend::proof::Proof::decode_from_bytes(&proof.proof)
@@ -400,34 +415,50 @@ fn decode_stark_proof(proof: &StarkProof) -> eyre::Result<VmStarkProof> {
             &mut Cursor::new(&proof.deferral_merkle_proofs),
         ).map_err(|e| eyre::eyre!("decode deferral_merkle_proofs failed: {e}"))?)
     };
-    Ok(VmStarkProof {
+    let baseline = if proof.baseline.is_empty() {
+        // Fallback for proofs without a stored baseline (should not happen in v2).
+        eyre::bail!("stark proof missing verification baseline");
+    } else {
+        serde_json::from_slice(&proof.baseline)
+            .map_err(|e| eyre::eyre!("decode baseline failed: {e}"))?
+    };
+    Ok((VmStarkProof {
         inner,
         user_pvs_proof,
         deferral_merkle_proofs,
-    })
+    }, baseline))
 }
 
 /// Compute deferral inputs and states from child proofs.
 pub fn compute_deferral_data(
     child_prover: &Prover,
+    cached_commit: openvm_continuations::CommitBytes,
     proofs: &[&StarkProof],
 ) -> eyre::Result<(Vec<[u8; 32]>, Vec<DeferralInput>, Vec<DeferralState>)> {
     let sdk = child_prover
         .sdk()
         .map_err(|e| eyre::eyre!("failed to get child sdk: {e}"))?;
     let mvk = (*sdk.agg_vk()).clone();
-    let stark_prover = sdk
-        .prover(child_prover.app_exe.clone())
-        .map_err(|e| eyre::eyre!("failed to create stark prover: {e}"))?;
-    let baseline = stark_prover.generate_baseline();
-    let vk = VmStarkVerifyingKey { mvk, baseline };
 
-    let vm_proofs: Vec<VmStarkProof> = proofs
+    let (vm_proofs, baselines): (Vec<VmStarkProof>, Vec<VerificationBaseline>) = proofs
         .iter()
         .map(|p| decode_stark_proof(p))
-        .collect::<eyre::Result<Vec<_>>>()?;
+        .collect::<eyre::Result<Vec<_>>>()?
+        .into_iter()
+        .unzip();
 
-    let raw_results = get_raw_deferral_results(&vk, &vm_proofs)
+    // All child proofs must share the same baseline (same app/config).
+    let baseline = baselines
+        .first()
+        .cloned()
+        .ok_or_else(|| eyre::eyre!("no child proofs to compute deferral data"))?;
+
+    let vk = VmStarkVerifyingKey { mvk, baseline };
+
+    let cached_commit: openvm_stark_sdk::config::baby_bear_poseidon2::Digest =
+        cached_commit.into();
+
+    let raw_results = get_raw_deferral_results(&vk, &vm_proofs, cached_commit)
         .map_err(|e| eyre::eyre!("get_raw_deferral_results failed: {e}"))?;
 
     let input_commits: Vec<[u8; 32]> = raw_results
@@ -437,7 +468,7 @@ pub fn compute_deferral_data(
 
     let deferral_inputs = vec![DeferralInput::from_inputs(&vm_proofs)];
 
-    let deferral_state = get_deferral_state(&vk, &vm_proofs, 0)
+    let deferral_state = get_deferral_state(&vk, &vm_proofs, cached_commit, 0)
         .map_err(|e| eyre::eyre!("get_deferral_state failed: {e}"))?;
 
     Ok((input_commits, deferral_inputs, vec![deferral_state]))
@@ -486,7 +517,7 @@ pub fn prove_verify_with_deferral<T: ProverTester>(
             .collect();
 
         let (input_commits, def_inputs, def_states) = if let Some(child) = child_prover {
-            compute_deferral_data(child, &stark_proofs)?
+            compute_deferral_data(child, prover.deferral_cached_commit()?, &stark_proofs)?
         } else {
             (vec![], vec![], vec![])
         };
@@ -571,7 +602,7 @@ where
             .collect();
 
         let (input_commits, def_inputs, def_states) = if let Some(child) = child_prover {
-            compute_deferral_data(child, &stark_proofs)?
+            compute_deferral_data(child, prover.deferral_cached_commit()?, &stark_proofs)?
         } else {
             (vec![], vec![], vec![])
         };

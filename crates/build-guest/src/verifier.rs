@@ -8,7 +8,7 @@ use eyre::Result;
 /// `openvm` crate version. Keep it in sync with the `openvm-solidity-sdk`
 /// revision used by the pinned `openvm` crates.
 pub fn download_evm_verifier() -> Result<openvm_sdk::types::EvmHalo2Verifier> {
-    let openvm_version = "v2.1.0";
+    let openvm_version = "v2.0.0-rc.3";
     let verifier_url = format!(
         "https://github.com/openvm-org/openvm-solidity-sdk/raw/refs/heads/main/src/{openvm_version}/OpenVmHalo2Verifier.sol"
     );
@@ -75,7 +75,7 @@ mod tests {
         // non-empty Solidity code.  A full "generate vs download" comparison
         // requires a full SDK setup and is exercised in CI instead.
         //
-        // Note: As of OpenVM v2.0.0-beta.2, the solidity-sdk repo only has
+        // Note: As of OpenVM v2.0.0-rc.3, the solidity-sdk repo only has
         // v1.x tags.  Use RECOMPUTE_MODE=yes to generate the verifier locally.
 
         let downloaded = download_evm_verifier().expect("Failed to download EVM verifier");

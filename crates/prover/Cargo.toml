@@ -16,8 +16,11 @@ openvm-sdk = { workspace = true }
 openvm-sdk-config = { workspace = true }
 openvm-static-verifier = { workspace = true }
 openvm-deferral-circuit = { workspace = true }
+openvm-continuations = { workspace = true }
 openvm-verify-stark-circuit = { workspace = true }
 openvm-verify-stark-host = { workspace = true }
+openvm-recursion-circuit = { workspace = true }
+openvm-stark-backend = { workspace = true }
 openvm-stark-sdk = { workspace = true, default-features = false }
 openvm-cuda-backend = { workspace = true, optional = true }
 

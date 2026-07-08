@@ -6,6 +6,10 @@ import { IOpenVmHalo2Verifier } from "./interfaces/IOpenVmHalo2Verifier.sol";
 
 type MemoryPointer is uint256;
 
+// BN254 scalar field modulus (Fr), as specified in EIP-197:
+// https://eips.ethereum.org/EIPS/eip-197
+uint256 constant BN254_SCALAR_MODULUS = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001;
+
 /// @notice This contract provides a thin wrapper around the Halo2 verifier
 /// outputted by `snark-verifier`, exposing a more user-friendly interface.
 contract OpenVmHalo2Verifier is Halo2Verifier, IOpenVmHalo2Verifier {
@@ -14,6 +18,12 @@ contract OpenVmHalo2Verifier is Halo2Verifier, IOpenVmHalo2Verifier {
 
     /// @dev Invalid proof data length
     error InvalidProofDataLength(uint256 expected, uint256 actual);
+
+    /// @dev Invalid app executable commitment
+    error InvalidAppExeCommit(bytes32 actual);
+
+    /// @dev Invalid app VM commitment
+    error InvalidAppVmCommit(bytes32 actual);
 
     /// @dev Proof verification failed
     error ProofVerificationFailed();
@@ -29,7 +39,7 @@ contract OpenVmHalo2Verifier is Halo2Verifier, IOpenVmHalo2Verifier {
     uint256 private constant FULL_PROOF_LENGTH = (12 + 2 + PUBLIC_VALUES_LENGTH + 43) * 32;
 
     /// @dev The version of OpenVM that generated this verifier.
-    string public constant OPENVM_VERSION = "2.0";
+    string private constant OPENVM_VERSION = "2.0";
 
     /// @notice A wrapper that constructs the proof into the right format for
     /// use with the `snark-verifier` verification.
@@ -51,6 +61,24 @@ contract OpenVmHalo2Verifier is Halo2Verifier, IOpenVmHalo2Verifier {
     function verify(bytes calldata publicValues, bytes calldata proofData, bytes32 appExeCommit, bytes32 appVmCommit) external view {
         if (publicValues.length != PUBLIC_VALUES_LENGTH) revert InvalidPublicValuesLength(PUBLIC_VALUES_LENGTH, publicValues.length);
         if (proofData.length != PROOF_DATA_LENGTH) revert InvalidProofDataLength(PROOF_DATA_LENGTH, proofData.length);
+        if (uint256(appExeCommit) >= BN254_SCALAR_MODULUS) revert InvalidAppExeCommit(appExeCommit);
+        if (uint256(appVmCommit) >= BN254_SCALAR_MODULUS) revert InvalidAppVmCommit(appVmCommit);
+
+        // Other than the fallback() in `Halo2Verifier`, there is only one
+        // function selector on the external ABI: `verify(..)`, which has
+        // selector 0x24270d54. If `proofData` ever began with 0x24270d54, this
+        // function would be called again instead of hitting the fallback. 
+        //
+        // If a valid proof ever began with 0x24270d54, it would fail to verify.
+        // However, `snark-verifier`'s proof structure guarantees that the first
+        // 12 words of the proof are the KZG accumulator limbs. Each limb holds
+        // 88 bits, so the first 4 bytes of the proof will always be
+        // 0x00000000.
+        //
+        // As an extra layer of protection, we assert that the first 4 bytes of
+        // `proofData` are 0x00000000 before self-calling into the fallback
+        // verifier.
+        assert(bytes4(proofData[0:4]) == bytes4(0x00000000));
 
         // We will format the public values and construct the full proof payload
         // below.

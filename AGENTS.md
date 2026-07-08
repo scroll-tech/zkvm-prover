@@ -13,7 +13,7 @@ Critical context for AI agents working on this repo. Read this before making cha
 
 ## OpenVM Version Sensitivity
 
-This project uses **OpenVM v2.0.0-beta.2** as its ZKVM. Guest executables (`.vmexe`) and host code **must be built from the exact same OpenVM version**. Even a minor version bump can change:
+This project uses **OpenVM v2.0.0-rc.3** as its ZKVM. Guest executables (`.vmexe`) and host code **must be built from the exact same OpenVM version**. Even a minor version bump can change:
 
 - The guest/host data layout (hint streams, public inputs)
 - The Halo2 SRS degree requirement
@@ -23,13 +23,13 @@ This project uses **OpenVM v2.0.0-beta.2** as its ZKVM. Guest executables (`.vme
 
 ### How to update OpenVM dependencies correctly
 
-OpenVM is declared as a **git dependency** (`branch = "develop-v2.1.0-rvr"`) in `Cargo.toml`, but the exact commit is pinned in `Cargo.lock`. Running a bare `cargo update` will **not** move the git branch forward; instead it will only bump unrelated crates.io packages (e.g. `alloy`, `revm`) which often break compatibility with the `scroll-tech/reth` and `sbv` forks.
+OpenVM is declared as a **git dependency** (`branch = "develop-v2.0.0-rc.3"`) in `Cargo.toml`, but the exact commit is pinned in `Cargo.lock`. Running a bare `cargo update` will **not** move the git branch forward; instead it will only bump unrelated crates.io packages (e.g. `alloy`, `revm`) which often break compatibility with the `scroll-tech/reth` and `sbv` forks.
 
 **Do NOT run a global `cargo update` unless you are prepared to upgrade the entire `alloy`/`revm`/`reth`/`sbv` dependency chain together.**
 
 To check whether the branch actually has new commits:
 ```bash
-git ls-remote https://github.com/openvm-org/openvm.git develop-v2.1.0-rvr
+git ls-remote https://github.com/openvm-org/openvm.git develop-v2.0.0-rc.3
 ```
 If the returned SHA differs from the one recorded in `Cargo.lock`, update only the OpenVM packages:
 ```bash
@@ -41,12 +41,12 @@ Then rebuild guests and run tests as described below.
 
 1. **Update the hardcoded version string** in `crates/build-guest/src/verifier.rs`:
    ```rust
-   let openvm_version = "v2.1.0"; // MUST match openvm-solidity-sdk tag
+   let openvm_version = "v2.0.0-rc.3"; // MUST match openvm-solidity-sdk tag
    ```
 
 2. **Force-rebuild ALL guest assets** (auto mode skips existing files):
    ```bash
-   RECOMPUTE_MODE=yes cargo run --release -p scroll-zkvm-build-guest -- --mode force
+   OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20 RECOMPUTE_MODE=yes cargo run --release -p scroll-zkvm-build-guest -- --mode force
    ```
    This regenerates: `app.elf`, `app.vmexe`, commitment `.rs` files, `openVmVk.json`,
    and the EVM verifier (`verifier.sol` + `verifier.bin`).
@@ -54,6 +54,10 @@ Then rebuild guests and run tests as described below.
    > `RECOMPUTE_MODE=yes` is **required** to regenerate the EVM verifier bytecode.
    > Without it the build only downloads the Solidity source, producing an empty
    > bytecode file that will cause `verify_evm_proof` to fail.
+
+   > Building `batch` or `bundle` requires the SDK of the previous circuit
+   > (`batch` needs `chunk`, `bundle` needs `batch`). Always build in a single
+   > `force` run so dependencies are generated in the correct order.
 
 3. **Verify commitments were updated** — check that `*_exe_commit.rs` and `*_vm_commit.rs` files changed, and that `openVmVk.json` timestamps are fresh.
 
@@ -64,7 +68,7 @@ Then rebuild guests and run tests as described below.
    These are cached proving keys. They are **not** automatically invalidated on version bumps.
 
 5. **Check SRS params** in `~/.openvm/params/`:
-   - OpenVM v2 requires `kzg_bn254_24.srs` (2 GB)
+   - OpenVM v2.0.0-rc.3 requires `kzg_bn254_24.srs` (2 GB)
    - If the file is empty/corrupted, replace it (check for `.1` or `.part` suffixes from interrupted downloads)
 
 6. **Clear test output cache** before re-running integration tests:
@@ -98,7 +102,7 @@ This happens when:
 
 **Fix**: Regenerate with:
 ```bash
-RECOMPUTE_MODE=yes cargo run --release -p scroll-zkvm-build-guest -- --mode force
+OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20 RECOMPUTE_MODE=yes cargo run --release -p scroll-zkvm-build-guest -- --mode force
 ```
 
 ### `cargo update` breaks compilation with alloy/revm type mismatches
@@ -113,7 +117,7 @@ The `build-guest.sh` script may fail if a stale `build-guest.cid` file exists. U
 
 ```bash
 # Force rebuild all guest assets (required after OpenVM upgrade)
-RECOMPUTE_MODE=yes cargo run --release -p scroll-zkvm-build-guest -- --mode force
+OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20 RECOMPUTE_MODE=yes cargo run --release -p scroll-zkvm-build-guest -- --mode force
 
 # Run end-to-end tests (ALWAYS use make, never raw cargo test)
 GPU=1 make test-e2e-bundle
@@ -137,12 +141,16 @@ OpenVM v2 replaces the traditional root-verifier recursion with a **deferred com
 
 The extra 2 AIRs in batch/bundle come from the deferral extension.
 
+### Deferral circuit must use the parent VM's memory layout
+
+The `MultiDeferralCircuitProver` (verify-stark deferral circuit) is constructed from the **child's aggregation VK**, but its `memory_dimensions` and `num_user_pvs` must come from the **parent's VM config** (the batch or bundle circuit that calls `verify_stark`). Using the child's config causes the deferral circuit to write public values to the wrong location in the parent VM, leading to `Proof verification failed for commit ...` inside the batch/bundle guest.
+
 ### Key configuration that must match between prover and verifier
 
 | Parameter | Prover (`crates/prover/src/prover/mod.rs`) | Verifier (`crates/build-guest/src/main.rs`) |
 |-----------|---------------------------------------------|---------------------------------------------|
-| `AggregationTreeConfig` | `num_children_internal: 2, num_children_leaf: 2` | Same |
-| `DeferralProver` | Built from child SDK in `enable_deferral()` | Built from batch SDK in `generate_evm_verifier()` |
+| `AggregationTreeConfig` | `num_children_internal: 3, num_children_leaf: 4` | Same |
+| `MultiDeferralCircuitProver` | Built from child SDK in `enable_deferral()` | Built from batch SDK in `generate_evm_verifier()` |
 | `agg_params` | `leaf_params + internal_params` (100-bit security) | Same |
 
 If any of these mismatch, the EVM verifier will reject proofs with `ProofVerificationFailed()`.

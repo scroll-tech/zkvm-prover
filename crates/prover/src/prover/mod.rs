@@ -4,20 +4,20 @@ use std::{
 };
 
 use openvm_circuit::arch::instructions::{exe::VmExe, DEFERRAL_AS};
+use openvm_recursion_circuit::batch_constraint::commit_child_vk;
 use openvm_sdk::{F, Sdk, StdIn, SC};
 use openvm_sdk::config::{AggregationConfig, AggregationSystemParams, AggregationTreeConfig, AppConfig};
-use openvm_sdk_config::SdkVmConfig;
+use openvm_sdk_config::{SdkVmConfig, deferral::SupportedDeferral};
+use openvm_sdk::prover::{DeferralAggProver, MultiDeferralCircuitProver};
+use openvm_stark_backend::StarkEngine;
+use openvm_continuations::CommitBytes;
 use openvm_stark_sdk::{
-    config::{internal_params_with_100_bits_security, leaf_params_with_100_bits_security, root_params_with_100_bits_security},
+    config::{hook_params_with_100_bits_security, internal_params_with_100_bits_security, leaf_params_with_100_bits_security},
     openvm_stark_backend::{codec::Encode, p3_field::PrimeField32},
 };
 use scroll_zkvm_types::{proof::OpenVmEvmProof, types_agg::ProgramCommitment, utils::serialize_vk};
 use scroll_zkvm_verifier::verifier::UniversalVerifier;
 use tracing::instrument;
-
-use openvm_deferral_circuit::DeferralFn;
-use openvm_sdk::prover::DeferralProver;
-use openvm_verify_stark_circuit::extension::verify_stark_deferral_fn;
 
 #[cfg(feature = "cuda")]
 use openvm_cuda_backend::BabyBearPoseidon2GpuEngine as DeferralEngine;
@@ -71,12 +71,6 @@ pub struct Prover {
     app_config: SdkAppConfig,
     /// Lazily initialized SDK
     sdk: OnceLock<Sdk>,
-    /// Optional deferral prover for aggregation circuits.
-    ///
-    /// The prover itself is moved into the SDK during `enable_deferral()`, so this
-    /// field is never read directly. It is kept to make the type explicit.
-    #[allow(dead_code)]
-    deferral_prover: Option<DeferralProver>,
 }
 
 /// Configure the [`Prover`].
@@ -86,21 +80,13 @@ pub struct ProverConfig {
     pub path_app_exe: PathBuf,
     /// Path to find application's OpenVM config.
     pub path_app_config: PathBuf,
-    /// The maximum length for a single OpenVM segment.
-    pub segment_len: Option<usize>,
 }
-
-const DEFAULT_SEGMENT_SIZE: usize = (1 << 22) - 1000;
 
 impl Prover {
     /// Setup the [`Prover`] given paths to the application's exe and proving key.
     #[instrument("Prover::setup")]
     pub fn setup(config: ProverConfig, name: Option<&str>) -> Result<Self, Error> {
-        let mut app_config = read_app_config(&config.path_app_config)?;
-        let segment_len = config.segment_len.unwrap_or(DEFAULT_SEGMENT_SIZE);
-        let segmentation_limits = &mut app_config.app_vm_config.system.config.segmentation_limits;
-        segmentation_limits.max_trace_height = segment_len as u32;
-
+        let app_config = read_app_config(&config.path_app_config)?;
         let app_exe = read_app_exe(&config.path_app_exe)?;
         Ok(Self {
             app_exe: Arc::new(app_exe),
@@ -108,7 +94,6 @@ impl Prover {
             prover_name: name.unwrap_or("universal").to_string(),
             app_config,
             sdk: OnceLock::new(),
-            deferral_prover: None,
         })
     }
 
@@ -183,22 +168,36 @@ impl Prover {
     /// 3. Extra memory space (`DEFERRAL_AS`) reserved for deferral state.
     pub fn enable_deferral(&mut self, child_prover: &Prover) -> Result<(), Error> {
         let child_sdk = child_prover.get_sdk()?;
-        let agg_prover = child_sdk.agg_prover();
-        let ir_vk = agg_prover.internal_recursive_prover.get_vk();
-        let ir_pcs_data = agg_prover
-            .internal_recursive_prover
-            .get_self_vk_pcs_data()
-            .ok_or_else(|| Error::GenProof("missing child VK PCS data".to_string()))?;
+        // Build the verify-stark deferral circuit from the child's full aggregation
+        // VK (root verifier VK). The cached commit must be the child's
+        // internal-recursive VK commit, computed with commit_child_vk so it matches
+        // what the child root proof exposes.
+        let child_agg_vk = child_sdk.agg_vk().clone();
+        let engine = <DeferralEngine as StarkEngine>::new(child_agg_vk.inner.params.clone());
+        let internal_recursive_cached_commit: CommitBytes =
+            commit_child_vk(&engine, &child_agg_vk, true)
+                .commitment
+                .into();
 
-        let system_config = child_sdk.app_config().app_vm_config.as_ref().clone();
+        // Reserve deferral address space in the parent config *before* reading the
+        // memory dimensions used by the deferral circuit, so the circuit's layout
+        // matches the runtime VM exactly.
+        self.app_config.app_vm_config.system.config.memory_config.addr_spaces
+            [DEFERRAL_AS as usize]
+            .num_cells = 1 << 25;
+
+        // The verify-stark deferral circuit runs as part of *this* (parent) VM, so
+        // its memory layout and public-value count must match the parent's config.
+        let system_config = self.app_config.app_vm_config.as_ref().clone();
         let memory_dimensions = system_config.memory_config.memory_dimensions();
         let num_user_pvs = system_config.num_public_values;
 
         let def_circuit_params = internal_params_with_100_bits_security();
-        let child_def_hook_commit = child_sdk.def_hook_commit();
+        let child_def_hook_commit: Option<CommitBytes> =
+            child_sdk.def_hook_commit().map(|c| c.into());
         let deferred_verify_prover = VerifyProver::new::<DeferralEngine>(
-            ir_vk.clone(),
-            ir_pcs_data.commitment.into(),
+            child_agg_vk,
+            internal_recursive_cached_commit,
             def_circuit_params,
             memory_dimensions,
             num_user_pvs,
@@ -207,19 +206,18 @@ impl Prover {
         );
         let verify_stark_prover = VerifyCircuitProver::new(deferred_verify_prover);
 
-        let hook_params = root_params_with_100_bits_security();
+        let hook_params = hook_params_with_100_bits_security();
         let agg_config = AggregationConfig {
             params: default_agg_params(),
         };
-        let deferral_prover = DeferralProver::new(verify_stark_prover, agg_config, hook_params);
+        let multi_deferral_circuit_prover =
+            MultiDeferralCircuitProver::new(verify_stark_prover, agg_config.clone(), hook_params);
+        let deferral_agg_prover = DeferralAggProver::new(agg_config, Arc::new(multi_deferral_circuit_prover));
+        let deferral_config = deferral_agg_prover
+            .multi_deferral_circuit_prover
+            .make_config(vec![SupportedDeferral::VerifyStark]);
 
-        let deferral_ext = deferral_prover
-            .make_extension(vec![Arc::new(DeferralFn::new(verify_stark_deferral_fn))]);
-
-        self.app_config.app_vm_config.deferral = Some(deferral_ext);
-        self.app_config.app_vm_config.system.config.memory_config.addr_spaces
-            [DEFERRAL_AS as usize]
-            .num_cells = 1 << 25;
+        self.app_config.app_vm_config.deferral = Some(deferral_config);
 
         // Pre-build SDK with deferral enabled so get_sdk() returns it directly.
         self.reset();
@@ -227,7 +225,7 @@ impl Prover {
             .app_config(self.app_config.clone())
             .agg_params(default_agg_params())
             .agg_tree_config(DEFAULT_AGG_TREE_CONFIG)
-            .deferral_prover(deferral_prover)
+            .deferral_agg_prover(deferral_agg_prover)
             .build()
             .map_err(|e| Error::GenProof(e.to_string()))?;
         self.sdk

@@ -37,20 +37,20 @@ use eyre::Result;
 use openvm_build::GuestOptions;
 use openvm_instructions::exe::VmExe;
 use openvm_circuit::arch::instructions::DEFERRAL_AS;
+use openvm_recursion_circuit::batch_constraint::commit_child_vk;
+use openvm_stark_backend::StarkEngine;
 use openvm_sdk::{
     F, Sdk,
     config::{AggregationConfig, AggregationSystemParams, AggregationTreeConfig, AppConfig},
     fs::write_object_to_file,
-    prover::DeferralProver,
+    prover::MultiDeferralCircuitProver,
 };
-use openvm_sdk_config::SdkVmConfig;
+use openvm_sdk_config::{SdkVmConfig, deferral::SupportedDeferral};
+use openvm_continuations::CommitBytes;
 use openvm_stark_sdk::{
-    config::{app_params_with_100_bits_security, internal_params_with_100_bits_security, leaf_params_with_100_bits_security, root_params_with_100_bits_security},
+    config::{app_params_with_100_bits_security, hook_params_with_100_bits_security, internal_params_with_100_bits_security, leaf_params_with_100_bits_security},
     openvm_stark_backend::p3_field::PrimeField32,
 };
-use openvm_continuations::CommitBytes;
-use openvm_deferral_circuit::DeferralFn;
-use openvm_verify_stark_circuit::extension::verify_stark_deferral_fn;
 use openvm_verify_stark_circuit::prover::{
     DeferredVerifyCpuCircuitProver as VerifyCircuitProver,
     DeferredVerifyCpuProver as VerifyProver,
@@ -133,22 +133,31 @@ fn write_commitment_as_evm_hex(
     Ok(())
 }
 
-/// Build a DeferralProver from a child SDK (CPU-only; build-guest does not use cuda).
-fn make_deferral_prover(sdk: &Sdk, agg_params: &AggregationSystemParams) -> DeferralProver {
-    let agg_prover = sdk.agg_prover();
-    let ir_vk = agg_prover.internal_recursive_prover.get_vk();
-    let ir_pcs_data = agg_prover
-        .internal_recursive_prover
-        .get_self_vk_pcs_data()
-        .expect("missing child VK PCS data");
-    let system_config = sdk.app_config().app_vm_config.as_ref().clone();
+/// Build a MultiDeferralCircuitProver from a child SDK and the parent app config
+/// (CPU-only; build-guest does not use cuda).
+fn make_deferral_prover(
+    child_sdk: &Sdk,
+    parent_app_config: &AppConfig<SdkVmConfig>,
+    agg_params: &AggregationSystemParams,
+) -> MultiDeferralCircuitProver {
+    let child_agg_vk = child_sdk.agg_vk().clone();
+    let engine = <DeferralEngine as StarkEngine>::new(child_agg_vk.inner.params.clone());
+    let internal_recursive_cached_commit: CommitBytes =
+        commit_child_vk(&engine, &child_agg_vk, true)
+            .commitment
+            .into();
+
+    // The verify-stark deferral circuit runs as part of the *parent* VM, so its
+    // memory layout and public-value count must match the parent's config.
+    let system_config = parent_app_config.app_vm_config.as_ref().clone();
     let memory_dimensions = system_config.memory_config.memory_dimensions();
     let num_user_pvs = system_config.num_public_values;
+
     let def_circuit_params = internal_params_with_100_bits_security();
-    let child_def_hook_commit = sdk.def_hook_commit();
+    let child_def_hook_commit: Option<CommitBytes> = child_sdk.def_hook_commit().map(|c| c.into());
     let deferred_verify_prover = VerifyProver::new::<DeferralEngine>(
-        ir_vk.clone(),
-        ir_pcs_data.commitment.into(),
+        child_agg_vk,
+        internal_recursive_cached_commit,
         def_circuit_params,
         memory_dimensions,
         num_user_pvs,
@@ -156,11 +165,11 @@ fn make_deferral_prover(sdk: &Sdk, agg_params: &AggregationSystemParams) -> Defe
         0,
     );
     let verify_stark_prover = VerifyCircuitProver::new(deferred_verify_prover);
-    let hook_params = root_params_with_100_bits_security();
+    let hook_params = hook_params_with_100_bits_security();
     let agg_config = AggregationConfig {
         params: agg_params.clone(),
     };
-    DeferralProver::new(verify_stark_prover, agg_config, hook_params)
+    MultiDeferralCircuitProver::new(verify_stark_prover, agg_config, hook_params)
 }
 
 /// Builds guest programs, transpiles them, and generates executable commitments.
@@ -203,22 +212,25 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
             toml::to_string_pretty(&app_config)?
         );
 
+        // Reserve deferral address space for all projects; SdkVmConfig::optimize() will zero it
+        // for circuits that do not enable deferral.
+        app_config.app_vm_config.system.config.memory_config.addr_spaces
+            [DEFERRAL_AS as usize]
+            .num_cells = 1 << 25;
+
         // Enable deferral for aggregation circuits using the previous SDK
-        let deferral_prover: Option<DeferralProver> = if (project_name == "batch" || project_name == "bundle")
-            && prev_sdk.is_some()
-        {
-            let child_sdk = prev_sdk.as_ref().unwrap();
-            let deferral_prover = make_deferral_prover(child_sdk, &agg_params);
-            let deferral_ext = deferral_prover
-                .make_extension(vec![Arc::new(DeferralFn::new(verify_stark_deferral_fn))]);
-            app_config.app_vm_config.deferral = Some(deferral_ext);
-            app_config.app_vm_config.system.config.memory_config.addr_spaces
-                [DEFERRAL_AS as usize]
-                .num_cells = 1 << 25;
-            Some(deferral_prover)
-        } else {
-            None
-        };
+        let deferral_prover: Option<MultiDeferralCircuitProver> =
+            if (project_name == "batch" || project_name == "bundle") && prev_sdk.is_some()
+            {
+                let child_sdk = prev_sdk.as_ref().unwrap();
+                let deferral_prover = make_deferral_prover(child_sdk, &app_config, &agg_params);
+                let deferral_config = deferral_prover
+                    .make_config(vec![SupportedDeferral::VerifyStark]);
+                app_config.app_vm_config.deferral = Some(deferral_config);
+                Some(deferral_prover)
+            } else {
+                None
+            };
 
         // Write config (possibly modified with deferral) to release output dir
         let output_path = release_output_dir.join(project_name).join(FD_APP_CONFIG);
@@ -233,7 +245,7 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
             .app_config(app_config.clone())
             .agg_params(agg_params.clone());
         if let Some(dp) = deferral_prover {
-            sdk_builder = sdk_builder.deferral_prover(dp);
+            sdk_builder = sdk_builder.multi_deferral_circuit_prover(dp);
         }
         let sdk = sdk_builder.build()?;
 
@@ -420,7 +432,7 @@ fn generate_evm_verifier(
     }
 
     let sdk = if recompute_mode {
-        // 1. Build a batch SDK to create a DeferralProver that matches the host prover.
+        // 1. Build a batch SDK to serve as the child circuit for bundle's deferral prover.
         let batch_config_path = release_output_dir.join("batch").join(FD_APP_CONFIG);
         let batch_app_config: AppConfig<SdkVmConfig> = if batch_config_path.exists() {
             toml::from_str(&fs::read_to_string(&batch_config_path)?)?
@@ -431,7 +443,6 @@ fn generate_evm_verifier(
             .app_config(batch_app_config)
             .agg_params(agg_params.clone())
             .build()?;
-        let deferral_prover = make_deferral_prover(&batch_sdk, &agg_params);
 
         // 2. Load the bundle config so the verifier matches the bundle circuit's
         //    aggregation-tree shape and deferral settings.
@@ -441,11 +452,19 @@ fn generate_evm_verifier(
         } else {
             AppConfig::riscv32(app_params.clone())
         };
+
+        // The bundle's deferral circuit verifies batch proofs; its memory layout must
+        // match the bundle VM config, not the batch config.
+        let deferral_prover = make_deferral_prover(&batch_sdk,
+            &bundle_app_config,
+            &agg_params,
+        );
+
         Sdk::builder()
             .app_config(bundle_app_config)
             .agg_params(agg_params)
             .agg_tree_config(DEFAULT_AGG_TREE_CONFIG)
-            .deferral_prover(deferral_prover)
+            .multi_deferral_circuit_prover(deferral_prover)
             .build()?
     } else {
         Sdk::riscv32(app_params, agg_params)

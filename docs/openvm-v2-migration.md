@@ -1,7 +1,7 @@
 # OpenVM v2 Migration Guide
 
 > Document ID: `docs/openvm-v2-migration.md`  
-> Scope: scroll-zkvm-prover migration from OpenVM v1.x to v2.0.0-beta.2  
+> Scope: scroll-zkvm-prover migration from OpenVM v1.x to v2.0.0-rc.3  
 > Author: Agent  
 > Date: 2026-05-22
 
@@ -110,9 +110,10 @@ Added `Prover::enable_deferral(child_prover: &Prover)`:
 
 - Extracts child's `agg_prover().internal_recursive_prover.get_vk()` and `get_self_vk_pcs_data()`.
 - Creates `VerifyProver::new::<DeferralEngine>(...)`.
-- Wraps it in `VerifyCircuitProver` and then `DeferralProver`.
-- Sets `app_config.app_vm_config.deferral = Some(deferral_ext)`.
-- Pre-builds the SDK with `Sdk::builder().deferral_prover(deferral_prover).build()`.
+- Wraps it in `VerifyCircuitProver` and then `MultiDeferralCircuitProver`.
+- Uses `multi_deferral_circuit_prover.make_config(vec![SupportedDeferral::VerifyStark])` to obtain a `DeferralConfig`.
+- Sets `app_config.app_vm_config.deferral = Some(deferral_config)`.
+- Pre-builds the SDK with `Sdk::builder().multi_deferral_circuit_prover(multi_deferral_circuit_prover).build()`.
 
 `gen_proof_stark` and `gen_proof_snark` now accept `def_inputs: &[DeferralInput]` and forward them to `sdk.prove(...)` / `sdk.prove_evm(...)`.
 
@@ -120,15 +121,15 @@ Added `Prover::enable_deferral(child_prover: &Prover)`:
 
 Added helper functions:
 
-- `compute_deferral_data(child_prover, proofs)`: decodes `StarkProof` → `VmStarkProof`, builds `VmStarkVerifyingKey`, computes `RawDeferralResult`s, and produces `input_commits`, `DeferralInput`s, and `DeferralState`s.
+- `compute_deferral_data(child_prover, cached_commit, proofs)`: decodes `StarkProof` → `VmStarkProof`, builds `VmStarkVerifyingKey`, computes `RawDeferralResult`s, and produces `input_commits`, `DeferralInput`s, and `DeferralState`s. The `cached_commit` comes from the parent prover's `deferral_circuit_cached_commits(0)`.
 - `prove_verify_with_deferral`: passes deferral data to `prover.prove_task_with_deferral()`.
 - `TaskProver::prove_task_with_deferral`: extension trait method that sets `stdin.deferrals = def_states` before proving.
 
 ### 3.4 `crates/build-guest/src/main.rs`
 
 - Projects are now built sequentially, preserving `prev_sdk`.
-- For `batch`/`bundle`, `make_deferral_prover(prev_sdk, &agg_params)` constructs the deferral prover.
-- `Sdk::builder().app_config(app_config).agg_params(agg_params).deferral_prover(...).build()` replaces the old `Sdk::riscv32(...)` path.
+- For `batch`/`bundle`, `make_deferral_prover(prev_sdk, &agg_params)` constructs a `MultiDeferralCircuitProver`.
+- `Sdk::builder().app_config(app_config).agg_params(agg_params).multi_deferral_circuit_prover(...).build()` replaces the old `Sdk::riscv32(...)` path.
 - The modified `app_config` (with `deferral` section) is serialized back to `releases/dev/{project}/openvm.toml`.
 
 ---
@@ -138,11 +139,11 @@ Added helper functions:
 New workspace dependencies:
 
 ```toml
-openvm-deferral-circuit = { git = "...", branch = "develop-v2.1.0-rvr" }
-openvm-deferral-guest   = { git = "...", branch = "develop-v2.1.0-rvr" }
-openvm-verify-stark-circuit = { git = "...", branch = "develop-v2.1.0-rvr" }
-openvm-verify-stark-host    = { git = "...", branch = "develop-v2.1.0-rvr" }
-openvm-verify-stark-guest   = { git = "...", branch = "develop-v2.1.0-rvr" }
+openvm-deferral-circuit = { git = "...", branch = "develop-v2.0.0-rc.3" }
+openvm-deferral-guest   = { git = "...", branch = "develop-v2.0.0-rc.3" }
+openvm-verify-stark-circuit = { git = "...", branch = "develop-v2.0.0-rc.3" }
+openvm-verify-stark-host    = { git = "...", branch = "develop-v2.0.0-rc.3" }
+openvm-verify-stark-guest   = { git = "...", branch = "develop-v2.0.0-rc.3" }
 openvm-cuda-backend = { git = "...", branch = "develop-v2" }   # for GPU builds
 ```
 
@@ -162,13 +163,13 @@ Crates that pull these in:
 
 ### 5.2 Transpiler must know about deferral
 
-If the SDK is built without `.deferral_prover(...)` **or** without `app_vm_config.deferral = Some(...)`, the transpiler will not include `DeferralTranspilerExtension`. Guest code containing `deferred_compute` instructions will then fail at runtime with an illegal instruction error.
+If the SDK is built without `.multi_deferral_circuit_prover(...)` **or** without `app_vm_config.deferral = Some(...)`, the transpiler will not include `DeferralTranspilerExtension`. Guest code containing `deferred_compute` instructions will then fail at runtime with an illegal instruction error.
 
 **Symptom**: `UnknownInstruction` or similar during `sdk.execute()`.
 
-### 5.3 `DeferralProver` is not `Clone`
+### 5.3 `MultiDeferralCircuitProver` is not `Clone`
 
-`DeferralProver` does not implement `Clone`. In the prover we worked around this by pre-building the SDK inside `enable_deferral()` and storing the resulting `Sdk` directly, rather than keeping the prover around for lazy initialization.
+`MultiDeferralCircuitProver` does not implement `Clone`. In the prover we worked around this by pre-building the SDK inside `enable_deferral()` and storing the resulting `Sdk` directly, rather than keeping the prover around for lazy initialization.
 
 ### 5.4 Child VK availability
 
@@ -180,7 +181,7 @@ If the SDK is built without `.deferral_prover(...)` **or** without `app_vm_confi
 
 ### 5.5 SRS params
 
-OpenVM v2.0.0-beta.2 requires `kzg_bn254_24.srs` (~2 GB). The Makefile auto-downloads it if missing:
+OpenVM v2.0.0-rc.3 requires `kzg_bn254_24.srs` (~2 GB). The Makefile auto-downloads it if missing:
 
 ```makefile
 SRS_PARAMS_DIR := $(HOME)/.openvm/params
