@@ -26,50 +26,50 @@ version = "0.8.0"
 
 [workspace.dependencies]
 # openvm guest libs
-openvm = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr" }
-openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", default-features = false }
-openvm-custom-insn = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", default-features = false }
-openvm-sha2 = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr" }
-openvm-sha2-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", default-features = false }
-openvm-p256 = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", package = "p256", features = [
+openvm = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64" }
+openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false }
+openvm-custom-insn = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false }
+openvm-sha2 = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64" }
+openvm-sha2-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false }
+openvm-p256 = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", package = "p256", features = [
   "std",
 ] }
-openvm-k256 = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", package = "k256", features = [
+openvm-k256 = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", package = "k256", features = [
   "std",
 ] }
-openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr" }
-openvm-keccak256 = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", default-features = false }
-openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", default-features = false }
-openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", default-features = false }
-openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", default-features = false }
-openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", default-features = false }
-openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", default-features = false }
-openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", default-features = false }
+openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64" }
+openvm-keccak256 = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false }
+openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false }
+openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false }
+openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false }
+openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false }
+openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false }
+openvm-rv32im-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", package = "openvm-riscv-guest", default-features = false }
 
 # openvm host libs
-openvm-benchmarks-prove = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", default-features = false }
-openvm-benchmarks-utils = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", default-features = false }
-openvm-build = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", default-features = false }
-openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", default-features = false }
-openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", default-features = false }
-openvm-instructions = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", default-features = false }
-openvm-sdk-config = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", default-features = false }
-openvm-static-verifier = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", default-features = false }
-openvm-verify-stark-host = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", default-features = false }
-openvm-recursion-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", default-features = false }
-openvm-verify-stark-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", default-features = false }
-openvm-verify-stark-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", default-features = false }
-openvm-deferral-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", default-features = false }
+openvm-benchmarks-prove = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false }
+openvm-benchmarks-utils = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false }
+openvm-build = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false }
+openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false }
+openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false }
+openvm-instructions = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false }
+openvm-sdk-config = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false }
+openvm-static-verifier = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false }
+openvm-verify-stark-host = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false }
+openvm-recursion-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false }
+openvm-verify-stark-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false }
+openvm-verify-stark-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false }
+openvm-deferral-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false }
 openvm-cuda-backend = { git = "https://github.com/openvm-org/stark-backend.git", branch = "develop-v2", default-features = false }
-openvm-deferral-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", default-features = false }
-openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", default-features = false }
-openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", default-features = false, features = [
+openvm-deferral-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false }
+openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", package = "openvm-riscv-transpiler", default-features = false }
+openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false, features = [
   "parallel",
   "evm-prove",
   "tco",
   "unprotected"
 ] }
-openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rvr", default-features = false }
+openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false }
 
 # more openvm related libs
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", branch = "develop-v2", default-features = false }
@@ -106,7 +106,7 @@ ecies = { git = "https://github.com/scroll-tech/ecies-rs" }
 eyre = "0.6"
 color-eyre = "0.6"
 futures = "0.3"
-halo2curves-axiom = { version = "0.7.2" }
+halo2curves-axiom = { git = "https://github.com/axiom-crypto/halo2curves.git", tag = "v0.7.2" }
 itertools = "0.14"
 hex-literal = { version = "0.4.1", default-features = false }
 hex = "0.4"
@@ -119,7 +119,7 @@ serde = { version = "1", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0" }
 serde_with = "3.11.0"
 base64 = "0.22"
-snark-verifier-sdk = { version = "=0.2.1", default-features = false, features = [
+snark-verifier-sdk = { git = "https://github.com/axiom-crypto/snark-verifier.git", tag = "v0.2.4", default-features = false, features = [
   "loader_halo2",
   "halo2-axiom",
   "display",
@@ -175,3 +175,14 @@ strip = false
 
 [profile.bench]
 inherits = "profiling"
+
+# Patch openvm-static-verifier so its `cuda` feature does not forward
+# `snark-verifier-sdk/cuda`. This keeps OpenVM STARK proving on GPU while
+# forcing the final Halo2 SNARK step onto CPU (the upstream GPU prover fails
+# with `cudaErrorInvalidConfiguration` in halo2-gpu's quotient kernel on this
+# machine).
+#
+# openvm-sdk is intentionally NOT patched; rv64 public-value limb handling is
+# done by application-level post-processing of the generated verifier.sol.
+[patch."https://github.com/openvm-org/openvm.git"]
+openvm-static-verifier = { path = "patches/openvm-static-verifier" }

@@ -26,7 +26,7 @@ pub fn execute_guest(
     tracing::info!("Double preset max cost to ({preset_max_cost}) for metering execution");
     compiled.ctx = compiled.ctx.with_max_execution_cost(preset_max_cost);
     let (mut public_values, (cost, instret)) =
-        sdk.execute_compiled_metered_cost(&compiled, inputs.clone())?;
+        sdk.execute_metered_cost(&compiled, inputs.clone())?;
     let mut total_cycle = instret;
 
     if public_values.iter().all(|x| *x == 0) {
@@ -39,7 +39,8 @@ pub fn execute_guest(
         tracing::warn!(
             "Large execution exceed limit of metered execution, cycle is expected to >{estimated_max_cycles}"
         );
-        public_values = sdk.execute(exe, inputs.clone())?;
+        let compiled_pure = sdk.compile(exe)?;
+        public_values = sdk.execute(&compiled_pure, inputs.clone())?;
         total_cycle = estimated_max_cycles;
 
         if public_values.iter().all(|x| *x == 0) {

@@ -1,0 +1,43 @@
+[package]
+name = "openvm-static-verifier"
+version = "2.0.0-beta.2"
+edition = "2021"
+rust-version = "1.91.1"
+authors = ["OpenVM Authors"]
+homepage = "https://openvm.dev"
+repository = "https://github.com/openvm-org/"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", branch = "develop-v2", default-features = false, features = ["baby-bear-bn254-poseidon2"] }
+openvm-cuda-backend = { git = "https://github.com/openvm-org/stark-backend.git", branch = "develop-v2", default-features = false, optional = true, features = ["baby-bear-bn254-poseidon2"] }
+openvm-verify-stark-host = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false }
+openvm-recursion-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false }
+openvm-cpu-backend = { git = "https://github.com/openvm-org/stark-backend.git", branch = "develop-v2", default-features = false }
+openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0-rv64", default-features = false, features = ["root-prover"] }
+halo2-base = { git = "https://github.com/axiom-crypto/halo2-lib.git", tag = "v0.5.2", default-features = false, features = ["halo2-axiom"] }
+snark-verifier-sdk = { git = "https://github.com/axiom-crypto/snark-verifier.git", tag = "v0.2.4", default-features = false, features = ["loader_evm"], optional = true }
+
+rand_chacha = "0.3"
+once_cell = { version = "1.20", default-features = false, optional = true }
+serde = { version = "1.0.201", default-features = false, features = ["derive"] }
+serde_json = { version = "1.0.117", optional = true }
+serde_with = { version = "3.11.0", features = ["hex"], optional = true }
+itertools = { version = "0.14.0", default-features = false }
+num-bigint = { version = "0.4.6", default-features = false }
+num-integer = { version = "0.1.46", default-features = false }
+tracing = "0.1.40"
+inferno = { version = "0.12", default-features = false, optional = true }
+
+[dev-dependencies]
+openvm-stark-backend = { git = "https://github.com/openvm-org/stark-backend.git", branch = "develop-v2", features = ["test-utils"] }
+openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", branch = "develop-v2", default-features = false, features = ["cpu-backend"] }
+
+[features]
+default = []
+# Patched: do NOT forward snark-verifier-sdk/cuda so Halo2 SNARK stays on CPU
+# while OpenVM STARK proving uses the GPU backend.
+cuda = ["dep:openvm-cuda-backend"]
+evm-prove = ["dep:snark-verifier-sdk", "dep:serde_with", "dep:once_cell", "dep:serde_json"]
+evm-verify = ["evm-prove", "snark-verifier-sdk/revm"]
+cell-profiling = ["dep:inferno"]

@@ -105,5 +105,8 @@ test-bundle:
 test-bundle-local:
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test bundle_circuit setup_prove_verify_local_task -- --exact --nocapture
 
-test-e2e-bundle:
+build-prover-split:
+	cargo build --release --bin prover-split $(CARGO_CONFIG_FLAG)
+
+test-e2e-bundle: build-prover-split
 	@cargo test $(CARGO_CONFIG_FLAG) --release -p scroll-zkvm-integration --test bundle_circuit e2e -- --exact --nocapture

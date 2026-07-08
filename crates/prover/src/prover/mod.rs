@@ -90,16 +90,17 @@ pub struct ProverConfig {
     pub segment_len: Option<usize>,
 }
 
+// Kept for API compatibility; RV64 uses memory-based segmentation instead of trace-height limit.
+#[allow(dead_code)]
 const DEFAULT_SEGMENT_SIZE: usize = (1 << 22) - 1000;
 
 impl Prover {
     /// Setup the [`Prover`] given paths to the application's exe and proving key.
     #[instrument("Prover::setup")]
     pub fn setup(config: ProverConfig, name: Option<&str>) -> Result<Self, Error> {
-        let mut app_config = read_app_config(&config.path_app_config)?;
-        let segment_len = config.segment_len.unwrap_or(DEFAULT_SEGMENT_SIZE);
-        let segmentation_limits = &mut app_config.app_vm_config.system.config.segmentation_limits;
-        segmentation_limits.max_trace_height = segment_len as u32;
+        let app_config = read_app_config(&config.path_app_config)?;
+        // RV64 uses memory-based segmentation; trace-height limit no longer exists.
+        // The segment_len config field is kept for API compatibility.
 
         let app_exe = read_app_exe(&config.path_app_exe)?;
         Ok(Self {
@@ -383,10 +384,12 @@ impl Prover {
         self.execute_and_check(&stdin)?;
 
         let sdk = self.get_sdk()?;
+
         let evm_proof = sdk
             .prove_evm(self.app_exe.clone(), stdin, def_inputs)
             .map_err(|e| Error::GenProof(format!("{}", e)))?;
 
         Ok(evm_proof)
     }
+
 }

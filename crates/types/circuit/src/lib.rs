@@ -60,7 +60,7 @@ where
     fn verify_proofs(witness: &Self::Witness) -> Vec<AggregationInput> {
         let proofs = witness.get_proofs();
 
-        #[cfg(all(target_os = "zkvm", target_arch = "riscv32"))]
+        #[cfg(all(target_os = "openvm", target_arch = "riscv64"))]
         {
             let input_commits: Vec<[u8; 32]> = openvm::io::read();
             assert_eq!(
@@ -75,7 +75,7 @@ where
             }
         }
 
-        #[cfg(not(all(target_os = "zkvm", target_arch = "riscv32")))]
+        #[cfg(not(all(target_os = "openvm", target_arch = "riscv64")))]
         {
             for proof in proofs.iter() {
                 Self::verify_commitments(&proof.commitment);
@@ -127,7 +127,7 @@ fn u32_array_to_commit(arr: &[u32; 8]) -> [u8; 32] {
 }
 
 /// Verify a root proof using deferred STARK verification (v2).
-#[cfg(all(target_os = "zkvm", target_arch = "riscv32"))]
+#[cfg(all(target_os = "openvm", target_arch = "riscv64"))]
 fn verify_proof(commitment: &ProgramCommitment, public_inputs: &[u32], input_commit: &[u8; 32]) {
     use openvm_verify_stark_guest::{verify_stark, ProofOutput};
 
@@ -137,15 +137,22 @@ fn verify_proof(commitment: &ProgramCommitment, public_inputs: &[u32], input_com
     let expected = ProofOutput {
         app_exe_commit: u32_array_to_commit(&commitment.exe),
         app_vm_commit: u32_array_to_commit(&commitment.vm),
-        user_public_values: public_inputs.iter().flat_map(|&w| w.to_le_bytes()).collect(),
+        // OpenVM v2 rv64 stores user public values as 2-byte (u16) cells. A 32-byte pi_hash is
+        // represented by 16 little-endian u16 cells followed by 16 zero cells, so the collapsed
+        // byte layout is `[pi_hash bytes][32 zero bytes]`.
+        user_public_values: {
+            let mut pvs: Vec<u8> = public_inputs.iter().map(|&w| w as u8).collect();
+            pvs.resize(pvs.len() * 2, 0);
+            pvs
+        },
     };
 
     verify_stark::<0>(input_commit, &expected);
 }
 
-#[cfg(not(all(target_os = "zkvm", target_arch = "riscv32")))]
+#[cfg(not(all(target_os = "openvm", target_arch = "riscv64")))]
 fn verify_proof(_commitment: &ProgramCommitment, _public_inputs: &[u32], _input_commit: &[u8; 32]) {
-    panic!("verify_proof should only be called on zkvm target");
+    panic!("verify_proof should only be called on openvm target");
 }
 
 /// This macro is used to manually drop an expression on zkvm (non x86/aarch64 targets).

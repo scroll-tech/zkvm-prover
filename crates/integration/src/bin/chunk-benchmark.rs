@@ -8,7 +8,6 @@ use scroll_zkvm_integration::testers::chunk::{
     ChunkProverTester, get_witness_from_env_or_builder, preset_chunk,
 };
 use scroll_zkvm_integration::{DIR_TESTRUN, ProverTester, WORKSPACE_ROOT};
-use std::process::Command;
 use std::{env, fs};
 
 fn main() -> eyre::Result<()> {
@@ -35,14 +34,7 @@ fn main() -> eyre::Result<()> {
         .join("chunk-circuit");
     let current_dir = env::current_dir()?;
     env::set_current_dir(&project_path)?;
-    let elf = build_elf(
-        &project_path,
-        if args.profiling {
-            "profiling"
-        } else {
-            "maxperf"
-        },
-    )?;
+    let elf = build_elf(&project_path, "maxperf")?;
     env::set_current_dir(current_dir)?;
 
     let wit = get_witness_from_env_or_builder(&mut preset_chunk())?;
@@ -54,18 +46,6 @@ fn main() -> eyre::Result<()> {
             ChunkProverTester::build_guest_input(&wit, std::iter::empty())?,
         )
     })?;
-
-    // exec flamegraph generation script
-    if args.profiling {
-        Command::new("python3")
-            .arg(WORKSPACE_ROOT.join("scripts").join("flamegraph.py"))
-            .arg(metrics_path)
-            .arg("--guest-symbols")
-            .arg(symbol_path)
-            .current_dir(output)
-            .status()?
-            .exit_ok()?;
-    }
 
     Ok(())
 }
