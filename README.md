@@ -91,7 +91,7 @@ Add the following dependency in your `Cargo.toml`:
 
 ```toml
 [dependencies]
-scroll-zkvm-prover = { git = "https://github.com/scroll-tech/zkvm-prover", branch = "develop-v2.1.0-rvr" }
+scroll-zkvm-prover = { git = "https://github.com/scroll-tech/zkvm-prover", branch = "master" }
 ```
 
 ### To prove a universal task with STARK proofs

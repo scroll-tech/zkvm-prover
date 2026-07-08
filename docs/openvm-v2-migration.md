@@ -83,11 +83,16 @@ bundle ── uses batch SDK to build DeferralProver
 
 For each aggregation circuit:
 
-1. Read the child SDK's `internal_recursive_prover` to get VK + PCS data.
-2. Construct a `DeferredVerifyProver` → `VerifyCircuitProver` → `DeferralProver`.
-3. Call `deferral_prover.make_extension(...)` to get `DeferralExtension`.
-4. Write `[app_vm_config.deferral]` into the release `openvm.toml`.
-5. Build the SDK with `.deferral_prover(deferral_prover)`.
+1. Read the child SDK's `agg_vk()` to get the full aggregation verifying key.
+2. Compute the child's internal-recursive cached commit with `commit_child_vk` so it
+   matches what the child root proof exposes.
+3. Construct a `DeferredVerifyProver` → `VerifyCircuitProver` →
+   `MultiDeferralCircuitProver` → `DeferralAggProver`.
+4. Call `multi_deferral_circuit_prover.make_config(vec![SupportedDeferral::VerifyStark])`
+   to obtain a `DeferralConfig`.
+5. Write `[app_vm_config.deferral]` into the release `openvm.toml`.
+6. Build the SDK with `.multi_deferral_circuit_prover(...)` (build-guest) or
+   `.deferral_agg_prover(...)` (host prover).
 
 This guarantees that:
 - The guest `.vmexe` is transpiled with `DeferralTranspilerExtension`.
@@ -108,12 +113,16 @@ This guarantees that:
 
 Added `Prover::enable_deferral(child_prover: &Prover)`:
 
-- Extracts child's `agg_prover().internal_recursive_prover.get_vk()` and `get_self_vk_pcs_data()`.
-- Creates `VerifyProver::new::<DeferralEngine>(...)`.
-- Wraps it in `VerifyCircuitProver` and then `MultiDeferralCircuitProver`.
-- Uses `multi_deferral_circuit_prover.make_config(vec![SupportedDeferral::VerifyStark])` to obtain a `DeferralConfig`.
+- Extracts child's `agg_vk()`.
+- Computes the child's internal-recursive cached commit via `commit_child_vk`.
+- Creates `VerifyProver::new::<DeferralEngine>(...)` using the **parent** VM's memory
+  dimensions and public-value count.
+- Wraps it in `VerifyCircuitProver`, then `MultiDeferralCircuitProver`, then
+  `DeferralAggProver`.
+- Uses `multi_deferral_circuit_prover.make_config(vec![SupportedDeferral::VerifyStark])`
+  to obtain a `DeferralConfig`.
 - Sets `app_config.app_vm_config.deferral = Some(deferral_config)`.
-- Pre-builds the SDK with `Sdk::builder().multi_deferral_circuit_prover(multi_deferral_circuit_prover).build()`.
+- Pre-builds the SDK with `Sdk::builder().deferral_agg_prover(deferral_agg_prover).build()`.
 
 `gen_proof_stark` and `gen_proof_snark` now accept `def_inputs: &[DeferralInput]` and forward them to `sdk.prove(...)` / `sdk.prove_evm(...)`.
 
@@ -193,7 +202,7 @@ SRS_PARAMS_URL := https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm
 OpenVM v2's Solidity verifier is not yet published to the download endpoint used by `verifier::download_evm_verifier()`. During guest builds you must set:
 
 ```bash
-RECOMPUTE_MODE=yes cargo run --release -p scroll-zkvm-build-guest
+OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20 RECOMPUTE_MODE=yes cargo run --release -p scroll-zkvm-build-guest -- --mode force
 ```
 
 This triggers `sdk.generate_halo2_verifier_solidity()` instead of downloading a stale contract.
@@ -203,8 +212,9 @@ This triggers `sdk.generate_halo2_verifier_solidity()` instead of downloading a 
 `SdkVmConfig::from_toml` will deserialize `deferral = None` if the TOML lacks `[app_vm_config.deferral]`. After a guest build, verify that the generated `releases/dev/{batch,bundle}/openvm.toml` contains:
 
 ```toml
-[app_vm_config.deferral]
-def_circuit_commits = [ [...], [...] ]
+[[app_vm_config.deferral.circuits]]
+def_type = "VerifyStark"
+commit = [...]
 ```
 
 ---
@@ -215,7 +225,7 @@ After any OpenVM version bump or guest rebuild:
 
 1. `rm -rf ~/.openvm/agg_stark.pk ~/.openvm/agg_stark.vk ~/.openvm/root.asm`
 2. `rm -rf .output/bundle-tests-*/`
-3. `RECOMPUTE_MODE=yes make build-guest-local`
+3. `OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20 RECOMPUTE_MODE=yes cargo run --release -p scroll-zkvm-build-guest -- --mode force`
 4. `GPU=1 make test-e2e-bundle`
 
 If tests fail with `NativeHintSliceSubEx` or `UnexpectedEof`, the root cause is almost always stale guest assets or missing SRS.

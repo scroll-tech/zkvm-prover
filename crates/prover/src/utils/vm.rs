@@ -36,8 +36,11 @@ pub fn execute_guest(
                     "public_values are all 0s upon execute"
                 )));
             }
+            // The fallback executor does not report instruction-retired counts.
+            // Use u64::MAX as a sentinel so any speed logging shows an obviously
+            // invalid value instead of a misleading 0 MHz.
             Ok(ExecutionResult {
-                total_cycle: 0,
+                total_cycle: u64::MAX,
                 public_values,
             })
         }

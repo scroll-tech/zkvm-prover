@@ -146,8 +146,15 @@ fn verify_proof(commitment: &ProgramCommitment, public_inputs: &[u32], input_com
 }
 
 #[cfg(not(all(target_os = "zkvm", target_arch = "riscv32")))]
-fn verify_proof(_commitment: &ProgramCommitment, _public_inputs: &[u32], _input_commit: &[u8; 32]) {
-    panic!("verify_proof should only be called on zkvm target");
+fn verify_proof(
+    _commitment: &ProgramCommitment,
+    _public_inputs: &[u32],
+    _input_commit: &[u8; 32],
+) {
+    // This function is guest-only: the actual deferred STARK verification happens inside
+    // the zkvm guest via `openvm_verify_stark_guest::verify_stark`. Calling it on a non-zkvm
+    // target is a programming error.
+    unimplemented!("verify_proof should only be called on zkvm target")
 }
 
 /// This macro is used to manually drop an expression on zkvm (non x86/aarch64 targets).

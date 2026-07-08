@@ -452,6 +452,13 @@ pub fn compute_deferral_data(
         .first()
         .cloned()
         .ok_or_else(|| eyre::eyre!("no child proofs to compute deferral data"))?;
+    for (i, b) in baselines.iter().enumerate().skip(1) {
+        if b.app_exe_commit != baseline.app_exe_commit
+            || b.app_vk_commit != baseline.app_vk_commit
+        {
+            eyre::bail!("child proof {i} has a different verification baseline; all child proofs must use the same app exe/vk commitment");
+        }
+    }
 
     let vk = VmStarkVerifyingKey { mvk, baseline };
 

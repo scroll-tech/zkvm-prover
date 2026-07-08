@@ -171,5 +171,5 @@ If any of these mismatch, the EVM verifier will reject proofs with `ProofVerific
 ## Guest Config Notes
 
 - `chunk-circuit`: requires `system.config.continuation_enabled = true`
-- `batch-circuit` / `bundle-circuit`: include `leaf_fri_params` with `num_queries = 193`, `commit_proof_of_work_bits = 20`
+- `batch-circuit` / `bundle-circuit`: aggregation FRI params are supplied in code via `AggregationConfig { params: default_agg_params() }`; the checked-in `openvm.toml` files do not contain `leaf_fri_params`
 - FRI params format in OpenVM v2: `commit_proof_of_work_bits` + `query_proof_of_work_bits`

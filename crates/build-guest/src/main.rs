@@ -48,7 +48,7 @@ use openvm_sdk::{
 use openvm_sdk_config::{SdkVmConfig, deferral::SupportedDeferral};
 use openvm_continuations::CommitBytes;
 use openvm_stark_sdk::{
-    config::{app_params_with_100_bits_security, hook_params_with_100_bits_security, internal_params_with_100_bits_security, leaf_params_with_100_bits_security},
+    config::{app_params_with_100_bits_security, hook_params_with_100_bits_security, internal_params_with_100_bits_security, leaf_params_with_100_bits_security, MAX_APP_LOG_STACKED_HEIGHT},
     openvm_stark_backend::p3_field::PrimeField32,
 };
 use openvm_verify_stark_circuit::prover::{
@@ -56,7 +56,6 @@ use openvm_verify_stark_circuit::prover::{
     DeferredVerifyCpuProver as VerifyProver,
 };
 use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2CpuEngine as DeferralEngine;
-use scroll_zkvm_types::zkvm::AGG_STARK_PROVING_KEY;
 use std::{
     env, fs,
     path::{Path, PathBuf},
@@ -404,14 +403,6 @@ fn generate_evm_verifier(
     let path_verifier_bin = verifier_output_dir.join("verifier.bin");
     let path_root_agg_pk = verifier_output_dir.join("root_verifier_vk");
 
-    if force_overwrite || !path_root_agg_pk.exists() {
-        write_object_to_file(
-            &path_root_agg_pk,
-            AGG_STARK_PROVING_KEY.internal_recursive.get_vk().clone(),
-        )
-        .expect("failed to write root_verifier_vk");
-    }
-
     // Skip regeneration in auto mode when artifacts already exist.
     if !force_overwrite && path_verifier_sol.exists() && path_verifier_bin.exists() {
         println!(
@@ -424,7 +415,7 @@ fn generate_evm_verifier(
         fs::create_dir_all(parent)?;
     }
 
-    let app_params = app_params_with_100_bits_security(21);
+    let app_params = app_params_with_100_bits_security(MAX_APP_LOG_STACKED_HEIGHT);
     let agg_params = default_agg_params();
 
     if !recompute_mode {
@@ -480,6 +471,16 @@ fn generate_evm_verifier(
     } else {
         verifier::download_evm_verifier()?
     };
+
+    // Write the root aggregation VK from the same SDK used to generate the verifier.
+    // This must match the bundle circuit's deferral config and aggregation tree shape.
+    if force_overwrite || !path_root_agg_pk.exists() {
+        write_object_to_file(
+            &path_root_agg_pk,
+            sdk.agg_vk().clone(),
+        )
+        .expect("failed to write root_verifier_vk");
+    }
 
     // In v2, the EVM verifier is split into multiple Solidity files.
     // We save the full set so external tools (Foundry, etc.) can recompile.

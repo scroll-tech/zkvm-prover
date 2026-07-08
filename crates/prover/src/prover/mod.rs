@@ -182,9 +182,15 @@ impl Prover {
         // Reserve deferral address space in the parent config *before* reading the
         // memory dimensions used by the deferral circuit, so the circuit's layout
         // matches the runtime VM exactly.
-        self.app_config.app_vm_config.system.config.memory_config.addr_spaces
-            [DEFERRAL_AS as usize]
-            .num_cells = 1 << 25;
+        let addr_spaces = &mut self.app_config.app_vm_config.system.config.memory_config.addr_spaces;
+        let deferral_as = DEFERRAL_AS as usize;
+        if deferral_as >= addr_spaces.len() {
+            return Err(Error::Custom(format!(
+                "deferral address space index {deferral_as} out of bounds (addr_spaces len {})",
+                addr_spaces.len()
+            )));
+        }
+        addr_spaces[deferral_as].num_cells = 1 << 25;
 
         // The verify-stark deferral circuit runs as part of *this* (parent) VM, so
         // its memory layout and public-value count must match the parent's config.
@@ -370,9 +376,10 @@ impl Prover {
         Ok(proof)
     }
 
-    /// Generate an [evm proof][evm_proof].
+    /// Generate an EVM (Halo2 SNARK) proof.
     ///
-    /// [evm_proof][openvm_native_recursion::halo2::EvmProof]
+    /// The returned [`OpenVmEvmProof`] wraps the SNARK proof bytes, public inputs,
+    /// and the app execution commitments required for on-chain verification.
     pub fn gen_proof_snark(
         &self,
         stdin: StdIn,
