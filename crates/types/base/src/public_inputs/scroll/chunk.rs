@@ -179,48 +179,41 @@ impl ChunkInfo {
             .collect()
     }
 
-    /// Feynman chunk public inputs are the same as EuclidV2.
-    pub fn pi_feynman(&self) -> Vec<u8> {
-        self.pi_euclidv2()
-    }
-
-    /// Public inputs encoded for a given chunk (galileo or da-codec@v9) is defined as
+    /// Public inputs encoded for a given chunk (feynman or da-codec@v8).
     ///
-    /// concat(
-    ///     version ||
-    ///     chain id ||
-    ///     prev state root ||
-    ///     post state root ||
-    ///     withdraw root ||
-    ///     tx data digest ||
-    ///     prev msg queue hash ||
-    ///     post msg queue hash ||
-    ///     initial block number ||
-    ///     block_ctx for block_ctx in block_ctxs
-    /// )
-    pub fn pi_galileo(&self, version: Version) -> Vec<u8> {
-        std::iter::empty()
-            .chain(&[version.as_version_byte()])
-            .chain(&self.chain_id.to_be_bytes())
-            .chain(self.prev_state_root.as_slice())
-            .chain(self.post_state_root.as_slice())
-            .chain(self.withdraw_root.as_slice())
-            .chain(self.tx_data_digest.as_slice())
-            .chain(self.prev_msg_queue_hash.as_slice())
-            .chain(self.post_msg_queue_hash.as_slice())
-            .chain(&self.initial_block_number.to_be_bytes())
-            .chain(
-                self.block_ctxs
-                    .iter()
-                    .flat_map(|block_ctx| block_ctx.to_bytes())
-                    .collect::<Vec<u8>>()
-                    .as_slice(),
-            )
-            .copied()
-            .collect()
+    /// Same layout as euclid-v2, but additionally commits to the L2 blockhash lineage.
+    pub fn pi_feynman(&self) -> Vec<u8> {
+        let mut pi = self.pi_euclidv2();
+        pi.extend_from_slice(self.prev_blockhash.as_slice());
+        pi.extend_from_slice(self.post_blockhash.as_slice());
+        pi
     }
 
-    /// Public inputs encoded for a given chunk (galileo or da-codec@v9) is defined as
+    /// Public inputs encoded for a given chunk (galileo or da-codec@v9).
+    ///
+    /// Same layout as feynman, with the version byte prepended.
+    pub fn pi_galileo(&self, version: Version) -> Vec<u8> {
+        let mut pi = Vec::with_capacity(
+            1 + 8 + 32 * 6 + 8 + self.block_ctxs.len() * SIZE_BLOCK_CTX + 32 * 2,
+        );
+        pi.push(version.as_version_byte());
+        pi.extend_from_slice(&self.chain_id.to_be_bytes());
+        pi.extend_from_slice(self.prev_state_root.as_slice());
+        pi.extend_from_slice(self.post_state_root.as_slice());
+        pi.extend_from_slice(self.withdraw_root.as_slice());
+        pi.extend_from_slice(self.tx_data_digest.as_slice());
+        pi.extend_from_slice(self.prev_msg_queue_hash.as_slice());
+        pi.extend_from_slice(self.post_msg_queue_hash.as_slice());
+        pi.extend_from_slice(&self.initial_block_number.to_be_bytes());
+        for block_ctx in &self.block_ctxs {
+            pi.extend_from_slice(&block_ctx.to_bytes());
+        }
+        pi.extend_from_slice(self.prev_blockhash.as_slice());
+        pi.extend_from_slice(self.post_blockhash.as_slice());
+        pi
+    }
+
+    /// Public inputs encoded for a given chunk (galileo-v2 or da-codec@v10).
     ///
     /// The same as galileo.
     pub fn pi_galileo_v2(&self, version: Version) -> Vec<u8> {
@@ -268,6 +261,16 @@ impl ChunkInfo {
             .copied()
             .collect()
     }
+
+    /// Block number of the last block in this chunk.
+    pub fn final_block_number(&self) -> u64 {
+        self.initial_block_number + self.block_ctxs.len() as u64 - 1
+    }
+
+    /// Returns true when blockhash lineage must be enforced for `version`.
+    fn is_blockhash_chaining_required(version: Version) -> bool {
+        version.domain == Domain::Validium || version.fork >= ForkName::Feynman
+    }
 }
 
 pub type VersionedChunkInfo = (ChunkInfo, Version);
@@ -297,7 +300,8 @@ impl MultiVersionPublicInputs for ChunkInfo {
     /// - state roots MUST be chained
     /// - L1 msg queue hash MUST be chained
     ///
-    /// Furthermore, for validiums we must also chain the blockhashes.
+    /// Furthermore, for validiums and post-Feynman Scroll domains, the blockhash lineage MUST also
+    /// be chained.
     fn validate(&self, prev_pi: &Self, version: Version) {
         assert_eq!(self.chain_id, prev_pi.chain_id);
         assert_eq!(self.prev_state_root, prev_pi.post_state_root);
@@ -311,10 +315,18 @@ impl MultiVersionPublicInputs for ChunkInfo {
             assert_eq!(prev_pi.post_msg_queue_hash, B256::ZERO);
         }
 
-        // - blockhash chaining must be validated for validiums.
-        // - encryption key must be the same between contiguous chunks in a batch.
-        if version.domain == Domain::Validium {
+        // Blockhash lineage must be validated for validiums and post-Feynman Scroll.
+        if Self::is_blockhash_chaining_required(version) {
             assert_eq!(self.prev_blockhash, prev_pi.post_blockhash);
+            assert_eq!(
+                self.initial_block_number,
+                prev_pi.final_block_number() + 1,
+                "initial block number must continue from the previous chunk"
+            );
+        }
+
+        // Encryption key must be the same between contiguous chunks in a batch (validium only).
+        if version.domain == Domain::Validium {
             assert!(self.encryption_key.is_some());
             assert_eq!(self.encryption_key, prev_pi.encryption_key);
         }

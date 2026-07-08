@@ -59,6 +59,10 @@ impl From<&BundleWitness> for BundleInfo {
             batch_hash,
             withdraw_root,
             msg_queue_hash,
+            prev_blockhash: first_batch.prev_blockhash,
+            post_blockhash: last_batch.post_blockhash,
+            initial_block_number: first_batch.initial_block_number,
+            final_block_number: last_batch.final_block_number,
             encryption_key: first_batch.encryption_key.clone(),
         }
     }

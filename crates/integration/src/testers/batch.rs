@@ -155,6 +155,10 @@ impl BatchTaskGenerator {
                     last_info.post_msg_queue_hash, info.prev_msg_queue_hash,
                     "msg queue hash"
                 );
+                assert_eq!(
+                    last_info.post_blockhash, info.prev_blockhash,
+                    "blockhash lineage"
+                );
             }
 
             last_info.replace(info);

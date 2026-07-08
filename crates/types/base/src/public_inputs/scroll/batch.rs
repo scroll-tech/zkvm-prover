@@ -24,6 +24,18 @@ pub struct BatchInfo {
     pub prev_msg_queue_hash: B256,
     /// The L1 msg queue hash at the end of the current batch.
     pub post_msg_queue_hash: B256,
+    /// The blockhash of the last block in the previous batch (parent of the first block).
+    #[serde(default)]
+    pub prev_blockhash: B256,
+    /// The blockhash of the last block in the current batch.
+    #[serde(default)]
+    pub post_blockhash: B256,
+    /// The block number of the first block in the batch.
+    #[serde(default)]
+    pub initial_block_number: u64,
+    /// The block number of the last block in the batch.
+    #[serde(default)]
+    pub final_block_number: u64,
     /// Optional encryption key, used in case of domain=Validium.
     pub encryption_key: Option<Box<[u8]>>,
 }
@@ -79,40 +91,38 @@ impl BatchInfo {
 
     /// Public inputs encoded for a batch (feynman or da-codec@v8).
     ///
-    /// Unchanged from euclid-v2.
+    /// Same as euclid-v2, but additionally commits to the L2 blockhash lineage and block range.
     fn pi_feynman(&self) -> Vec<u8> {
-        self.pi_euclidv2()
+        let mut pi = self.pi_euclidv2();
+        pi.extend_from_slice(self.prev_blockhash.as_slice());
+        pi.extend_from_slice(self.post_blockhash.as_slice());
+        pi.extend_from_slice(&self.initial_block_number.to_be_bytes());
+        pi.extend_from_slice(&self.final_block_number.to_be_bytes());
+        pi
     }
 
-    /// Public inputs encoded for a batch (galileo or da-codec@v9) is defined as
+    /// Public inputs encoded for a batch (galileo or da-codec@v9).
     ///
-    /// concat(
-    ///     version ||
-    ///     parent state root ||
-    ///     parent batch hash ||
-    ///     state root ||
-    ///     batch hash ||
-    ///     chain id ||
-    ///     withdraw root ||
-    ///     prev msg queue hash ||
-    ///     post msg queue hash
-    /// )
+    /// Same layout as feynman, with the version byte prepended.
     fn pi_galileo(&self, version: Version) -> Vec<u8> {
-        std::iter::empty()
-            .chain(&[version.as_version_byte()])
-            .chain(self.parent_state_root.as_slice())
-            .chain(self.parent_batch_hash.as_slice())
-            .chain(self.state_root.as_slice())
-            .chain(self.batch_hash.as_slice())
-            .chain(self.chain_id.to_be_bytes().as_slice())
-            .chain(self.withdraw_root.as_slice())
-            .chain(self.prev_msg_queue_hash.as_slice())
-            .chain(self.post_msg_queue_hash.as_slice())
-            .copied()
-            .collect()
+        let mut pi = Vec::with_capacity(1 + 32 * 9 + 8 + 8 * 2);
+        pi.push(version.as_version_byte());
+        pi.extend_from_slice(self.parent_state_root.as_slice());
+        pi.extend_from_slice(self.parent_batch_hash.as_slice());
+        pi.extend_from_slice(self.state_root.as_slice());
+        pi.extend_from_slice(self.batch_hash.as_slice());
+        pi.extend_from_slice(&self.chain_id.to_be_bytes());
+        pi.extend_from_slice(self.withdraw_root.as_slice());
+        pi.extend_from_slice(self.prev_msg_queue_hash.as_slice());
+        pi.extend_from_slice(self.post_msg_queue_hash.as_slice());
+        pi.extend_from_slice(self.prev_blockhash.as_slice());
+        pi.extend_from_slice(self.post_blockhash.as_slice());
+        pi.extend_from_slice(&self.initial_block_number.to_be_bytes());
+        pi.extend_from_slice(&self.final_block_number.to_be_bytes());
+        pi
     }
 
-    /// Public inputs encoded for a batch (galileo or da-codec@v9) is defined as
+    /// Public inputs encoded for a batch (galileo-v2 or da-codec@v10).
     ///
     /// Same as galileo.
     pub fn pi_galileo_v2(&self, version: Version) -> Vec<u8> {
@@ -173,6 +183,8 @@ impl MultiVersionPublicInputs for BatchInfo {
     /// - state roots MUST be chained
     /// - batch hashes MUST be chained
     /// - L1 msg queue hashes MUST be chained
+    ///
+    /// Furthermore, for post-Feynman Scroll, the L2 blockhash lineage MUST also be chained.
     fn validate(&self, prev_pi: &Self, version: Version) {
         assert_eq!(self.chain_id, prev_pi.chain_id);
         assert_eq!(self.parent_state_root, prev_pi.state_root);
@@ -184,6 +196,16 @@ impl MultiVersionPublicInputs for BatchInfo {
             assert_eq!(prev_pi.prev_msg_queue_hash, B256::ZERO);
             assert_eq!(self.post_msg_queue_hash, B256::ZERO);
             assert_eq!(prev_pi.post_msg_queue_hash, B256::ZERO);
+        }
+
+        // Enforce L2 blockhash lineage for post-Feynman Scroll batches.
+        if version.domain == Domain::Scroll && version.fork >= ForkName::Feynman {
+            assert_eq!(self.prev_blockhash, prev_pi.post_blockhash);
+            assert_eq!(
+                self.initial_block_number,
+                prev_pi.final_block_number + 1,
+                "initial block number must continue from the previous batch"
+            );
         }
 
         if version.domain == Domain::Validium {

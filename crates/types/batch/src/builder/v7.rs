@@ -129,6 +129,10 @@ impl<P: Payload> super::BatchInfoBuilder for GenericBatchInfoBuilderV7<P> {
             withdraw_root: last_chunk.withdraw_root,
             prev_msg_queue_hash: first_chunk.prev_msg_queue_hash,
             post_msg_queue_hash: last_chunk.post_msg_queue_hash,
+            prev_blockhash: first_chunk.prev_blockhash,
+            post_blockhash: last_chunk.post_blockhash,
+            initial_block_number: first_chunk.initial_block_number,
+            final_block_number: last_chunk.final_block_number(),
             encryption_key: None,
         }
     }

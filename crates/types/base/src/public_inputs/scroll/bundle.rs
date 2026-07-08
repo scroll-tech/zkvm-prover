@@ -32,6 +32,18 @@ pub struct BundleInfo {
     pub batch_hash: B256,
     /// The withdrawals root at the last block in the last chunk in the last batch in the bundle.
     pub withdraw_root: B256,
+    /// The blockhash of the last block in the previous bundle (parent of the first block).
+    #[serde(default)]
+    pub prev_blockhash: B256,
+    /// The blockhash of the last block in the current bundle.
+    #[serde(default)]
+    pub post_blockhash: B256,
+    /// The block number of the first block in the bundle.
+    #[serde(default)]
+    pub initial_block_number: u64,
+    /// The block number of the last block in the bundle.
+    #[serde(default)]
+    pub final_block_number: u64,
     /// Optional encryption key, used in the case of domain=Validium.
     pub encryption_key: Option<Box<[u8]>>,
 }
@@ -72,7 +84,7 @@ impl BundleInfo {
     ///     post state root ||
     ///     batch hash ||
     ///     withdraw root
-    /// )   
+    /// )
     pub fn pi_euclidv2(&self) -> Vec<u8> {
         std::iter::empty()
             .chain(self.chain_id.to_be_bytes().as_slice())
@@ -87,16 +99,24 @@ impl BundleInfo {
             .collect()
     }
 
+    /// Public inputs encoded for a bundle (feynman or da-codec@v8).
+    ///
+    /// Same as euclid-v2, but additionally commits to the L2 blockhash lineage and block range.
     pub fn pi_feynman(&self) -> Vec<u8> {
-        self.pi_euclidv2()
+        let mut pi = self.pi_euclidv2();
+        pi.extend_from_slice(self.prev_blockhash.as_slice());
+        pi.extend_from_slice(self.post_blockhash.as_slice());
+        pi.extend_from_slice(&self.initial_block_number.to_be_bytes());
+        pi.extend_from_slice(&self.final_block_number.to_be_bytes());
+        pi
     }
 
     pub fn pi_galileo(&self) -> Vec<u8> {
-        self.pi_euclidv2()
+        self.pi_feynman()
     }
 
     pub fn pi_galileo_v2(&self) -> Vec<u8> {
-        self.pi_euclidv2()
+        self.pi_feynman()
     }
 
     pub fn pi_versioned(&self, version: Version, pi: impl IntoIterator<Item = u8>) -> Vec<u8> {

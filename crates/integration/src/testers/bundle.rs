@@ -119,7 +119,16 @@ impl BundleTaskGenerator {
                 // validate some data
                 assert_eq!(info.parent_state_root, last_info.state_root, "state root");
                 assert_eq!(info.chain_id, last_info.chain_id, "chain id");
-                assert_eq!(info.parent_batch_hash, last_info.batch_hash, "batch hash",);
+                assert_eq!(info.parent_batch_hash, last_info.batch_hash, "batch hash");
+                assert_eq!(
+                    last_info.post_blockhash, info.prev_blockhash,
+                    "blockhash lineage"
+                );
+                assert_eq!(
+                    last_info.final_block_number + 1,
+                    info.initial_block_number,
+                    "block number continuity"
+                );
             }
 
             let pi_hash = info.pi_hash_by_version(version);

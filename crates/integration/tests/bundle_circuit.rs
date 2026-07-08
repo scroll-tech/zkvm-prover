@@ -111,6 +111,10 @@ fn verify_bundle_info_pi() {
             "0x97f9728ad48ff896b4272abcecd9a6a46577c24fbf2504f5ed2c3178c857263a",
         )
         .unwrap(),
+        prev_blockhash: Default::default(),
+        post_blockhash: Default::default(),
+        initial_block_number: 0,
+        final_block_number: 0,
         encryption_key: None,
     };
 
@@ -146,10 +150,10 @@ fn e2e_inner(
     let version = testing_version();
     let pi_str = match version.fork {
         ForkName::EuclidV1 => "3cc70faf6b5a4bd565694a4c64de59befb735f4aac2a4b9e6a6fc2ee950b8a72",
-        ForkName::EuclidV2 => "2028510c403837c6ed77660fd92814ba61d7b746e7268cc8dfc14d163d45e6bd",
-        ForkName::Feynman => "80523a61b2b94b2922638ec90edd084b1022798e1e5539c3a079d2b0736e4f32",
-        ForkName::Galileo => "86290e8c329dd2ec430df4a8b2ae8396b3996b3e814afff24b7cedeb26387087",
-        ForkName::GalileoV2 => "7ff4ebd1e74adf0f7740df04d9ba7a334beb37faffa126dda00c6b2ade8f90d4",
+        ForkName::EuclidV2 => "98e737d33f44056fa817da85206be37b33a51df8e6195a322c80bcf2c8fb61ac",
+        ForkName::Feynman => "e3ee47dd51a0f0a73cc85d5af3a673d5208c3d21bbb4844e649032d5e7e1b9bd",
+        ForkName::Galileo => "c27263e52c1f00550fa1fc93c7a01d9dc279798c234a402b9ef7e5315f6d1698",
+        ForkName::GalileoV2 => "b3bd46e0c861eded50db6efe775110fab65776a10b3129aa90faa3f6baa05e91",
     };
     let expected_pi_hash = metadata.pi_hash_by_version(version);
     // sanity check for pi of bundle hash, update the expected hash if block witness changed

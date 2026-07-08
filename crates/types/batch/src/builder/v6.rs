@@ -53,6 +53,10 @@ impl super::BatchInfoBuilder for BatchInfoBuilderV6 {
             withdraw_root: last.withdraw_root,
             prev_msg_queue_hash: Default::default(),
             post_msg_queue_hash: Default::default(),
+            prev_blockhash: first.prev_blockhash,
+            post_blockhash: last.post_blockhash,
+            initial_block_number: first.initial_block_number,
+            final_block_number: last.final_block_number(),
             encryption_key: Default::default(),
         }
     }
