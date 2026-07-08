@@ -230,13 +230,16 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
 
         // Enable deferral for aggregation circuits using the previous SDK
         let deferral_prover: Option<MultiDeferralCircuitProver> =
-            if (project_name == "batch" || project_name == "bundle") && prev_sdk.is_some() {
-                let child_sdk = prev_sdk.as_ref().unwrap();
-                let deferral_prover = make_deferral_prover(child_sdk, &app_config, &agg_params);
-                let deferral_config =
-                    deferral_prover.make_config(vec![SupportedDeferral::VerifyStark]);
-                app_config.app_vm_config.deferral = Some(deferral_config);
-                Some(deferral_prover)
+            if project_name == "batch" || project_name == "bundle" {
+                if let Some(child_sdk) = prev_sdk.as_ref() {
+                    let deferral_prover = make_deferral_prover(child_sdk, &app_config, &agg_params);
+                    let deferral_config =
+                        deferral_prover.make_config(vec![SupportedDeferral::VerifyStark]);
+                    app_config.app_vm_config.deferral = Some(deferral_config);
+                    Some(deferral_prover)
+                } else {
+                    None
+                }
             } else {
                 None
             };
