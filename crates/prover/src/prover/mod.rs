@@ -3,16 +3,21 @@ use std::{
     sync::{Arc, OnceLock},
 };
 
-use openvm_circuit::arch::instructions::{exe::VmExe, DEFERRAL_AS};
-use openvm_recursion_circuit::batch_constraint::commit_child_vk;
-use openvm_sdk::{F, Sdk, StdIn, SC};
-use openvm_sdk::config::{AggregationConfig, AggregationSystemParams, AggregationTreeConfig, AppConfig};
-use openvm_sdk_config::{SdkVmConfig, deferral::SupportedDeferral};
-use openvm_sdk::prover::{DeferralAggProver, MultiDeferralCircuitProver};
-use openvm_stark_backend::StarkEngine;
+use openvm_circuit::arch::instructions::{DEFERRAL_AS, exe::VmExe};
 use openvm_continuations::CommitBytes;
+use openvm_recursion_circuit::batch_constraint::commit_child_vk;
+use openvm_sdk::config::{
+    AggregationConfig, AggregationSystemParams, AggregationTreeConfig, AppConfig,
+};
+use openvm_sdk::prover::{DeferralAggProver, MultiDeferralCircuitProver};
+use openvm_sdk::{F, SC, Sdk, StdIn};
+use openvm_sdk_config::{SdkVmConfig, deferral::SupportedDeferral};
+use openvm_stark_backend::StarkEngine;
 use openvm_stark_sdk::{
-    config::{hook_params_with_100_bits_security, internal_params_with_100_bits_security, leaf_params_with_100_bits_security},
+    config::{
+        hook_params_with_100_bits_security, internal_params_with_100_bits_security,
+        leaf_params_with_100_bits_security,
+    },
     openvm_stark_backend::{codec::Encode, p3_field::PrimeField32},
 };
 use scroll_zkvm_types::{proof::OpenVmEvmProof, types_agg::ProgramCommitment, utils::serialize_vk};
@@ -22,16 +27,16 @@ use tracing::instrument;
 #[cfg(feature = "cuda")]
 use openvm_cuda_backend::BabyBearPoseidon2GpuEngine as DeferralEngine;
 #[cfg(feature = "cuda")]
-use openvm_verify_stark_circuit::prover::DeferredVerifyGpuProver as VerifyProver;
-#[cfg(feature = "cuda")]
 use openvm_verify_stark_circuit::prover::DeferredVerifyGpuCircuitProver as VerifyCircuitProver;
+#[cfg(feature = "cuda")]
+use openvm_verify_stark_circuit::prover::DeferredVerifyGpuProver as VerifyProver;
 
 #[cfg(not(feature = "cuda"))]
 use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2CpuEngine as DeferralEngine;
 #[cfg(not(feature = "cuda"))]
-use openvm_verify_stark_circuit::prover::DeferredVerifyCpuProver as VerifyProver;
-#[cfg(not(feature = "cuda"))]
 use openvm_verify_stark_circuit::prover::DeferredVerifyCpuCircuitProver as VerifyCircuitProver;
+#[cfg(not(feature = "cuda"))]
+use openvm_verify_stark_circuit::prover::DeferredVerifyCpuProver as VerifyProver;
 
 type SdkAppConfig = AppConfig<SdkVmConfig>;
 
@@ -182,7 +187,13 @@ impl Prover {
         // Reserve deferral address space in the parent config *before* reading the
         // memory dimensions used by the deferral circuit, so the circuit's layout
         // matches the runtime VM exactly.
-        let addr_spaces = &mut self.app_config.app_vm_config.system.config.memory_config.addr_spaces;
+        let addr_spaces = &mut self
+            .app_config
+            .app_vm_config
+            .system
+            .config
+            .memory_config
+            .addr_spaces;
         let deferral_as = DEFERRAL_AS as usize;
         if deferral_as >= addr_spaces.len() {
             return Err(Error::Custom(format!(
@@ -218,7 +229,8 @@ impl Prover {
         };
         let multi_deferral_circuit_prover =
             MultiDeferralCircuitProver::new(verify_stark_prover, agg_config.clone(), hook_params);
-        let deferral_agg_prover = DeferralAggProver::new(agg_config, Arc::new(multi_deferral_circuit_prover));
+        let deferral_agg_prover =
+            DeferralAggProver::new(agg_config, Arc::new(multi_deferral_circuit_prover));
         let deferral_config = deferral_agg_prover
             .multi_deferral_circuit_prover
             .make_config(vec![SupportedDeferral::VerifyStark]);
@@ -366,12 +378,8 @@ impl Prover {
 
         tracing::info!("verifing stark proof");
         let agg_vk = self.get_sdk()?.agg_vk();
-        UniversalVerifier::verify_stark_proof_with_vk(
-            &agg_vk,
-            &proof,
-            &self.get_app_vk(),
-        )
-        .map_err(|e| Error::VerifyProof(e.to_string()))?;
+        UniversalVerifier::verify_stark_proof_with_vk(&agg_vk, &proof, &self.get_app_vk())
+            .map_err(|e| Error::VerifyProof(e.to_string()))?;
         tracing::info!("verifing stark proof done");
         Ok(proof)
     }

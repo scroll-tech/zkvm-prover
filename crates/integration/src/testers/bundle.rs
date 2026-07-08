@@ -9,8 +9,7 @@ use scroll_zkvm_types::{
 
 // Only related to hardcoded commitments. Can be refactored later.
 use crate::{
-    PROGRAM_COMMITMENTS, PartialProvingTask, ProverTester,
-    prove_verify_single_evm_with_deferral,
+    PROGRAM_COMMITMENTS, PartialProvingTask, ProverTester, prove_verify_single_evm_with_deferral,
     testers::batch::BatchTaskGenerator, utils::metadata_from_batch_witnesses,
 };
 use scroll_zkvm_prover::Prover;

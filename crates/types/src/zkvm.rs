@@ -1,12 +1,10 @@
 use once_cell::sync::Lazy;
 use openvm_sdk::Sdk;
-use openvm_sdk::keygen::AggProvingKey;
 use openvm_sdk::config::AggregationSystemParams;
+use openvm_sdk::keygen::AggProvingKey;
 use openvm_stark_sdk::config::{
-    app_params_with_100_bits_security,
-    leaf_params_with_100_bits_security,
-    internal_params_with_100_bits_security,
-    MAX_APP_LOG_STACKED_HEIGHT,
+    MAX_APP_LOG_STACKED_HEIGHT, app_params_with_100_bits_security,
+    internal_params_with_100_bits_security, leaf_params_with_100_bits_security,
 };
 
 /// Proving key for STARK aggregation. Primarily used to aggregate

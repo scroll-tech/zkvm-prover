@@ -34,10 +34,7 @@ fn main() -> eyre::Result<()> {
         .join("chunk-circuit");
     let current_dir = env::current_dir()?;
     env::set_current_dir(&project_path)?;
-    let elf = build_elf(
-        &project_path,
-        "maxperf",
-    )?;
+    let elf = build_elf(&project_path, "maxperf")?;
     env::set_current_dir(current_dir)?;
 
     let wit = get_witness_from_env_or_builder(&mut preset_chunk())?;

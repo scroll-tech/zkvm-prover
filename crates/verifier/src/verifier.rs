@@ -1,9 +1,9 @@
+use openvm_continuations::CommitBytes;
+use openvm_sdk::SC;
+use openvm_sdk::Sdk;
 use openvm_sdk::types::AppExecutionCommit;
 use openvm_stark_sdk::openvm_stark_backend::keygen::types::MultiStarkVerifyingKey;
 use openvm_stark_sdk::openvm_stark_backend::{codec::Decode, p3_field::PrimeField32, proof::Proof};
-use openvm_sdk::SC;
-use openvm_sdk::Sdk;
-use openvm_continuations::CommitBytes;
 use scroll_zkvm_types::proof::OpenVmEvmProof;
 use scroll_zkvm_types::{proof::StarkProof, utils::serialize_vk};
 use std::path::Path;
@@ -42,7 +42,7 @@ impl UniversalVerifier {
     ) -> eyre::Result<()> {
         let prog_commit = serialize_vk::deserialize(vk);
 
-        use openvm_verify_stark_host::{vk::VerificationBaseline, VmStarkProof};
+        use openvm_verify_stark_host::{VmStarkProof, vk::VerificationBaseline};
         let baseline: VerificationBaseline = if stark_proof.baseline.is_empty() {
             eyre::bail!("stark proof missing verification baseline (v2+ required)");
         } else {
@@ -52,15 +52,19 @@ impl UniversalVerifier {
         let deferral_merkle_proofs = if stark_proof.deferral_merkle_proofs.is_empty() {
             None
         } else {
-            Some(openvm_verify_stark_host::deferral::DeferralMerkleProofs::decode(
-                &mut std::io::Cursor::new(&stark_proof.deferral_merkle_proofs),
-            )?)
+            Some(
+                openvm_verify_stark_host::deferral::DeferralMerkleProofs::decode(
+                    &mut std::io::Cursor::new(&stark_proof.deferral_merkle_proofs),
+                )?,
+            )
         };
         let vm_stark_proof = VmStarkProof {
             inner: Proof::<SC>::decode_from_bytes(&stark_proof.proof)?,
             user_pvs_proof: {
                 use openvm_circuit::system::memory::merkle::public_values::UserPublicValuesProof;
-                UserPublicValuesProof::decode::<SC, _>(&mut std::io::Cursor::new(&stark_proof.user_pvs_proof))?
+                UserPublicValuesProof::decode::<SC, _>(&mut std::io::Cursor::new(
+                    &stark_proof.user_pvs_proof,
+                ))?
             },
             deferral_merkle_proofs,
         };
@@ -92,12 +96,10 @@ impl UniversalVerifier {
         let path_agg_vk = path_verifier.as_ref().join("root_verifier_vk");
         let evm_verifier = std::fs::read(path_verifier_code)?;
 
-        let loaded_mvk = openvm_sdk::fs::read_object_from_file(path_agg_vk).unwrap_or_else(
-            |_| {
-                tracing::warn!("root_verifier_vk not found on disk, computing on-the-fly (slow)...");
-                AGG_STARK_PROVING_KEY.internal_recursive.get_vk().clone()
-            }
-        );
+        let loaded_mvk = openvm_sdk::fs::read_object_from_file(path_agg_vk).unwrap_or_else(|_| {
+            tracing::warn!("root_verifier_vk not found on disk, computing on-the-fly (slow)...");
+            AGG_STARK_PROVING_KEY.internal_recursive.get_vk().clone()
+        });
 
         Ok(Self {
             evm_verifier,

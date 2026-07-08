@@ -15,9 +15,7 @@ fn main() {
     Crypto::install();
 
     ecies::sha256::set_digest_provider(|| {
-        Box::new(ecies::sha256::ext::ExtSha256Core::new(
-            sha256_digest,
-        ))
+        Box::new(ecies::sha256::ext::ExtSha256Core::new(sha256_digest))
     })
     .unwrap();
 

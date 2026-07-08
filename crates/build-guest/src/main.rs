@@ -35,10 +35,10 @@ use clap::{Parser, ValueEnum};
 use dotenvy::dotenv;
 use eyre::Result;
 use openvm_build::GuestOptions;
-use openvm_instructions::exe::VmExe;
 use openvm_circuit::arch::instructions::DEFERRAL_AS;
+use openvm_continuations::CommitBytes;
+use openvm_instructions::exe::VmExe;
 use openvm_recursion_circuit::batch_constraint::commit_child_vk;
-use openvm_stark_backend::StarkEngine;
 use openvm_sdk::{
     F, Sdk,
     config::{AggregationConfig, AggregationSystemParams, AggregationTreeConfig, AppConfig},
@@ -46,16 +46,19 @@ use openvm_sdk::{
     prover::MultiDeferralCircuitProver,
 };
 use openvm_sdk_config::{SdkVmConfig, deferral::SupportedDeferral};
-use openvm_continuations::CommitBytes;
+use openvm_stark_backend::StarkEngine;
+use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2CpuEngine as DeferralEngine;
 use openvm_stark_sdk::{
-    config::{app_params_with_100_bits_security, hook_params_with_100_bits_security, internal_params_with_100_bits_security, leaf_params_with_100_bits_security, MAX_APP_LOG_STACKED_HEIGHT},
+    config::{
+        MAX_APP_LOG_STACKED_HEIGHT, app_params_with_100_bits_security,
+        hook_params_with_100_bits_security, internal_params_with_100_bits_security,
+        leaf_params_with_100_bits_security,
+    },
     openvm_stark_backend::p3_field::PrimeField32,
 };
 use openvm_verify_stark_circuit::prover::{
-    DeferredVerifyCpuCircuitProver as VerifyCircuitProver,
-    DeferredVerifyCpuProver as VerifyProver,
+    DeferredVerifyCpuCircuitProver as VerifyCircuitProver, DeferredVerifyCpuProver as VerifyProver,
 };
-use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2CpuEngine as DeferralEngine;
 use std::{
     env, fs,
     path::{Path, PathBuf},
@@ -217,18 +220,21 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
 
         // Reserve deferral address space for all projects; SdkVmConfig::optimize() will zero it
         // for circuits that do not enable deferral.
-        app_config.app_vm_config.system.config.memory_config.addr_spaces
-            [DEFERRAL_AS as usize]
+        app_config
+            .app_vm_config
+            .system
+            .config
+            .memory_config
+            .addr_spaces[DEFERRAL_AS as usize]
             .num_cells = 1 << 25;
 
         // Enable deferral for aggregation circuits using the previous SDK
         let deferral_prover: Option<MultiDeferralCircuitProver> =
-            if (project_name == "batch" || project_name == "bundle") && prev_sdk.is_some()
-            {
+            if (project_name == "batch" || project_name == "bundle") && prev_sdk.is_some() {
                 let child_sdk = prev_sdk.as_ref().unwrap();
                 let deferral_prover = make_deferral_prover(child_sdk, &app_config, &agg_params);
-                let deferral_config = deferral_prover
-                    .make_config(vec![SupportedDeferral::VerifyStark]);
+                let deferral_config =
+                    deferral_prover.make_config(vec![SupportedDeferral::VerifyStark]);
                 app_config.app_vm_config.deferral = Some(deferral_config);
                 Some(deferral_prover)
             } else {
@@ -308,8 +314,10 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
         let prover = sdk.prover(Arc::new(app_exe.clone()))?;
         let exe_digest = prover.app_prover.app_exe_commit();
         let vm_digest = prover.app_vm_commit();
-        let exe_commit_u32: [u32; DIGEST_SIZE] = std::array::from_fn(|i| exe_digest[i].as_canonical_u32());
-        let vm_commit_u32: [u32; DIGEST_SIZE] = std::array::from_fn(|i| vm_digest[i].as_canonical_u32());
+        let exe_commit_u32: [u32; DIGEST_SIZE] =
+            std::array::from_fn(|i| exe_digest[i].as_canonical_u32());
+        let vm_commit_u32: [u32; DIGEST_SIZE] =
+            std::array::from_fn(|i| vm_digest[i].as_canonical_u32());
 
         write_commitment(
             &Path::new(project_dir).join(format!("{project_name}_exe_commit.rs")),
@@ -451,10 +459,7 @@ fn generate_evm_verifier(
 
         // The bundle's deferral circuit verifies batch proofs; its memory layout must
         // match the bundle VM config, not the batch config.
-        let deferral_prover = make_deferral_prover(&batch_sdk,
-            &bundle_app_config,
-            &agg_params,
-        );
+        let deferral_prover = make_deferral_prover(&batch_sdk, &bundle_app_config, &agg_params);
 
         Sdk::builder()
             .app_config(bundle_app_config)
@@ -475,11 +480,8 @@ fn generate_evm_verifier(
     // Write the root aggregation VK from the same SDK used to generate the verifier.
     // This must match the bundle circuit's deferral config and aggregation tree shape.
     if force_overwrite || !path_root_agg_pk.exists() {
-        write_object_to_file(
-            &path_root_agg_pk,
-            sdk.agg_vk().clone(),
-        )
-        .expect("failed to write root_verifier_vk");
+        write_object_to_file(&path_root_agg_pk, sdk.agg_vk().clone())
+            .expect("failed to write root_verifier_vk");
     }
 
     // In v2, the EVM verifier is split into multiple Solidity files.

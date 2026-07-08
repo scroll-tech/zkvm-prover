@@ -1,10 +1,10 @@
 use crate::utils::{as_base64, vec_as_base64};
-use openvm_static_verifier::keygen::RawEvmProof;
 use openvm_sdk::SC;
 use openvm_stark_sdk::{
     openvm_stark_backend::{p3_field::PrimeField32, proof::Proof},
     p3_baby_bear::BabyBear,
 };
+use openvm_static_verifier::keygen::RawEvmProof;
 use serde::{Deserialize, Serialize};
 use std::io;
 use std::io::Cursor;
@@ -208,8 +208,10 @@ impl ProofEnum {
                 use openvm_circuit::system::memory::merkle::public_values::UserPublicValuesProof;
                 use openvm_stark_sdk::config::baby_bear_poseidon2::{DIGEST_SIZE, F};
                 let proof: UserPublicValuesProof<DIGEST_SIZE, F> =
-                    UserPublicValuesProof::decode::<SC, _>(&mut Cursor::new(&stark_proof.user_pvs_proof))
-                        .expect("decode user_pvs_proof failed");
+                    UserPublicValuesProof::decode::<SC, _>(&mut Cursor::new(
+                        &stark_proof.user_pvs_proof,
+                    ))
+                    .expect("decode user_pvs_proof failed");
                 proof
                     .public_values
                     .iter()

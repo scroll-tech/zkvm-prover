@@ -71,7 +71,11 @@ where
 
             for (proof, input_commit) in proofs.iter().zip(input_commits.iter()) {
                 Self::verify_commitments(&proof.commitment);
-                verify_proof(&proof.commitment, proof.public_values.as_slice(), input_commit);
+                verify_proof(
+                    &proof.commitment,
+                    proof.public_values.as_slice(),
+                    input_commit,
+                );
             }
         }
 
@@ -79,7 +83,11 @@ where
         {
             for proof in proofs.iter() {
                 Self::verify_commitments(&proof.commitment);
-                verify_proof(&proof.commitment, proof.public_values.as_slice(), &[0u8; 32]);
+                verify_proof(
+                    &proof.commitment,
+                    proof.public_values.as_slice(),
+                    &[0u8; 32],
+                );
             }
         }
 
@@ -129,7 +137,7 @@ fn u32_array_to_commit(arr: &[u32; 8]) -> [u8; 32] {
 /// Verify a root proof using deferred STARK verification (v2).
 #[cfg(all(target_os = "zkvm", target_arch = "riscv32"))]
 fn verify_proof(commitment: &ProgramCommitment, public_inputs: &[u32], input_commit: &[u8; 32]) {
-    use openvm_verify_stark_guest::{verify_stark, ProofOutput};
+    use openvm_verify_stark_guest::{ProofOutput, verify_stark};
 
     // Sanity check for the number of public-input values.
     assert_eq!(public_inputs.len(), NUM_PUBLIC_VALUES);
@@ -146,11 +154,7 @@ fn verify_proof(commitment: &ProgramCommitment, public_inputs: &[u32], input_com
 }
 
 #[cfg(not(all(target_os = "zkvm", target_arch = "riscv32")))]
-fn verify_proof(
-    _commitment: &ProgramCommitment,
-    _public_inputs: &[u32],
-    _input_commit: &[u8; 32],
-) {
+fn verify_proof(_commitment: &ProgramCommitment, _public_inputs: &[u32], _input_commit: &[u8; 32]) {
     // This function is guest-only: the actual deferred STARK verification happens inside
     // the zkvm guest via `openvm_verify_stark_guest::verify_stark`. Calling it on a non-zkvm
     // target is a programming error.
