@@ -119,7 +119,11 @@ fn write_commitment(output_path: &PathBuf, commitment: [u32; DIGEST_SIZE]) -> Re
     Ok(())
 }
 
-/// Writes a commitment array as hex
+/// Writes a commitment array as canonical-form hex.
+///
+/// The EVM verifier constructor (`ZkEvmVerifierPostFeynman`) expects digests in
+/// canonical form (big-endian). The proof instances also contain canonical
+/// digests, so this file can be used directly without Montgomery conversion.
 fn write_commitment_as_evm_hex(
     output_path: &PathBuf,
     commitment: [u32; DIGEST_SIZE],
@@ -319,6 +323,7 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
 
         // Special handling for bundle project
         if project_name == "bundle" {
+            // Primary files: canonical form, usable directly by EVM verifier constructors.
             let output_path = release_output_dir.join(project_name).join("digest_1.hex");
             write_commitment_as_evm_hex(&output_path, exe_commit_u32)?;
             let output_path = release_output_dir.join(project_name).join("digest_2.hex");
