@@ -52,7 +52,6 @@ fn print_vks() -> eyre::Result<()> {
         let config = ProverConfig {
             path_app_exe,
             path_app_config,
-            ..Default::default()
         };
 
         let app_vk = hex::encode(Prover::setup(config, None).unwrap().get_app_vk());

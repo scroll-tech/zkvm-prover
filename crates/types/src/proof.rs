@@ -96,7 +96,7 @@ use snark_verifier_sdk::snark_verifier::{
 
 impl From<OpenVmEvmProof> for EvmProof {
     fn from(value: OpenVmEvmProof) -> Self {
-        let raw_proof: RawEvmProof = value.try_into().expect("fail to convert");
+        let raw_proof: RawEvmProof = value.into();
         let instances = raw_proof
             .instances
             .iter()
@@ -139,7 +139,7 @@ impl From<EvmProof> for OpenVmEvmProof {
             instances,
             proof: value.proof,
         };
-        raw_proof.try_into().expect("fail to convert")
+        raw_proof.into()
     }
 }
 

@@ -201,7 +201,6 @@ pub trait ProverTester {
         let config = scroll_zkvm_prover::ProverConfig {
             path_app_exe,
             path_app_config,
-            ..Default::default()
         };
         let prover = Prover::setup(config, Some(Self::NAME))?;
 
@@ -452,6 +451,7 @@ fn decode_stark_proof(proof: &StarkProof) -> eyre::Result<(VmStarkProof, Verific
 }
 
 /// Compute deferral inputs and states from child proofs.
+#[allow(clippy::type_complexity)]
 pub fn compute_deferral_data(
     child_prover: &Prover,
     cached_commit: openvm_continuations::CommitBytes,
