@@ -6,13 +6,16 @@ use circuit::ChunkCircuit as C;
 
 openvm::entry!(main);
 
+fn sha256_digest(input: &[u8], output: &mut [u8; 32]) {
+    use openvm_sha2::Digest;
+    *output = openvm_sha2::Sha256::digest(input).into();
+}
+
 fn main() {
     Crypto::install();
 
     ecies::sha256::set_digest_provider(|| {
-        Box::new(ecies::sha256::ext::ExtSha256Core::new(
-            openvm_sha2::set_sha256,
-        ))
+        Box::new(ecies::sha256::ext::ExtSha256Core::new(sha256_digest))
     })
     .unwrap();
 

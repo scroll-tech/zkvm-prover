@@ -105,7 +105,10 @@ pub fn point_evaluation(
 ///
 /// We use the [`openvm_sha256_guest`] extension to compute the SHA-256 digest.
 pub fn kzg_to_versioned_hash(kzg_commitment: &[u8]) -> [u8; 32] {
-    let mut hash = openvm_sha2::sha256(kzg_commitment);
+    let mut hash: [u8; 32] = {
+        use openvm_sha2::Digest;
+        openvm_sha2::Sha256::digest(kzg_commitment).into()
+    };
     hash[0] = VERSIONED_HASH_VERSION_KZG;
     hash
 }

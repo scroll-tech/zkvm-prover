@@ -31,10 +31,8 @@ for f in chunk-circuit/chunk_vm_commit.rs \
   docker cp ${container_id}:/app/crates/circuits/${f} crates/circuits/${f}
 done
 
-# copy root verifier
-docker cp ${container_id}:/app/crates/build-guest/root_verifier.asm crates/build-guest/root_verifier.asm
-
-# copy exe commitments from container to local
+# copy release files from container to local
+docker cp ${container_id}:/app/releases/dev/. releases/dev/
 for f in chunk-circuit/chunk_exe_commit.rs \
   batch-circuit/batch_exe_commit.rs \
   bundle-circuit/bundle_exe_commit.rs; do

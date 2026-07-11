@@ -10,8 +10,7 @@
 //! 4. Creates verification keys and supporting files
 //!
 //! ## OpenVM Assets Generation:
-//! 1. Generates root verifier assembly code
-//! 2. Creates EVM verifier contract (Solidity) and bytecode
+//! 1. Generates EVM verifier contract (Solidity) and bytecode
 //!
 //! ## Usage:
 //! ```bash
@@ -24,7 +23,7 @@
 //!   - `force`: Always regenerate all files (use for clean builds or CI)
 //!
 //! ## Environment Variables:
-//! - `BUILD_PROJECT`: Comma-separated list of projects to build (e.g., "chunk,batch").
+//! - `BUILD_PROJECT`: Comma-separated list of projects to build (e.g. "chunk,batch").
 //!   Defaults to "chunk,batch,bundle".
 //!
 //! ## Output:
@@ -36,29 +35,49 @@ use clap::{Parser, ValueEnum};
 use dotenvy::dotenv;
 use eyre::Result;
 use openvm_build::GuestOptions;
+use openvm_circuit::arch::instructions::DEFERRAL_AS;
+use openvm_continuations::CommitBytes;
 use openvm_instructions::exe::VmExe;
-use openvm_native_compiler::ir::DIGEST_SIZE;
+use openvm_recursion_circuit::batch_constraint::commit_child_vk;
 use openvm_sdk::{
     F, Sdk,
-    commit::CommitBytes,
-    config::{AppConfig, SdkVmConfig},
+    config::{AggregationConfig, AggregationSystemParams, AggregationTreeConfig, AppConfig},
     fs::write_object_to_file,
-    prover::AppProver,
+    prover::MultiDeferralCircuitProver,
 };
+use openvm_sdk_config::{SdkVmConfig, deferral::SupportedDeferral};
+use openvm_stark_backend::{StarkEngine, SystemParams};
+use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2CpuEngine as DeferralEngine;
 use openvm_stark_sdk::{
-    openvm_stark_backend::p3_field::{PrimeField, RawDataSerializable},
-    p3_bn254::Bn254 as Bn254Fr,
+    config::{
+        MAX_APP_LOG_STACKED_HEIGHT, app_params_with_100_bits_security,
+        hook_params_with_100_bits_security, internal_params_with_100_bits_security,
+        leaf_params_with_100_bits_security,
+    },
+    openvm_stark_backend::p3_field::PrimeField32,
 };
-use scroll_zkvm_types::zkvm::AGG_STARK_PROVING_KEY;
-use snark_verifier_sdk::snark_verifier::loader::evm::compile_solidity;
+use openvm_verify_stark_circuit::prover::{
+    DeferredVerifyCpuCircuitProver as VerifyCircuitProver, DeferredVerifyCpuProver as VerifyProver,
+};
 use std::{
     env, fs,
+    io::Write,
     path::{Path, PathBuf},
     sync::Arc,
     time::Instant,
 };
 
 mod verifier;
+
+const DIGEST_SIZE: usize = 8;
+
+/// Default aggregation parameters used across chunk, batch, and bundle circuits.
+fn default_agg_params() -> AggregationSystemParams {
+    AggregationSystemParams {
+        leaf: leaf_params_with_100_bits_security(),
+        internal: internal_params_with_100_bits_security(),
+    }
+}
 
 #[derive(Debug, Clone, ValueEnum)]
 enum OutputMode {
@@ -112,60 +131,52 @@ fn write_commitment_as_evm_hex(
     output_path: &PathBuf,
     commitment: [u32; DIGEST_SIZE],
 ) -> Result<()> {
-    let digest_bytes = compress_commitment_to_canonical_bytes(&commitment);
+    let commit_bytes = CommitBytes::from(commitment);
     if let Some(parent) = output_path.parent() {
         fs::create_dir_all(parent)?;
     }
-    fs::write(output_path, hex::encode(digest_bytes))?;
-    println!(
-        "{LOG_PREFIX} Wrote canonical commitment to {}",
-        output_path.display()
-    );
+    fs::write(output_path, hex::encode(commit_bytes.as_slice()))?;
+    println!("{LOG_PREFIX} Wrote commitment to {}", output_path.display());
     Ok(())
 }
 
-/// Writes a commitment array as Montgomery-form hex.
-///
-/// Kept for backward compatibility with tooling that expects the legacy
-/// Montgomery representation. Most callers should use `digest_1.hex` /
-/// `digest_2.hex` (canonical) instead.
-fn write_commitment_as_evm_hex_montgomery(
-    output_path: &PathBuf,
-    commitment: [u32; DIGEST_SIZE],
-) -> Result<()> {
-    let digest_bytes = compress_commitment(&commitment)
-        .into_bytes()
-        .into_iter()
-        .rev() // To big endian
-        .collect::<Vec<u8>>();
-    if let Some(parent) = output_path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    fs::write(output_path, hex::encode(digest_bytes))?;
-    println!(
-        "{LOG_PREFIX} Wrote Montgomery commitment to {}",
-        output_path.display()
+/// Build a MultiDeferralCircuitProver from a child SDK and the parent app config
+/// (CPU-only; build-guest does not use cuda).
+fn make_deferral_prover(
+    child_sdk: &Sdk,
+    parent_app_config: &AppConfig<SdkVmConfig>,
+    agg_params: &AggregationSystemParams,
+) -> MultiDeferralCircuitProver {
+    let child_agg_vk = child_sdk.agg_vk().clone();
+    let engine = <DeferralEngine as StarkEngine>::new(child_agg_vk.inner.params.clone());
+    let internal_recursive_cached_commit: CommitBytes =
+        commit_child_vk(&engine, &child_agg_vk, true)
+            .commitment
+            .into();
+
+    // The verify-stark deferral circuit runs as part of the *parent* VM, so its
+    // memory layout and public-value count must match the parent's config.
+    let system_config = parent_app_config.app_vm_config.as_ref().clone();
+    let memory_dimensions = system_config.memory_config.memory_dimensions();
+    let num_user_pvs = system_config.num_public_values;
+
+    let def_circuit_params = internal_params_with_100_bits_security();
+    let child_def_hook_commit: Option<CommitBytes> = child_sdk.def_hook_commit().map(|c| c.into());
+    let deferred_verify_prover = VerifyProver::new::<DeferralEngine>(
+        child_agg_vk,
+        internal_recursive_cached_commit,
+        def_circuit_params,
+        memory_dimensions,
+        num_user_pvs,
+        child_def_hook_commit,
+        0,
     );
-    Ok(())
-}
-
-/// Compresses an 8-element u32 commitment into a single canonical Fr element.
-///
-/// Returns big-endian canonical bytes, matching the format expected by the
-/// on-chain `ZkEvmVerifierPostFeynman` wrapper and the proof instances.
-fn compress_commitment_to_canonical_bytes(commitment: &[u32; DIGEST_SIZE]) -> [u8; 32] {
-    let bn254 = CommitBytes::from_u32_digest(commitment).to_bn254();
-    let biguint = bn254.as_canonical_biguint();
-    let be_bytes = biguint.to_bytes_be();
-    let mut bytes = [0u8; 32];
-    bytes[32 - be_bytes.len()..].copy_from_slice(&be_bytes);
-    bytes
-}
-
-/// Compresses an 8-element u32 commitment into a single Fr element.
-/// Used for generating digests compatible with on-chain verifiers.
-fn compress_commitment(commitment: &[u32; DIGEST_SIZE]) -> Bn254Fr {
-    CommitBytes::from_u32_digest(commitment).to_bn254()
+    let verify_stark_prover = VerifyCircuitProver::new(deferred_verify_prover);
+    let hook_params = hook_params_with_100_bits_security();
+    let agg_config = AggregationConfig {
+        params: agg_params.clone(),
+    };
+    MultiDeferralCircuitProver::new(verify_stark_prover, agg_config, hook_params)
 }
 
 /// Builds guest programs, transpiles them, and generates executable commitments.
@@ -181,7 +192,12 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
 
     println!("{LOG_PREFIX} Projects to build: {:?}", projects_to_build);
 
+    let _app_params = app_params_with_100_bits_security(21);
+    let agg_params = default_agg_params();
+
     let mut vk_dump: serde_json::Value = serde_json::from_str("{}")?;
+    let mut prev_sdk: Option<Sdk> = None;
+
     for project_name in projects_to_build {
         let project_path = workspace_dir
             .join("crates")
@@ -196,20 +212,55 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
         let project_dir = project_path.to_str().expect("Invalid path");
         // First read the app config specified in the project's root directory.
         let path_app_config = Path::new(project_dir).join(FD_APP_CONFIG);
-        let app_config: AppConfig<SdkVmConfig> =
+        let mut app_config: AppConfig<SdkVmConfig> =
             toml::from_str(&fs::read_to_string(&path_app_config)?)?;
         println!(
             "{project_dir} app config: {}",
             toml::to_string_pretty(&app_config)?
         );
 
-        // copy path_app_config as ${release_output_dir}/${project_name}/${FD_APP_CONFIG}
+        // Reserve deferral address space for all projects; SdkVmConfig::optimize() will zero it
+        // for circuits that do not enable deferral.
+        app_config
+            .app_vm_config
+            .system
+            .config
+            .memory_config
+            .addr_spaces[DEFERRAL_AS as usize]
+            .num_cells = 1 << 25;
+
+        // Enable deferral for aggregation circuits using the previous SDK
+        let deferral_prover: Option<MultiDeferralCircuitProver> =
+            if project_name == "batch" || project_name == "bundle" {
+                if let Some(child_sdk) = prev_sdk.as_ref() {
+                    let deferral_prover = make_deferral_prover(child_sdk, &app_config, &agg_params);
+                    let deferral_config =
+                        deferral_prover.make_config(vec![SupportedDeferral::VerifyStark]);
+                    app_config.app_vm_config.deferral = Some(deferral_config);
+                    Some(deferral_prover)
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+
+        // Write config (possibly modified with deferral) to release output dir
         let output_path = release_output_dir.join(project_name).join(FD_APP_CONFIG);
         if let Some(parent) = output_path.parent() {
             fs::create_dir_all(parent)?;
         }
-        fs::copy(&path_app_config, &output_path)?;
-        println!("{LOG_PREFIX} Copied config to {}", output_path.display());
+        fs::write(&output_path, toml::to_string_pretty(&app_config)?)?;
+        println!("{LOG_PREFIX} Wrote config to {}", output_path.display());
+
+        // Build SDK with the project-specific app config
+        let mut sdk_builder = Sdk::builder()
+            .app_config(app_config.clone())
+            .agg_params(agg_params.clone());
+        if let Some(dp) = deferral_prover {
+            sdk_builder = sdk_builder.multi_deferral_circuit_prover(dp);
+        }
+        let sdk = sdk_builder.build()?;
 
         // 1. Build ELF
 
@@ -229,7 +280,6 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
             ..Default::default()
         };
         let guest_opts = guest_opts.with_profile("maxperf".to_string());
-        let sdk = Sdk::new(app_config)?;
         let elf = sdk
             .build(guest_opts, project_dir, &Default::default(), None)
             .inspect_err(|_err| {
@@ -265,16 +315,13 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
         println!("{LOG_PREFIX} exe written to {path_app_exe:?}");
 
         // 3. Compute and Write Executable Commitment
-        let app_pk = sdk.app_pk();
-        let app_prover: AppProver<openvm_sdk::DefaultStarkEngine, _> = AppProver::new(
-            *sdk.app_vm_builder(),
-            &app_pk.app_vm_pk,
-            Arc::new(app_exe),
-            app_pk.leaf_committed_exe.get_program_commit(),
-        )?;
-        let app_comm = app_prover.app_commit();
-        let exe_commit_u32 = app_comm.app_exe_commit.to_u32_digest();
-        let vm_commit_u32 = app_comm.app_vm_commit.to_u32_digest();
+        let prover = sdk.prover(Arc::new(app_exe.clone()))?;
+        let exe_digest = prover.app_prover.app_exe_commit();
+        let vm_digest = prover.app_vm_commit();
+        let exe_commit_u32: [u32; DIGEST_SIZE] =
+            std::array::from_fn(|i| exe_digest[i].as_canonical_u32());
+        let vm_commit_u32: [u32; DIGEST_SIZE] =
+            std::array::from_fn(|i| vm_digest[i].as_canonical_u32());
 
         write_commitment(
             &Path::new(project_dir).join(format!("{project_name}_exe_commit.rs")),
@@ -292,16 +339,6 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
             write_commitment_as_evm_hex(&output_path, exe_commit_u32)?;
             let output_path = release_output_dir.join(project_name).join("digest_2.hex");
             write_commitment_as_evm_hex(&output_path, vm_commit_u32)?;
-
-            // Backup files: Montgomery form, kept for backward compatibility.
-            let output_path = release_output_dir
-                .join(project_name)
-                .join("digest_1.montgomery.hex");
-            write_commitment_as_evm_hex_montgomery(&output_path, exe_commit_u32)?;
-            let output_path = release_output_dir
-                .join(project_name)
-                .join("digest_2.montgomery.hex");
-            write_commitment_as_evm_hex_montgomery(&output_path, vm_commit_u32)?;
         }
 
         use scroll_zkvm_types::{types_agg::ProgramCommitment, utils::serialize_vk};
@@ -319,6 +356,8 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
             "{LOG_PREFIX} Finished build for config in {:?}",
             start_time.elapsed()
         );
+
+        prev_sdk = Some(sdk);
     }
 
     let output_path = release_output_dir.join("verifier").join("openVmVk.json");
@@ -335,53 +374,297 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
     Ok(())
 }
 
-/// Generates the root verifier assembly code.
-fn generate_root_verifier(workspace_dir: &Path, force_overwrite: bool) -> Result<()> {
-    println!("{LOG_PREFIX} === Generating Root Verifier Assembly ===");
+/// Root verifier assembly is no longer needed in v2 (deferred compute model).
+fn generate_root_verifier(_workspace_dir: &Path, _force_overwrite: bool) -> Result<()> {
+    println!("{LOG_PREFIX} === Root Verifier Assembly ===");
+    println!("{LOG_PREFIX} Skipping: root verifier ASM is deprecated in OpenVM v2");
+    Ok(())
+}
 
-    let root_verifier_path = workspace_dir
-        .join("crates")
-        .join("build-guest")
-        .join("root_verifier.asm");
+/// Default aggregation-tree shape used by the host prover and the EVM verifier.
+///
+/// Must stay in sync with [`Prover::get_sdk`](crates/prover/src/prover/mod.rs).
+const DEFAULT_AGG_TREE_CONFIG: AggregationTreeConfig = AggregationTreeConfig {
+    num_children_internal: 3,
+    num_children_leaf: 4,
+};
 
-    // Check if file exists and skip if in auto mode
-    if !force_overwrite && root_verifier_path.exists() {
-        println!(
-            "{LOG_PREFIX} Root verifier already exists, skipping (use --output-mode force to overwrite)"
-        );
-        return Ok(());
+/// How the EVM verifier should be obtained.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum RecomputeMode {
+    /// Always generate the verifier locally.
+    Yes,
+    /// Only attempt to download a pre-built verifier.
+    No,
+    /// Try downloading first; fall back to local generation if it fails.
+    Auto,
+}
+
+fn recompute_mode_from_env() -> RecomputeMode {
+    match env::var("RECOMPUTE_MODE").as_deref() {
+        Ok("yes") => RecomputeMode::Yes,
+        Ok("no") => RecomputeMode::No,
+        Ok("auto") => RecomputeMode::Auto,
+        Ok(value) => {
+            println!("{LOG_PREFIX} Unrecognized RECOMPUTE_MODE='{value}', defaulting to auto.");
+            RecomputeMode::Auto
+        }
+        Err(_) => RecomputeMode::Auto,
+    }
+}
+
+/// Build the full bundle SDK used for local verifier generation.
+///
+/// This mirrors the host prover's deferral setup so that the verifier hardcodes the
+/// same aggregation-tree shape and deferral settings as the bundle circuit.
+fn build_recompute_sdk(
+    release_output_dir: &Path,
+    app_params: &SystemParams,
+    agg_params: &AggregationSystemParams,
+) -> Result<Sdk> {
+    // 1. Build a batch SDK to serve as the child circuit for bundle's deferral prover.
+    let batch_config_path = release_output_dir.join("batch").join(FD_APP_CONFIG);
+    let batch_app_config: AppConfig<SdkVmConfig> = if batch_config_path.exists() {
+        toml::from_str(&fs::read_to_string(&batch_config_path)?)?
+    } else {
+        AppConfig::riscv32(app_params.clone())
+    };
+    let batch_sdk = Sdk::builder()
+        .app_config(batch_app_config)
+        .agg_params(agg_params.clone())
+        .build()?;
+
+    // 2. Load the bundle config so the verifier matches the bundle circuit's
+    //    aggregation-tree shape and deferral settings.
+    let bundle_config_path = release_output_dir.join("bundle").join(FD_APP_CONFIG);
+    let bundle_app_config: AppConfig<SdkVmConfig> = if bundle_config_path.exists() {
+        toml::from_str(&fs::read_to_string(&bundle_config_path)?)?
+    } else {
+        AppConfig::riscv32(app_params.clone())
+    };
+
+    // The bundle's deferral circuit verifies batch proofs; its memory layout must
+    // match the bundle VM config, not the batch config.
+    let deferral_prover = make_deferral_prover(&batch_sdk, &bundle_app_config, agg_params);
+
+    Ok(Sdk::builder()
+        .app_config(bundle_app_config)
+        .agg_params(agg_params.clone())
+        .agg_tree_config(DEFAULT_AGG_TREE_CONFIG)
+        .multi_deferral_circuit_prover(deferral_prover)
+        .build()?)
+}
+
+/// Build the bundle SDK and generate the EVM verifier locally.
+///
+/// Returns both the SDK (needed to write the root aggregation VK) and the
+/// generated verifier artifact. This is exposed so tests can compare the
+/// generated verifier against the downloaded one.
+pub fn build_evm_verifier(
+    release_output_dir: &Path,
+) -> Result<(Sdk, openvm_sdk::types::EvmHalo2Verifier)> {
+    let app_params = app_params_with_100_bits_security(MAX_APP_LOG_STACKED_HEIGHT);
+    let agg_params = default_agg_params();
+    let sdk = build_recompute_sdk(release_output_dir, &app_params, &agg_params)?;
+    let verifier = sdk.generate_halo2_verifier_solidity()?;
+    Ok((sdk, verifier))
+}
+
+fn write_evm_verifier_artifacts(
+    verifier_output_dir: &Path,
+    verifier: &openvm_sdk::types::EvmHalo2Verifier,
+    sdk: &Sdk,
+    force_overwrite: bool,
+) -> Result<()> {
+    let path_root_agg_pk = verifier_output_dir.join("root_verifier_vk");
+
+    // Write the root aggregation VK from the same SDK used to generate the verifier.
+    // This must match the bundle circuit's deferral config and aggregation tree shape.
+    if force_overwrite || !path_root_agg_pk.exists() {
+        write_object_to_file(&path_root_agg_pk, sdk.agg_vk().clone())
+            .expect("failed to write root_verifier_vk");
     }
 
-    let asm = Sdk::riscv32().generate_root_verifier_asm();
-    fs::write(&root_verifier_path, asm).expect("fail to write");
+    // In v2, the EVM verifier is split into multiple Solidity files.
+    // We save the full set so external tools (Foundry, etc.) can recompile.
+    if !verifier.halo2_verifier_code.is_empty() {
+        let path_halo2 = verifier_output_dir.join("Halo2Verifier.sol");
+        fs::write(&path_halo2, &verifier.halo2_verifier_code)?;
+        println!("{LOG_PREFIX} Halo2Verifier.sol written to {path_halo2:?}");
+    }
+    if !verifier.openvm_verifier_interface.is_empty() {
+        let path_interfaces = verifier_output_dir.join("interfaces");
+        fs::create_dir_all(&path_interfaces)?;
+        let path_interface = path_interfaces.join("IOpenVmHalo2Verifier.sol");
+        fs::write(&path_interface, &verifier.openvm_verifier_interface)?;
+        println!("{LOG_PREFIX} IOpenVmHalo2Verifier.sol written to {path_interface:?}");
+    }
 
-    println!(
-        "{LOG_PREFIX} Root verifier generated at: {}",
-        root_verifier_path.display()
-    );
+    // Backwards-compatible names used by the Rust verifier.
+    let path_verifier_sol = verifier_output_dir.join("verifier.sol");
+    fs::write(&path_verifier_sol, &verifier.openvm_verifier_code)?;
+    println!("{LOG_PREFIX} verifier_sol (OpenVmHalo2Verifier) written to {path_verifier_sol:?}");
+
+    let path_verifier_bin = verifier_output_dir.join("verifier.bin");
+    let bytecode = if verifier.artifact.bytecode.is_empty() {
+        println!(
+            "{LOG_PREFIX} Downloaded verifier has no bundled bytecode; compiling Solidity locally with solc..."
+        );
+        compile_solidity_bytecode(verifier_output_dir)?
+    } else {
+        verifier.artifact.bytecode.clone()
+    };
+    fs::write(&path_verifier_bin, &bytecode)?;
+    println!("{LOG_PREFIX} verifier_bin written to {path_verifier_bin:?}");
 
     Ok(())
 }
 
-fn generate_evm_verifier(
-    verifier_output_dir: &PathBuf,
-    recompute_mode: bool,
-    force_overwrite: bool,
-) -> Result<()> {
-    println!("{LOG_PREFIX} === Dumping EVM VERIFIER ===");
-    let path_verifier_sol = verifier_output_dir.join("verifier.sol");
-    let path_verifier_bin = verifier_output_dir.join("verifier.bin");
-    let path_root_agg_pk = verifier_output_dir.join("root_verifier_vk");
+/// Compile `verifier.sol` (and its local imports) with `solc` using the same
+/// settings as the OpenVM SDK, and return the deployment bytecode for the
+/// `OpenVmHalo2Verifier` contract.
+fn compile_solidity_bytecode(verifier_output_dir: &Path) -> Result<Vec<u8>> {
+    let interface_path = verifier_output_dir.join("interfaces/IOpenVmHalo2Verifier.sol");
+    let halo2_path = verifier_output_dir.join("Halo2Verifier.sol");
+    let parent_path = verifier_output_dir.join("verifier.sol");
 
-    if force_overwrite || !path_root_agg_pk.exists() {
-        write_object_to_file(&path_root_agg_pk, AGG_STARK_PROVING_KEY.get_agg_vk())
-            .expect("fail to write");
+    let read = |p: &Path| -> Result<String> {
+        fs::read_to_string(p).map_err(|e| eyre::eyre!("Failed to read {}: {e}", p.display()))
+    };
+
+    // Use the same source paths as the OpenVM SDK so the generated metadata
+    // matches as closely as possible.
+    let sources: std::collections::HashMap<String, String> = [
+        (
+            "src/v2.0-deferral/interfaces/IOpenVmHalo2Verifier.sol".to_string(),
+            read(&interface_path)?,
+        ),
+        (
+            "src/v2.0-deferral/Halo2Verifier.sol".to_string(),
+            read(&halo2_path)?,
+        ),
+        (
+            "src/v2.0-deferral/OpenVmHalo2Verifier.sol".to_string(),
+            read(&parent_path)?,
+        ),
+    ]
+    .into_iter()
+    .collect();
+
+    let solc_input = serde_json::json!({
+        "language": "Solidity",
+        "sources": sources.iter().map(|(k, v)| (k.clone(), serde_json::json!({ "content": v }))).collect::<serde_json::Map<_,_>>(),
+        "settings": {
+            "remappings": ["forge-std/=lib/forge-std/src/"],
+            "optimizer": {
+                "enabled": true,
+                "runs": 100000,
+                "details": {
+                    "constantOptimizer": false,
+                    "yul": false
+                }
+            },
+            "evmVersion": "paris",
+            "viaIR": false,
+            "outputSelection": {
+                "*": {
+                    "*": ["metadata", "evm.bytecode.object"]
+                }
+            }
+        }
+    });
+
+    let mut child = std::process::Command::new("solc")
+        .arg("--standard-json")
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .map_err(|e| eyre::eyre!("Failed to spawn solc: {e}"))?;
+
+    child
+        .stdin
+        .take()
+        .expect("Failed to open stdin")
+        .write_all(solc_input.to_string().as_bytes())
+        .map_err(|e| eyre::eyre!("Failed to write solc input: {e}"))?;
+
+    let output = child
+        .wait_with_output()
+        .map_err(|e| eyre::eyre!("Failed to read solc output: {e}"))?;
+
+    if !output.status.success() {
+        return Err(eyre::eyre!(
+            "solc failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        ));
     }
 
-    // Check if files exist and skip if in auto mode
+    let parsed: serde_json::Value = serde_json::from_slice(&output.stdout)
+        .map_err(|e| eyre::eyre!("solc returned invalid JSON: {e}"))?;
+
+    if let Some(errors) = parsed.get("errors") {
+        let has_error = errors
+            .as_array()
+            .map(|arr| {
+                arr.iter()
+                    .any(|e| e.get("severity").and_then(|s| s.as_str()) == Some("error"))
+            })
+            .unwrap_or(false);
+        if has_error {
+            return Err(eyre::eyre!(
+                "solc reported errors:\n{}",
+                serde_json::to_string_pretty(errors).unwrap_or_default()
+            ));
+        }
+    }
+
+    let bytecode_hex = parsed
+        .get("contracts")
+        .and_then(|c| c.get("src/v2.0-deferral/OpenVmHalo2Verifier.sol"))
+        .and_then(|c| c.get("OpenVmHalo2Verifier"))
+        .and_then(|c| c.get("evm"))
+        .and_then(|c| c.get("bytecode"))
+        .and_then(|c| c.get("object"))
+        .and_then(|s| s.as_str())
+        .ok_or_else(|| eyre::eyre!("Could not find OpenVmHalo2Verifier bytecode in solc output"))?;
+
+    hex::decode(bytecode_hex).map_err(|e| eyre::eyre!("solc returned invalid hex: {e}"))
+}
+
+/// Generate the EVM verifier Solidity contract and its deployment bytecode.
+///
+/// # Modes
+///
+/// ## `RECOMPUTE_MODE=yes`
+/// Always re-generates the verifier from scratch using the local OpenVM SDK.
+/// This requires:
+/// 1. Building a **batch SDK** to obtain the deferral prover (matches host prover config).
+/// 2. Loading the **bundle app config** so the verifier hardcodes the same aggregation-tree
+///    shape and deferral settings as the bundle circuit.
+///
+/// ## `RECOMPUTE_MODE=no`
+/// Only downloads a pre-built Solidity verifier from `openvm-solidity-sdk`.
+/// No bytecode is produced; only the `.sol` file is fetched.
+///
+/// ## `RECOMPUTE_MODE=auto` (default)
+/// Attempts to download a pre-built verifier first. If the download fails
+/// (e.g. the version has not been published yet), falls back to local generation.
+fn generate_evm_verifier(
+    _workspace_dir: &Path,
+    release_output_dir: &PathBuf,
+    verifier_output_dir: &PathBuf,
+    recompute_mode: RecomputeMode,
+    force_overwrite: bool,
+) -> Result<()> {
+    println!("{LOG_PREFIX} === Generating EVM Verifier ===");
+    let path_verifier_sol = verifier_output_dir.join("verifier.sol");
+    let path_verifier_bin = verifier_output_dir.join("verifier.bin");
+
+    // Skip regeneration in auto mode when artifacts already exist.
     if !force_overwrite && path_verifier_sol.exists() && path_verifier_bin.exists() {
         println!(
-            "{LOG_PREFIX} EVM verifier files already exist, skipping (use --output-mode force to overwrite)"
+            "{LOG_PREFIX} EVM verifier files already exist, skipping (use --mode force to overwrite)"
         );
         return Ok(());
     }
@@ -390,17 +673,51 @@ fn generate_evm_verifier(
         fs::create_dir_all(parent)?;
     }
 
-    let verifier_sol = if recompute_mode {
-        verifier::generate_evm_verifier()?
-    } else {
-        verifier::download_evm_verifier()?
-    };
-    fs::write(&path_verifier_sol, &verifier_sol)?;
-    println!("{LOG_PREFIX} verifier_sol written to {path_verifier_sol:?}");
+    let app_params = app_params_with_100_bits_security(MAX_APP_LOG_STACKED_HEIGHT);
+    let agg_params = default_agg_params();
 
-    let verifier_bin = compile_solidity(&verifier_sol);
-    fs::write(&path_verifier_bin, &verifier_bin)?;
-    println!("{LOG_PREFIX} verifier_bin written to {path_verifier_bin:?}");
+    match recompute_mode {
+        RecomputeMode::Yes => {
+            println!("{LOG_PREFIX} RECOMPUTE_MODE=yes: generating verifier locally.");
+            let (sdk, verifier) = build_evm_verifier(release_output_dir)?;
+            write_evm_verifier_artifacts(verifier_output_dir, &verifier, &sdk, force_overwrite)?;
+        }
+        RecomputeMode::No => {
+            println!("{LOG_PREFIX} RECOMPUTE_MODE=no: downloading pre-built verifier only.");
+            let sdk = Sdk::riscv32(app_params, agg_params);
+            let verifier = verifier::download_evm_verifier()?;
+            write_evm_verifier_artifacts(verifier_output_dir, &verifier, &sdk, force_overwrite)?;
+        }
+        RecomputeMode::Auto => {
+            println!(
+                "{LOG_PREFIX} RECOMPUTE_MODE=auto: trying download first, falling back to local generation on failure."
+            );
+            match verifier::download_evm_verifier() {
+                Ok(verifier) => {
+                    println!("{LOG_PREFIX} Download succeeded; using pre-built verifier.");
+                    let sdk = Sdk::riscv32(app_params, agg_params);
+                    write_evm_verifier_artifacts(
+                        verifier_output_dir,
+                        &verifier,
+                        &sdk,
+                        force_overwrite,
+                    )?;
+                }
+                Err(e) => {
+                    println!(
+                        "{LOG_PREFIX} Download failed ({e}). Falling back to local verifier generation..."
+                    );
+                    let (sdk, verifier) = build_evm_verifier(release_output_dir)?;
+                    write_evm_verifier_artifacts(
+                        verifier_output_dir,
+                        &verifier,
+                        &sdk,
+                        force_overwrite,
+                    )?;
+                }
+            }
+        }
+    }
 
     Ok(())
 }
@@ -414,8 +731,10 @@ fn generate_openvm_assets(
     env::set_current_dir(workspace_dir)?;
 
     generate_root_verifier(workspace_dir, force_overwrite)?;
-    let recompute_mode = env::var("RECOMPUTE_MODE").is_ok_and(|value| value == "yes");
+    let recompute_mode = recompute_mode_from_env();
     generate_evm_verifier(
+        workspace_dir,
+        release_output_dir,
         &release_output_dir.join("verifier"),
         recompute_mode,
         force_overwrite,
@@ -451,10 +770,11 @@ pub fn main() -> Result<()> {
 
     println!("{LOG_PREFIX} Generating openvm assets");
     let force_overwrite = matches!(cli.mode, OutputMode::Force);
-    generate_openvm_assets(&workspace_dir, &release_output_dir, force_overwrite)?;
-
     println!("{LOG_PREFIX} Generating app assets (always overwrite)");
     generate_app_assets(&workspace_dir, &release_output_dir)?;
+
+    println!("{LOG_PREFIX} Generating openvm assets");
+    generate_openvm_assets(&workspace_dir, &release_output_dir, force_overwrite)?;
 
     println!("{LOG_PREFIX} Build process completed successfully.");
     Ok(())

@@ -26,6 +26,27 @@ The [prover](./crates/prover) crate offers a minimalistic API for setting up, ge
 
 For a deeper dive into our implementation, please refer the [interfaces](./docs/interfaces.md) doc.
 
+## Build Guest Programs
+
+In case you have made any changes to the guest programs, or after upgrading OpenVM,
+it is important to rebuild them before running the tests.
+
+```shell
+# Standard rebuild (skips existing artifacts)
+$ make build-guest
+
+# Force full rebuild — required after OpenVM upgrades
+$ cargo run --release -p scroll-zkvm-build-guest -- --mode force
+```
+
+> By default, `RECOMPUTE_MODE` is `auto`: `build-guest` first tries to download the
+> Solidity verifier from `openvm-solidity-sdk`, compiles it locally with `solc` to
+> produce `verifier.bin`, and falls back to the full OpenVM verifier generation if
+> the download fails. `RECOMPUTE_MODE=yes` forces local generation unconditionally;
+> `RECOMPUTE_MODE=no` forces download-only and fails if the download is unavailable.
+
+Upon building the guest programs, the child commitments in [batch-circuit](./crates/circuits/batch-circuit/src/child_commitments.rs) and [bundle-circuit](./crates/circuits/bundle-circuit/src/child_commitments.rs) will be overwritten by `build-guest`.
+
 ## Testing
 
 For more commands please refer the [Makefile](./Makefile).
@@ -33,12 +54,6 @@ For more commands please refer the [Makefile](./Makefile).
 ### Build Guest Programs
 
 In case you have made any changes to the guest programs, it is important to build them before running the tests.
-
-```shell
-$ make build-guest
-```
-
-Upon building the guest programs, the child commitments in [batch-circuit](./crates/circuits/batch-circuit/src/child_commitments.rs) and [bundle-circuit](./crates/circuits/bundle-circuit/src/child_commitments.rs) will be overwritten by `build-guest`.
 
 ### End-to-end tests for chunk-prover
 

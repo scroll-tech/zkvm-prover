@@ -1,6 +1,6 @@
 use sbv_primitives::B256;
 use scroll_zkvm_integration::{
-    ASSET_BASE_DIR, ProverTester, TaskProver,
+    ASSET_BASE_DIR, ProverTester,
     testers::{
         batch::{BatchProverTester, preset_batch_multiple, preset_batch_validium},
         bundle::{BundleProverTester, BundleTaskGenerator},
@@ -52,7 +52,6 @@ fn print_vks() -> eyre::Result<()> {
         let config = ProverConfig {
             path_app_exe,
             path_app_config,
-            ..Default::default()
         };
 
         let app_vk = hex::encode(Prover::setup(config, None).unwrap().get_app_vk());
@@ -134,9 +133,9 @@ fn e2e() -> eyre::Result<()> {
 }
 
 fn e2e_inner(
-    chunk_prover: &mut impl TaskProver,
-    batch_prover: &mut impl TaskProver,
-    bundle_prover: &mut impl TaskProver,
+    chunk_prover: &mut Prover,
+    batch_prover: &mut Prover,
+    bundle_prover: &mut Prover,
 ) -> eyre::Result<()> {
     let mut task = preset_bundle();
     let wit = task.get_or_build_witness()?;

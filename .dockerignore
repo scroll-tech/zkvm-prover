@@ -16,10 +16,20 @@ docs
 *.yml
 
 *.sh
-
 *.log
 *.md
 
 openvm-clippy
 
 target
+
+# Large sub-project build artifacts that are not needed inside the guest builder
+sp1/target
+zisk/target
+zisk/releases
+
+# Performance data files
+perf
+
+# Git metadata
+.git

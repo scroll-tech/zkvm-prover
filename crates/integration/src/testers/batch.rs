@@ -9,10 +9,11 @@ use scroll_zkvm_types::{
 };
 
 use crate::{
-    PROGRAM_COMMITMENTS, PartialProvingTask, ProverTester, TaskProver, prove_verify,
+    PROGRAM_COMMITMENTS, PartialProvingTask, ProverTester, TaskProver, prove_verify_with_deferral,
     testers::chunk::{ChunkTaskGenerator, preset_chunk_multiple, preset_chunk_validium},
     utils::{build_batch_witnesses, build_batch_witnesses_validium},
 };
+use scroll_zkvm_prover::Prover;
 
 impl PartialProvingTask for BatchWitness {
     fn identifier(&self) -> String {
@@ -74,15 +75,21 @@ impl BatchTaskGenerator {
 
     pub fn get_or_build_proof(
         &mut self,
-        prover: &mut impl TaskProver,
-        child_prover: &mut impl TaskProver,
+        prover: &mut Prover,
+        child_prover: &mut Prover,
     ) -> eyre::Result<ProofEnum> {
         if let Some(proof) = &self.proof {
             return Ok(proof.clone());
         }
         let wit = self.get_or_build_witness()?;
         let agg_proofs = self.get_or_build_child_proofs(child_prover)?;
-        let proof = prove_verify::<BatchProverTester>(prover, &wit, &agg_proofs)?;
+        prover.enable_deferral(child_prover)?;
+        let proof = prove_verify_with_deferral::<BatchProverTester>(
+            prover,
+            &wit,
+            &agg_proofs,
+            Some(child_prover),
+        )?;
         self.proof.replace(proof.clone());
         Ok(proof)
     }

@@ -9,9 +9,10 @@ use scroll_zkvm_types::{
 
 // Only related to hardcoded commitments. Can be refactored later.
 use crate::{
-    PROGRAM_COMMITMENTS, PartialProvingTask, ProverTester, TaskProver, prove_verify_single_evm,
+    PROGRAM_COMMITMENTS, PartialProvingTask, ProverTester, prove_verify_single_evm_with_deferral,
     testers::batch::BatchTaskGenerator, utils::metadata_from_batch_witnesses,
 };
+use scroll_zkvm_prover::Prover;
 
 impl PartialProvingTask for BundleWitness {
     fn identifier(&self) -> String {
@@ -60,24 +61,30 @@ impl BundleTaskGenerator {
 
     pub fn get_or_build_proof(
         &mut self,
-        prover: &mut impl TaskProver,
-        batch_prover: &mut impl TaskProver,
-        chunk_prover: &mut impl TaskProver,
+        prover: &mut Prover,
+        batch_prover: &mut Prover,
+        chunk_prover: &mut Prover,
     ) -> eyre::Result<ProofEnum> {
         if let Some(proof) = &self.proof {
             return Ok(proof.clone());
         }
         let wit = self.get_or_build_witness()?;
         let agg_proofs = self.get_or_build_child_proofs(batch_prover, chunk_prover)?;
-        let proof = prove_verify_single_evm::<BundleProverTester>(prover, &wit, &agg_proofs)?;
+        prover.enable_deferral(batch_prover)?;
+        let proof = prove_verify_single_evm_with_deferral::<BundleProverTester>(
+            prover,
+            &wit,
+            &agg_proofs,
+            Some(batch_prover),
+        )?;
         self.proof.replace(proof.clone());
         Ok(proof)
     }
 
     fn get_or_build_child_proofs(
         &mut self,
-        batch_prover: &mut impl TaskProver,
-        chunk_prover: &mut impl TaskProver,
+        batch_prover: &mut Prover,
+        chunk_prover: &mut Prover,
     ) -> eyre::Result<Vec<ProofEnum>> {
         let mut proofs = Vec::new();
         for chunk_gen in &mut self.batch_generators {
