@@ -629,7 +629,7 @@ fn compile_solidity_bytecode(verifier_output_dir: &Path) -> Result<Vec<u8>> {
         .and_then(|s| s.as_str())
         .ok_or_else(|| eyre::eyre!("Could not find OpenVmHalo2Verifier bytecode in solc output"))?;
 
-    hex::decode(bytecode_hex).map_err(|e| eyre::eyre!("solc returned invalid hex: {e}").into())
+    hex::decode(bytecode_hex).map_err(|e| eyre::eyre!("solc returned invalid hex: {e}"))
 }
 
 /// Generate the EVM verifier Solidity contract and its deployment bytecode.
