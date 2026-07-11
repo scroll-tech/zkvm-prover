@@ -199,13 +199,21 @@ SRS_PARAMS_URL := https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm
 
 ### 5.6 EVM verifier recompute
 
-OpenVM v2's Solidity verifier is not yet published to the download endpoint used by `verifier::download_evm_verifier()`. During guest builds you must set:
+`build-guest` uses `RECOMPUTE_MODE` to decide how to obtain the EVM verifier:
+
+- `auto` (default): download the Solidity verifier from `openvm-solidity-sdk`,
+  compile it locally with `solc` to produce `verifier.bin`, and fall back to the
+  full local OpenVM verifier generation if the download is unavailable.
+- `yes`: always generate the verifier locally.
+- `no`: only download; fail if the pre-built verifier is unavailable.
 
 ```bash
-OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20 RECOMPUTE_MODE=yes cargo run --release -p scroll-zkvm-build-guest -- --mode force
+OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20 cargo run --release -p scroll-zkvm-build-guest -- --mode force
 ```
 
-This triggers `sdk.generate_halo2_verifier_solidity()` instead of downloading a stale contract.
+The `auto` mode avoids the long OpenVM verifier-generation step when a published
+Solidity verifier is available, while still producing a usable `verifier.bin` by
+compiling the downloaded source.
 
 ### 5.7 `openvm.toml` must contain deferral config
 
@@ -225,7 +233,7 @@ After any OpenVM version bump or guest rebuild:
 
 1. `rm -rf ~/.openvm/agg_stark.pk ~/.openvm/agg_stark.vk ~/.openvm/root.asm`
 2. `rm -rf .output/bundle-tests-*/`
-3. `OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20 RECOMPUTE_MODE=yes cargo run --release -p scroll-zkvm-build-guest -- --mode force`
+3. `OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20 cargo run --release -p scroll-zkvm-build-guest -- --mode force`
 4. `GPU=1 make test-e2e-bundle`
 
 If tests fail with `NativeHintSliceSubEx` or `UnexpectedEof`, the root cause is almost always stale guest assets or missing SRS.
@@ -238,3 +246,32 @@ If tests fail with `NativeHintSliceSubEx` or `UnexpectedEof`, the root cause is 
 - `openvm-deferral-circuit` extension: `extensions/deferral/circuit/src/extension/mod.rs`
 - `openvm-verify-stark-circuit` prover: `guest-libs/verify-stark/circuit/src/prover/mod.rs`
 - Original AGENTS.md in repo root for additional OpenVM version sensitivity notes.
+
+---
+
+## 8. Update: v2.0.0-rc.7 → v2.0.0
+
+The repo previously tracked the `develop-v2.0.0-rc.3` branch, but `Cargo.lock` had
+actually advanced to commit `031c8b1` (= `v2.0.0-rc.7`). The move to the `v2.0.0`
+release (commit `15a7ab6`) was therefore an rc.7 → final bump and required **no host
+code changes** — `cargo check` across `types*` / `prover` / `verifier` / `integration`
+/ `build-guest` passed with zero warnings and zero errors.
+
+What changed:
+
+- `Cargo.toml`: every `openvm-org/openvm.git` entry moved from
+  `branch = "develop-v2.0.0-rc.3"` to `tag = "v2.0.0"`; the three
+  `openvm-org/stark-backend.git` entries moved from `branch = "develop-v2"` to
+  `tag = "v2.0.0"` (this tag MUST match the one openvm's own `Cargo.toml` pins).
+- `Cargo.lock`: refreshed with `cargo metadata` only — no package outside the
+  openvm/stark git sources changed version or source (alloy/revm/sbv untouched;
+  package count 851 → 851).
+- `crates/build-guest/src/verifier.rs`: `solidity_sdk_tag` set to `"v2.0"` and
+  `verifier_path` set to `"v2.0-deferral"` to match the published
+  `openvm-solidity-sdk` release layout.
+- SRS: still `kzg_bn254_24.srs` (unchanged from rc.7); no re-download needed.
+
+Still required to complete the upgrade (per the checklist above): force-rebuild all
+guest assets with the default `RECOMPUTE_MODE=auto` (or `yes` to skip the download
+attempt), clear stale `.output/` caches, and re-run the `make test-e2e-*` suite.
+

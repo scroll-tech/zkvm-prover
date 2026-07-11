@@ -36,12 +36,14 @@ it is important to rebuild them before running the tests.
 $ make build-guest
 
 # Force full rebuild — required after OpenVM upgrades
-$ RECOMPUTE_MODE=yes cargo run --release -p scroll-zkvm-build-guest -- --mode force
+$ cargo run --release -p scroll-zkvm-build-guest -- --mode force
 ```
 
-> `RECOMPUTE_MODE=yes` tells `build-guest` to regenerate the EVM verifier **bytecode**
-> from scratch instead of downloading only the Solidity source. Without this,
-> EVM proof verification will fail because `verifier.bin` will be empty.
+> By default, `RECOMPUTE_MODE` is `auto`: `build-guest` first tries to download the
+> Solidity verifier from `openvm-solidity-sdk`, compiles it locally with `solc` to
+> produce `verifier.bin`, and falls back to the full OpenVM verifier generation if
+> the download fails. `RECOMPUTE_MODE=yes` forces local generation unconditionally;
+> `RECOMPUTE_MODE=no` forces download-only and fails if the download is unavailable.
 
 Upon building the guest programs, the child commitments in [batch-circuit](./crates/circuits/batch-circuit/src/child_commitments.rs) and [bundle-circuit](./crates/circuits/bundle-circuit/src/child_commitments.rs) will be overwritten by `build-guest`.
 

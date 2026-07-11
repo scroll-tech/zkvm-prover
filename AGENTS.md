@@ -13,7 +13,7 @@ Critical context for AI agents working on this repo. Read this before making cha
 
 ## OpenVM Version Sensitivity
 
-This project uses **OpenVM v2.0.0-rc.3** as its ZKVM. Guest executables (`.vmexe`) and host code **must be built from the exact same OpenVM version**. Even a minor version bump can change:
+This project uses **OpenVM v2.0.0** as its ZKVM. Guest executables (`.vmexe`) and host code **must be built from the exact same OpenVM version**. Even a minor version bump can change:
 
 - The guest/host data layout (hint streams, public inputs)
 - The Halo2 SRS degree requirement
@@ -23,37 +23,36 @@ This project uses **OpenVM v2.0.0-rc.3** as its ZKVM. Guest executables (`.vmexe
 
 ### How to update OpenVM dependencies correctly
 
-OpenVM is declared as a **git dependency** (`branch = "develop-v2.0.0-rc.3"`) in `Cargo.toml`, but the exact commit is pinned in `Cargo.lock`. Running a bare `cargo update` will **not** move the git branch forward; instead it will only bump unrelated crates.io packages (e.g. `alloy`, `revm`) which often break compatibility with the `scroll-tech/reth` and `sbv` forks.
+OpenVM is declared as a **git dependency** (`tag = "v2.0.0"`) in `Cargo.toml`, and the exact commit is also pinned in `Cargo.lock`. The `openvm-org/openvm.git` and `openvm-org/stark-backend.git` entries MUST stay on matching tags — `openvm`'s own `Cargo.toml` pins a specific `stark-backend` tag, and a mismatch produces duplicate-registry / type-mismatch errors. Because the tag is immutable, the declared ref and the locked commit should always agree. The real hazard is a bare `cargo update`: it will **not** change the OpenVM tag, but it will bump unrelated crates.io packages (e.g. `alloy`, `revm`) which often break compatibility with the `scroll-tech/reth` and `sbv` forks.
 
 **Do NOT run a global `cargo update` unless you are prepared to upgrade the entire `alloy`/`revm`/`reth`/`sbv` dependency chain together.**
 
-To check whether the branch actually has new commits:
-```bash
-git ls-remote https://github.com/openvm-org/openvm.git develop-v2.0.0-rc.3
-```
-If the returned SHA differs from the one recorded in `Cargo.lock`, update only the OpenVM packages:
-```bash
-cargo update -p openvm
-```
-Then rebuild guests and run tests as described below.
+To move to a newer OpenVM tag, retarget every `openvm-org/openvm.git` and `openvm-org/stark-backend.git` entry in `Cargo.toml` to the new tag, then refresh only those git sources — `cargo metadata` is enough — rather than a global `cargo update`. Verify with `git diff Cargo.lock` that no other package's version/source changed. Then rebuild guests and run tests as described below.
 
 ### After ANY OpenVM version upgrade, you MUST:
 
 1. **Update the hardcoded version string** in `crates/build-guest/src/verifier.rs`:
    ```rust
-   let openvm_version = "v2.0.0-rc.3"; // MUST match openvm-solidity-sdk tag
+   let solidity_sdk_tag = "v2.0"; // MUST match openvm-solidity-sdk tag
+   let verifier_path = "v2.0-deferral"; // bundle/deferral verifier
    ```
 
 2. **Force-rebuild ALL guest assets** (auto mode skips existing files):
    ```bash
-   OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20 RECOMPUTE_MODE=yes cargo run --release -p scroll-zkvm-build-guest -- --mode force
+   # Local build
+   OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20 cargo run --release -p scroll-zkvm-build-guest -- --mode force
+
+   # Docker build (matches CI)
+   OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20 make build-guest
    ```
    This regenerates: `app.elf`, `app.vmexe`, commitment `.rs` files, `openVmVk.json`,
    and the EVM verifier (`verifier.sol` + `verifier.bin`).
 
-   > `RECOMPUTE_MODE=yes` is **required** to regenerate the EVM verifier bytecode.
-   > Without it the build only downloads the Solidity source, producing an empty
-   > bytecode file that will cause `verify_evm_proof` to fail.
+   > The default `RECOMPUTE_MODE=auto` tries to download the Solidity verifier from
+   > `openvm-solidity-sdk` and compiles it locally with `solc` to produce `verifier.bin`.
+   > If the download fails, it falls back to the full local OpenVM verifier generation.
+   > `RECOMPUTE_MODE=yes` skips the download and always generates the verifier locally;
+   > `RECOMPUTE_MODE=no` forces download-only and fails if no pre-built verifier is available.
 
    > Building `batch` or `bundle` requires the SDK of the previous circuit
    > (`batch` needs `chunk`, `bundle` needs `batch`). Always build in a single
@@ -68,7 +67,7 @@ Then rebuild guests and run tests as described below.
    These are cached proving keys. They are **not** automatically invalidated on version bumps.
 
 5. **Check SRS params** in `~/.openvm/params/`:
-   - OpenVM v2.0.0-rc.3 requires `kzg_bn254_24.srs` (2 GB)
+   - OpenVM v2.0.0 requires `kzg_bn254_24.srs` (2 GB)
    - If the file is empty/corrupted, replace it (check for `.1` or `.part` suffixes from interrupted downloads)
 
 6. **Clear test output cache** before re-running integration tests:
@@ -96,19 +95,20 @@ UnexpectedEof: failed to fill whole buffer
 ### `ProofVerificationFailed()` (Solidity error `0xd611c318`)
 **Cause**: The EVM verifier was generated with a different circuit config than the proof.
 This happens when:
-- The verifier was built **without** `RECOMPUTE_MODE=yes` (uses `Sdk::riscv32()` default)
+- The verifier was built with `RECOMPUTE_MODE=no` but the downloaded verifier is missing, stale, or has empty bytecode
 - The verifier was built **without** the deferral prover, but the proof uses deferral (batch/bundle)
 - The verifier's `AggregationTreeConfig` does not match the prover's (`num_children_internal/leaf`)
 
 **Fix**: Regenerate with:
 ```bash
-OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20 RECOMPUTE_MODE=yes cargo run --release -p scroll-zkvm-build-guest -- --mode force
+OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20 cargo run --release -p scroll-zkvm-build-guest -- --mode force
 ```
+(The default `auto` mode will fall back to local generation if the download fails; use `RECOMPUTE_MODE=yes` to force local generation immediately.)
 
 ### `cargo update` breaks compilation with alloy/revm type mismatches
 **Symptoms**: Errors like `missing verify_and_compute_signer_unchecked in implementation` (alloy) or `mismatched types` between `revm_primitives::hardfork::SpecId` and `SpecId` (revm).
 **Cause**: A global `cargo update` bumps `alloy` to 1.8.x and `revm` to 30.2.0, but the `scroll-tech/reth` and `sbv` forks were built against older versions. The `[patch.crates-io]` table pins `revm` to `scroll-v91` (30.1.1), which no longer satisfies the newer `alloy-evm` requirements, leading to duplicate registry versions of `revm-handler` / `revm-primitives` in the dependency graph.
-**Fix**: Restore the original `Cargo.lock` (`git checkout HEAD -- Cargo.lock`) and update only what you actually need (e.g. `cargo update -p openvm`).
+**Fix**: Restore the original `Cargo.lock` (`git checkout HEAD -- Cargo.lock`) and update only what you actually need (e.g. `cargo metadata` scoped to the OpenVM git sources).
 
 ### Docker build fails with stale CID
 The `build-guest.sh` script may fail if a stale `build-guest.cid` file exists. Use local build (`cargo run -p scroll-zkvm-build-guest`) as fallback.
@@ -116,8 +116,10 @@ The `build-guest.sh` script may fail if a stale `build-guest.cid` file exists. U
 ## Build & Test Commands
 
 ```bash
-# Force rebuild all guest assets (required after OpenVM upgrade)
-OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20 RECOMPUTE_MODE=yes cargo run --release -p scroll-zkvm-build-guest -- --mode force
+# Force rebuild all guest assets (required after OpenVM upgrade).
+# Default RECOMPUTE_MODE=auto falls back to local generation if the download fails.
+# Use RECOMPUTE_MODE=yes to skip the download and force local generation.
+OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20 cargo run --release -p scroll-zkvm-build-guest -- --mode force
 
 # Run end-to-end tests (ALWAYS use make, never raw cargo test)
 GPU=1 make test-e2e-bundle
@@ -130,6 +132,14 @@ GPU=1 make test-multi-chunk
 The Makefile sets `RUST_MIN_STACK=16777216` (16 MB) and `CARGO_CONFIG_FLAG`. Running `cargo test` directly skips both, which causes:
 - Stack overflow during prover initialization (default Rust stack is only ~2 MB)
 - Missing CUDA features if `GPU=1` is set but `--features scroll-zkvm-integration/cuda` is not passed
+
+**⚠️ CRITICAL: Use `--release` for any test that exercises halo2 verifier generation.**
+The `test_verifier` test in `scroll-zkvm-build-guest` builds the full bundle SDK and runs
+`generate_halo2_verifier_solidity()`. In debug mode this is orders of magnitude slower and
+can waste hours of CPU time. Always run it as:
+```bash
+cargo test --release -p scroll-zkvm-build-guest test_verifier
+```
 
 ## Deferral Model (OpenVM v2+)
 
