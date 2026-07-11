@@ -406,9 +406,7 @@ fn recompute_mode_from_env() -> RecomputeMode {
         Ok("no") => RecomputeMode::No,
         Ok("auto") => RecomputeMode::Auto,
         Ok(value) => {
-            println!(
-                "{LOG_PREFIX} Unrecognized RECOMPUTE_MODE='{value}', defaulting to auto."
-            );
+            println!("{LOG_PREFIX} Unrecognized RECOMPUTE_MODE='{value}', defaulting to auto.");
             RecomputeMode::Auto
         }
         Err(_) => RecomputeMode::Auto,
@@ -509,7 +507,9 @@ fn write_evm_verifier_artifacts(
 
     let path_verifier_bin = verifier_output_dir.join("verifier.bin");
     let bytecode = if verifier.artifact.bytecode.is_empty() {
-        println!("{LOG_PREFIX} Downloaded verifier has no bundled bytecode; compiling Solidity locally with solc...");
+        println!(
+            "{LOG_PREFIX} Downloaded verifier has no bundled bytecode; compiling Solidity locally with solc..."
+        );
         compile_solidity_bytecode(verifier_output_dir)?
     } else {
         verifier.artifact.bytecode.clone()
@@ -535,9 +535,18 @@ fn compile_solidity_bytecode(verifier_output_dir: &Path) -> Result<Vec<u8>> {
     // Use the same source paths as the OpenVM SDK so the generated metadata
     // matches as closely as possible.
     let sources: std::collections::HashMap<String, String> = [
-        ("src/v2.0-deferral/interfaces/IOpenVmHalo2Verifier.sol".to_string(), read(&interface_path)?),
-        ("src/v2.0-deferral/Halo2Verifier.sol".to_string(), read(&halo2_path)?),
-        ("src/v2.0-deferral/OpenVmHalo2Verifier.sol".to_string(), read(&parent_path)?),
+        (
+            "src/v2.0-deferral/interfaces/IOpenVmHalo2Verifier.sol".to_string(),
+            read(&interface_path)?,
+        ),
+        (
+            "src/v2.0-deferral/Halo2Verifier.sol".to_string(),
+            read(&halo2_path)?,
+        ),
+        (
+            "src/v2.0-deferral/OpenVmHalo2Verifier.sol".to_string(),
+            read(&parent_path)?,
+        ),
     ]
     .into_iter()
     .collect();
@@ -580,7 +589,9 @@ fn compile_solidity_bytecode(verifier_output_dir: &Path) -> Result<Vec<u8>> {
         .write_all(solc_input.to_string().as_bytes())
         .map_err(|e| eyre::eyre!("Failed to write solc input: {e}"))?;
 
-    let output = child.wait_with_output().map_err(|e| eyre::eyre!("Failed to read solc output: {e}"))?;
+    let output = child
+        .wait_with_output()
+        .map_err(|e| eyre::eyre!("Failed to read solc output: {e}"))?;
 
     if !output.status.success() {
         return Err(eyre::eyre!(
@@ -595,7 +606,10 @@ fn compile_solidity_bytecode(verifier_output_dir: &Path) -> Result<Vec<u8>> {
     if let Some(errors) = parsed.get("errors") {
         let has_error = errors
             .as_array()
-            .map(|arr| arr.iter().any(|e| e.get("severity").and_then(|s| s.as_str()) == Some("error")))
+            .map(|arr| {
+                arr.iter()
+                    .any(|e| e.get("severity").and_then(|s| s.as_str()) == Some("error"))
+            })
             .unwrap_or(false);
         if has_error {
             return Err(eyre::eyre!(
@@ -675,19 +689,31 @@ fn generate_evm_verifier(
             write_evm_verifier_artifacts(verifier_output_dir, &verifier, &sdk, force_overwrite)?;
         }
         RecomputeMode::Auto => {
-            println!("{LOG_PREFIX} RECOMPUTE_MODE=auto: trying download first, falling back to local generation on failure.");
+            println!(
+                "{LOG_PREFIX} RECOMPUTE_MODE=auto: trying download first, falling back to local generation on failure."
+            );
             match verifier::download_evm_verifier() {
                 Ok(verifier) => {
                     println!("{LOG_PREFIX} Download succeeded; using pre-built verifier.");
                     let sdk = Sdk::riscv32(app_params, agg_params);
-                    write_evm_verifier_artifacts(verifier_output_dir, &verifier, &sdk, force_overwrite)?;
+                    write_evm_verifier_artifacts(
+                        verifier_output_dir,
+                        &verifier,
+                        &sdk,
+                        force_overwrite,
+                    )?;
                 }
                 Err(e) => {
                     println!(
                         "{LOG_PREFIX} Download failed ({e}). Falling back to local verifier generation..."
                     );
                     let (sdk, verifier) = build_evm_verifier(release_output_dir)?;
-                    write_evm_verifier_artifacts(verifier_output_dir, &verifier, &sdk, force_overwrite)?;
+                    write_evm_verifier_artifacts(
+                        verifier_output_dir,
+                        &verifier,
+                        &sdk,
+                        force_overwrite,
+                    )?;
                 }
             }
         }

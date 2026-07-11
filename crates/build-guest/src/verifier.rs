@@ -24,7 +24,9 @@ pub fn download_evm_verifier() -> Result<openvm_sdk::types::EvmHalo2Verifier> {
     let halo2_url = format!(
         "https://raw.githubusercontent.com/openvm-org/openvm-solidity-sdk/{solidity_sdk_tag}/src/{verifier_path}/Halo2Verifier.sol"
     );
-    println!("{LOG_PREFIX} Downloading pre-built verifier from openvm-solidity-sdk (tag {solidity_sdk_tag}, path {verifier_path})...");
+    println!(
+        "{LOG_PREFIX} Downloading pre-built verifier from openvm-solidity-sdk (tag {solidity_sdk_tag}, path {verifier_path})..."
+    );
 
     let fetch = |url: &str| -> Result<String> {
         let output = std::process::Command::new("wget")
@@ -137,7 +139,11 @@ mod tests {
         ];
 
         for (name, file_name, gen, dl) in cases {
-            println!("Comparing {name} (generated {} bytes vs downloaded {} bytes)", gen.len(), dl.len());
+            println!(
+                "Comparing {name} (generated {} bytes vs downloaded {} bytes)",
+                gen.len(),
+                dl.len()
+            );
             let gen_fmt = format_with_forge(gen, file_name);
             let dl_fmt = format_with_forge(dl, file_name);
             assert_eq!(
