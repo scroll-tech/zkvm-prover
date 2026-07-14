@@ -131,11 +131,7 @@ impl BundleTaskGenerator {
 
             let pi_hash = info.pi_hash_by_version(version);
             let proof = AggregationInput {
-                public_values: pi_hash
-                    .as_slice()
-                    .iter()
-                    .map(|&b| b as u32)
-                    .collect::<Vec<_>>(),
+                public_values: crate::utils::pi_hash_to_public_values(&pi_hash),
                 commitment,
             };
             batch_proofs.push(proof);

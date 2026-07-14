@@ -60,7 +60,7 @@ where
     fn verify_proofs(witness: &Self::Witness) -> Vec<AggregationInput> {
         let proofs = witness.get_proofs();
 
-        #[cfg(all(target_os = "zkvm", target_arch = "riscv32"))]
+        #[cfg(target_os = "openvm")]
         {
             let input_commits: Vec<[u8; 32]> = openvm::io::read();
             assert_eq!(
@@ -79,7 +79,7 @@ where
             }
         }
 
-        #[cfg(not(all(target_os = "zkvm", target_arch = "riscv32")))]
+        #[cfg(not(target_os = "openvm"))]
         {
             for proof in proofs.iter() {
                 Self::verify_commitments(&proof.commitment);
@@ -135,25 +135,29 @@ fn u32_array_to_commit(arr: &[u32; 8]) -> [u8; 32] {
 }
 
 /// Verify a root proof using deferred STARK verification (v2).
-#[cfg(all(target_os = "zkvm", target_arch = "riscv32"))]
+#[cfg(target_os = "openvm")]
 fn verify_proof(commitment: &ProgramCommitment, public_inputs: &[u32], input_commit: &[u8; 32]) {
     use openvm_verify_stark_guest::{ProofOutput, verify_stark};
 
     // Sanity check for the number of public-input values.
     assert_eq!(public_inputs.len(), NUM_PUBLIC_VALUES);
 
-    // OpenVM stores each user public value byte as a 32-bit field element; the
-    // verify-stark guest helper collapses them back to dense bytes.
+    // OpenVM stores each user public value as a u16 cell in a 32-bit field
+    // element; the verify-stark guest helper collapses them back to dense
+    // bytes (2 little-endian bytes per cell).
     let expected = ProofOutput {
         app_exe_commit: u32_array_to_commit(&commitment.exe),
         app_vm_commit: u32_array_to_commit(&commitment.vm),
-        user_public_values: public_inputs.iter().map(|&w| w as u8).collect(),
+        user_public_values: public_inputs
+            .iter()
+            .flat_map(|&w| (w as u16).to_le_bytes())
+            .collect(),
     };
 
     verify_stark::<0>(input_commit, &expected);
 }
 
-#[cfg(not(all(target_os = "zkvm", target_arch = "riscv32")))]
+#[cfg(not(target_os = "openvm"))]
 fn verify_proof(_commitment: &ProgramCommitment, _public_inputs: &[u32], _input_commit: &[u8; 32]) {
     // This function is guest-only: the actual deferred STARK verification happens inside
     // the zkvm guest via `openvm_verify_stark_guest::verify_stark`. Calling it on a non-zkvm

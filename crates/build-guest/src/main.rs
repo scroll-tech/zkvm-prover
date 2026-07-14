@@ -299,7 +299,7 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
         fs::create_dir_all(&path_assets)?;
         let elf_src = workspace_dir
             .join("target")
-            .join("riscv32im-risc0-zkvm-elf")
+            .join("riscv64im-unknown-openvm-elf")
             .join("maxperf")
             .join(format!("scroll-zkvm-{project_name}-circuit"));
         let path_app_elf: PathBuf = path_assets.join("app.elf");
@@ -436,7 +436,7 @@ fn build_recompute_sdk(
     let batch_app_config: AppConfig<SdkVmConfig> = if batch_config_path.exists() {
         toml::from_str(&fs::read_to_string(&batch_config_path)?)?
     } else {
-        AppConfig::riscv32(app_params.clone())
+        AppConfig::riscv64(app_params.clone())
     };
     let batch_sdk = Sdk::builder()
         .app_config(batch_app_config)
@@ -449,7 +449,7 @@ fn build_recompute_sdk(
     let bundle_app_config: AppConfig<SdkVmConfig> = if bundle_config_path.exists() {
         toml::from_str(&fs::read_to_string(&bundle_config_path)?)?
     } else {
-        AppConfig::riscv32(app_params.clone())
+        AppConfig::riscv64(app_params.clone())
     };
 
     // The bundle's deferral circuit verifies batch proofs; its memory layout must
@@ -475,8 +475,60 @@ pub fn build_evm_verifier(
     let app_params = app_params_with_100_bits_security(MAX_APP_LOG_STACKED_HEIGHT);
     let agg_params = default_agg_params();
     let sdk = build_recompute_sdk(release_output_dir, &app_params, &agg_params)?;
-    let verifier = sdk.generate_halo2_verifier_solidity()?;
+    let mut verifier = sdk.generate_halo2_verifier_solidity()?;
+    verifier.openvm_verifier_code =
+        patch_verifier_for_u16_public_values(&verifier.openvm_verifier_code)?;
+    // The SDK compiled the artifact bytecode from the *unpatched* source.
+    // Clear it so `write_evm_verifier_artifacts` recompiles with solc from
+    // the patched verifier.sol written to disk.
+    verifier.artifact.bytecode = Vec::new();
     Ok((sdk, verifier))
+}
+
+/// Patch the locally generated `OpenVmHalo2Verifier.sol` for u16 public values.
+///
+/// On the `develop-v2.1.0` branch, user public values are u16 cells (2 bytes
+/// each), and the SDK packs them as 2 little-endian bytes per cell in
+/// `EvmProof::verifier_calldata`. The Solidity template on this branch still
+/// expects 1 byte per public value, so the generated wrapper reverts with
+/// `InvalidPublicValuesLength`. Until upstream updates the template, rewrite
+/// the generated wrapper to:
+///
+/// - accept `2 * PUBLIC_VALUES_LENGTH` calldata bytes, and
+/// - expand each u16 cell (little-endian in calldata) into a big-endian
+///   `bytes32` word.
+///
+/// Fails loudly if the expected template fragments are not found, so we notice
+/// when upstream changes the template (e.g. ships a proper u16 fix).
+fn patch_verifier_for_u16_public_values(sol_code: &str) -> Result<String> {
+    const OLD_LEN_CHECK: &str = "if (publicValues.length != PUBLIC_VALUES_LENGTH) revert InvalidPublicValuesLength(PUBLIC_VALUES_LENGTH, publicValues.length);";
+    const NEW_LEN_CHECK: &str = "if (publicValues.length != PUBLIC_VALUES_LENGTH * 2) revert InvalidPublicValuesLength(PUBLIC_VALUES_LENGTH * 2, publicValues.length);";
+    const OLD_LOOP: &str = "            // Copy each byte of the public values into the proof. It copies the
+            // most significant bytes of public values first.
+            let publicValuesMemOffset := add(add(proofPtr, 0x1c0), 0x1f)
+            for { let i := 0 } iszero(eq(i, PUBLIC_VALUES_LENGTH)) { i := add(i, 1) } {
+                calldatacopy(add(publicValuesMemOffset, shl(5, i)), add(publicValues.offset, i), 0x01)
+            }";
+    const NEW_LOOP: &str = "            // Copy each u16 public value cell into its own bytes32 word. The
+            // calldata packs each cell as 2 little-endian bytes; the word is
+            // big-endian, so the low byte lands at offset 0x1f and the high
+            // byte at 0x1e of each word.
+            let publicValuesMemOffset := add(add(proofPtr, 0x1c0), 0x1f)
+            for { let i := 0 } iszero(eq(i, PUBLIC_VALUES_LENGTH)) { i := add(i, 1) } {
+                calldatacopy(add(publicValuesMemOffset, shl(5, i)), add(publicValues.offset, shl(1, i)), 0x01)
+                calldatacopy(sub(add(publicValuesMemOffset, shl(5, i)), 1), add(add(publicValues.offset, shl(1, i)), 1), 0x01)
+            }";
+
+    let mut patched = sol_code.to_string();
+    for (old, new) in [(OLD_LEN_CHECK, NEW_LEN_CHECK), (OLD_LOOP, NEW_LOOP)] {
+        if !patched.contains(old) {
+            return Err(eyre::eyre!(
+                "verifier template fragment not found; upstream may have changed the OpenVmHalo2Verifier template (u16 public values patch needs review)"
+            ));
+        }
+        patched = patched.replace(old, new);
+    }
+    Ok(patched)
 }
 
 fn write_evm_verifier_artifacts(
@@ -545,15 +597,15 @@ fn compile_solidity_bytecode(verifier_output_dir: &Path) -> Result<Vec<u8>> {
     // matches as closely as possible.
     let sources: std::collections::HashMap<String, String> = [
         (
-            "src/v2.0-deferral/interfaces/IOpenVmHalo2Verifier.sol".to_string(),
+            "src/v2.1-deferral/interfaces/IOpenVmHalo2Verifier.sol".to_string(),
             read(&interface_path)?,
         ),
         (
-            "src/v2.0-deferral/Halo2Verifier.sol".to_string(),
+            "src/v2.1-deferral/Halo2Verifier.sol".to_string(),
             read(&halo2_path)?,
         ),
         (
-            "src/v2.0-deferral/OpenVmHalo2Verifier.sol".to_string(),
+            "src/v2.1-deferral/OpenVmHalo2Verifier.sol".to_string(),
             read(&parent_path)?,
         ),
     ]
@@ -630,7 +682,7 @@ fn compile_solidity_bytecode(verifier_output_dir: &Path) -> Result<Vec<u8>> {
 
     let bytecode_hex = parsed
         .get("contracts")
-        .and_then(|c| c.get("src/v2.0-deferral/OpenVmHalo2Verifier.sol"))
+        .and_then(|c| c.get("src/v2.1-deferral/OpenVmHalo2Verifier.sol"))
         .and_then(|c| c.get("OpenVmHalo2Verifier"))
         .and_then(|c| c.get("evm"))
         .and_then(|c| c.get("bytecode"))
@@ -693,7 +745,7 @@ fn generate_evm_verifier(
         }
         RecomputeMode::No => {
             println!("{LOG_PREFIX} RECOMPUTE_MODE=no: downloading pre-built verifier only.");
-            let sdk = Sdk::riscv32(app_params, agg_params);
+            let sdk = Sdk::riscv64(app_params, agg_params);
             let verifier = verifier::download_evm_verifier()?;
             write_evm_verifier_artifacts(verifier_output_dir, &verifier, &sdk, force_overwrite)?;
         }
@@ -704,7 +756,7 @@ fn generate_evm_verifier(
             match verifier::download_evm_verifier() {
                 Ok(verifier) => {
                     println!("{LOG_PREFIX} Download succeeded; using pre-built verifier.");
-                    let sdk = Sdk::riscv32(app_params, agg_params);
+                    let sdk = Sdk::riscv64(app_params, agg_params);
                     write_evm_verifier_artifacts(
                         verifier_output_dir,
                         &verifier,

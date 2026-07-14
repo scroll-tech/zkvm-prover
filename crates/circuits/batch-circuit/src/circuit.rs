@@ -86,10 +86,17 @@ impl AggCircuit for BatchCircuit {
         proofs
             .iter()
             .map(|proof| {
+                // Each public value is a u16 cell (2 bytes, little-endian); the
+                // pi hash occupies the first 32 bytes (16 cells).
                 let transformed = proof
                     .public_values
                     .iter()
-                    .map(|&val| u8::try_from(val).expect("0 < public value < 256"))
+                    .flat_map(|&val| {
+                        u16::try_from(val)
+                            .expect("public value fits in u16")
+                            .to_le_bytes()
+                    })
+                    .take(32)
                     .collect::<Vec<u8>>();
                 B256::from_slice(transformed.as_slice())
             })

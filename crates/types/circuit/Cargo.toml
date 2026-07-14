@@ -11,7 +11,7 @@ version.workspace = true
 scroll-zkvm-types-base.workspace = true
 alloy-primitives.workspace = true
 openvm = { workspace = true, features = ["std"] }
-openvm-rv32im-guest.workspace = true
+openvm-riscv-guest.workspace = true
 openvm-custom-insn.workspace = true
 openvm-verify-stark-guest.workspace = true
 openvm-deferral-guest.workspace = true

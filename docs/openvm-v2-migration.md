@@ -275,3 +275,46 @@ Still required to complete the upgrade (per the checklist above): force-rebuild 
 guest assets with the default `RECOMPUTE_MODE=auto` (or `yes` to skip the download
 attempt), clear stale `.output/` caches, and re-run the `make test-e2e-*` suite.
 
+
+---
+
+## 9. Update: v2.0.0 → develop-v2.1.0 (RV64)
+
+The move to the `develop-v2.1.0` branch (commit `fd569c7`) is a **major migration**:
+OpenVM switches the guest ISA from RV32 to RV64. What changed:
+
+- `Cargo.toml`: every `openvm-org/openvm.git` entry moved from `tag = "v2.0.0"` to
+  `branch = "develop-v2.1.0"`; the three `openvm-org/stark-backend.git` entries
+  stay on `tag = "v2.0.0"` (that is what openvm's own `Cargo.toml` pins on this
+  branch). Crate renames: `openvm-rv32im-guest`/`openvm-rv32im-transpiler` →
+  `openvm-riscv-guest`/`openvm-riscv-transpiler`.
+- Guest toolchain: `OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20` → `openvm-1.94.0`
+  (the openvm rust fork with the built-in `riscv64im-unknown-openvm-elf` target).
+  `rust-toolchain.toml` host channel → `nightly-2026-01-18` (openvm-sdk `tco`
+  feature); the `riscv32im-unknown-none-elf` target entry was dropped.
+- `openvm.toml` (all three circuits): `[app_vm_config.rv32i]`/`rv32m` →
+  `rv64i`/`rv64m`.
+- SDK API: `Sdk::riscv32`/`AppConfig::riscv32` → `riscv64`; `Sdk::execute*` now
+  takes a compiled instance (`sdk.compile_metered_cost(exe)?` then
+  `sdk.execute_metered_cost(&compiled, inputs)`; same for `compile`/`execute`).
+- Hint stream is 8-byte granular: guest `read_witnesses_rkyv_raw` reads a `u64`
+  length prefix (`hint_store_u64!`) then uses `hint_buffer_chunked`.
+- User public values are u16 cells (2 LE bytes per cell; `NUM_PUBLIC_VALUES` is
+  still 32 cells). Affected spots: guest `verify_proof` expected PVs,
+  `aggregated_pi_hashes` in batch/bundle circuits, fabricated
+  `AggregationInput.public_values` in integration utils, and the EVM branch of
+  `types/src/proof.rs::public_values()`.
+- Guest cfg gates: `target_os = "zkvm"` → `target_os = "openvm"`.
+- `crates/build-guest/src/verifier.rs`: `solidity_sdk_tag = "v2.1"`,
+  `verifier_path = "v2.1-deferral"`. `openvm-solidity-sdk` has no `v2.1` tag yet,
+  so the download fails and `auto` mode falls back to local verifier generation.
+- EVM verifier workaround: the branch's Solidity template still expects 1 byte
+  per public value while the SDK packs u16 cells as 2 LE bytes.
+  `crates/build-guest/src/main.rs::patch_verifier_for_u16_public_values`
+  rewrites the generated wrapper (length check ×2, per-cell byte expansion) and
+  clears the precompiled artifact so `verifier.bin` is recompiled from the
+  patched source by `solc`.
+- SRS: still `kzg_bn254_24.srs` (unchanged).
+
+Verification: `GPU=1 make test-single-chunk`, `test-multi-chunk`,
+`test-e2e-batch`, `test-e2e-bundle` all pass (CUDA, RTX 3090).
