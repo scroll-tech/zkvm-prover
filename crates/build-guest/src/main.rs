@@ -344,6 +344,15 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
             write_commitment_as_evm_hex(&output_path, vm_commit_u32)?;
         }
 
+        // Write the aggregation VK for batch proofs so the coordinator can verify
+        // deferred batch proofs independently (v0.9.0+).
+        if project_name == "batch" {
+            let batch_mvk_path = release_output_dir.join("batch_root_verifier_vk");
+            write_object_to_file(&batch_mvk_path, sdk.agg_vk().clone())
+                .expect("failed to write batch_root_verifier_vk");
+            println!("{LOG_PREFIX} Wrote batch aggregation VK to {batch_mvk_path:?}");
+        }
+
         use scroll_zkvm_types::{types_agg::ProgramCommitment, utils::serialize_vk};
         let app_vk = serialize_vk::serialize(&ProgramCommitment {
             exe: exe_commit_u32,
