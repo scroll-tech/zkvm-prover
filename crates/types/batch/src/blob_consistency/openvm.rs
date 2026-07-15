@@ -1,5 +1,3 @@
-#![cfg(feature = "openvm")]
-
 use std::ops::{AddAssign, MulAssign};
 use std::sync::LazyLock;
 

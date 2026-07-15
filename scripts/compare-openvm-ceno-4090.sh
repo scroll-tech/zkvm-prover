@@ -68,6 +68,28 @@ if ! nvidia-smi -L | grep -q .; then
   exit 1
 fi
 
+if [[ "$RUN_OPENVM" == "1" ]] && ! command -v solc >/dev/null 2>&1; then
+  cat >&2 <<'ERR'
+solc not found on PATH.
+
+OpenVM compiles the generated Halo2 verifier with solc during setup/proof verification.
+Install Solidity compiler 0.8.19 before running the OpenVM side, for example:
+
+  sudo add-apt-repository ppa:ethereum/ethereum -y
+  sudo apt-get update
+  sudo apt-get install -y solc
+
+Then verify:
+
+  solc --version
+
+To run only the Ceno side while solc is missing:
+
+  scripts/compare-openvm-ceno-4090.sh --skip-openvm
+ERR
+  exit 1
+fi
+
 TS="$(date -u +%Y%m%d-%H%M%S)"
 OUT_DIR="${OUT_DIR:-.output/ceno-openvm-4090-${TS}}"
 mkdir -p "$OUT_DIR"

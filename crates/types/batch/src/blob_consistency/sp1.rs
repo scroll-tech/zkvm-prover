@@ -1,5 +1,3 @@
-#![cfg(feature = "sp1")]
-
 use alloy_primitives::{B256, U256};
 use bls12_381::G1Affine;
 use kzg_rs::{

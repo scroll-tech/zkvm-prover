@@ -44,7 +44,7 @@ pub struct PointEvalWitness {
     pub kzg_proof_y: Bytes48,
 }
 
-#[cfg(feature = "openvm")]
+#[cfg(all(feature = "openvm", not(feature = "sp1")))]
 pub fn build_point_eval_witness(kzg_commitment: Bytes48, kzg_proof: Bytes48) -> PointEvalWitness {
     use halo2curves_axiom::bls12_381::G1Affine;
     let kzg_commitment = G1Affine::from_compressed_be(&kzg_commitment).expect("invalid");
