@@ -90,7 +90,7 @@ prove-zisk-chunk-cpu:
 	cd zisk && PATH="$$HOME/.zisk/bin:$$PATH" cargo run --release -p scroll-zkvm-zisk-prover-test -- --circuit chunk --prove --emulator
 
 # ---- Ceno backend (see ceno/AGENTS.md) ----
-CENO_PROVER_FEATURES ?= gpu,jemalloc,aot-x86_64
+CENO_PROVER_FEATURES ?= gpu,jemalloc,aot-x86_64,parallel
 CENO_MAX_CELL_PER_SHARD ?= 1245708288
 CENO_CARGO_ENV = CARGO_NET_GIT_FETCH_WITH_CLI=true
 CENO_GPU_E2E_ENV = $(CENO_CARGO_ENV) RUSTFLAGS="-C target-feature=+avx2" JEMALLOC_SYS_WITH_MALLOC_CONF=retain:true,background_thread:true,metadata_thp:always,thp:always,dirty_decay_ms:10000,muzzy_decay_ms:10000,abort_conf:true RUST_MIN_STACK=536870912 CENO_EMULATOR_BACKEND=aot CENO_GPU_ENABLE_WITGEN=0 CENO_GPU_WITGEN=0 CENO_CONCURRENT_CHIP_PROVING=1 CENO_GPU_MEM_TRACKING=0 CENO_GPU_CACHE_LEVEL=1 CENO_GPU_JAGGED_RESHAPE_LOG_HEIGHT=23 CENO_GPU_LARGE_TASK_BOOKING_MARGIN_MB=3048 CENO_MAX_CELL_PER_SHARD=$(CENO_MAX_CELL_PER_SHARD)
