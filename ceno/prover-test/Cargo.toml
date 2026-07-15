@@ -1,0 +1,43 @@
+[package]
+name = "scroll-zkvm-ceno-prover-test"
+edition.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[[bin]]
+name = "prove-ceno"
+path = "src/main.rs"
+
+[dependencies]
+ceno_emul = { workspace = true }
+ceno_host = { workspace = true }
+ceno_sdk = { workspace = true }
+ceno_zkvm = { workspace = true }
+ff_ext = { workspace = true }
+mpcs = { workspace = true }
+scroll-zkvm-backend = { workspace = true }
+scroll-zkvm-types-base = { workspace = true }
+scroll-zkvm-types-chunk = { workspace = true, features = ["scroll", "scroll-compress-info"] }
+scroll-zkvm-types-batch = { workspace = true, features = ["sp1", "host"] }
+scroll-zkvm-types-bundle = { workspace = true }
+sbv-core = { workspace = true }
+sbv-primitives = { workspace = true, features = ["revm-types", "reth-evm-types"] }
+alloy-primitives = { workspace = true }
+bincode = { workspace = true }
+bitcode = { workspace = true }
+clap = { workspace = true, features = ["derive"] }
+eyre = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+tiny-keccak = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+vm-zstd = { workspace = true }
+
+[features]
+default = []
+gpu = ["ceno_sdk/gpu"]
+jemalloc = ["ceno_sdk/jemalloc"]
+aot-x86_64 = ["ceno_sdk/aot-x86_64"]
+parallel = ["ceno_zkvm/parallel"]

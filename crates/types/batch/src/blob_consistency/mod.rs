@@ -8,10 +8,10 @@ mod constants;
 
 #[cfg(feature = "openvm")]
 mod openvm;
-#[cfg(feature = "openvm")]
-mod types;
 #[cfg(feature = "sp1")]
 mod sp1;
+#[cfg(feature = "openvm")]
+mod types;
 
 pub use constants::{BLS_MODULUS, VERSIONED_HASH_VERSION_KZG};
 

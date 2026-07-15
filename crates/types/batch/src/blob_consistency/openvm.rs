@@ -1,5 +1,3 @@
-#![cfg(feature = "openvm")]
-
 use std::ops::{AddAssign, MulAssign};
 use std::sync::LazyLock;
 
@@ -12,7 +10,9 @@ use openvm_pairing::bls12_381::{Bls12_381, G1Affine, G2Affine, Scalar};
 use openvm_pairing_guest::{algebra, pairing::PairingCheck};
 
 use super::types::ToIntrinsic;
-use crate::blob_consistency::constants::{BLS_MODULUS, KZG_G2_SETUP_BYTES, VERSIONED_HASH_VERSION_KZG};
+use crate::blob_consistency::constants::{
+    BLS_MODULUS, KZG_G2_SETUP_BYTES, VERSIONED_HASH_VERSION_KZG,
+};
 
 use super::{BLOB_WIDTH, LOG_BLOB_WIDTH};
 
