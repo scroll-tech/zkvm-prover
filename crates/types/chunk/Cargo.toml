@@ -52,7 +52,7 @@ openvm = [
   "dep:openvm-pairing",
   "alloy-primitives/native-keccak",
 ]
-host = ["scroll-compress-info", "alloy-primitives/tiny-keccak"]
+host = ["scroll", "scroll-compress-info", "alloy-primitives/tiny-keccak"]
 scroll = [
   "sbv-core/scroll",
   "sbv-primitives/scroll-evm-types",
@@ -60,4 +60,4 @@ scroll = [
   "sbv-primitives/scroll-revm-types",
   "sbv-primitives/scroll-reth-evm-types",
 ]
-scroll-compress-info = ["sbv-core/scroll-compress-info"]
+scroll-compress-info = ["sbv-core/scroll", "sbv-core/scroll-compress-info"]

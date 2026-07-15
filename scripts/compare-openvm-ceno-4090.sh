@@ -68,6 +68,10 @@ if ! nvidia-smi -L | grep -q .; then
   exit 1
 fi
 
+if [[ -d "$HOME/.local/bin" ]]; then
+  export PATH="$HOME/.local/bin:$PATH"
+fi
+
 if [[ "$RUN_OPENVM" == "1" ]] && ! command -v solc >/dev/null 2>&1; then
   cat >&2 <<'ERR'
 solc not found on PATH.
@@ -75,9 +79,10 @@ solc not found on PATH.
 OpenVM compiles the generated Halo2 verifier with solc during setup/proof verification.
 Install Solidity compiler 0.8.19 before running the OpenVM side, for example:
 
-  sudo add-apt-repository ppa:ethereum/ethereum -y
-  sudo apt-get update
-  sudo apt-get install -y solc
+  python3 -m pip install --user solc-select
+  export PATH="$HOME/.local/bin:$PATH"
+  solc-select install 0.8.19
+  solc-select use 0.8.19
 
 Then verify:
 
@@ -88,6 +93,32 @@ To run only the Ceno side while solc is missing:
   scripts/compare-openvm-ceno-4090.sh --skip-openvm
 ERR
   exit 1
+fi
+
+if [[ "$RUN_OPENVM" == "1" ]]; then
+  SOLC_VERSION_OUTPUT="$(solc --version)"
+  if ! grep -Eq 'Version: 0\.8\.19(\+|$)' <<<"$SOLC_VERSION_OUTPUT"; then
+    cat >&2 <<ERR
+solc 0.8.19 is required for OpenVM verifier compilation.
+
+Current solc:
+$SOLC_VERSION_OUTPUT
+
+Switch the solc on PATH to 0.8.19, for example:
+
+  python3 -m pip install --user solc-select
+  export PATH="$HOME/.local/bin:\$PATH"
+  solc-select install 0.8.19
+  solc-select use 0.8.19
+  solc --version
+
+snark-verifier invokes the literal command "solc", so PATH must resolve to 0.8.19.
+To run only the Ceno side while solc is mismatched:
+
+  scripts/compare-openvm-ceno-4090.sh --skip-openvm
+ERR
+    exit 1
+  fi
 fi
 
 TS="$(date -u +%Y%m%d-%H%M%S)"
