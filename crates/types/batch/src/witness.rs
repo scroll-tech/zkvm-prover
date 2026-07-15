@@ -1,9 +1,9 @@
+#[cfg(feature = "openvm")]
+use types_base::public_inputs::scroll::batch::BatchInfo;
 use types_base::{
     aggregation::{AggregationInput, ProofCarryingWitness},
     public_inputs::{ForkName, scroll::chunk::ChunkInfo},
 };
-#[cfg(feature = "openvm")]
-use types_base::public_inputs::scroll::batch::BatchInfo;
 
 use crate::header::ReferenceHeader;
 
@@ -60,10 +60,10 @@ pub fn build_point_eval_witness(kzg_commitment: Bytes48, kzg_proof: Bytes48) -> 
 #[cfg(feature = "sp1")]
 pub fn build_point_eval_witness(kzg_commitment: Bytes48, kzg_proof: Bytes48) -> PointEvalWitness {
     use bls12_381::G1Affine;
-    let commitment: G1Affine = Option::from(G1Affine::from_compressed(&kzg_commitment))
-        .expect("invalid kzg commitment");
-    let proof: G1Affine = Option::from(G1Affine::from_compressed(&kzg_proof))
-        .expect("invalid kzg proof");
+    let commitment: G1Affine =
+        Option::from(G1Affine::from_compressed(&kzg_commitment)).expect("invalid kzg commitment");
+    let proof: G1Affine =
+        Option::from(G1Affine::from_compressed(&kzg_proof)).expect("invalid kzg proof");
     let commitment_uncompressed = commitment.to_uncompressed();
     let proof_uncompressed = proof.to_uncompressed();
     PointEvalWitness {
@@ -90,7 +90,10 @@ pub fn build_intrinsic_point(
 
 #[cfg(feature = "openvm")]
 pub fn build_point(x: Bytes48, y: Bytes48) -> Option<halo2curves_axiom::bls12_381::G1Affine> {
-    use halo2curves_axiom::{CurveAffine, bls12_381::{Fq, G1Affine}};
+    use halo2curves_axiom::{
+        CurveAffine,
+        bls12_381::{Fq, G1Affine},
+    };
     let x = Fq::from_bytes_be(&x).into_option()?;
     let y = Fq::from_bytes_be(&y).into_option()?;
     G1Affine::from_xy(x, y).into_option()
@@ -128,9 +131,8 @@ impl ProofCarryingWitness for BatchWitness {
 impl From<&BatchWitness> for BatchInfo {
     fn from(witness: &BatchWitness) -> Self {
         use crate::builder::{
-            BatchInfoBuilder, BatchInfoBuilderV6, BatchInfoBuilderV7,
+            BatchInfoBuilder, BatchInfoBuilderV6, BatchInfoBuilderV7, BuilderArgsV6, BuilderArgsV7,
             validium::{ValidiumBatchInfoBuilder, ValidiumBuilderArgs},
-            BuilderArgsV6, BuilderArgsV7,
         };
 
         let chunk_infos = witness.chunk_infos.to_vec();

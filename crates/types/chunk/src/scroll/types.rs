@@ -2,6 +2,7 @@ use super::{types::validium::SecretKey, witness::ValidiumInputs};
 use alloc::vec::Vec;
 use alloy_primitives::keccak256;
 use alloy_sol_types::sol;
+use core::ops::Deref;
 use itertools::Itertools;
 use sbv_primitives::{
     B256, U256,
@@ -11,7 +12,6 @@ use sbv_primitives::{
         reth::primitives::{Block, RecoveredBlock, TransactionSigned},
     },
 };
-use core::ops::Deref;
 
 pub mod validium;
 

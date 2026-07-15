@@ -37,8 +37,7 @@ pub fn verify_blob_versioned_hash(
     );
 
     // Reconstruct the full EIP-4844 blob (4096 32-byte field elements, MSB zeroed).
-    let blob =
-        Blob::from_slice(&envelope_to_blob_bytes(blob_bytes)).expect("invalid blob bytes");
+    let blob = Blob::from_slice(&envelope_to_blob_bytes(blob_bytes)).expect("invalid blob bytes");
 
     // `kzg-rs` is patched for the SP1 target so that `load_trusted_setup_file()` returns a static
     // copy of the EIP-4844 trusted setup rather than reading from the (non-existent) guest fs.
@@ -58,13 +57,12 @@ pub fn verify_blob_versioned_hash(
 
     // Evaluate the blob polynomial at the challenge point.
     let settings = KzgSettings::load_trusted_setup_file().expect("failed to load KZG settings");
-    let polynomial = blob.as_polynomial().expect("failed to parse blob polynomial");
-    let evaluation = evaluate_polynomial_in_evaluation_form(
-        polynomial,
-        challenge_scalar,
-        &settings,
-    )
-    .expect("failed to evaluate blob polynomial");
+    let polynomial = blob
+        .as_polynomial()
+        .expect("failed to parse blob polynomial");
+    let evaluation =
+        evaluate_polynomial_in_evaluation_form(polynomial, challenge_scalar, &settings)
+            .expect("failed to evaluate blob polynomial");
 
     // kzg-rs `Scalar::to_bytes()` is little-endian, but `verify_kzg_proof` expects big-endian.
     let mut evaluation_be = evaluation.to_bytes();
@@ -119,9 +117,10 @@ mod tests {
             b[31] = 0x42;
             b
         };
-        let challenge =
-            kzg_rs::kzg_proof::safe_scalar_affine_from_bytes(&Bytes32::from_slice(&challenge_bytes).unwrap())
-                .unwrap();
+        let challenge = kzg_rs::kzg_proof::safe_scalar_affine_from_bytes(
+            &Bytes32::from_slice(&challenge_bytes).unwrap(),
+        )
+        .unwrap();
 
         let y = evaluate_polynomial_in_evaluation_form(polynomial, challenge, &settings).unwrap();
 
@@ -177,30 +176,22 @@ mod tests {
         let ckzg_commitment = c_kzg::ethereum_kzg_settings(0)
             .blob_to_kzg_commitment(&ckzg_blob)
             .unwrap();
-        let standard_challenge =
-            kzg_rs::kzg_proof::compute_challenge(&blob, &{
-                let g1: G1Affine = Option::from(G1Affine::from_compressed(
-                    ckzg_commitment.to_bytes().as_ref(),
-                ))
-                .unwrap();
-                g1
-            })
+        let standard_challenge = kzg_rs::kzg_proof::compute_challenge(&blob, &{
+            let g1: G1Affine = Option::from(G1Affine::from_compressed(
+                ckzg_commitment.to_bytes().as_ref(),
+            ))
             .unwrap();
-
-        let y = evaluate_polynomial_in_evaluation_form(
-            polynomial,
-            standard_challenge,
-            &settings,
-        )
+            g1
+        })
         .unwrap();
+
+        let y = evaluate_polynomial_in_evaluation_form(polynomial, standard_challenge, &settings)
+            .unwrap();
 
         let mut standard_challenge_be = standard_challenge.to_bytes();
         standard_challenge_be.reverse();
         let (_proof, ckzg_y) = c_kzg::ethereum_kzg_settings(0)
-            .compute_kzg_proof(
-                &ckzg_blob,
-                &c_kzg::Bytes32::new(standard_challenge_be),
-            )
+            .compute_kzg_proof(&ckzg_blob, &c_kzg::Bytes32::new(standard_challenge_be))
             .unwrap();
 
         let mut y_be = y.to_bytes();
@@ -235,16 +226,8 @@ mod tests {
         };
 
         let (proof, _y) = point_eval::get_kzg_proof(&blob, challenge_digest);
-        let witness = crate::build_point_eval_witness(
-            *commitment.to_bytes(),
-            *proof.to_bytes(),
-        );
+        let witness = crate::build_point_eval_witness(*commitment.to_bytes(), *proof.to_bytes());
 
-        verify_blob_versioned_hash(
-            &envelope,
-            versioned_hash,
-            challenge_digest,
-            &witness,
-        );
+        verify_blob_versioned_hash(&envelope, versioned_hash, challenge_digest, &witness);
     }
 }
