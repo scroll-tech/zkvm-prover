@@ -3,8 +3,12 @@
 This directory is an isolated Ceno Cargo workspace. Keep Ceno dependencies and patches here;
 do not add Ceno crates to the root OpenVM workspace.
 
-The workspace uses the local Ceno checkout at `../../ceno` and the local GPU HAL at
-`../../ceno-gpu/cuda_hal`, matching the Ceno branch used by `../../ceno-reth-benchmark`.
+The workspace uses remote Ceno dependencies in `Cargo.toml`, isolated from the root OpenVM
+workspace:
+
+- `scroll-tech/ceno` on branch `master`.
+- `scroll-tech/ceno-gpu` on branch `main`, via the `cuda_hal` patch. This may require
+  GitHub SSH access on fresh machines.
 
 Build and validation commands:
 

@@ -75,6 +75,7 @@ mkdir -p "$OUT_DIR"
 export GPU=1
 export CENO_MAX_CELL_PER_SHARD="${CENO_MAX_CELL_PER_SHARD:-1245708288}"
 export RUST_LOG="${RUST_LOG:-scroll_zkvm_prover=info,scroll_zkvm_integration=debug}"
+export CARGO_NET_GIT_FETCH_WITH_CLI="${CARGO_NET_GIT_FETCH_WITH_CLI:-true}"
 
 echo "[bench] output dir: $OUT_DIR"
 echo "[bench] CENO_MAX_CELL_PER_SHARD=$CENO_MAX_CELL_PER_SHARD"

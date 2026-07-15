@@ -92,11 +92,12 @@ prove-zisk-chunk-cpu:
 # ---- Ceno backend (see ceno/AGENTS.md) ----
 CENO_PROVER_FEATURES ?= gpu,jemalloc,aot-x86_64
 CENO_MAX_CELL_PER_SHARD ?= 1245708288
-CENO_GPU_E2E_ENV = RUSTFLAGS="-C target-feature=+avx2" JEMALLOC_SYS_WITH_MALLOC_CONF=retain:true,background_thread:true,metadata_thp:always,thp:always,dirty_decay_ms:10000,muzzy_decay_ms:10000,abort_conf:true RUST_MIN_STACK=536870912 CENO_EMULATOR_BACKEND=aot CENO_GPU_ENABLE_WITGEN=0 CENO_GPU_WITGEN=0 CENO_CONCURRENT_CHIP_PROVING=1 CENO_GPU_MEM_TRACKING=0 CENO_GPU_CACHE_LEVEL=1 CENO_GPU_JAGGED_RESHAPE_LOG_HEIGHT=23 CENO_GPU_LARGE_TASK_BOOKING_MARGIN_MB=3048 CENO_MAX_CELL_PER_SHARD=$(CENO_MAX_CELL_PER_SHARD)
+CENO_CARGO_ENV = CARGO_NET_GIT_FETCH_WITH_CLI=true
+CENO_GPU_E2E_ENV = $(CENO_CARGO_ENV) RUSTFLAGS="-C target-feature=+avx2" JEMALLOC_SYS_WITH_MALLOC_CONF=retain:true,background_thread:true,metadata_thp:always,thp:always,dirty_decay_ms:10000,muzzy_decay_ms:10000,abort_conf:true RUST_MIN_STACK=536870912 CENO_EMULATOR_BACKEND=aot CENO_GPU_ENABLE_WITGEN=0 CENO_GPU_WITGEN=0 CENO_CONCURRENT_CHIP_PROVING=1 CENO_GPU_MEM_TRACKING=0 CENO_GPU_CACHE_LEVEL=1 CENO_GPU_JAGGED_RESHAPE_LOG_HEIGHT=23 CENO_GPU_LARGE_TASK_BOOKING_MARGIN_MB=3048 CENO_MAX_CELL_PER_SHARD=$(CENO_MAX_CELL_PER_SHARD)
 
 build-guest-ceno:
-	cd ceno && cargo run --release -p scroll-zkvm-build-guest-ceno -- --mode force
-	cd ceno && RUSTFLAGS="-C target-feature=+avx2" JEMALLOC_SYS_WITH_MALLOC_CONF=retain:true,background_thread:true,metadata_thp:always,thp:always,dirty_decay_ms:10000,muzzy_decay_ms:10000,abort_conf:true cargo build --release -p scroll-zkvm-ceno-prover-test --features $(CENO_PROVER_FEATURES)
+	cd ceno && $(CENO_CARGO_ENV) cargo run --release -p scroll-zkvm-build-guest-ceno -- --mode force
+	cd ceno && $(CENO_CARGO_ENV) RUSTFLAGS="-C target-feature=+avx2" JEMALLOC_SYS_WITH_MALLOC_CONF=retain:true,background_thread:true,metadata_thp:always,thp:always,dirty_decay_ms:10000,muzzy_decay_ms:10000,abort_conf:true cargo build --release -p scroll-zkvm-ceno-prover-test --features $(CENO_PROVER_FEATURES)
 
 test-e2e-ceno-chunk:
 	@if [ "$(GPU)" != "1" ]; then echo "GPU=1 is required for Ceno GPU E2E"; exit 1; fi
