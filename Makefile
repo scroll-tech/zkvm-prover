@@ -10,6 +10,9 @@ export RUST_LOG
 OPENVM_RUST_TOOLCHAIN ?= nightly-2025-08-18
 export OPENVM_RUST_TOOLCHAIN
 
+CENO_RUST_TOOLCHAIN ?= +nightly-2025-11-20
+export CENO_RUST_TOOLCHAIN
+
 # Set GPU config if GPU=1 is set
 ifeq ($(GPU),1)
 CARGO_CONFIG_FLAG = --features scroll-zkvm-integration/cuda
@@ -85,6 +88,27 @@ prove-zisk-chunk:
 
 prove-zisk-chunk-cpu:
 	cd zisk && PATH="$$HOME/.zisk/bin:$$PATH" cargo run --release -p scroll-zkvm-zisk-prover-test -- --circuit chunk --prove --emulator
+
+# ---- Ceno backend (see ceno/AGENTS.md) ----
+CENO_PROVER_FEATURES ?= gpu,jemalloc,aot-x86_64
+CENO_MAX_CELL_PER_SHARD ?= 1245708288
+CENO_GPU_E2E_ENV = RUSTFLAGS="-C target-feature=+avx2" JEMALLOC_SYS_WITH_MALLOC_CONF=retain:true,background_thread:true,metadata_thp:always,thp:always,dirty_decay_ms:10000,muzzy_decay_ms:10000,abort_conf:true RUST_MIN_STACK=536870912 CENO_EMULATOR_BACKEND=aot CENO_GPU_ENABLE_WITGEN=0 CENO_GPU_WITGEN=0 CENO_CONCURRENT_CHIP_PROVING=1 CENO_GPU_MEM_TRACKING=0 CENO_GPU_CACHE_LEVEL=1 CENO_GPU_JAGGED_RESHAPE_LOG_HEIGHT=23 CENO_GPU_LARGE_TASK_BOOKING_MARGIN_MB=3048 CENO_MAX_CELL_PER_SHARD=$(CENO_MAX_CELL_PER_SHARD)
+
+build-guest-ceno:
+	cd ceno && cargo run --release -p scroll-zkvm-build-guest-ceno -- --mode force
+	cd ceno && RUSTFLAGS="-C target-feature=+avx2" JEMALLOC_SYS_WITH_MALLOC_CONF=retain:true,background_thread:true,metadata_thp:always,thp:always,dirty_decay_ms:10000,muzzy_decay_ms:10000,abort_conf:true cargo build --release -p scroll-zkvm-ceno-prover-test --features $(CENO_PROVER_FEATURES)
+
+test-e2e-ceno-chunk:
+	@if [ "$(GPU)" != "1" ]; then echo "GPU=1 is required for Ceno GPU E2E"; exit 1; fi
+	cd ceno && $(CENO_GPU_E2E_ENV) cargo run --release -p scroll-zkvm-ceno-prover-test --features $(CENO_PROVER_FEATURES) -- --circuit chunk --gpu
+
+test-e2e-ceno-batch:
+	@if [ "$(GPU)" != "1" ]; then echo "GPU=1 is required for Ceno GPU E2E"; exit 1; fi
+	cd ceno && $(CENO_GPU_E2E_ENV) cargo run --release -p scroll-zkvm-ceno-prover-test --features $(CENO_PROVER_FEATURES) -- --circuit batch --gpu
+
+test-e2e-ceno-bundle:
+	@if [ "$(GPU)" != "1" ]; then echo "GPU=1 is required for Ceno GPU E2E"; exit 1; fi
+	cd ceno && $(CENO_GPU_E2E_ENV) cargo run --release -p scroll-zkvm-ceno-prover-test --features $(CENO_PROVER_FEATURES) -- --circuit bundle --gpu
 
 # In-guest recursion PoC: prove the bundle stub, then verify that child proof inside
 # the batch recursion guest via zisk-verifier. We use the prebuilt emulator (`-l`) because
