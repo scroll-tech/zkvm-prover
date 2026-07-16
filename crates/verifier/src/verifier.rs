@@ -98,7 +98,7 @@ impl UniversalVerifier {
 
         let loaded_mvk = openvm_sdk::fs::read_object_from_file(path_agg_vk).unwrap_or_else(|_| {
             tracing::warn!("root_verifier_vk not found on disk, computing on-the-fly (slow)...");
-            AGG_STARK_PROVING_KEY.internal_recursive.get_vk().clone()
+            AGG_STARK_PROVING_KEY.agg_pk.internal_recursive.get_vk().clone()
         });
 
         Ok(Self {

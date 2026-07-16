@@ -1,8 +1,12 @@
 use cargo_metadata::MetadataCommand;
 use once_cell::sync::OnceCell;
 use openvm_circuit::arch::deferral::DeferralState;
+use openvm_sdk::config::AggregationSystemParams;
 use openvm_sdk::{DeferralInput, Sdk, StdIn};
 use openvm_stark_sdk::openvm_stark_backend::codec::Decode;
+use openvm_stark_sdk::config::{
+    internal_params_with_100_bits_security, leaf_params_with_100_bits_security,
+};
 use openvm_verify_stark_circuit::extension::{get_deferral_state, get_raw_deferral_results};
 use openvm_verify_stark_host::{
     VmStarkProof,
@@ -20,7 +24,7 @@ use scroll_zkvm_types::{
     types_agg::ProgramCommitment,
     utils::serialize_vk,
 };
-use scroll_zkvm_verifier::verifier::{AGG_STARK_PROVING_KEY, UniversalVerifier};
+use scroll_zkvm_verifier::verifier::UniversalVerifier;
 use std::collections::HashMap;
 use std::{
     io::Cursor,
@@ -403,10 +407,16 @@ pub fn tester_execute<T: ProverTester>(
             .map(|p| p.as_stark_proof().expect("must be stark proof")),
     )?;
 
-    let _app_vm_config = app_config.app_vm_config.clone();
+    // Use the circuit-specific app config so the executor supports all required
+    // extensions (keccak, ecc, pairing, etc.). Aggregation params are only needed
+    // to satisfy the SDK builder; key generation is lazy and never triggered by
+    // the execution-only test path.
     let sdk = Sdk::builder()
         .app_config(app_config)
-        .agg_pk(AGG_STARK_PROVING_KEY.clone())
+        .agg_params(AggregationSystemParams {
+            leaf: leaf_params_with_100_bits_security(),
+            internal: internal_params_with_100_bits_security(),
+        })
         .build()
         .map_err(|e| eyre::eyre!("sdk build failed: {e}"))?;
     let ret = scroll_zkvm_prover::utils::vm::execute_guest(&sdk, app_exe, &stdin)?;
