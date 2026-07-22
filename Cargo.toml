@@ -60,7 +60,7 @@ openvm-recursion-circuit = { git = "https://github.com/openvm-org/openvm.git", b
 openvm-verify-stark-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0", default-features = false }
 openvm-verify-stark-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0", default-features = false }
 openvm-deferral-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0", default-features = false }
-openvm-cuda-backend = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v2.0.0", default-features = false }
+openvm-cuda-backend = { git = "https://github.com/openvm-org/stark-backend.git", branch = "develop-v2.1.0", default-features = false }
 openvm-deferral-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0", default-features = false }
 openvm-riscv-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0", default-features = false }
 openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0", default-features = false, features = [
@@ -72,8 +72,8 @@ openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", branch = "devel
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0", default-features = false }
 
 # more openvm related libs
-openvm-stark-backend = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v2.0.0", default-features = false }
-openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v2.0.0", default-features = false }
+openvm-stark-backend = { git = "https://github.com/openvm-org/stark-backend.git", branch = "develop-v2.1.0", default-features = false }
+openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", branch = "develop-v2.1.0", default-features = false }
 
 sbv-core = { git = "https://github.com/scroll-tech/stateless-block-verifier", tag = "scroll-v91.2" }
 sbv-helpers = { git = "https://github.com/scroll-tech/stateless-block-verifier", tag = "scroll-v91.2", features = ["dev"] }
@@ -120,7 +120,7 @@ serde = { version = "1", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0" }
 serde_with = "3.11.0"
 base64 = "0.22"
-snark-verifier-sdk = { git = "https://github.com/axiom-crypto/snark-verifier.git", tag = "v0.2.6", default-features = false, features = [
+snark-verifier-sdk = { git = "https://github.com/axiom-crypto/snark-verifier.git", branch = "develop-v2.1.0", default-features = false, features = [
   "loader_halo2",
   "display",
   "revm",
