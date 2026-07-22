@@ -58,13 +58,8 @@ contract OpenVmHalo2Verifier is Halo2Verifier, IOpenVmHalo2Verifier {
     /// @param appExeCommit The commitment to the OpenVM application executable whose execution
     /// is being verified.
     /// @param appVmCommit The commitment to the VM configuration.
-    function verify(bytes calldata publicValues, bytes calldata proofData, bytes32 appExeCommit, bytes32 appVmCommit)
-        external
-        view
-    {
-        if (publicValues.length != PUBLIC_VALUES_LENGTH) {
-            revert InvalidPublicValuesLength(PUBLIC_VALUES_LENGTH, publicValues.length);
-        }
+    function verify(bytes calldata publicValues, bytes calldata proofData, bytes32 appExeCommit, bytes32 appVmCommit) external view {
+        if (publicValues.length != PUBLIC_VALUES_LENGTH * 2) revert InvalidPublicValuesLength(PUBLIC_VALUES_LENGTH * 2, publicValues.length);
         if (proofData.length != PROOF_DATA_LENGTH) revert InvalidProofDataLength(PROOF_DATA_LENGTH, proofData.length);
         if (uint256(appExeCommit) >= BN254_SCALAR_MODULUS) revert InvalidAppExeCommit(appExeCommit);
         if (uint256(appVmCommit) >= BN254_SCALAR_MODULUS) revert InvalidAppVmCommit(appVmCommit);
@@ -72,7 +67,7 @@ contract OpenVmHalo2Verifier is Halo2Verifier, IOpenVmHalo2Verifier {
         // Other than the fallback() in `Halo2Verifier`, there is only one
         // function selector on the external ABI: `verify(..)`, which has
         // selector 0x24270d54. If `proofData` ever began with 0x24270d54, this
-        // function would be called again instead of hitting the fallback.
+        // function would be called again instead of hitting the fallback. 
         //
         // If a valid proof ever began with 0x24270d54, it would fail to verify.
         // However, `snark-verifier`'s proof structure guarantees that the first
@@ -119,12 +114,11 @@ contract OpenVmHalo2Verifier is Halo2Verifier, IOpenVmHalo2Verifier {
     ///
     /// @return proofPtr Memory pointer to the beginning of the constructed
     /// proof. This pointer does not follow `bytes memory` semantics.
-    function _constructProof(
-        bytes calldata publicValues,
-        bytes calldata proofData,
-        bytes32 appExeCommit,
-        bytes32 appVmCommit
-    ) internal pure returns (MemoryPointer proofPtr) {
+    function _constructProof(bytes calldata publicValues, bytes calldata proofData, bytes32 appExeCommit, bytes32 appVmCommit)
+        internal
+        pure
+        returns (MemoryPointer proofPtr)
+    {
         uint256 fullProofLength = FULL_PROOF_LENGTH;
 
         // The expected proof format using hex offsets:
@@ -158,11 +152,14 @@ contract OpenVmHalo2Verifier is Halo2Verifier, IOpenVmHalo2Verifier {
             let proofSuffixOffset := add(0x1c0, shl(5, PUBLIC_VALUES_LENGTH))
             calldatacopy(add(proofPtr, proofSuffixOffset), add(proofData.offset, 0x180), 0x560)
 
-            // Copy each byte of the public values into the proof. It copies the
-            // most significant bytes of public values first.
+            // Copy each u16 public value cell into its own bytes32 word. The
+            // calldata packs each cell as 2 little-endian bytes; the word is
+            // big-endian, so the low byte lands at offset 0x1f and the high
+            // byte at 0x1e of each word.
             let publicValuesMemOffset := add(add(proofPtr, 0x1c0), 0x1f)
             for { let i := 0 } iszero(eq(i, PUBLIC_VALUES_LENGTH)) { i := add(i, 1) } {
-                calldatacopy(add(publicValuesMemOffset, shl(5, i)), add(publicValues.offset, i), 0x01)
+                calldatacopy(add(publicValuesMemOffset, shl(5, i)), add(publicValues.offset, shl(1, i)), 0x01)
+                calldatacopy(sub(add(publicValuesMemOffset, shl(5, i)), 1), add(add(publicValues.offset, shl(1, i)), 1), 0x01)
             }
         }
     }

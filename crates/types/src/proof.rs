@@ -25,7 +25,7 @@ pub struct EvmProof {
     //pub accumulator: Vec<u8>,
     /// The public inputs of the SNARK proof.
     /// Previously the `instance`s are U256 values, with accumulator and digests.
-    /// For real user PI values, they will be like 0x0000..00000ab, only 1 byte non zero.
+    /// For real user PI values, they will be like 0x0000..00000ab, only 2 bytes (u16 cell) non zero.
     /// Usually of length (12+2+32)x32
     /// Now: the `instance` is splitted. The `user_public_values` is "dense".
     /// Each byte is valid PI. Usually of length 32.
@@ -220,8 +220,9 @@ impl ProofEnum {
             }
             Self::Evm(evm_proof) => {
                 // The first 12 scalars are accumulators.
-                // The next 2 scalars are digests.
-                // The next 32 scalars are the public input hash.
+                // The next 2 scalars are app commits.
+                // The remaining scalars are user public values: each holds a
+                // u16 cell in its low 2 bytes (scalars are big-endian encoded).
                 let pi_hash_bytes = evm_proof
                     .instances
                     .iter()
@@ -230,11 +231,11 @@ impl ProofEnum {
                     .cloned()
                     .collect::<Vec<u8>>();
 
-                // The 32 scalars of public input hash actually only have the LSB that is the
-                // meaningful byte.
                 pi_hash_bytes
                     .chunks_exact(32)
-                    .map(|bytes32_chunk| bytes32_chunk[31] as u32)
+                    .map(|bytes32_chunk| {
+                        (bytes32_chunk[30] as u32) << 8 | bytes32_chunk[31] as u32
+                    })
                     .collect::<Vec<u32>>()
             }
         }

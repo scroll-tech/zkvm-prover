@@ -5,29 +5,28 @@ use openvm::platform as openvm_platform;
 ///
 /// rkyv needs special alignment for its data structures, use a pre-aligned buffer with rkyv::access_unchecked
 /// is more efficient than rkyv::access.
-#[cfg(target_os = "zkvm")]
+#[cfg(target_os = "openvm")]
 #[inline(always)]
 pub fn read_witnesses_rkyv_raw() -> Vec<u8> {
     use std::alloc::{GlobalAlloc, Layout, System};
-    openvm_rv32im_guest::hint_input();
-    let mut len: u32 = 0;
-    openvm_rv32im_guest::hint_store_u32!((&mut len) as *mut u32 as u32);
-    let num_words = len.div_ceil(4);
-    let size = (num_words * 4) as usize;
+    openvm_riscv_guest::hint_input();
+    // The hint-stream length prefix is a single 8-byte word on the rv64 guest.
+    let mut len: u64 = 0;
+    openvm_riscv_guest::hint_store_u64!((&mut len) as *mut u64);
+    let num_words = (len as usize).div_ceil(8);
+    let size = num_words * 8;
     let layout = Layout::from_size_align(size, 16).unwrap();
     let ptr_start = unsafe { System.alloc(layout) };
-    let mut ptr = ptr_start;
-    for _ in 0..num_words {
-        openvm_rv32im_guest::hint_store_u32!(ptr as u32);
-        ptr = unsafe { ptr.add(4) };
-    }
+    // SAFETY: `ptr_start` points to an allocation of `size == num_words * 8` bytes,
+    // so the chunked dword writes stay within the allocation.
+    unsafe { openvm_riscv_guest::hint_buffer_chunked(ptr_start, num_words) };
     unsafe { Vec::from_raw_parts(ptr_start, len as usize, size) }
 }
 
 /// Read the witnesses from the hint stream.
 pub fn read_witnesses() -> Vec<u8> {
-    #[cfg(not(target_os = "zkvm"))]
+    #[cfg(not(target_os = "openvm"))]
     return openvm::io::read_vec(); // avoid compiler complaint
-    #[cfg(target_os = "zkvm")]
+    #[cfg(target_os = "openvm")]
     return read_witnesses_rkyv_raw();
 }

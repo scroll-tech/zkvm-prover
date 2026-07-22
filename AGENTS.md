@@ -13,7 +13,7 @@ Critical context for AI agents working on this repo. Read this before making cha
 
 ## OpenVM Version Sensitivity
 
-This project uses **OpenVM v2.0.0** as its ZKVM. Guest executables (`.vmexe`) and host code **must be built from the exact same OpenVM version**. Even a minor version bump can change:
+This project uses **OpenVM `develop-v2.1.0` branch** (RV64 guest toolchain) as its ZKVM. Guest executables (`.vmexe`) and host code **must be built from the exact same OpenVM version**. Even a minor version bump can change:
 
 - The guest/host data layout (hint streams, public inputs)
 - The Halo2 SRS degree requirement
@@ -21,29 +21,61 @@ This project uses **OpenVM v2.0.0** as its ZKVM. Guest executables (`.vmexe`) an
 - Field algebra APIs
 - ECC constructor signatures
 
+### v2.1.0 (RV64) migration notes
+
+Compared to v2.0.0, the `develop-v2.1.0` branch changes:
+
+- Guest target is now `riscv64im-unknown-openvm-elf` (built into the `openvm-1.94.0`
+  rust fork toolchain). Guest builds MUST use `OPENVM_RUST_TOOLCHAIN=openvm-1.94.0`
+  (the default in the Makefile and in `openvm-build`). The old
+  `riscv32im-risc0-zkvm-elf` / `nightly-2025-11-20` combination is gone.
+- Crate renames: `openvm-rv32im-{guest,transpiler,circuit}` → `openvm-riscv-{guest,transpiler,circuit}`.
+- `openvm.toml`: `[app_vm_config.rv32i]`/`rv32m` → `rv64i`/`rv64m`.
+- SDK API: `Sdk::riscv32`/`AppConfig::riscv32` → `riscv64`; `Sdk::execute*` now
+  takes a compiled instance — call `sdk.compile*` / `sdk.compile_metered_cost`
+  first, then `sdk.execute(&compiled, ...)` / `sdk.execute_metered_cost(&compiled, ...)`.
+- Hint stream words are 8 bytes: `hint_store_u32!` → `hint_store_u64!` /
+  `hint_buffer_chunked`, and the hint-stream length prefix is a `u64`.
+- User public values are **u16 cells** (2 little-endian bytes per cell) instead of
+  1 byte per u32 cell. `NUM_PUBLIC_VALUES` is still 32 cells (= 64 bytes); the
+  32-byte pi hash fills the first 16 cells.
+- Guest cfg gates: `target_os = "zkvm"` → `target_os = "openvm"`.
+- ⚠️ **EVM verifier template bug on this branch**: the SDK packs user public
+  values as 2 LE bytes per u16 cell in `verifier_calldata`, but the Solidity
+  template (`crates/sdk/contracts/template/OpenVmHalo2Verifier.sol`) still
+  expects 1 byte per PV, causing `InvalidPublicValuesLength` reverts.
+  `crates/build-guest/src/main.rs::patch_verifier_for_u16_public_values`
+  rewrites the locally generated wrapper to accept 2 bytes per cell. If that
+  function errors with "template fragment not found", upstream has changed the
+  template — review whether the patch is still needed.
+- Host toolchain: `rust-toolchain.toml` uses `nightly-2026-01-18` (required by the
+  openvm-sdk `tco` feature).
+
 ### How to update OpenVM dependencies correctly
 
-OpenVM is declared as a **git dependency** (`tag = "v2.0.0"`) in `Cargo.toml`, and the exact commit is also pinned in `Cargo.lock`. The `openvm-org/openvm.git` and `openvm-org/stark-backend.git` entries MUST stay on matching tags — `openvm`'s own `Cargo.toml` pins a specific `stark-backend` tag, and a mismatch produces duplicate-registry / type-mismatch errors. Because the tag is immutable, the declared ref and the locked commit should always agree. The real hazard is a bare `cargo update`: it will **not** change the OpenVM tag, but it will bump unrelated crates.io packages (e.g. `alloy`, `revm`) which often break compatibility with the `scroll-tech/reth` and `sbv` forks.
+OpenVM is declared as a **git dependency** (`branch = "develop-v2.1.0"`) in `Cargo.toml`, and the exact commit is also pinned in `Cargo.lock`. The `openvm-org/stark-backend.git` entries MUST stay on the tag that `openvm`'s own `Cargo.toml` pins for that branch (currently `tag = "v2.0.0"`) — a mismatch produces duplicate-registry / type-mismatch errors. A branch ref moves: after fetching, verify the locked commit is the one you expect. The real hazard is a bare `cargo update`: it will bump unrelated crates.io packages (e.g. `alloy`, `revm`) which often break compatibility with the `scroll-tech/reth` and `sbv` forks.
 
 **Do NOT run a global `cargo update` unless you are prepared to upgrade the entire `alloy`/`revm`/`reth`/`sbv` dependency chain together.**
 
-To move to a newer OpenVM tag, retarget every `openvm-org/openvm.git` and `openvm-org/stark-backend.git` entry in `Cargo.toml` to the new tag, then refresh only those git sources — `cargo metadata` is enough — rather than a global `cargo update`. Verify with `git diff Cargo.lock` that no other package's version/source changed. Then rebuild guests and run tests as described below.
+To move to a newer OpenVM ref, retarget every `openvm-org/openvm.git` entry in `Cargo.toml` to the new tag/branch and set `openvm-org/stark-backend.git` to whatever tag that openvm ref's own `Cargo.toml` pins, then refresh only those git sources — `cargo metadata` is enough — rather than a global `cargo update`. Verify with `git diff Cargo.lock` that no other package's version/source changed. Then rebuild guests and run tests as described below.
 
 ### After ANY OpenVM version upgrade, you MUST:
 
 1. **Update the hardcoded version string** in `crates/build-guest/src/verifier.rs`:
    ```rust
-   let solidity_sdk_tag = "v2.0"; // MUST match openvm-solidity-sdk tag
-   let verifier_path = "v2.0-deferral"; // bundle/deferral verifier
+   let solidity_sdk_tag = "v2.1"; // MUST match openvm-solidity-sdk tag
+   let verifier_path = "v2.1-deferral"; // bundle/deferral verifier
    ```
+   (As of the `develop-v2.1.0` upgrade, `openvm-solidity-sdk` has no `v2.1` tag yet,
+   so the download fails and `auto` mode falls back to local verifier generation.)
 
 2. **Force-rebuild ALL guest assets** (auto mode skips existing files):
    ```bash
    # Local build
-   OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20 cargo run --release -p scroll-zkvm-build-guest -- --mode force
+   OPENVM_RUST_TOOLCHAIN=openvm-1.94.0 cargo run --release -p scroll-zkvm-build-guest -- --mode force
 
    # Docker build (matches CI)
-   OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20 make build-guest
+   OPENVM_RUST_TOOLCHAIN=openvm-1.94.0 make build-guest
    ```
    This regenerates: `app.elf`, `app.vmexe`, commitment `.rs` files, `openVmVk.json`,
    and the EVM verifier (`verifier.sol` + `verifier.bin`).
@@ -67,7 +99,7 @@ To move to a newer OpenVM tag, retarget every `openvm-org/openvm.git` and `openv
    These are cached proving keys. They are **not** automatically invalidated on version bumps.
 
 5. **Check SRS params** in `~/.openvm/params/`:
-   - OpenVM v2.0.0 requires `kzg_bn254_24.srs` (2 GB)
+   - OpenVM v2.x requires `kzg_bn254_24.srs` (2 GB)
    - If the file is empty/corrupted, replace it (check for `.1` or `.part` suffixes from interrupted downloads)
 
 6. **Clear test output cache** before re-running integration tests:
@@ -101,7 +133,7 @@ This happens when:
 
 **Fix**: Regenerate with:
 ```bash
-OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20 cargo run --release -p scroll-zkvm-build-guest -- --mode force
+OPENVM_RUST_TOOLCHAIN=openvm-1.94.0 cargo run --release -p scroll-zkvm-build-guest -- --mode force
 ```
 (The default `auto` mode will fall back to local generation if the download fails; use `RECOMPUTE_MODE=yes` to force local generation immediately.)
 
@@ -119,7 +151,7 @@ The `build-guest.sh` script may fail if a stale `build-guest.cid` file exists. U
 # Force rebuild all guest assets (required after OpenVM upgrade).
 # Default RECOMPUTE_MODE=auto falls back to local generation if the download fails.
 # Use RECOMPUTE_MODE=yes to skip the download and force local generation.
-OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20 cargo run --release -p scroll-zkvm-build-guest -- --mode force
+OPENVM_RUST_TOOLCHAIN=openvm-1.94.0 cargo run --release -p scroll-zkvm-build-guest -- --mode force
 
 # Run end-to-end tests (ALWAYS use make, never raw cargo test)
 GPU=1 make test-e2e-bundle
@@ -183,3 +215,5 @@ If any of these mismatch, the EVM verifier will reject proofs with `ProofVerific
 - `chunk-circuit`: requires `system.config.continuation_enabled = true`
 - `batch-circuit` / `bundle-circuit`: aggregation FRI params are supplied in code via `AggregationConfig { params: default_agg_params() }`; the checked-in `openvm.toml` files do not contain `leaf_fri_params`
 - FRI params format in OpenVM v2: `commit_proof_of_work_bits` + `query_proof_of_work_bits`
+- VM extension sections in `openvm.toml` are `[app_vm_config.rv64i]` / `[app_vm_config.rv64m]` (RV64)
+- Guest ELFs land in `target/riscv64im-unknown-openvm-elf/maxperf/`

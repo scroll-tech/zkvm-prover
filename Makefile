@@ -7,7 +7,7 @@ export RUST_BACKTRACE
 RUST_LOG ?= off,scroll_zkvm_integration=debug,scroll_zkvm_verifier=debug,scroll_zkvm_prover=debug,p3_fri=warn,p3_dft=warn,openvm_circuit=warn
 export RUST_LOG
 
-OPENVM_RUST_TOOLCHAIN ?= nightly-2025-11-20
+OPENVM_RUST_TOOLCHAIN ?= openvm-1.94.0
 export OPENVM_RUST_TOOLCHAIN
 
 # Set GPU config if GPU=1 is set
