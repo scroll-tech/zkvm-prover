@@ -143,6 +143,32 @@ impl Prover {
         self.get_sdk()
     }
 
+    /// File name of the serialized aggregation verifying key next to `app.vmexe`.
+    const FD_AGG_VK: &'static str = "agg_vk.bin";
+
+    /// Load this circuit's aggregation VK, preferring the pre-built asset
+    /// (`agg_vk.bin`, written by build-guest next to `app.vmexe`) so callers can
+    /// obtain the VK without constructing the aggregation prover. Constructing
+    /// the prover is expensive and, with the `cuda` feature, uploads several GiB
+    /// of proving keys to GPU memory that is never reclaimed.
+    ///
+    /// Falls back to deriving the VK from the SDK if the asset is missing.
+    pub fn load_agg_vk(
+        &self,
+    ) -> Result<Arc<openvm_stark_backend::keygen::types::MultiStarkVerifyingKey<SC>>, Error> {
+        let path = self.config.path_app_exe.with_file_name(Self::FD_AGG_VK);
+        match openvm_sdk::fs::read_object_from_file(&path) {
+            Ok(mvk) => Ok(Arc::new(mvk)),
+            Err(e) => {
+                tracing::warn!(
+                    "failed to read {} ({e}); deriving agg VK from SDK (slow, may allocate GPU memory)",
+                    path.display()
+                );
+                Ok(self.get_sdk()?.agg_vk())
+            }
+        }
+    }
+
     /// Pick up loaded app commit as "vk" in proof, to distinguish from which circuit the proof comes
     pub fn get_app_vk(&self) -> Vec<u8> {
         serialize_vk::serialize(&self.get_app_commitment())
@@ -177,7 +203,9 @@ impl Prover {
         // VK (root verifier VK). The cached commit must be the child's
         // internal-recursive VK commit, computed with commit_child_vk so it matches
         // what the child root proof exposes.
-        let child_agg_vk = child_sdk.agg_vk().clone();
+        // Load the child agg VK from the pre-built asset when available, so we
+        // don't construct the child's (GPU) aggregation prover just to get the VK.
+        let child_agg_vk = child_prover.load_agg_vk()?;
         let engine = <DeferralEngine as StarkEngine>::new(child_agg_vk.inner.params.clone());
         let internal_recursive_cached_commit: CommitBytes =
             commit_child_vk(&engine, &child_agg_vk, true)
