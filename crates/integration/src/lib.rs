@@ -301,7 +301,13 @@ impl TaskProver for Prover {
     }
 
     fn get_vk(&mut self) -> eyre::Result<Vec<u8>> {
-        Ok(self.get_app_vk())
+        // Use the program commitment published in openVmVk.json instead of
+        // deriving it from the prover: deriving constructs the (GPU) aggregation
+        // prover just to read the commitment.
+        let commitment = PROGRAM_COMMITMENTS
+            .get(self.prover_name.as_str())
+            .ok_or_else(|| eyre::eyre!("no program commitment for {}", self.prover_name))?;
+        Ok(serialize_vk::serialize(commitment))
     }
 
     fn get_agg_vk(
@@ -311,7 +317,7 @@ impl TaskProver for Prover {
             openvm_sdk::SC,
         >,
     > {
-        Ok((*self.sdk()?.agg_vk()).clone())
+        Ok((*self.load_agg_vk()?).clone())
     }
 
     fn deferral_cached_commit(&self) -> eyre::Result<openvm_continuations::CommitBytes> {
@@ -457,10 +463,9 @@ pub fn compute_deferral_data(
     cached_commit: openvm_continuations::CommitBytes,
     proofs: &[&StarkProof],
 ) -> eyre::Result<(Vec<[u8; 32]>, Vec<DeferralInput>, Vec<DeferralState>)> {
-    let sdk = child_prover
-        .sdk()
-        .map_err(|e| eyre::eyre!("failed to get child sdk: {e}"))?;
-    let mvk = (*sdk.agg_vk()).clone();
+    // Load the child agg VK from the pre-built asset when available; deriving it
+    // from the SDK constructs the child's (GPU) aggregation prover just for the VK.
+    let mvk = (*child_prover.load_agg_vk()?).clone();
 
     let (vm_proofs, baselines): (Vec<VmStarkProof>, Vec<VerificationBaseline>) = proofs
         .iter()

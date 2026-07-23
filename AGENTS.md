@@ -45,7 +45,7 @@ To move to a newer OpenVM tag, retarget every `openvm-org/openvm.git` and `openv
    # Docker build (matches CI)
    OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20 make build-guest
    ```
-   This regenerates: `app.elf`, `app.vmexe`, commitment `.rs` files, `openVmVk.json`,
+   This regenerates: `app.elf`, `app.vmexe`, commitment `.rs` files, `agg_vk.bin`, `openVmVk.json`,
    and the EVM verifier (`verifier.sol` + `verifier.bin`).
 
    > The default `RECOMPUTE_MODE=auto` tries to download the Solidity verifier from
@@ -67,8 +67,9 @@ To move to a newer OpenVM tag, retarget every `openvm-org/openvm.git` and `openv
    These are cached proving keys. They are **not** automatically invalidated on version bumps.
 
 5. **Check SRS params** in `~/.openvm/params/`:
-   - OpenVM v2.0.0 requires `kzg_bn254_24.srs` (2 GB)
-   - If the file is empty/corrupted, replace it (check for `.1` or `.part` suffixes from interrupted downloads)
+   - OpenVM v2.0.0 requires `kzg_bn254_24.srs` (2 GB); the SNARK step in e2e tests also needs `kzg_bn254_22.srs` and `kzg_bn254_23.srs`
+   - Download any missing file with `make $HOME/.openvm/params/<name>.srs`
+   - If a file is empty/corrupted, replace it (check for `.1` or `.part` suffixes from interrupted downloads)
 
 6. **Clear test output cache** before re-running integration tests:
    ```bash
@@ -112,6 +113,40 @@ OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20 cargo run --release -p scroll-zkvm-buil
 
 ### Docker build fails with stale CID
 The `build-guest.sh` script may fail if a stale `build-guest.cid` file exists. Use local build (`cargo run -p scroll-zkvm-build-guest`) as fallback.
+
+## GPU Features
+
+Two levels of GPU acceleration exist, wired as cargo features:
+
+- `scroll-zkvm-integration/cuda` (→ `scroll-zkvm-prover/cuda` → `openvm-sdk/cuda`): STARK proving on GPU.
+- `scroll-zkvm-integration/halo2-gpu` (→ `openvm-sdk/halo2-gpu` → `openvm-static-verifier/halo2-gpu` → `snark-verifier-sdk/cuda`): additionally runs the **halo2 (SNARK) aggregation prover on GPU** via `halo2-axiom-gpu`. This needs far more VRAM than STARK proving — `test-e2e-bundle` peaks at ~23.5 GiB, so it only fits on 24 GB-class cards (e.g. RTX 3090/4090).
+
+The Makefile auto-enables `halo2-gpu` when `GPU=1` and the GPU has ≥ 22 GiB VRAM. Override with `HALO2_GPU=1` / `HALO2_GPU=0`:
+
+```bash
+GPU=1 make test-e2e-bundle        # 24 GB card: STARK + SNARK both on GPU
+GPU=1 HALO2_GPU=0 make test-e2e-bundle  # STARK on GPU, SNARK on CPU
+```
+
+### VRAM budgeting with `halo2-gpu` (24 GB cards)
+
+Measured on RTX 4090 during `test-e2e-bundle`:
+
+- The halo2 SNARK prover (k=23 static-verifier circuit) needs **~15 GB of physically free VRAM** at `create_proof` time (SRS upload, pk/advice polynomials, MSM buckets, NTT). These allocations are not chunkable; only the final quotient step chunks itself by `cudaMemGetInfo` free bytes.
+- openvm's VPMM memory pool (`openvm-cuda-common`) **never returns physical pages to the OS** — once the pool grows, `cudaMemGetInfo` free bytes stay low for the rest of the process. What matters is *live* GPU allocations at SNARK start.
+- If free bytes ≈ 0, the quotient chunking computes `batch_size = 0`, which surfaces as `cudaErrorInvalidConfiguration` (`quotient.cu`) or a SIGFPE (division by zero in MSM `win_num_`) — not a clean OOM.
+
+To keep the live GPU set small before the SNARK phase:
+
+- The aggregation VK is a **release asset** (`releases/dev/{chunk,batch,bundle}/agg_vk.bin`, written by build-guest). `Prover::load_agg_vk()` reads it; `enable_deferral`, `compute_deferral_data`, and the integration `get_agg_vk()` all use it instead of building the child's GPU aggregation prover (~5.7 GB per circuit) just to obtain the VK.
+- Integration `get_vk()` uses `PROGRAM_COMMITMENTS` (from `openVmVk.json`) instead of `Prover::get_app_vk()`, which also builds the GPU prover as a side effect.
+- The bundle tester calls `chunk_prover.reset()` / `batch_prover.reset()` after `enable_deferral` to drop child SDKs before SNARK.
+
+Do **not** reintroduce `sdk.prover()` / `sdk.agg_vk()` calls in read-only (verification/config) paths — each one silently uploads GiB-scale proving keys that stay live for the process lifetime.
+
+### Dependency note: `halo2-lib` retag
+
+`halo2-axiom-gpu` (pulled in by `snark-verifier-sdk/cuda`) must pin `openvm-cuda-common` to the **same stark-backend source** as the rest of the graph, or resolution fails with a `links = "cuda-common"` conflict. axiom-crypto **retagged `halo2-lib` v0.5.4** (commit `6522c1c5` → `a69fdee7`) to fix exactly this (`halo2-axiom-gpu` tag `v1.0.0-rc.2` → `v1.0.0`); the code diff is semantically nil. `Cargo.lock` is pinned to the new commit — if a stale lock ever resolves `halo2-axiom-gpu` to `v1.0.0-rc.2`, run `cargo update -p halo2-base` (scoped, safe) to re-resolve the moved tag.
 
 ## Build & Test Commands
 
@@ -170,6 +205,7 @@ If any of these mismatch, the EVM verifier will reject proofs with `ProofVerific
 | File / Dir | Purpose |
 |------------|---------|
 | `releases/dev/{chunk,batch,bundle}/app.vmexe` | Guest executables |
+| `releases/dev/{chunk,batch,bundle}/agg_vk.bin` | Serialized aggregation VK (read by `Prover::load_agg_vk`) |
 | `releases/dev/verifier/openVmVk.json` | Program commitments loaded by integration tests |
 | `releases/dev/verifier/verifier.bin` | EVM verifier bytecode |
 | `crates/circuits/*-circuit/openvm.toml` | Guest VM configs (FRI params, PoW bits) |

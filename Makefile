@@ -13,13 +13,27 @@ export OPENVM_RUST_TOOLCHAIN
 # Set GPU config if GPU=1 is set
 ifeq ($(GPU),1)
 CARGO_CONFIG_FLAG = --features scroll-zkvm-integration/cuda
+# SNARK (halo2) GPU proving needs ~15 GiB of free VRAM on top of the STARK
+# prover's footprint (test-e2e-bundle peaks at ~23.5 GiB), so auto-enable it
+# only on 24 GB-class cards (e.g. RTX 3090/4090). Override with HALO2_GPU=1 / HALO2_GPU=0.
+HALO2_GPU ?= auto
+ifeq ($(HALO2_GPU),1)
+HALO2_GPU_ENABLED := 1
+else ifeq ($(HALO2_GPU),auto)
+GPU_MEM_MIB := $(shell nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits 2>/dev/null | sort -rn | head -1)
+HALO2_GPU_ENABLED := $(shell [ -n "$(GPU_MEM_MIB)" ] && [ "$(GPU_MEM_MIB)" -ge 22000 ] && echo 1)
+endif
+ifneq ($(HALO2_GPU_ENABLED),)
+CARGO_CONFIG_FLAG += --features scroll-zkvm-integration/halo2-gpu
+$(info halo2 GPU proving enabled: SNARK aggregation will run on GPU)
+endif
 else
 CARGO_CONFIG_FLAG =
 endif
 
 SRS_PARAMS_DIR := $(HOME)/.openvm/params
 SRS_PARAMS_URL := https://circuit-release.s3.us-west-2.amazonaws.com/scroll-zkvm/params
-SRS_PARAMS := $(SRS_PARAMS_DIR)/kzg_bn254_22.srs $(SRS_PARAMS_DIR)/kzg_bn254_24.srs
+SRS_PARAMS := $(SRS_PARAMS_DIR)/kzg_bn254_22.srs $(SRS_PARAMS_DIR)/kzg_bn254_23.srs $(SRS_PARAMS_DIR)/kzg_bn254_24.srs
 
 # Download params if missing
 $(SRS_PARAMS_DIR)/%.srs:

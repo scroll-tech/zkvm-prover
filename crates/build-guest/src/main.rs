@@ -107,6 +107,9 @@ const LOG_PREFIX: &str = "[build-guest]";
 /// File descriptor for app openvm config.
 const FD_APP_CONFIG: &str = "openvm.toml";
 
+/// File descriptor for the serialized aggregation verifying key.
+const FD_AGG_VK: &str = "agg_vk.bin";
+
 /// Writes a commitment array to a Rust source file.
 fn write_commitment(output_path: &PathBuf, commitment: [u32; DIGEST_SIZE]) -> Result<()> {
     let content = format!(
@@ -351,6 +354,13 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
         println!("{project_name}: {app_vk}");
 
         vk_dump[format!("{project_name}_vk")] = serde_json::Value::String(app_vk);
+
+        // Dump the aggregation VK so downstream provers can build deferral
+        // circuits and verify cached proofs without constructing the (GPU)
+        // aggregation prover just to obtain the VK.
+        let path_agg_vk = path_assets.join(FD_AGG_VK);
+        write_object_to_file(&path_agg_vk, sdk.agg_vk().clone())?;
+        println!("{LOG_PREFIX} agg vk written to {path_agg_vk:?}");
 
         println!(
             "{LOG_PREFIX} Finished build for config in {:?}",
