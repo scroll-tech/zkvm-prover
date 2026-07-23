@@ -7,7 +7,7 @@ mod openvm;
 mod types;
 
 pub use openvm::point_evaluation;
-pub use openvm::{kzg_to_versioned_hash, verify_kzg_proof};
+pub use openvm::{is_in_g1_subgroup, kzg_to_versioned_hash, verify_kzg_proof};
 pub use types::ToIntrinsic;
 
 // Number of bytes in a u256.
