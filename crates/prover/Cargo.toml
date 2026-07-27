@@ -41,5 +41,8 @@ cudarc = { version = "0.9", optional = true }
 [features]
 default = []
 cuda = ["openvm-sdk/cuda", "dep:cudarc", "openvm-verify-stark-circuit/cuda", "dep:openvm-cuda-backend"]
+# GPU acceleration for the halo2 (SNARK) prover on top of `cuda`. Needs much
+# more VRAM than STARK proving; enable only on 24 GB-class GPUs.
+halo2-gpu = ["cuda", "openvm-sdk/halo2-gpu"]
 
 

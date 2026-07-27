@@ -72,5 +72,7 @@ glob = "0.3"
 default = ["limit-logs", "scroll"]
 scroll = ["scroll-zkvm-types/scroll", "sbv-utils/scroll"]
 cuda = ["scroll-zkvm-prover/cuda"]
+# halo2 (SNARK) proving on GPU; implies cuda. VRAM-heavy, see scroll-zkvm-prover.
+halo2-gpu = ["scroll-zkvm-prover/halo2-gpu"]
 limit-logs = []
 perf-metrics = ["openvm-sdk/perf-metrics"]

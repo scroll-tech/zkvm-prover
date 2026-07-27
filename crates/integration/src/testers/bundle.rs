@@ -71,6 +71,12 @@ impl BundleTaskGenerator {
         let wit = self.get_or_build_witness()?;
         let agg_proofs = self.get_or_build_child_proofs(batch_prover, chunk_prover)?;
         prover.enable_deferral(batch_prover)?;
+        // Release the child provers' SDKs before the bundle STARK/SNARK phase.
+        // Their GPU-resident proving keys are no longer needed (deferral data is
+        // already configured above, and child agg VKs are loaded from disk), and
+        // on 24 GB cards the halo2 GPU prover needs the headroom.
+        chunk_prover.reset();
+        batch_prover.reset();
         let proof = prove_verify_single_evm_with_deferral::<BundleProverTester>(
             prover,
             &wit,
