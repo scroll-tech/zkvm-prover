@@ -25,8 +25,8 @@ This project uses **OpenVM `develop-v2.1.0` branch** (RV64 guest toolchain) as i
 
 Compared to v2.0.0, the `develop-v2.1.0` branch changes:
 
-- Guest target is now `riscv64im-unknown-openvm-elf` (built into the `openvm-1.94.0`
-  rust fork toolchain). Guest builds MUST use `OPENVM_RUST_TOOLCHAIN=openvm-1.94.0`
+- Guest target is now `riscv64im-unknown-openvm-elf` (built into the `openvm-1.94.1`
+  rust fork toolchain). Guest builds MUST use `OPENVM_RUST_TOOLCHAIN=openvm-1.94.1`
   (the default in the Makefile and in `openvm-build`). The old
   `riscv32im-risc0-zkvm-elf` / `nightly-2025-11-20` combination is gone.
 - Crate renames: `openvm-rv32im-{guest,transpiler,circuit}` → `openvm-riscv-{guest,transpiler,circuit}`.
@@ -72,10 +72,10 @@ To move to a newer OpenVM ref, retarget every `openvm-org/openvm.git` entry in `
 2. **Force-rebuild ALL guest assets** (auto mode skips existing files):
    ```bash
    # Local build
-   OPENVM_RUST_TOOLCHAIN=openvm-1.94.0 cargo run --release -p scroll-zkvm-build-guest -- --mode force
+   OPENVM_RUST_TOOLCHAIN=openvm-1.94.1 cargo run --release -p scroll-zkvm-build-guest -- --mode force
 
    # Docker build (matches CI)
-   OPENVM_RUST_TOOLCHAIN=openvm-1.94.0 make build-guest
+   OPENVM_RUST_TOOLCHAIN=openvm-1.94.1 make build-guest
    ```
    This regenerates: `app.elf`, `app.vmexe`, commitment `.rs` files, `agg_vk.bin`, `openVmVk.json`,
    and the EVM verifier (`verifier.sol` + `verifier.bin`).
@@ -134,7 +134,7 @@ This happens when:
 
 **Fix**: Regenerate with:
 ```bash
-OPENVM_RUST_TOOLCHAIN=openvm-1.94.0 cargo run --release -p scroll-zkvm-build-guest -- --mode force
+OPENVM_RUST_TOOLCHAIN=openvm-1.94.1 cargo run --release -p scroll-zkvm-build-guest -- --mode force
 ```
 (The default `auto` mode will fall back to local generation if the download fails; use `RECOMPUTE_MODE=yes` to force local generation immediately.)
 
@@ -186,7 +186,7 @@ Do **not** reintroduce `sdk.prover()` / `sdk.agg_vk()` calls in read-only (verif
 # Force rebuild all guest assets (required after OpenVM upgrade).
 # Default RECOMPUTE_MODE=auto falls back to local generation if the download fails.
 # Use RECOMPUTE_MODE=yes to skip the download and force local generation.
-OPENVM_RUST_TOOLCHAIN=openvm-1.94.0 cargo run --release -p scroll-zkvm-build-guest -- --mode force
+OPENVM_RUST_TOOLCHAIN=openvm-1.94.1 cargo run --release -p scroll-zkvm-build-guest -- --mode force
 
 # Run end-to-end tests (ALWAYS use make, never raw cargo test)
 GPU=1 make test-e2e-bundle
