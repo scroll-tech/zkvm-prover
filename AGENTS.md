@@ -36,18 +36,11 @@ Compared to v2.0.0, the `develop-v2.1.0` branch changes:
   first, then `sdk.execute(&compiled, ...)` / `sdk.execute_metered_cost(&compiled, ...)`.
 - Hint stream words are 8 bytes: `hint_store_u32!` → `hint_store_u64!` /
   `hint_buffer_chunked`, and the hint-stream length prefix is a `u64`.
-- User public values are **u16 cells** (2 little-endian bytes per cell) instead of
-  1 byte per u32 cell. `NUM_PUBLIC_VALUES` is still 32 cells (= 64 bytes); the
-  32-byte pi hash fills the first 16 cells.
+- User public values are **single bytes** (1 byte per cell, stored in the low byte
+  of a u32 field element). `NUM_PUBLIC_VALUES` is 32 cells (= 32 bytes); the
+  32-byte pi hash fills all 32 cells. (Earlier v2.1.0 snapshots used u16 cells;
+  upstream restored byte-sized public values in commit `b3c95cd00`.)
 - Guest cfg gates: `target_os = "zkvm"` → `target_os = "openvm"`.
-- ⚠️ **EVM verifier template bug on this branch**: the SDK packs user public
-  values as 2 LE bytes per u16 cell in `verifier_calldata`, but the Solidity
-  template (`crates/sdk/contracts/template/OpenVmHalo2Verifier.sol`) still
-  expects 1 byte per PV, causing `InvalidPublicValuesLength` reverts.
-  `crates/build-guest/src/main.rs::patch_verifier_for_u16_public_values`
-  rewrites the locally generated wrapper to accept 2 bytes per cell. If that
-  function errors with "template fragment not found", upstream has changed the
-  template — review whether the patch is still needed.
 - Host toolchain: `rust-toolchain.toml` uses `nightly-2026-01-18` (required by the
   openvm-sdk `tco` feature).
 
@@ -146,6 +139,36 @@ OPENVM_RUST_TOOLCHAIN=openvm-1.94.1 cargo run --release -p scroll-zkvm-build-gue
 ### Docker build fails with stale CID
 The `build-guest.sh` script may fail if a stale `build-guest.cid` file exists. Use local build (`cargo run -p scroll-zkvm-build-guest`) as fallback.
 
+### Guest crashes with `upper 4 bytes must be zero` (TryFromIntError) in store/addi
+**Symptoms**: `test-execute-chunk` / proving panics in `openvm_riscv_circuit` with a
+register holding `0xfffffffffffffe60` (=-416) or similar sign-extended garbage, and the
+stack pointer walks down by a fixed stride (e.g. 416) until it wraps.
+**Cause**: Upstream `openvm-mem` (introduced in commit `d664effb1`, "use rust native
+memory intrinsics") implements `copy_forward`/`copy_backward` with 64-byte aggregate
+copies (`load::<64>`/`store::<64>`). LLVM lowers those aggregate copies into calls to
+`memmove`, which makes `memmove` recursively call itself and overflow the guest stack.
+**Fix**: We ship a local override at `patches/openvm-mem` (wired via
+`[patch."https://github.com/openvm-org/openvm.git"]` in `Cargo.toml`) that does the
+block copies with 8× `u64` loads-then-stores instead of one 64-byte aggregate. If you
+bump OpenVM and upstream fixes `openvm-mem`, delete the `[patch]` entry and the
+`patches/openvm-mem` directory.
+
+### `subtree size exceeds the address space's configured leaf count` (bundle root/SNARK)
+**Symptoms**: `test-e2e-bundle` fails during `gen_proof_snark` (the Halo2 wrap of the
+bundle root proof) with this assert from
+`crates/vm/src/system/cuda/merkle_tree/mod.rs`, for `DEFERRAL_AS` (address space 4)
+with `num_cells=0`.
+**Cause**: OpenVM commit `a935d8b3d` ("perf: sparse initial memory snapshot and GPU
+Merkle build") added a strict leaf-count assert. The SDK's `compute_root_proof_heights`
+builds the root config from a default `AppConfig::riscv64` (which has `deferral=None`),
+so `apply_optimizations` zeroes `DEFERRAL_AS.num_cells` — but deferral is actually
+active and the root proof touches that address space. This is an upstream SDK
+inconsistency the new assert exposes.
+**Fix**: We currently pin OpenVM to `b3c95cd00` (the commit just before `a935d8b3d`),
+which does not have the GPU Merkle build. To move to `a935d8b3d` or later you must patch
+`openvm-sdk` so the root-prover config keeps `DEFERRAL_AS` allocated (or wait for an
+upstream fix).
+
 ## GPU Features
 
 Two levels of GPU acceleration exist, wired as cargo features:
@@ -207,6 +230,20 @@ can waste hours of CPU time. Always run it as:
 ```bash
 cargo test --release -p scroll-zkvm-build-guest test_verifier
 ```
+
+### RVR native execution toolchain (currently disabled)
+
+The optional `rvr` feature of `openvm-sdk` compiles guest code to native C at runtime for
+faster execution. It is **not** enabled in `Cargo.toml` by default (the default path uses
+the interpreter, which is slower but well-tested). If you enable it, you need
+**LLVM clang-22 + lld-22** on the host:
+
+- Set `RVR_CC=clang-22` and `RVR_LD=lld` (or `RVR_LD=ld.lld`) when running tests.
+- If the system clang is older, install clang-22/lld-22 via conda-forge and put it on `PATH`:
+  ```bash
+  mamba install -y -c conda-forge clang=22 lld=22 llvm=22
+  PATH="/home/scroll/miniforge3/bin:$PATH" RVR_CC=clang-22 RVR_LD=lld GPU=1 make test-single-chunk
+  ```
 
 ## Deferral Model (OpenVM v2+)
 

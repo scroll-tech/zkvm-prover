@@ -79,17 +79,13 @@ impl AggCircuit for BundleCircuit {
         proofs
             .iter()
             .map(|proof| {
-                // Each public value is a u16 cell (2 bytes, little-endian); the
-                // pi hash occupies the first 32 bytes (16 cells).
+                // Each public value cell is a single byte; the pi hash occupies all
+                // 32 cells.
                 let transformed = proof
                     .public_values
                     .iter()
-                    .flat_map(|&val| {
-                        u16::try_from(val)
-                            .expect("public value fits in u16")
-                            .to_le_bytes()
-                    })
                     .take(32)
+                    .map(|&val| val as u8)
                     .collect::<Vec<u8>>();
                 B256::from_slice(transformed.as_slice())
             })

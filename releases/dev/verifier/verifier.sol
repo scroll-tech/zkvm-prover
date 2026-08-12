@@ -59,7 +59,7 @@ contract OpenVmHalo2Verifier is Halo2Verifier, IOpenVmHalo2Verifier {
     /// is being verified.
     /// @param appVmCommit The commitment to the VM configuration.
     function verify(bytes calldata publicValues, bytes calldata proofData, bytes32 appExeCommit, bytes32 appVmCommit) external view {
-        if (publicValues.length != PUBLIC_VALUES_LENGTH * 2) revert InvalidPublicValuesLength(PUBLIC_VALUES_LENGTH * 2, publicValues.length);
+        if (publicValues.length != PUBLIC_VALUES_LENGTH) revert InvalidPublicValuesLength(PUBLIC_VALUES_LENGTH, publicValues.length);
         if (proofData.length != PROOF_DATA_LENGTH) revert InvalidProofDataLength(PROOF_DATA_LENGTH, proofData.length);
         if (uint256(appExeCommit) >= BN254_SCALAR_MODULUS) revert InvalidAppExeCommit(appExeCommit);
         if (uint256(appVmCommit) >= BN254_SCALAR_MODULUS) revert InvalidAppVmCommit(appVmCommit);
@@ -152,14 +152,11 @@ contract OpenVmHalo2Verifier is Halo2Verifier, IOpenVmHalo2Verifier {
             let proofSuffixOffset := add(0x1c0, shl(5, PUBLIC_VALUES_LENGTH))
             calldatacopy(add(proofPtr, proofSuffixOffset), add(proofData.offset, 0x180), 0x560)
 
-            // Copy each u16 public value cell into its own bytes32 word. The
-            // calldata packs each cell as 2 little-endian bytes; the word is
-            // big-endian, so the low byte lands at offset 0x1f and the high
-            // byte at 0x1e of each word.
+            // Copy each byte of the public values into the proof. It copies the
+            // most significant bytes of public values first.
             let publicValuesMemOffset := add(add(proofPtr, 0x1c0), 0x1f)
             for { let i := 0 } iszero(eq(i, PUBLIC_VALUES_LENGTH)) { i := add(i, 1) } {
-                calldatacopy(add(publicValuesMemOffset, shl(5, i)), add(publicValues.offset, shl(1, i)), 0x01)
-                calldatacopy(sub(add(publicValuesMemOffset, shl(5, i)), 1), add(add(publicValues.offset, shl(1, i)), 1), 0x01)
+                calldatacopy(add(publicValuesMemOffset, shl(5, i)), add(publicValues.offset, i), 0x01)
             }
         }
     }

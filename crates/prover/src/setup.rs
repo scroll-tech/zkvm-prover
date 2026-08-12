@@ -80,6 +80,7 @@ pub fn read_app_exe<P: AsRef<Path>>(path: P) -> Result<VmExe<F>, Error> {
             })
             .collect(),
         fn_bounds: old_exe.fn_bounds,
+        cfg_block_starts: Default::default(),
     };
     Ok(exe)
 }

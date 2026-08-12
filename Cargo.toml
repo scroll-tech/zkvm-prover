@@ -162,6 +162,12 @@ revm-precompile = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v
 revm-primitives = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
 revm-state = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
 
+# openvm-mem's copy_forward/copy_backward use 64-byte aggregate copies that LLVM lowers
+# into `memmove` calls, making `memmove` recurse until the guest stack overflows.
+# Override with a local copy that uses u64 chunks instead. See patches/openvm-mem.
+[patch."https://github.com/openvm-org/openvm.git"]
+openvm-mem = { path = "patches/openvm-mem" }
+
 [profile.maxperf]
 inherits = "release"
 lto = "fat"

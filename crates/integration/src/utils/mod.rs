@@ -40,14 +40,13 @@ fn blks_tx_bytes<'a>(blks: impl Iterator<Item = &'a BlockWitness>) -> Vec<u8> {
         })
 }
 
-/// Encode a 32-byte pi hash as OpenVM public values: each public value is a
-/// u16 cell (2 little-endian bytes), so the hash fills the first 16 cells and
-/// the remaining cells (up to `NUM_PUBLIC_VALUES`) are zero.
+/// Encode a 32-byte pi hash as OpenVM public values: each public value cell is a
+/// single byte, so the 32-byte hash fills all `NUM_PUBLIC_VALUES` (32) cells.
 pub(crate) fn pi_hash_to_public_values(pi_hash: &B256) -> Vec<u32> {
     let mut public_values = pi_hash
         .as_slice()
-        .chunks_exact(2)
-        .map(|c| u16::from_le_bytes([c[0], c[1]]) as u32)
+        .iter()
+        .map(|&b| b as u32)
         .collect::<Vec<_>>();
     public_values.resize(scroll_zkvm_types::types_agg::NUM_PUBLIC_VALUES, 0);
     public_values
