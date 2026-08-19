@@ -52,6 +52,12 @@ SP1 uses accelerated keccak/sha2 (sp1-patches) so these instruction counts alrea
 reflect precompiled crypto. ZisK's chunk guest here uses **software** keccak, so its
 step count is not expected to match SP1's instruction count 1:1.
 
+> **ZisK v1.1.0-alpha re-measurement (2026-08-19).** After upgrading from v0.18.0,
+> the same 6-block chunk workload executes in **2,677,400,792 steps / 41.92 s /
+> 63.9 Msteps/s** — ~11% fewer steps and ~28% higher emulator throughput than the
+> v0.18.0 row above (3.016B steps, 60.48 s, 49.9 Msteps/s). Same guest source
+> (software keccak), same host.
+
 **Correctness cross-check.** Both backends commit the **identical** 32-byte chunk
 `pi_hash` for block 20239240 — `0x363c27bd bf063718 cb78963a 44e32f13 b1511066
 6fa3fe9c deef1da0 8abc3ca8` — confirming the ZisK guest runs the *same* real Scroll

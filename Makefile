@@ -87,8 +87,9 @@ prove-zisk-chunk-cpu:
 	cd zisk && PATH="$$HOME/.zisk/bin:$$PATH" cargo run --release -p scroll-zkvm-zisk-prover-test -- --circuit chunk --prove --emulator
 
 # In-guest recursion PoC: prove the bundle stub, then verify that child proof inside
-# the batch recursion guest via zisk-verifier. We use the prebuilt emulator (`-l`) because
-# the ASM microservice path times out on this machine for tiny proofs.
+# the batch recursion guest via zisk-verifier. We use the (default) Rust emulator
+# (`--emulator`, no-op since ZisK v1.x) because the ASM path times out on this
+# machine for tiny proofs.
 recursion-poc-zisk: build-guest-zisk
 	python3 -c "import struct; p=b'\\x00\\x01\\x02\\x03'; buf=struct.pack('<Q',len(p))+p; buf+=b'\\x00'*(-len(buf)%8); open('zisk/releases/dev/zisk/prover-test/bundle_input_framed.bin','wb').write(buf)"
 	cd zisk && PATH="$$HOME/.zisk/bin:$$PATH" cargo run --release -p scroll-zkvm-zisk-recursion-test -- prove-child \

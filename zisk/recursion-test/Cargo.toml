@@ -13,7 +13,7 @@ path = "src/main.rs"
 # Builds a child proof with cargo-zisk, then feeds it to the batch guest which
 # verifies it via zisk-verifier inside the zkVM.
 [dependencies]
-zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.18.0" }
+zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v1.1.0-alpha" }
 clap = { workspace = true, features = ["derive"] }
 eyre = { workspace = true }
 tracing = { workspace = true }

@@ -8,7 +8,7 @@
 //!
 //! Host contract: the input file is a single ZisK-framed value — an 8-byte LE length
 //! prefix followed by the (8-byte-aligned) `bincode::config::standard()` encoding of a
-//! `ChunkWitness`. `ziskos::io::read_input_slice()` returns exactly those payload bytes.
+//! `ChunkWitness`. `ziskos::io::read_slice()` returns exactly those payload bytes.
 
 #![no_main]
 ziskos::entrypoint!(main);
@@ -39,7 +39,7 @@ unsafe extern "Rust" fn __getrandom_v03_custom(
 
 pub fn main() {
     // Read the bincode-encoded ChunkWitness from the ZisK input stream.
-    let witness_bytes = ziskos::io::read_input_slice();
+    let witness_bytes = ziskos::io::read_slice();
     let (witness, _): (ChunkWitness, _) =
         bincode::serde::decode_from_slice(witness_bytes.as_ref(), bincode::config::standard())
             .expect("ChunkCircuit: deserialisation of witness bytes failed");

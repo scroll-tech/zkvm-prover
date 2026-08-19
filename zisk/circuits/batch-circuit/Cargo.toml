@@ -12,7 +12,7 @@ path = "src/main.rs"
 [dependencies]
 ziskos = { workspace = true }
 alloy-primitives = { workspace = true }
-zisk-verifier = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.18.0", default-features = false }
+zisk-verifier = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v1.1.0-alpha", default-features = false }
 
 [features]
 default = []

@@ -4,7 +4,8 @@
 //!
 //! 1. `prove-child` — call `cargo-zisk prove` to generate a STARK proof for a small
 //!    child ELF. On this machine the ASM runner times out for small CPU proofs, so the
-//!    Makefile uses `--minimal --emulator` (`-c -l`) for the bundle-stub child proof.
+//!    Makefile uses `--minimal --emulator` (the Rust emulator, default since ZisK v1.x)
+//!    for the bundle-stub child proof.
 //!
 //! 2. `verify-in-guest` — load the child `Proof`, serialize it into the shape expected by
 //!    the batch recursion guest (`[proof][vk]`), frame it, and run `ziskemu` on the batch
@@ -32,7 +33,7 @@ enum Cmd {
         /// Child ELF path.
         #[arg(long)]
         elf: PathBuf,
-        /// Child input file. For guests using `ziskos::io::read_input_slice()` this must be
+        /// Child input file. For guests using `ziskos::io::read_slice()` this must be
         /// the ZisK-framed input ( `[u64 LE len][payload][pad to 8]` ), which is what
         /// `prove-zisk` writes.
         #[arg(long)]
@@ -43,7 +44,9 @@ enum Cmd {
         /// Generate a minimal (compressed) STARK proof.
         #[arg(long)]
         minimal: bool,
-        /// Use the prebuilt emulator (`-l`) instead of the ASM runner.
+        /// Prove with the (default) Rust emulator instead of `--asm`.
+        /// No-op since ZisK v1.x (the Rust emulator is the default; v0.18 mapped
+        /// this to `cargo-zisk prove -l`). Kept for CLI compatibility.
         #[arg(long)]
         emulator: bool,
         /// Use GPU acceleration (`-g`).
@@ -103,9 +106,10 @@ fn prove_child(
     if minimal {
         cmd.arg("-c");
     }
-    if emulator {
-        cmd.arg("-l");
-    }
+    // Since ZisK v1.x the Rust emulator is the default proving backend; the old
+    // `-l` (prebuilt emulator) flag no longer exists. `emulator` is therefore a
+    // no-op — pass `-a/--asm` to cargo-zisk if the ASM backend is ever wanted.
+    let _ = emulator;
     if gpu {
         cmd.arg("-g");
     }
@@ -129,7 +133,9 @@ fn verify_in_guest(
     let proof = Proof::load(proof_path)
         .map_err(|e| eyre::eyre!("failed to load ZisK proof: {e}"))?;
 
-    // get_proof_u64 returns: [minimal(1)][n_publics(1)][program_vk][publics][proof_body][zisk_vk]
+    // get_proof_u64 returns: [minimal(1)][n_publics(1)][flag?|program_vk|publics][proof_body][zisk_vk]
+    // (n_publics is 69 for a full vadcop_final proof — the leading is_vadcop_final_proof
+    // flag — and 68 for a minimal/compressed one; zisk-verifier handles both).
     // The batch guest's verify_vadcop_final_proof expects proof without vk and vk separately.
     let words = proof
         .get_proof_u64()

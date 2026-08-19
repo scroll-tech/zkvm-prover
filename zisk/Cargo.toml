@@ -28,8 +28,8 @@ repository = "https://github.com/scroll-tech/zkvm-prover"
 version = "0.8.0"
 
 [workspace.dependencies]
-# ZisK guest entrypoint + host SDK, pinned to the installed toolchain (cargo-zisk 0.18.0).
-ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.18.0" }
+# ZisK guest entrypoint + host SDK, pinned to the installed toolchain (cargo-zisk 1.1.0-alpha).
+ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v1.1.0-alpha" }
 
 scroll-zkvm-backend = { path = "../crates/backend" }
 scroll-zkvm-types-base = { path = "../crates/types/base" }

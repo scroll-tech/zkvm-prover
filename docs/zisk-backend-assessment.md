@@ -7,6 +7,16 @@
 > 评估日期：2026-07-01
 > 当前主后端：OpenVM v1.6.0；第二后端：SP1 v6.3.0（隔离在 `sp1/` workspace）
 > ZisK 版本：v0.18.0
+>
+> **升级记录（2026-08-19）**：`zisk/` workspace 已升级到 **ZisK v1.1.0-alpha**（跳过
+> v1.0.0-alpha；两者均为面向 production 的 alpha，审计进行中）。主要变化：默认证明
+> hash 切到 Poseidon1、`verify_vadcop_final_proof` 新增 hash 参数、非 minimal proof 的
+> publics 从 68 变为 69（多一个 `is_vadcop_final_proof` flag）、新增 host 侧
+> `cargo-zisk aggregate` recurser、`cargo-zisk` 链接 OpenMPI（需 `libopenmpi3` +
+> `libopenmpi-dev`）、`cargo-zisk build` 改为合并 config rustflags。**v1.1.0-alpha 复测
+> （2026-08-19，2× RTX 4090）**：6 块 chunk 执行 2.677B steps / 63.9 Msteps/s（比 v0.18
+> 快 ~28%）；单块 chunk GPU proving 59s 成功；in-guest 递归（Poseidon1）验证通过。本文
+> 其余内容仍是基于 v0.18.0 的评估记录。
 
 ---
 
@@ -175,3 +185,44 @@ SP1 接入时已经把业务逻辑与 OpenVM 解耦，ZisK 可以直接复用，
 - SP1 接入参考：`sp1/AGENTS.md`、`sp1/prover-test/src/main.rs`
 - 本机 ZisK 证明失败日志：`~/kunxian/zkvm-arena/results/zisk/*/*.log`
 - SP1↔ZisK 速度对比：`docs/benchmark-sp1-vs-zisk.md`
+
+---
+
+## 9. 附录：官方 host recurser（`cargo-zisk aggregate`）评估（2026-08-19）
+
+v1.1.0-alpha 引入了官方 host 侧递归聚合。评估结论：**不能整体替代我们的 in-guest
+递归，但可在 bundle 层（纯聚合）补位；batch 层仍必须走 in-guest 递归。** 决定暂不启用，
+留作 bundle 层设计选项。
+
+**它是什么**（基于 v1.1.0-alpha 源码，`recurser/`、`cli/.../aggregate.rs`）：不是"在
+ZisK guest 里跑 verifier"，而是 circom 原生 STARK 折叠——setup 时用 `stark2circom`
+把 vadcop_final verifier 生成成 circom 电路、实例化两份（每折一次恰好 2:1，支持树状
+递归），外加用户自写的 `AggregatePublics` stitch 电路，由 proofman 原生证明。无
+RISC-V 模拟开销，单次 fold 比 in-guest FRI 验证快得多；`fold → wrap → Plonk → EVM`
+全链路官方已打通（`examples/recurser/l2/`）。
+
+**关键限制——publics 传播**：聚合证明的 64 个 user publics 槽完全由 stitch 电路决定，
+叶子 publics 不自动保留；stitch 是 circom，只能做 Goldilocks 域算术/等值检查/Poseidon，
+**做不了 keccak 和 blob-KZG**。
+
+**对三层架构的适用性**：
+
+- **batch 层：不能替代。** batch guest 还要做 blob-KZG 验证、BatchInfo 派生、keccak
+  pi_hash——circom 表达不了。in-guest `verify_vadcop_final_proof`（现有 PoC 路线）
+  是唯一可行路径。
+- **bundle 层：适合，但有前提。** 纯聚合场景与官方 l2 例子同形（stitch 做链式连续性
+  检查）；但 Scroll 的 bundle pi_hash 是 keccak 派生，stitch 算不起，除非改 pi 格式
+  （不现实）。
+- **值得留意的 hybrid**：recurser 链外把 N 个 batch 证明 fold 成 1 个（stitch 把 batch
+  pi_hashes 拷进输出槽），瘦 bundle guest 只做"in-guest 验证这 1 个聚合证明 + keccak
+  派生 bundle pi_hash"——in-guest FRI 验证从 N 次降到 1 次。聚合证明线格式与叶子相同
+  （flag=0），`verify_vadcop_final_proof(proof, recurser_verkey, "Poseidon1")` 理论上
+  可验（**未实测**，做 bundle 层时先验证这一小步）。
+
+**启用成本**（如未来采用）：recurser setup 工具链（circom、pil2 源码、
+`cargo-zisk setup --recursive` + `setup --aggregation`，setup 很重）；recurser verkey
+需随 release assets 分发（类比 `openVmVk.json`）；2:1 fold，N 个证明需 N-1 次 fold。
+
+**附带价值**：recurser 的 verifier 是 stark2circom 代码生成，与我们 guest 内用的
+`zisk-verifier`（Rust 移植）实现不同源但 starkinfo 同一份——可作为交叉验证 in-guest
+验证正确性的对照工具。

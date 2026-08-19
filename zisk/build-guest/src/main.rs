@@ -72,22 +72,14 @@ fn build_zisk_program(args: &Args, program_dir: &Path, project: &str) -> eyre::R
 
     // `cargo-zisk build --release` inside the circuit crate.
     //
-    // NOTE: `cargo-zisk build` sets the `RUSTFLAGS` env var itself (to the trimmed value
-    // of any inherited `RUSTFLAGS`), which makes cargo IGNORE the `[target.*].rustflags`
-    // in `.cargo/config.toml`. So the `getrandom_backend="custom"` cfg the chunk guest
-    // needs (getrandom 0.3.x, pulled by the sbv/revm graph) must be injected here via the
-    // env, otherwise it never reaches the build. We preserve any inherited RUSTFLAGS.
-    let mut rustflags = std::env::var("RUSTFLAGS").unwrap_or_default();
-    if !rustflags.contains("getrandom_backend") {
-        if !rustflags.is_empty() {
-            rustflags.push(' ');
-        }
-        rustflags.push_str("--cfg getrandom_backend=\"custom\"");
-    }
+    // NOTE: the `getrandom_backend="custom"` cfg the chunk guest needs (getrandom
+    // 0.3.x, pulled by the sbv/revm graph) comes from `[target.*].rustflags` in
+    // `zisk/.cargo/config.toml`. Since ZisK v1.1.0-alpha, `cargo-zisk build` merges
+    // config rustflags into `CARGO_ENCODED_RUSTFLAGS` itself (older versions set
+    // `RUSTFLAGS` and thereby made cargo ignore the config file).
     let status = Command::new(&args.cargo_zisk)
         .arg("build")
         .arg("--release")
-        .env("RUSTFLAGS", &rustflags)
         .current_dir(program_dir)
         .status()
         .map_err(|e| eyre::eyre!("failed to spawn `{} build`: {e}", args.cargo_zisk))?;

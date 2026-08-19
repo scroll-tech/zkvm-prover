@@ -5,7 +5,7 @@
 //! steps/throughput — the key-free, reliable half of the SP1-vs-ZisK comparison. If a
 //! proving key is installed it can also attempt a proof via `cargo-zisk prove`.
 //!
-//! ZisK input framing (see `ziskos::io::read_input_slice`): each value is an 8-byte
+//! ZisK input framing (see `ziskos::io::read_slice`): each value is an 8-byte
 //! little-endian length prefix followed by the payload padded up to an 8-byte boundary.
 
 mod witness;
@@ -47,8 +47,9 @@ struct Args {
     #[arg(long)]
     gpu: bool,
 
-    /// Use the prebuilt emulator for proving (`cargo-zisk prove -l`).
-    /// Recommended on this machine because the ASM runner times out for small CPU proofs.
+    /// Prove with the (default) Rust emulator instead of `--asm`.
+    /// Since ZisK v1.x the Rust emulator is the default backend, so this flag is a
+    /// no-op kept for CLI compatibility (v0.18 mapped it to `cargo-zisk prove -l`).
     #[arg(long)]
     emulator: bool,
 
@@ -154,9 +155,9 @@ fn main() -> eyre::Result<()> {
         if args.gpu {
             cmd.arg("-g");
         }
-        if args.emulator {
-            cmd.arg("-l");
-        }
+        // NOTE: `--emulator` needs no cargo-zisk flag — since ZisK v1.x the Rust
+        // emulator is the default proving backend (`-a/--asm` opts into ASM).
+        let _ = args.emulator;
         let status = cmd
             .status()
             .map_err(|e| eyre::eyre!("failed to spawn `{}`: {e}", args.cargo_zisk))?;

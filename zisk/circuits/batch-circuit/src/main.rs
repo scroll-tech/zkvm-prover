@@ -20,7 +20,7 @@ use alloy_primitives::keccak256;
 use zisk_verifier::{verify_vadcop_final_proof, PROGRAM_VK_LEN};
 
 pub fn main() {
-    let input = ziskos::io::read_input_slice();
+    let input = ziskos::io::read_slice();
     let words: Vec<u64> = input
         .chunks_exact(8)
         .map(|c| u64::from_le_bytes(c.try_into().expect("batch input not 8-byte aligned")))
@@ -37,7 +37,10 @@ pub fn main() {
     let vk = &words[p..p + vk_len];
 
     let ok = if vk_len == PROGRAM_VK_LEN {
-        verify_vadcop_final_proof(proof, vk)
+        // Hash family must match the proving key the child proof was generated with;
+        // ZisK ≥ v1.0.0-alpha defaults to Poseidon1 (Poseidon2 was dropped after
+        // https://eprint.iacr.org/2026/306).
+        verify_vadcop_final_proof(proof, vk, "Poseidon1")
     } else {
         false
     };

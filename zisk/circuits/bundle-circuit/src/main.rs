@@ -19,7 +19,7 @@ ziskos::entrypoint!(main);
 use alloy_primitives::keccak256;
 
 pub fn main() {
-    let input = ziskos::io::read_input_slice();
+    let input = ziskos::io::read_slice();
     // Placeholder public output until real bundle aggregation lands.
     let commitment = keccak256(input.as_ref());
     ziskos::io::commit_slice(commitment.as_slice());
