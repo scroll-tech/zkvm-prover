@@ -162,12 +162,19 @@ with `num_cells=0`.
 Merkle build") added a strict leaf-count assert. The SDK's `compute_root_proof_heights`
 builds the root config from a default `AppConfig::riscv64` (which has `deferral=None`),
 so `apply_optimizations` zeroes `DEFERRAL_AS.num_cells` — but deferral is actually
-active and the root proof touches that address space. This is an upstream SDK
-inconsistency the new assert exposes.
-**Fix**: We currently pin OpenVM to `b3c95cd00` (the commit just before `a935d8b3d`),
-which does not have the GPU Merkle build. To move to `a935d8b3d` or later you must patch
-`openvm-sdk` so the root-prover config keeps `DEFERRAL_AS` allocated (or wait for an
-upstream fix).
+active and the root proof touches that address space.
+**Fix**: Fixed upstream by `46709d24` ("fix: keep the dummy root-keygen app config
+self-consistent", #3118), which re-runs `apply_optimizations()` in
+`compute_root_proof_heights` so the dummy root-keygen config keeps `DEFERRAL_AS`
+allocated. We track `develop-v2.1.0` HEAD (`29fc511e`), which includes the fix. If you
+ever need to pin between `a935d8b3d` and `46709d24`, this assert will come back.
+
+### Field-independent instructions (#3109)
+As of `29fc511e` ("refactor(v2.1): make program instructions field-independent"),
+`Instruction` / `Program` / `VmExe` are **non-generic** (no `<F>`); operands are
+`InstructionOperand(i32)` restricted to the signed 30-bit domain. This changes the
+`app.vmexe` serialization format, so any OpenVM bump across this commit requires a
+full force rebuild of guest assets.
 
 ## GPU Features
 

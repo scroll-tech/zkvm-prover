@@ -10,7 +10,7 @@ use openvm_sdk::config::{
     AggregationConfig, AggregationSystemParams, AggregationTreeConfig, AppConfig,
 };
 use openvm_sdk::prover::{DeferralAggProver, MultiDeferralCircuitProver};
-use openvm_sdk::{F, SC, Sdk, StdIn};
+use openvm_sdk::{SC, Sdk, StdIn};
 use openvm_sdk_config::{SdkVmConfig, deferral::SupportedDeferral};
 use openvm_stark_backend::StarkEngine;
 use openvm_stark_sdk::{
@@ -69,7 +69,7 @@ pub struct Prover {
     /// Prover name
     pub prover_name: String,
     /// The program exe.
-    pub app_exe: Arc<VmExe<F>>,
+    pub app_exe: Arc<VmExe>,
     /// Prover configuration.
     pub config: ProverConfig,
     /// SDKConfig

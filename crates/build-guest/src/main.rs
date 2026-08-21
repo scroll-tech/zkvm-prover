@@ -40,7 +40,7 @@ use openvm_continuations::CommitBytes;
 use openvm_instructions::exe::VmExe;
 use openvm_recursion_circuit::batch_constraint::commit_child_vk;
 use openvm_sdk::{
-    F, Sdk,
+    Sdk,
     config::{AggregationConfig, AggregationSystemParams, AggregationTreeConfig, AppConfig},
     fs::write_object_to_file,
     prover::MultiDeferralCircuitProver,
@@ -310,7 +310,7 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
         println!("{LOG_PREFIX} elf written to {path_app_elf:?}");
 
         // 2. Transpile ELF to VM Executable
-        let app_exe: VmExe<F> = (*sdk.convert_to_exe(elf)?).clone();
+        let app_exe: VmExe = (*sdk.convert_to_exe(elf)?).clone();
 
         // Write exe to disc.
         let path_app_exe: PathBuf = path_assets.join("app.vmexe");
