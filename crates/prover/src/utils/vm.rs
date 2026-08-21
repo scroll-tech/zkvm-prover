@@ -16,7 +16,8 @@ pub fn execute_guest(
     inputs: &StdIn,
 ) -> Result<ExecutionResult, SdkError> {
     let exe = sdk.convert_to_exe(exe)?;
-    match sdk.execute_metered_cost(exe.clone(), inputs.clone()) {
+    let compiled_metered_cost = sdk.compile_metered_cost(exe.clone())?;
+    match sdk.execute_metered_cost(&compiled_metered_cost, inputs.clone()) {
         Ok((public_values, (_cost, instret))) => {
             if public_values.iter().all(|&x| x == 0) {
                 return Err(SdkError::Other(eyre::eyre!(
@@ -30,7 +31,8 @@ pub fn execute_guest(
         }
         Err(e) => {
             tracing::warn!("Metered execution failed: {e}, falling back to execute");
-            let public_values = sdk.execute(exe, inputs.clone())?;
+            let compiled = sdk.compile(exe)?;
+            let public_values = sdk.execute(&compiled, inputs.clone())?;
             if public_values.iter().all(|&x| x == 0) {
                 return Err(SdkError::Other(eyre::eyre!(
                     "public_values are all 0s upon execute"

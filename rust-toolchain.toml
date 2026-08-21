@@ -1,4 +1,5 @@
 [toolchain]
-channel = "nightly-2025-11-20"
-targets = ["riscv32im-unknown-none-elf", "x86_64-unknown-linux-gnu"]
+# Nightly required by the openvm-sdk "tco" feature (see openvm's rust-toolchain.toml).
+channel = "nightly-2026-01-18"
+targets = ["x86_64-unknown-linux-gnu"]
 components = ["llvm-tools", "rustc-dev"]

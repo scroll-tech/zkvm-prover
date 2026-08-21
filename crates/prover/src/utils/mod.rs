@@ -76,11 +76,12 @@ pub fn save_stdin_as_json(stdin: &openvm_sdk::StdIn, filename: &str) {
     let mut json: serde_json::Value = serde_json::from_str("{\"input\":[]}").unwrap();
     let json_input = json["input"].as_array_mut().unwrap();
     for item in &stdin.buffer {
-        use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
         let mut bytes: Vec<u8> = vec![0x02];
-        for f in item {
-            let u32_bytes = f.as_canonical_u32().to_le_bytes();
-            bytes.extend_from_slice(&u32_bytes);
+        for b in item {
+            // The new OpenVM SDK stores stdin as raw bytes; keep the historical
+            // 0x02 (little-endian u32 word) serialization so the dumped JSON is
+            // still accepted by `cargo openvm`.
+            bytes.extend_from_slice(&[*b, 0, 0, 0]);
         }
         json_input.push(serde_json::Value::String(format!(
             "0x{}",

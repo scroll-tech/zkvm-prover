@@ -1,0 +1,7 @@
+[package]
+name = "openvm-mem"
+description = "libc memory intrinsics (memcpy, memset, memmove, memcmp, bcmp) for OpenVM guest programs."
+version = "2.0.0"
+edition = "2021"
+
+[lints]

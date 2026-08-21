@@ -40,6 +40,18 @@ fn blks_tx_bytes<'a>(blks: impl Iterator<Item = &'a BlockWitness>) -> Vec<u8> {
         })
 }
 
+/// Encode a 32-byte pi hash as OpenVM public values: each public value cell is a
+/// single byte, so the 32-byte hash fills all `NUM_PUBLIC_VALUES` (32) cells.
+pub(crate) fn pi_hash_to_public_values(pi_hash: &B256) -> Vec<u32> {
+    let mut public_values = pi_hash
+        .as_slice()
+        .iter()
+        .map(|&b| b as u32)
+        .collect::<Vec<_>>();
+    public_values.resize(scroll_zkvm_types::types_agg::NUM_PUBLIC_VALUES, 0);
+    public_values
+}
+
 #[derive(Clone, Debug)]
 pub struct LastHeader {
     pub batch_index: u64,
@@ -316,11 +328,7 @@ pub fn build_batch_witnesses(
         .map(|chunk_info| {
             let pi_hash = chunk_info.pi_hash_by_version(version);
             AggregationInput {
-                public_values: pi_hash
-                    .as_slice()
-                    .iter()
-                    .map(|&b| b as u32)
-                    .collect::<Vec<_>>(),
+                public_values: pi_hash_to_public_values(&pi_hash),
                 commitment,
             }
         })
@@ -389,11 +397,7 @@ pub fn build_batch_witnesses_validium(
         .map(|chunk_info| {
             let pi_hash = chunk_info.pi_hash_by_version(version);
             AggregationInput {
-                public_values: pi_hash
-                    .as_slice()
-                    .iter()
-                    .map(|&b| b as u32)
-                    .collect::<Vec<_>>(),
+                public_values: pi_hash_to_public_values(&pi_hash),
                 commitment,
             }
         })
