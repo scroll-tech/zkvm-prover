@@ -244,9 +244,15 @@ impl Prover {
         self.execute_and_check(&stdin)?;
 
         let sdk = self.get_sdk()?;
+        let t = std::time::Instant::now();
         let evm_proof = sdk
             .prove_evm(self.app_exe.clone(), stdin)
             .map_err(|e| Error::GenProof(format!("{}", e)))?;
+        let proving_time_mills = t.elapsed().as_millis() as u64;
+        tracing::info!(
+            "openvm {} evm create_proof time (setup excluded): {proving_time_mills}ms",
+            self.prover_name
+        );
 
         Ok(evm_proof)
     }

@@ -86,9 +86,6 @@ pub fn execute(witness: ChunkWitness) -> Result<ChunkInfo, String> {
         }),
     };
 
-    #[cfg(all(target_os = "zkvm", feature = "openvm"))]
-    println!("chunk_info = {}", chunk_info);
-
     Ok(chunk_info)
 }
 

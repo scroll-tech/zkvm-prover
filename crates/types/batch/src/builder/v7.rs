@@ -1,5 +1,3 @@
-#![cfg(feature = "openvm")]
-
 use std::marker::PhantomData;
 
 use alloy_primitives::B256;

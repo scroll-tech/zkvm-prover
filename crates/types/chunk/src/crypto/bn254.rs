@@ -1,6 +1,6 @@
 // Copied from https://github.com/axiom-crypto/revm/blob/v75-openvm/crates/precompile/src/bn128.rs under MIT License
+use alloc::vec::Vec;
 use sbv_primitives::types::revm::precompile::PrecompileError;
-use std::vec::Vec;
 
 use hex_literal::hex;
 use openvm_ecc_guest::{

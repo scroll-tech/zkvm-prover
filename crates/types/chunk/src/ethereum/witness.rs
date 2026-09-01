@@ -1,5 +1,5 @@
-use sbv_core::BlockWitness;
 use hashbrown::HashSet;
+use sbv_core::BlockWitness;
 
 /// The witness type accepted by the chunk-circuit.
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]

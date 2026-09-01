@@ -1,0 +1,19 @@
+[package]
+name = "scroll-zkvm-ceno-batch-circuit"
+edition.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[[bin]]
+name = "batch"
+path = "src/main.rs"
+
+[dependencies]
+ceno_rt = { workspace = true }
+alloy-primitives = { workspace = true }
+scroll-zkvm-types-base = { workspace = true }
+scroll-zkvm-types-batch = { workspace = true }
+
+[features]
+default = []

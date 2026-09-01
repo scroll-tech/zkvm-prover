@@ -3,10 +3,10 @@ use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::vec::Vec;
 use alloy_primitives::B256;
+use hashbrown::HashSet;
 use sbv_core::witness::BlockWitness;
 use sbv_primitives::types::consensus::TxL1Message;
 use sbv_primitives::types::evm::ScrollTxCompressionInfos;
-use hashbrown::HashSet;
 use types_base::version::Version;
 use types_base::{fork_name::ForkName, public_inputs::scroll::chunk::ChunkInfo};
 

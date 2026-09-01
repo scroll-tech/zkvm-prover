@@ -1,8 +1,8 @@
 use alloy_consensus::crypto::RecoveryError;
+use alloc::sync::Arc;
 use alloy_primitives::Address;
 use sbv_primitives::types::revm::precompile;
 use sbv_primitives::types::revm::precompile::PrecompileError;
-use std::sync::Arc;
 
 mod bn254;
 mod secp256k1;
