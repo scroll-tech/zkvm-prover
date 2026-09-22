@@ -29,6 +29,10 @@ Compared to v2.0.0, the `develop-v2.1.0` branch changes:
   rust fork toolchain). Guest builds MUST use `OPENVM_RUST_TOOLCHAIN=openvm-1.94.1`
   (the default in the Makefile and in `openvm-build`). The old
   `riscv32im-risc0-zkvm-elf` / `nightly-2025-11-20` combination is gone.
+  The toolchain is installed via `cargo openvm toolchain install` (see Dockerfile; it
+  extracts to `~/.openvm/toolchains/openvm-1.94.1` and symlinks it from
+  `~/.rustup/toolchains/`). The prebuilt binaries require **glibc ≥ 2.39**
+  (Ubuntu 24.04+); on older hosts see the glibc failure pattern below.
 - Crate renames: `openvm-rv32im-{guest,transpiler,circuit}` → `openvm-riscv-{guest,transpiler,circuit}`.
 - `openvm.toml`: `[app_vm_config.rv32i]`/`rv32m` → `rv64i`/`rv64m`.
 - SDK API: `Sdk::riscv32`/`AppConfig::riscv32` → `riscv64`; `Sdk::execute*` now
@@ -138,6 +142,39 @@ OPENVM_RUST_TOOLCHAIN=openvm-1.94.1 cargo run --release -p scroll-zkvm-build-gue
 
 ### Docker build fails with stale CID
 The `build-guest.sh` script may fail if a stale `build-guest.cid` file exists. Use local build (`cargo run -p scroll-zkvm-build-guest`) as fallback.
+
+### Guest build fails: `GLIBC_2.3x' not found` / `GLIBCXX_3.4.32' not found`
+**Symptoms**: `scroll-zkvm-build-guest` fails during the RV64 guest build with
+`rustc: /lib/x86_64-linux-gnu/libc.so.6: version 'GLIBC_2.39' not found (required by
+.../openvm-1.94.1/lib/librustc_driver-*.so)`.
+**Cause**: The prebuilt `openvm-1.94.1` toolchain installed by `cargo openvm toolchain
+install` requires glibc ≥ 2.39 (Ubuntu 24.04+). Older hosts (e.g. Ubuntu 22.04, glibc
+2.35) cannot run it.
+**Fix**: Run the guest build inside an Ubuntu 24.04 container with the repo and the
+rustup/cargo/openvm dirs mounted (host-compiled binaries run fine inside; glibc is
+forward-compatible):
+```bash
+cat > /tmp/Dockerfile.guest2404 <<'EOF'
+FROM ubuntu:24.04
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential ca-certificates git && rm -rf /var/lib/apt/lists/*
+EOF
+docker build -t guest-build-2404:local -f /tmp/Dockerfile.guest2404 /tmp
+
+docker run --rm --user $(id -u):$(id -g) \
+  -e HOME="$HOME" -e RUSTUP_HOME="$HOME/.rustup" -e CARGO_HOME="$HOME/.cargo" \
+  -e OPENVM_RUST_TOOLCHAIN=openvm-1.94.1 \
+  -e PATH="$HOME/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
+  -v "$PWD:$PWD" -v "$HOME/.rustup:$HOME/.rustup" -v "$HOME/.cargo:$HOME/.cargo" \
+  -v "$HOME/.openvm:$HOME/.openvm" -w "$PWD" \
+  guest-build-2404:local \
+  "$HOME/.cargo/bin/cargo" run --release -p scroll-zkvm-build-guest -- --mode force
+```
+⚠️ The `~/.openvm` mount is **required**: the toolchain really lives at
+`~/.openvm/toolchains/openvm-1.94.1` and is only symlinked from
+`~/.rustup/toolchains/`; without the mount rustup reports
+`override toolchain 'openvm-1.94.1' is not installed` (dangling symlink → ENOENT).
+Tip: set `OPENVM_GUEST_LOGFILE=<path>` to capture the inner guest cargo output — it
+defaults to `/dev/tty`, which is invisible in containers/CI.
 
 ### Guest crashes with `upper 4 bytes must be zero` (TryFromIntError) in store/addi
 **Symptoms**: `test-execute-chunk` / proving panics in `openvm_riscv_circuit` with a
