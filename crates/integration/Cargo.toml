@@ -45,7 +45,7 @@ eyre.workspace = true
 rayon.workspace = true
 serde.workspace = true
 futures.workspace = true
-vm-zstd = { workspace = true, features = ["zstd"] }
+encoder-standard = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 
 hex.workspace = true

@@ -17,7 +17,24 @@ use scroll_zkvm_types::{
     utils::{keccak256, point_eval, serialize_vk},
 };
 use std::env;
-use vm_zstd::zstd_encode;
+use std::io::Write;
+
+/// Encode payload bytes into a single zstd frame without the 4-byte magic number,
+/// matching the scroll envelope format (see `zstd_decode` in scroll-zkvm-types-batch).
+fn zstd_encode(raw_input_bytes: &[u8]) -> Vec<u8> {
+    use encoder_standard::{N_BLOCK_SIZE_TARGET, init_zstd_encoder};
+
+    // compression level = 0 defaults to using level=3, which is zstd's default.
+    let mut encoder = init_zstd_encoder(N_BLOCK_SIZE_TARGET);
+
+    // set source length, which will be reflected in the frame header.
+    encoder
+        .set_pledged_src_size(Some(raw_input_bytes.len() as u64))
+        .unwrap();
+
+    encoder.write_all(raw_input_bytes).unwrap();
+    encoder.finish().unwrap()
+}
 
 #[allow(dead_code)]
 fn final_l1_index(blk: &BlockWitness) -> u64 {
