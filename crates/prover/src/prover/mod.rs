@@ -43,6 +43,104 @@ type SdkAppConfig = AppConfig<SdkVmConfig>;
 // Re-export from openvm_sdk.
 pub use openvm_sdk::{self};
 
+/// Dumps guest profiling counters (per-function cycles, cells used) recorded
+/// by openvm's `perf-metrics` feature into JSON files in the format that
+/// `scripts/flamegraph.py` consumes. Enabled by setting PROFILE_METRICS_DIR to
+/// an output directory. Every proof writes `<prover_name>-<n>.json` holding the
+/// counter *delta* since the previous proof in this process, so each file
+/// contains exactly one proof's guest profile.
+#[cfg(feature = "perf-metrics")]
+mod profile_dump {
+    use std::collections::HashMap;
+    use std::sync::{Mutex, OnceLock};
+
+    static SNAPSHOTTER: OnceLock<Option<metrics_util::debugging::Snapshotter>> = OnceLock::new();
+    static PREV: Mutex<Option<HashMap<String, u64>>> = Mutex::new(None);
+    static NEXT_IDX: Mutex<std::collections::BTreeMap<String, usize>> =
+        Mutex::new(std::collections::BTreeMap::new());
+
+    fn snapshotter() -> Option<&'static metrics_util::debugging::Snapshotter> {
+        std::env::var_os("PROFILE_METRICS_DIR")?;
+        SNAPSHOTTER
+            .get_or_init(|| {
+                let recorder = metrics_util::debugging::DebuggingRecorder::new();
+                let snapshotter = recorder.snapshotter();
+                metrics::set_global_recorder(recorder)
+                    .ok()
+                    .map(|_| snapshotter)
+            })
+            .as_ref()
+    }
+
+    pub fn install() {
+        let _ = snapshotter();
+    }
+
+    pub fn dump(prover_name: &str) {
+        let Some(snapshotter) = snapshotter() else {
+            return;
+        };
+        let dir = std::env::var("PROFILE_METRICS_DIR").expect("checked by snapshotter()");
+
+        #[derive(serde::Serialize)]
+        struct Entry {
+            metric: String,
+            labels: Vec<(String, String)>,
+            value: u64,
+        }
+
+        // Current absolute counter values, keyed by a stable serialization.
+        let mut entries = HashMap::<String, (String, Vec<(String, String)>)>::new();
+        let mut cur = HashMap::<String, u64>::new();
+        for (key, _unit, _desc, value) in snapshotter.snapshot().into_vec() {
+            if key.kind() != metrics_util::MetricKind::Counter {
+                continue;
+            }
+            let metrics_util::debugging::DebugValue::Counter(value) = value else {
+                continue;
+            };
+            let key = key.key();
+            let labels: Vec<(String, String)> = key
+                .labels()
+                .map(|l| (l.key().to_string(), l.value().to_string()))
+                .collect();
+            let id = format!("{}\0{:?}", key.name(), labels);
+            entries.insert(id.clone(), (key.name().to_string(), labels));
+            cur.insert(id, value);
+        }
+
+        let mut prev = PREV.lock().unwrap();
+        let prev_map = prev.get_or_insert_with(HashMap::new);
+        let mut delta_entries = Vec::new();
+        for (id, value) in &cur {
+            let delta = value.saturating_sub(prev_map.get(id).copied().unwrap_or(0));
+            if delta == 0 {
+                continue;
+            }
+            let (metric, labels) = &entries[id];
+            delta_entries.push(Entry {
+                metric: metric.clone(),
+                labels: labels.clone(),
+                value: delta,
+            });
+        }
+        *prev_map = cur;
+        drop(prev);
+
+        let mut idx_map = NEXT_IDX.lock().unwrap();
+        let idx = idx_map.entry(prover_name.to_string()).or_insert(0);
+        let path = format!("{dir}/{prover_name}-{idx}.json");
+        *idx += 1;
+        drop(idx_map);
+
+        let json = serde_json::json!({ "counter": delta_entries });
+        match std::fs::write(&path, serde_json::to_string(&json).unwrap()) {
+            Ok(()) => tracing::info!("profile metrics written to {path}"),
+            Err(err) => tracing::warn!("failed to write profile metrics to {path}: {err}"),
+        }
+    }
+}
+
 /// Default aggregation parameters shared by all provers.
 fn default_agg_params() -> AggregationSystemParams {
     AggregationSystemParams {
@@ -351,10 +449,14 @@ impl Prover {
         let execution_time_mills = t.elapsed().as_millis() as u64;
 
         let t = std::time::Instant::now();
+        #[cfg(feature = "perf-metrics")]
+        profile_dump::install();
         let sdk = self.get_sdk()?;
         let (vm_stark_proof, baseline) = sdk
             .prove(self.app_exe.clone(), stdin, def_inputs)
             .map_err(|e| Error::GenProof(e.to_string()))?;
+        #[cfg(feature = "perf-metrics")]
+        profile_dump::dump(&self.prover_name);
         let proving_time_mills = t.elapsed().as_millis() as u64;
         let proving_time_s = proving_time_mills as f32 / 1000.0f32;
         let prove_speed = (total_cycles as f32 / 1_000_000.0f32) / proving_time_s; // MHz
@@ -423,10 +525,14 @@ impl Prover {
     ) -> Result<OpenVmEvmProof, Error> {
         self.execute_and_check(&stdin)?;
 
+        #[cfg(feature = "perf-metrics")]
+        profile_dump::install();
         let sdk = self.get_sdk()?;
         let evm_proof = sdk
             .prove_evm(self.app_exe.clone(), stdin, def_inputs)
             .map_err(|e| Error::GenProof(format!("{}", e)))?;
+        #[cfg(feature = "perf-metrics")]
+        profile_dump::dump(&self.prover_name);
 
         Ok(evm_proof)
     }

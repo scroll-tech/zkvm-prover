@@ -15,7 +15,7 @@ use scroll_zkvm_types_circuit::{
 use crate::child_commitments;
 
 #[allow(unused_imports, clippy::single_component_path_imports)]
-use openvm_keccak256_guest;
+use openvm_keccak256; // trigger extern native-keccak256
 
 #[derive(Default)]
 pub struct BundleCircuit;

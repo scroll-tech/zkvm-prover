@@ -8083,7 +8083,7 @@ dependencies = [
  "alloy-primitives",
  "bincode 2.0.1",
  "openvm",
- "openvm-keccak256-guest",
+ "openvm-keccak256",
  "scroll-zkvm-types-bundle",
  "scroll-zkvm-types-circuit",
 ]
@@ -8172,6 +8172,8 @@ dependencies = [
  "eyre",
  "git-version",
  "hex",
+ "metrics",
+ "metrics-util",
  "openvm-circuit",
  "openvm-continuations",
  "openvm-cuda-backend",

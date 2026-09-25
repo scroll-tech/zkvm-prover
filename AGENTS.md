@@ -106,6 +106,55 @@ To move to a newer OpenVM ref, retarget every `openvm-org/openvm.git` entry in `
    ```
    Integration tests reuse cached proofs by default. Stale proofs from a previous OpenVM version will cause failures.
 
+### Guest ELF link fails with `undefined symbol: native_keccak256`
+**Cause**: The circuit crate enabled `alloy-primitives/native-keccak` (so `alloy_primitives::keccak256`
+calls the `native_keccak256` extern) but links the wrong provider crate. The extern is defined in
+**`openvm-keccak256`** (guest-libs, also exports `native_keccakf`/`native_xorin`), NOT in
+`openvm-keccak256-guest` (extensions — only defines `native_xorin`/`native_keccakf`).
+**Fix**: depend on `openvm-keccak256` and import it in `circuit.rs` (`use openvm_keccak256;`),
+mirroring `batch-circuit`. Check the actual keccak backend per circuit with
+`cargo tree -p <circuit> --prefix none -f "{p} {f}" | grep ^alloy-primitives`:
+the guest graph must show `native-keccak` and must NOT show `tiny-keccak` (a software fallback —
+the bundle circuit once spent 63% of its cycles in `tiny_keccak::keccakf` because of this).
+
+## Guest Cycle Profiling
+
+Function-level cycle attribution is available via openvm's `perf-metrics` feature (function
+spans from ELF symbol bounds + a metrics recorder in the prover):
+
+1. **Build guests with profiling metadata** (adds `fn_bounds` + `guest.symbols` to the assets;
+   exe commitments are unaffected):
+   ```bash
+   # in the guest-build container, like a normal force build but with the feature
+   BUILD_PROJECT=chunk,batch,bundle OPENVM_BUILD_LOCKED=1 \
+     cargo run --release --locked -p scroll-zkvm-build-guest \
+     --features scroll-zkvm-build-guest/perf-metrics -- --mode force
+   ```
+   (The transpiler requires `GUEST_SYMBOLS_PATH` when `function-span` is on; build-guest sets it
+   per project to `releases/dev/<project>/guest.symbols`. build-guest also inserts a synthetic
+   `[0, first_fn)` fn bound — without it openvm's `update_current_fn` panics on entry-trampoline PCs.)
+
+2. **Run any proving test** with the prover-side feature and an output dir:
+   ```bash
+   PROFILE_METRICS_DIR=/tmp/prof GPU=1 cargo test --release --locked \
+     --features scroll-zkvm-integration/cuda,scroll-zkvm-integration/perf-metrics \
+     -p scroll-zkvm-integration --test batch_circuit e2e -- --exact --nocapture
+   ```
+   Every proof writes `<dir>/<prover_name>-<n>.json` (per-proof counter deltas) in the
+   `scripts/flamegraph.py` metrics format.
+
+3. **Analyze** with `scripts/profile_top.py <json> --symbols releases/dev/<project>/guest.symbols`
+   (top functions by executed instructions, inclusive span stacks). `scripts/flamegraph.py`
+   `--guest-symbols` works on the same files for SVG flamegraphs.
+
+Caveats:
+- The profile counts *executed instructions* per function. On the GPU proving path the
+  per-AIR `cells_used` metrics are NOT emitted (CPU prove only), and the instruction replay
+  inflates wall-clock proving time ~4x — never compare wall times from a `perf-metrics` build
+  against a clean build.
+- The recorder accumulates per process; the prover writes per-proof deltas, so each JSON holds
+  exactly one proof's profile even when a test proves many circuits (e2e bundle).
+
 ## Common Failure Patterns
 
 ### `NativeHintSliceSubEx` assertion failure

@@ -75,4 +75,4 @@ cuda = ["scroll-zkvm-prover/cuda"]
 # halo2 (SNARK) proving on GPU; implies cuda. VRAM-heavy, see scroll-zkvm-prover.
 halo2-gpu = ["scroll-zkvm-prover/halo2-gpu"]
 limit-logs = []
-perf-metrics = ["openvm-sdk/perf-metrics"]
+perf-metrics = ["openvm-sdk/perf-metrics", "scroll-zkvm-prover/perf-metrics"]

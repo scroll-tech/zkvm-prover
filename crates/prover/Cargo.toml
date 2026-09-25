@@ -35,6 +35,8 @@ thiserror.workspace = true
 toml = "0.8"
 
 cudarc = { version = "0.9", optional = true }
+metrics = { version = "0.23", optional = true }
+metrics-util = { version = "0.17", optional = true }
 
 [dev-dependencies]
 
@@ -44,5 +46,8 @@ cuda = ["openvm-sdk/cuda", "dep:cudarc", "openvm-verify-stark-circuit/cuda", "de
 # GPU acceleration for the halo2 (SNARK) prover on top of `cuda`. Needs much
 # more VRAM than STARK proving; enable only on 24 GB-class GPUs.
 halo2-gpu = ["cuda", "openvm-sdk/halo2-gpu"]
+# Per-function guest cycle profiling. Dumps a metrics JSON (flamegraph.py
+# format) at the path in env PROFILE_METRICS_JSON after each proof.
+perf-metrics = ["openvm-sdk/perf-metrics", "dep:metrics", "dep:metrics-util"]
 
 

@@ -267,6 +267,21 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
 
         // 1. Build ELF
 
+        // Create the assets dir if not already present.
+        let path_assets = Path::new(release_output_dir).join(project_name);
+        fs::create_dir_all(&path_assets)?;
+
+        // With `perf-metrics`, the transpiler records function bounds in the exe and
+        // requires GUEST_SYMBOLS_PATH to dump the demangled symbol table (consumed by
+        // scripts/flamegraph.py --guest-symbols). `sdk.build` already decodes the ELF,
+        // so this must be set before it.
+        #[cfg(feature = "perf-metrics")]
+        {
+            let guest_symbols_path = path_assets.join("guest.symbols");
+            println!("{LOG_PREFIX} GUEST_SYMBOLS_PATH={guest_symbols_path:?}");
+            std::env::set_var("GUEST_SYMBOLS_PATH", &guest_symbols_path);
+        }
+
         // Store current directory and change to project directory
         let original_dir = env::current_dir()?;
         env::set_current_dir(&project_path)?;
@@ -297,9 +312,6 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
             original_dir.display()
         );
 
-        // Create the assets dir if not already present.
-        let path_assets = Path::new(release_output_dir).join(project_name);
-        fs::create_dir_all(&path_assets)?;
         let elf_src = workspace_dir
             .join("target")
             .join("riscv64im-unknown-openvm-elf")
@@ -311,6 +323,28 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
 
         // 2. Transpile ELF to VM Executable
         let app_exe: VmExe = (*sdk.convert_to_exe(elf)?).clone();
+
+        // openvm's `update_current_fn` unwraps the greatest function bound <= pc,
+        // which panics if execution touches a pc below the first STT_FUNC symbol
+        // (entry trampolines etc.). Cover that range with a synthetic bound whose
+        // name is offset 0 in the symbols string table (the empty string).
+        #[cfg(feature = "perf-metrics")]
+        let app_exe = {
+            let mut app_exe = app_exe;
+            if let Some((&min_start, _)) = app_exe.fn_bounds.iter().next() {
+                if min_start > 0 {
+                    app_exe.fn_bounds.insert(
+                        0,
+                        openvm_instructions::exe::FnBound {
+                            start: 0,
+                            end: min_start - 1,
+                            name: "0".to_string(),
+                        },
+                    );
+                }
+            }
+            app_exe
+        };
 
         // Write exe to disc.
         let path_app_exe: PathBuf = path_assets.join("app.vmexe");
