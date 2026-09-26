@@ -4827,6 +4827,7 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-guest"
 version = "2.0.0"
+source = "git+https://github.com/openvm-org/openvm.git?branch=develop-v2.1.0#29fc511e6892a3e45455404f25293468bc880228"
 dependencies = [
  "openvm-platform",
 ]
@@ -7581,6 +7582,7 @@ dependencies = [
 [[package]]
 name = "risc0-ethereum-trie"
 version = "0.1.0"
+source = "git+https://github.com/risc0/risc0-ethereum#c1ddb41a44dc0730da883bbfa9fbe75ad335df1b"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",

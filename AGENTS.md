@@ -166,33 +166,82 @@ Caveats:
 
 ## Local patch crates (`patches/`)
 
-Dependencies patched to local sources via `[patch]` in the root `Cargo.toml`:
+- `patches/openvm-mem` — memmove recursion fix (see failure patterns). This is the only live
+  patch right now.
 
-- `patches/openvm-mem` — memmove recursion fix (see failure patterns).
-- `patches/openvm-keccak256-guest` — `native_xorin` gains an aligned-stack staging fast path
-  for unaligned inputs/lengths (the common case for trie-node and digest hashing), avoiding
-  2 heap allocations + 3 copies per call. ~27% of the chunk circuit's 87k keccak absorbs take
-  this path. Revert by deleting the `[patch]` entry and directory.
-- `patches/risc0-ethereum-trie` — hand-written MPT node decoder replacing the
-  alloy-rlp `PayloadView` based one (no per-list `Vec` allocation, single-copy path
-  decoding), plus an inline fast path for the 33-byte digest children that dominate
-  branch nodes (~111k per chunk vs ~11.5k real nodes — skipping the generic decoder
-  recursion for them was the single biggest chunk win, −8%). The original
-  implementation is kept as `decode_node_orig`/`decode_path_orig` behind
-  `const FAST_DECODE` for A/B measurement; the crate's own unit tests
-  (`cargo test` inside the directory) cover the parser.
+## Cycle-optimization experiments (2026-09, reverted)
 
-Rules of engagement when editing `[patch]` tables here:
+We tried two further guest-cycle patches for the **chunk** circuit, measured them carefully,
+and then **reverted** them — the cycles saved did not justify carrying forked dependencies.
+The experiment code is preserved in commit `430b7acc` if it is ever wanted again.
 
-- **Never** run a bare `cargo update` or a plain `cargo metadata` after changing patches —
-  unpinned git deps (`risc0-ethereum` by branch HEAD, `da-codec`, ...) float to the newest
+### What was tried, and the measured numbers
+
+Preset: GalileoV2 chunk, 6 blocks / 630 txs / 35.2M gas. Baseline 202,969,694 guest
+instructions; e2e STARK prove 44.15s (RTX 4090).
+
+| change | cycles saved | note |
+|---|---|---|
+| `risc0-ethereum-trie`: hand-written MPT node parser (no per-list `Vec`, single-copy compact path) | −6.9M | decode side only |
+| + inline fast path for 33-byte digest children | −15.6M | the single biggest win |
+| `openvm-keccak256-guest`: `native_xorin` aligned-stack staging for unaligned input | −2.3M | 27% of absorbs took slow path |
+| **total** | **−12.1%** (→178.4M) | e2e time only **−6.2%** (→41.4s) |
+
+Key structural insight: a chunk witness MPT holds ~11.5k real nodes but **~111k 33-byte
+digest children** (upper branches are nearly full) — each digest child used to cost a full
+decoder recursion + a heap box; inlining them was 2/3 of the total win. Also from the
+ground-truth instrumentation: the chunk guest executes **87,192 keccak absorbs over 10.08
+MB** of input (~60% of it witness state nodes and bytecode hashing, which is inherent to
+the stateless proof model).
+
+pi hashes were bit-identical across all changes; e2e chunk/batch/bundle all passed.
+
+### Where the chunk bottleneck actually is (full-execution CPU-prove profile, 194M instr)
+
+- **~50%+: the revm interpreter itself** (dispatch loop, instruction handlers, mstore/mload,
+  journal). No fork-level fix — needs an interpreter redesign (superinstructions, register
+  dispatch), which is a revm-scale project with high fork drift.
+- **~32% of trace cells: KeccakfPermAir** — driven by hashing the witness MPT nodes +
+  bytecode (proof-model-inherent; only a smaller witness or a cheaper keccak circuit helps).
+- **~23% of trace cells: Poseidon2 memory-merkle periphery** — scales with guest memory
+  traffic.
+- MPT witness decode (after the reverted patches ~13%, before ~21%), `calculate_state_root`
+  dirty-path re-encode 7.7%, jumpdest `into_analyzed` 6.5%, ecrecover msm 4.1%, witness
+  bincode deserialize 2.4%, keccak call wrappers 4.8%.
+
+Realistic ceiling for more fork-level work: ~3-6%. The step change would be the interpreter
+or the proof model, not more micro-patches.
+
+### Directions tried and rejected (do not retry blindly)
+
+- **SWAR / word-at-a-time jumpdest scan**: real contract code has a PUSH-opcode byte in
+  **~83% of 8-byte words**, so the word fast path almost never engages and the mask setup is
+  pure overhead (a first version was 3x *slower*). The upstream byte loop is at its floor.
+  (When bit-parallel tricks are needed elsewhere: the classic `(x−LO)&~x&HI` zero-byte mask
+  has false positives from cross-byte borrows; use `!(((x&0x7f..)+0x7f..)|x)&HI` instead.)
+- **Deduplicating witness codes before analysis**: already done host-side in
+  `ChunkWitness::new` (a `HashSet<&Bytes>` filter) — nothing left on the table.
+- **Reducing keccak absorb count**: witness state/code hashing is proof verification, not
+  overhead — it cannot be skipped without changing the security model.
+- **Patching `revm-bytecode` directly**: a `[patch]` cannot intercept *path* deps inside a
+  git dependency (scroll-revm's crates inter-depend via workspace `path`), so it would
+  require vendoring the whole revm repo. Not worth it.
+
+### Methodology lessons
+
+- **GPU-prove function profiles truncate after ~26%** of a chunk-sized execution (the GPU
+  postflight program log only covers the first segments). Any hotspot ranking from
+  `PROFILE_METRICS_DIR` + GPU is a *biased, early-phase* sample — use a CPU prove for a
+  full-execution profile (~45 min for chunk, covers 100%).
+- Cycle counts: `test_execute`'s metered `instret` equals the true retired-instruction count
+  (verified against in-guest counters); it is the right iteration metric and needs no GPU.
+- `[patch]` table edits: afterwards run **no** bare `cargo update`/`cargo metadata` —
+  unpinned git deps (branch-HEAD `risc0-ethereum`, `da-codec`, ...) float to the newest
   fetched commit and `alloy-evm`'s `revm` req re-resolves to registry `30.2.0`, breaking the
-  build with duplicate-revm type mismatches. Instead hand-edit `Cargo.lock` to the minimal
-  diff (for a path patch: delete the package's `source =` line, adjust its dep list), then
-  verify with `cargo metadata --locked` (must print nothing / exit 0 without touching the lock).
-- A `[patch]` cannot intercept *path* deps inside a git dependency (e.g. `revm-interpreter`'s
-  dep on `revm-bytecode` inside the scroll-revm repo) — patching individual crates out of such
-  a repo requires vendoring the whole repo, which we avoid.
+  build with duplicate-revm type mismatches. Hand-edit `Cargo.lock` to the minimal diff (for
+  a path patch: delete the package's `source =` line, adjust its dep list) and verify with
+  `cargo metadata --locked` (must exit 0 without touching the lock).
+
 
 ## Common Failure Patterns
 

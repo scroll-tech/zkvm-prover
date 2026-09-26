@@ -165,21 +165,11 @@ revm-state = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
 # openvm-mem's copy_forward/copy_backward use 64-byte aggregate copies that LLVM lowers
 # into `memmove` calls, making `memmove` recurse until the guest stack overflows.
 # Override with a local copy that uses u64 chunks instead. See patches/openvm-mem.
-# openvm-keccak256-guest: local fork adds an unaligned-input fast path for native_xorin
-# (avoids 2 heap allocs + 3 memcpys per keccak256 call). See patches/openvm-keccak256-guest.
+# (Two further guest-cycle patches — openvm-keccak256-guest and risc0-ethereum-trie —
+# were tried, measured at −12.1% chunk cycles, and reverted as not worth the fork.
+# See AGENTS.md "Cycle-optimization experiments" and commit 430b7acc.)
 [patch."https://github.com/openvm-org/openvm.git"]
 openvm-mem = { path = "patches/openvm-mem" }
-openvm-keccak256-guest = { path = "patches/openvm-keccak256-guest" }
-
-# (An sbv-trie fork for bytecode-analysis dedup was tried and rejected: witness
-# codes are already deduplicated host-side in ChunkWitness::new, and a SWAR
-# jumpdest scan loses to the byte-wise loop since ~83% of 8-byte words in real
-# bytecode contain a PUSH opcode byte.)
-
-# Experimental local fork for guest cycle optimization (hand-written MPT node parser).
-# Same code as c1ddb41 otherwise; delete this section to disable.
-[patch."https://github.com/risc0/risc0-ethereum"]
-risc0-ethereum-trie = { path = "patches/risc0-ethereum-trie" }
 
 [profile.maxperf]
 inherits = "release"
