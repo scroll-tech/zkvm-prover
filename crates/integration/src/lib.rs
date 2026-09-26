@@ -3,10 +3,10 @@ use once_cell::sync::OnceCell;
 use openvm_circuit::arch::deferral::DeferralState;
 use openvm_sdk::config::AggregationSystemParams;
 use openvm_sdk::{DeferralInput, Sdk, StdIn};
-use openvm_stark_sdk::openvm_stark_backend::codec::Decode;
 use openvm_stark_sdk::config::{
     internal_params_with_100_bits_security, leaf_params_with_100_bits_security,
 };
+use openvm_stark_sdk::openvm_stark_backend::codec::Decode;
 use openvm_verify_stark_circuit::extension::{get_deferral_state, get_raw_deferral_results};
 use openvm_verify_stark_host::{
     VmStarkProof,
@@ -425,7 +425,11 @@ pub fn tester_execute<T: ProverTester>(
         })
         .build()
         .map_err(|e| eyre::eyre!("sdk build failed: {e}"))?;
+    #[cfg(feature = "perf-metrics")]
+    scroll_zkvm_prover::prover::profile_dump::install();
     let ret = scroll_zkvm_prover::utils::vm::execute_guest(&sdk, app_exe, &stdin)?;
+    #[cfg(feature = "perf-metrics")]
+    scroll_zkvm_prover::prover::profile_dump::dump("execute");
     Ok(ret)
 }
 

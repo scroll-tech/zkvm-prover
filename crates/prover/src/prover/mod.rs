@@ -50,7 +50,7 @@ pub use openvm_sdk::{self};
 /// counter *delta* since the previous proof in this process, so each file
 /// contains exactly one proof's guest profile.
 #[cfg(feature = "perf-metrics")]
-mod profile_dump {
+pub mod profile_dump {
     use std::collections::HashMap;
     use std::sync::{Mutex, OnceLock};
 

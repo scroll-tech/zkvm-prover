@@ -152,8 +152,47 @@ Caveats:
   per-AIR `cells_used` metrics are NOT emitted (CPU prove only), and the instruction replay
   inflates wall-clock proving time ~4x — never compare wall times from a `perf-metrics` build
   against a clean build.
+- **GPU prove replay is truncated**: the GPU postflight program log only covers the first
+  ~26% of a chunk-sized execution (53.4M of 203M instructions — verify against the
+  `execute_metered_insns` counter or `total_cycles`; if `frequency` totals are much lower,
+  the sample is partial). Witness-processing phases sit early in the execution, so a
+  truncated sample over-weights them vs EVM execution. For a full-execution profile, run the
+  prove on CPU (no `cuda` feature): the CPU replay covers every segment.
+- The execute-only path (`tester_execute`, e.g. `test-execute-chunk`) also honors
+  `PROFILE_METRICS_DIR` and writes `execute-0.json`, but the metered-cost executor emits no
+  function-span counters there — it is only useful for total cycle counts.
 - The recorder accumulates per process; the prover writes per-proof deltas, so each JSON holds
   exactly one proof's profile even when a test proves many circuits (e2e bundle).
+
+## Local patch crates (`patches/`)
+
+Dependencies patched to local sources via `[patch]` in the root `Cargo.toml`:
+
+- `patches/openvm-mem` — memmove recursion fix (see failure patterns).
+- `patches/openvm-keccak256-guest` — `native_xorin` gains an aligned-stack staging fast path
+  for unaligned inputs/lengths (the common case for trie-node and digest hashing), avoiding
+  2 heap allocations + 3 copies per call. ~27% of the chunk circuit's 87k keccak absorbs take
+  this path. Revert by deleting the `[patch]` entry and directory.
+- `patches/risc0-ethereum-trie` — hand-written MPT node decoder replacing the
+  alloy-rlp `PayloadView` based one (no per-list `Vec` allocation, single-copy path
+  decoding), plus an inline fast path for the 33-byte digest children that dominate
+  branch nodes (~111k per chunk vs ~11.5k real nodes — skipping the generic decoder
+  recursion for them was the single biggest chunk win, −8%). The original
+  implementation is kept as `decode_node_orig`/`decode_path_orig` behind
+  `const FAST_DECODE` for A/B measurement; the crate's own unit tests
+  (`cargo test` inside the directory) cover the parser.
+
+Rules of engagement when editing `[patch]` tables here:
+
+- **Never** run a bare `cargo update` or a plain `cargo metadata` after changing patches —
+  unpinned git deps (`risc0-ethereum` by branch HEAD, `da-codec`, ...) float to the newest
+  fetched commit and `alloy-evm`'s `revm` req re-resolves to registry `30.2.0`, breaking the
+  build with duplicate-revm type mismatches. Instead hand-edit `Cargo.lock` to the minimal
+  diff (for a path patch: delete the package's `source =` line, adjust its dep list), then
+  verify with `cargo metadata --locked` (must print nothing / exit 0 without touching the lock).
+- A `[patch]` cannot intercept *path* deps inside a git dependency (e.g. `revm-interpreter`'s
+  dep on `revm-bytecode` inside the scroll-revm repo) — patching individual crates out of such
+  a repo requires vendoring the whole repo, which we avoid.
 
 ## Common Failure Patterns
 
