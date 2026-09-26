@@ -79,14 +79,21 @@ impl<P: Payload> super::BatchInfoBuilder for GenericBatchInfoBuilderV7<P> {
             "blob-envelope bigger than allowed",
         );
 
-        let envelope_bytes = {
-            let mut padded = args.blob_bytes.to_vec();
-            padded.resize(N_BLOB_BYTES, 0);
-            padded
+        // Blob bytes from the witness are already padded to N_BLOB_BYTES; only
+        // fall back to local padding for shorter (e.g. hand-crafted) inputs.
+        let envelope_bytes_storage;
+        let envelope_bytes: &[u8] = if args.blob_bytes.len() == N_BLOB_BYTES {
+            args.blob_bytes.as_slice()
+        } else {
+            envelope_bytes_storage = {
+                let mut padded = args.blob_bytes.to_vec();
+                padded.resize(N_BLOB_BYTES, 0);
+                padded
+            };
+            &envelope_bytes_storage
         };
-        let envelope = <<Self::Payload as Payload>::Envelope as Envelope>::from_slice(
-            envelope_bytes.as_slice(),
-        );
+        let envelope =
+            <<Self::Payload as Payload>::Envelope as Envelope>::from_slice(envelope_bytes);
         let payload = Self::Payload::from_envelope(&envelope);
 
         let blob_versioned_hash = args.header.blob_versioned_hash();

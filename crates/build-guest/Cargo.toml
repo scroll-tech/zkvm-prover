@@ -31,3 +31,5 @@ clap = { version = "4.0", features = ["derive"] }
 [features]
 default = ["scroll"]
 scroll = ["scroll-zkvm-types/scroll"]
+# Bake function bounds into .vmexe files for guest cycle profiling.
+perf-metrics = ["openvm-sdk/perf-metrics"]

@@ -80,9 +80,7 @@ impl Payload for PayloadV6 {
     fn from_envelope(envelope: &Self::Envelope) -> Self {
         // Decode the payload bytes from the envelope bytes.
         let payload_bytes = if envelope.is_encoded {
-            vm_zstd::process(envelope.envelope_bytes.as_slice())
-                .expect("envelope to payload v6 should succeed zstd-decoding")
-                .decoded_data
+            super::zstd_decode(envelope.envelope_bytes.as_slice())
         } else {
             envelope.envelope_bytes.to_vec()
         };

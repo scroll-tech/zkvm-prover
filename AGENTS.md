@@ -13,7 +13,7 @@ Critical context for AI agents working on this repo. Read this before making cha
 
 ## OpenVM Version Sensitivity
 
-This project uses **OpenVM v2.0.0** as its ZKVM. Guest executables (`.vmexe`) and host code **must be built from the exact same OpenVM version**. Even a minor version bump can change:
+This project uses **OpenVM `develop-v2.1.0` branch** (RV64 guest toolchain) as its ZKVM. Guest executables (`.vmexe`) and host code **must be built from the exact same OpenVM version**. Even a minor version bump can change:
 
 - The guest/host data layout (hint streams, public inputs)
 - The Halo2 SRS degree requirement
@@ -21,29 +21,58 @@ This project uses **OpenVM v2.0.0** as its ZKVM. Guest executables (`.vmexe`) an
 - Field algebra APIs
 - ECC constructor signatures
 
+### v2.1.0 (RV64) migration notes
+
+Compared to v2.0.0, the `develop-v2.1.0` branch changes:
+
+- Guest target is now `riscv64im-unknown-openvm-elf` (built into the `openvm-1.94.1`
+  rust fork toolchain). Guest builds MUST use `OPENVM_RUST_TOOLCHAIN=openvm-1.94.1`
+  (the default in the Makefile and in `openvm-build`). The old
+  `riscv32im-risc0-zkvm-elf` / `nightly-2025-11-20` combination is gone.
+  The toolchain is installed via `cargo openvm toolchain install` (see Dockerfile; it
+  extracts to `~/.openvm/toolchains/openvm-1.94.1` and symlinks it from
+  `~/.rustup/toolchains/`). The prebuilt binaries require **glibc ≥ 2.39**
+  (Ubuntu 24.04+); on older hosts see the glibc failure pattern below.
+- Crate renames: `openvm-rv32im-{guest,transpiler,circuit}` → `openvm-riscv-{guest,transpiler,circuit}`.
+- `openvm.toml`: `[app_vm_config.rv32i]`/`rv32m` → `rv64i`/`rv64m`.
+- SDK API: `Sdk::riscv32`/`AppConfig::riscv32` → `riscv64`; `Sdk::execute*` now
+  takes a compiled instance — call `sdk.compile*` / `sdk.compile_metered_cost`
+  first, then `sdk.execute(&compiled, ...)` / `sdk.execute_metered_cost(&compiled, ...)`.
+- Hint stream words are 8 bytes: `hint_store_u32!` → `hint_store_u64!` /
+  `hint_buffer_chunked`, and the hint-stream length prefix is a `u64`.
+- User public values are **single bytes** (1 byte per cell, stored in the low byte
+  of a u32 field element). `NUM_PUBLIC_VALUES` is 32 cells (= 32 bytes); the
+  32-byte pi hash fills all 32 cells. (Earlier v2.1.0 snapshots used u16 cells;
+  upstream restored byte-sized public values in commit `b3c95cd00`.)
+- Guest cfg gates: `target_os = "zkvm"` → `target_os = "openvm"`.
+- Host toolchain: `rust-toolchain.toml` uses `nightly-2026-01-18` (required by the
+  openvm-sdk `tco` feature).
+
 ### How to update OpenVM dependencies correctly
 
-OpenVM is declared as a **git dependency** (`tag = "v2.0.0"`) in `Cargo.toml`, and the exact commit is also pinned in `Cargo.lock`. The `openvm-org/openvm.git` and `openvm-org/stark-backend.git` entries MUST stay on matching tags — `openvm`'s own `Cargo.toml` pins a specific `stark-backend` tag, and a mismatch produces duplicate-registry / type-mismatch errors. Because the tag is immutable, the declared ref and the locked commit should always agree. The real hazard is a bare `cargo update`: it will **not** change the OpenVM tag, but it will bump unrelated crates.io packages (e.g. `alloy`, `revm`) which often break compatibility with the `scroll-tech/reth` and `sbv` forks.
+OpenVM is declared as a **git dependency** (`branch = "develop-v2.1.0"`) in `Cargo.toml`, and the exact commit is also pinned in `Cargo.lock`. The `openvm-org/stark-backend.git` entries MUST stay on the tag that `openvm`'s own `Cargo.toml` pins for that branch (currently `tag = "v2.0.0"`) — a mismatch produces duplicate-registry / type-mismatch errors. A branch ref moves: after fetching, verify the locked commit is the one you expect. The real hazard is a bare `cargo update`: it will bump unrelated crates.io packages (e.g. `alloy`, `revm`) which often break compatibility with the `scroll-tech/reth` and `sbv` forks.
 
 **Do NOT run a global `cargo update` unless you are prepared to upgrade the entire `alloy`/`revm`/`reth`/`sbv` dependency chain together.**
 
-To move to a newer OpenVM tag, retarget every `openvm-org/openvm.git` and `openvm-org/stark-backend.git` entry in `Cargo.toml` to the new tag, then refresh only those git sources — `cargo metadata` is enough — rather than a global `cargo update`. Verify with `git diff Cargo.lock` that no other package's version/source changed. Then rebuild guests and run tests as described below.
+To move to a newer OpenVM ref, retarget every `openvm-org/openvm.git` entry in `Cargo.toml` to the new tag/branch and set `openvm-org/stark-backend.git` to whatever tag that openvm ref's own `Cargo.toml` pins, then refresh only those git sources — `cargo metadata` is enough — rather than a global `cargo update`. Verify with `git diff Cargo.lock` that no other package's version/source changed. Then rebuild guests and run tests as described below.
 
 ### After ANY OpenVM version upgrade, you MUST:
 
 1. **Update the hardcoded version string** in `crates/build-guest/src/verifier.rs`:
    ```rust
-   let solidity_sdk_tag = "v2.0"; // MUST match openvm-solidity-sdk tag
-   let verifier_path = "v2.0-deferral"; // bundle/deferral verifier
+   let solidity_sdk_tag = "v2.1"; // MUST match openvm-solidity-sdk tag
+   let verifier_path = "v2.1-deferral"; // bundle/deferral verifier
    ```
+   (As of the `develop-v2.1.0` upgrade, `openvm-solidity-sdk` has no `v2.1` tag yet,
+   so the download fails and `auto` mode falls back to local verifier generation.)
 
 2. **Force-rebuild ALL guest assets** (auto mode skips existing files):
    ```bash
    # Local build
-   OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20 cargo run --release -p scroll-zkvm-build-guest -- --mode force
+   OPENVM_RUST_TOOLCHAIN=openvm-1.94.1 cargo run --release -p scroll-zkvm-build-guest -- --mode force
 
    # Docker build (matches CI)
-   OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20 make build-guest
+   OPENVM_RUST_TOOLCHAIN=openvm-1.94.1 make build-guest
    ```
    This regenerates: `app.elf`, `app.vmexe`, commitment `.rs` files, `agg_vk.bin`, `openVmVk.json`,
    and the EVM verifier (`verifier.sol` + `verifier.bin`).
@@ -67,7 +96,7 @@ To move to a newer OpenVM tag, retarget every `openvm-org/openvm.git` and `openv
    These are cached proving keys. They are **not** automatically invalidated on version bumps.
 
 5. **Check SRS params** in `~/.openvm/params/`:
-   - OpenVM v2.0.0 requires `kzg_bn254_24.srs` (2 GB); the SNARK step in e2e tests also needs `kzg_bn254_22.srs` and `kzg_bn254_23.srs`
+   - OpenVM v2.x requires `kzg_bn254_24.srs` (2 GB); the SNARK step in e2e tests also needs `kzg_bn254_22.srs` and `kzg_bn254_23.srs`
    - Download any missing file with `make $HOME/.openvm/params/<name>.srs`
    - If a file is empty/corrupted, replace it (check for `.1` or `.part` suffixes from interrupted downloads)
 
@@ -76,6 +105,143 @@ To move to a newer OpenVM tag, retarget every `openvm-org/openvm.git` and `openv
    rm -rf .output/bundle-tests-*/
    ```
    Integration tests reuse cached proofs by default. Stale proofs from a previous OpenVM version will cause failures.
+
+### Guest ELF link fails with `undefined symbol: native_keccak256`
+**Cause**: The circuit crate enabled `alloy-primitives/native-keccak` (so `alloy_primitives::keccak256`
+calls the `native_keccak256` extern) but links the wrong provider crate. The extern is defined in
+**`openvm-keccak256`** (guest-libs, also exports `native_keccakf`/`native_xorin`), NOT in
+`openvm-keccak256-guest` (extensions — only defines `native_xorin`/`native_keccakf`).
+**Fix**: depend on `openvm-keccak256` and import it in `circuit.rs` (`use openvm_keccak256;`),
+mirroring `batch-circuit`. Check the actual keccak backend per circuit with
+`cargo tree -p <circuit> --prefix none -f "{p} {f}" | grep ^alloy-primitives`:
+the guest graph must show `native-keccak` and must NOT show `tiny-keccak` (a software fallback —
+the bundle circuit once spent 63% of its cycles in `tiny_keccak::keccakf` because of this).
+
+## Guest Cycle Profiling
+
+Function-level cycle attribution is available via openvm's `perf-metrics` feature (function
+spans from ELF symbol bounds + a metrics recorder in the prover):
+
+1. **Build guests with profiling metadata** (adds `fn_bounds` + `guest.symbols` to the assets;
+   exe commitments are unaffected):
+   ```bash
+   # in the guest-build container, like a normal force build but with the feature
+   BUILD_PROJECT=chunk,batch,bundle OPENVM_BUILD_LOCKED=1 \
+     cargo run --release --locked -p scroll-zkvm-build-guest \
+     --features scroll-zkvm-build-guest/perf-metrics -- --mode force
+   ```
+   (The transpiler requires `GUEST_SYMBOLS_PATH` when `function-span` is on; build-guest sets it
+   per project to `releases/dev/<project>/guest.symbols`. build-guest also inserts a synthetic
+   `[0, first_fn)` fn bound — without it openvm's `update_current_fn` panics on entry-trampoline PCs.)
+
+2. **Run any proving test** with the prover-side feature and an output dir:
+   ```bash
+   PROFILE_METRICS_DIR=/tmp/prof GPU=1 cargo test --release --locked \
+     --features scroll-zkvm-integration/cuda,scroll-zkvm-integration/perf-metrics \
+     -p scroll-zkvm-integration --test batch_circuit e2e -- --exact --nocapture
+   ```
+   Every proof writes `<dir>/<prover_name>-<n>.json` (per-proof counter deltas) in the
+   `scripts/flamegraph.py` metrics format.
+
+3. **Analyze** with `scripts/profile_top.py <json> --symbols releases/dev/<project>/guest.symbols`
+   (top functions by executed instructions, inclusive span stacks). `scripts/flamegraph.py`
+   `--guest-symbols` works on the same files for SVG flamegraphs.
+
+Caveats:
+- The profile counts *executed instructions* per function. On the GPU proving path the
+  per-AIR `cells_used` metrics are NOT emitted (CPU prove only), and the instruction replay
+  inflates wall-clock proving time ~4x — never compare wall times from a `perf-metrics` build
+  against a clean build.
+- **GPU prove replay is truncated**: the GPU postflight program log only covers the first
+  ~26% of a chunk-sized execution (53.4M of 203M instructions — verify against the
+  `execute_metered_insns` counter or `total_cycles`; if `frequency` totals are much lower,
+  the sample is partial). Witness-processing phases sit early in the execution, so a
+  truncated sample over-weights them vs EVM execution. For a full-execution profile, run the
+  prove on CPU (no `cuda` feature): the CPU replay covers every segment.
+- The execute-only path (`tester_execute`, e.g. `test-execute-chunk`) also honors
+  `PROFILE_METRICS_DIR` and writes `execute-0.json`, but the metered-cost executor emits no
+  function-span counters there — it is only useful for total cycle counts.
+- The recorder accumulates per process; the prover writes per-proof deltas, so each JSON holds
+  exactly one proof's profile even when a test proves many circuits (e2e bundle).
+
+## Local patch crates (`patches/`)
+
+- `patches/openvm-mem` — memmove recursion fix (see failure patterns). This is the only live
+  patch right now.
+
+## Cycle-optimization experiments (2026-09, reverted)
+
+We tried two further guest-cycle patches for the **chunk** circuit, measured them carefully,
+and then **reverted** them — the cycles saved did not justify carrying forked dependencies.
+The experiment code is preserved in commit `430b7acc` if it is ever wanted again.
+
+### What was tried, and the measured numbers
+
+Preset: GalileoV2 chunk, 6 blocks / 630 txs / 35.2M gas. Baseline 202,969,694 guest
+instructions; e2e STARK prove 44.15s (RTX 4090).
+
+| change | cycles saved | note |
+|---|---|---|
+| `risc0-ethereum-trie`: hand-written MPT node parser (no per-list `Vec`, single-copy compact path) | −6.9M | decode side only |
+| + inline fast path for 33-byte digest children | −15.6M | the single biggest win |
+| `openvm-keccak256-guest`: `native_xorin` aligned-stack staging for unaligned input | −2.3M | 27% of absorbs took slow path |
+| **total** | **−12.1%** (→178.4M) | e2e time only **−6.2%** (→41.4s) |
+
+Key structural insight: a chunk witness MPT holds ~11.5k real nodes but **~111k 33-byte
+digest children** (upper branches are nearly full) — each digest child used to cost a full
+decoder recursion + a heap box; inlining them was 2/3 of the total win. Also from the
+ground-truth instrumentation: the chunk guest executes **87,192 keccak absorbs over 10.08
+MB** of input (~60% of it witness state nodes and bytecode hashing, which is inherent to
+the stateless proof model).
+
+pi hashes were bit-identical across all changes; e2e chunk/batch/bundle all passed.
+
+### Where the chunk bottleneck actually is (full-execution CPU-prove profile, 194M instr)
+
+- **~50%+: the revm interpreter itself** (dispatch loop, instruction handlers, mstore/mload,
+  journal). No fork-level fix — needs an interpreter redesign (superinstructions, register
+  dispatch), which is a revm-scale project with high fork drift.
+- **~32% of trace cells: KeccakfPermAir** — driven by hashing the witness MPT nodes +
+  bytecode (proof-model-inherent; only a smaller witness or a cheaper keccak circuit helps).
+- **~23% of trace cells: Poseidon2 memory-merkle periphery** — scales with guest memory
+  traffic.
+- MPT witness decode (after the reverted patches ~13%, before ~21%), `calculate_state_root`
+  dirty-path re-encode 7.7%, jumpdest `into_analyzed` 6.5%, ecrecover msm 4.1%, witness
+  bincode deserialize 2.4%, keccak call wrappers 4.8%.
+
+Realistic ceiling for more fork-level work: ~3-6%. The step change would be the interpreter
+or the proof model, not more micro-patches.
+
+### Directions tried and rejected (do not retry blindly)
+
+- **SWAR / word-at-a-time jumpdest scan**: real contract code has a PUSH-opcode byte in
+  **~83% of 8-byte words**, so the word fast path almost never engages and the mask setup is
+  pure overhead (a first version was 3x *slower*). The upstream byte loop is at its floor.
+  (When bit-parallel tricks are needed elsewhere: the classic `(x−LO)&~x&HI` zero-byte mask
+  has false positives from cross-byte borrows; use `!(((x&0x7f..)+0x7f..)|x)&HI` instead.)
+- **Deduplicating witness codes before analysis**: already done host-side in
+  `ChunkWitness::new` (a `HashSet<&Bytes>` filter) — nothing left on the table.
+- **Reducing keccak absorb count**: witness state/code hashing is proof verification, not
+  overhead — it cannot be skipped without changing the security model.
+- **Patching `revm-bytecode` directly**: a `[patch]` cannot intercept *path* deps inside a
+  git dependency (scroll-revm's crates inter-depend via workspace `path`), so it would
+  require vendoring the whole revm repo. Not worth it.
+
+### Methodology lessons
+
+- **GPU-prove function profiles truncate after ~26%** of a chunk-sized execution (the GPU
+  postflight program log only covers the first segments). Any hotspot ranking from
+  `PROFILE_METRICS_DIR` + GPU is a *biased, early-phase* sample — use a CPU prove for a
+  full-execution profile (~45 min for chunk, covers 100%).
+- Cycle counts: `test_execute`'s metered `instret` equals the true retired-instruction count
+  (verified against in-guest counters); it is the right iteration metric and needs no GPU.
+- `[patch]` table edits: afterwards run **no** bare `cargo update`/`cargo metadata` —
+  unpinned git deps (branch-HEAD `risc0-ethereum`, `da-codec`, ...) float to the newest
+  fetched commit and `alloy-evm`'s `revm` req re-resolves to registry `30.2.0`, breaking the
+  build with duplicate-revm type mismatches. Hand-edit `Cargo.lock` to the minimal diff (for
+  a path patch: delete the package's `source =` line, adjust its dep list) and verify with
+  `cargo metadata --locked` (must exit 0 without touching the lock).
+
 
 ## Common Failure Patterns
 
@@ -102,7 +268,7 @@ This happens when:
 
 **Fix**: Regenerate with:
 ```bash
-OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20 cargo run --release -p scroll-zkvm-build-guest -- --mode force
+OPENVM_RUST_TOOLCHAIN=openvm-1.94.1 cargo run --release -p scroll-zkvm-build-guest -- --mode force
 ```
 (The default `auto` mode will fall back to local generation if the download fails; use `RECOMPUTE_MODE=yes` to force local generation immediately.)
 
@@ -113,6 +279,76 @@ OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20 cargo run --release -p scroll-zkvm-buil
 
 ### Docker build fails with stale CID
 The `build-guest.sh` script may fail if a stale `build-guest.cid` file exists. Use local build (`cargo run -p scroll-zkvm-build-guest`) as fallback.
+
+### Guest build fails: `GLIBC_2.3x' not found` / `GLIBCXX_3.4.32' not found`
+**Symptoms**: `scroll-zkvm-build-guest` fails during the RV64 guest build with
+`rustc: /lib/x86_64-linux-gnu/libc.so.6: version 'GLIBC_2.39' not found (required by
+.../openvm-1.94.1/lib/librustc_driver-*.so)`.
+**Cause**: The prebuilt `openvm-1.94.1` toolchain installed by `cargo openvm toolchain
+install` requires glibc ≥ 2.39 (Ubuntu 24.04+). Older hosts (e.g. Ubuntu 22.04, glibc
+2.35) cannot run it.
+**Fix**: Run the guest build inside an Ubuntu 24.04 container with the repo and the
+rustup/cargo/openvm dirs mounted (host-compiled binaries run fine inside; glibc is
+forward-compatible):
+```bash
+cat > /tmp/Dockerfile.guest2404 <<'EOF'
+FROM ubuntu:24.04
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential ca-certificates git && rm -rf /var/lib/apt/lists/*
+EOF
+docker build -t guest-build-2404:local -f /tmp/Dockerfile.guest2404 /tmp
+
+docker run --rm --user $(id -u):$(id -g) \
+  -e HOME="$HOME" -e RUSTUP_HOME="$HOME/.rustup" -e CARGO_HOME="$HOME/.cargo" \
+  -e OPENVM_RUST_TOOLCHAIN=openvm-1.94.1 \
+  -e PATH="$HOME/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
+  -v "$PWD:$PWD" -v "$HOME/.rustup:$HOME/.rustup" -v "$HOME/.cargo:$HOME/.cargo" \
+  -v "$HOME/.openvm:$HOME/.openvm" -w "$PWD" \
+  guest-build-2404:local \
+  "$HOME/.cargo/bin/cargo" run --release -p scroll-zkvm-build-guest -- --mode force
+```
+⚠️ The `~/.openvm` mount is **required**: the toolchain really lives at
+`~/.openvm/toolchains/openvm-1.94.1` and is only symlinked from
+`~/.rustup/toolchains/`; without the mount rustup reports
+`override toolchain 'openvm-1.94.1' is not installed` (dangling symlink → ENOENT).
+Tip: set `OPENVM_GUEST_LOGFILE=<path>` to capture the inner guest cargo output — it
+defaults to `/dev/tty`, which is invisible in containers/CI.
+
+### Guest crashes with `upper 4 bytes must be zero` (TryFromIntError) in store/addi
+**Symptoms**: `test-execute-chunk` / proving panics in `openvm_riscv_circuit` with a
+register holding `0xfffffffffffffe60` (=-416) or similar sign-extended garbage, and the
+stack pointer walks down by a fixed stride (e.g. 416) until it wraps.
+**Cause**: Upstream `openvm-mem` (introduced in commit `d664effb1`, "use rust native
+memory intrinsics") implements `copy_forward`/`copy_backward` with 64-byte aggregate
+copies (`load::<64>`/`store::<64>`). LLVM lowers those aggregate copies into calls to
+`memmove`, which makes `memmove` recursively call itself and overflow the guest stack.
+**Fix**: We ship a local override at `patches/openvm-mem` (wired via
+`[patch."https://github.com/openvm-org/openvm.git"]` in `Cargo.toml`) that does the
+block copies with 8× `u64` loads-then-stores instead of one 64-byte aggregate. If you
+bump OpenVM and upstream fixes `openvm-mem`, delete the `[patch]` entry and the
+`patches/openvm-mem` directory.
+
+### `subtree size exceeds the address space's configured leaf count` (bundle root/SNARK)
+**Symptoms**: `test-e2e-bundle` fails during `gen_proof_snark` (the Halo2 wrap of the
+bundle root proof) with this assert from
+`crates/vm/src/system/cuda/merkle_tree/mod.rs`, for `DEFERRAL_AS` (address space 4)
+with `num_cells=0`.
+**Cause**: OpenVM commit `a935d8b3d` ("perf: sparse initial memory snapshot and GPU
+Merkle build") added a strict leaf-count assert. The SDK's `compute_root_proof_heights`
+builds the root config from a default `AppConfig::riscv64` (which has `deferral=None`),
+so `apply_optimizations` zeroes `DEFERRAL_AS.num_cells` — but deferral is actually
+active and the root proof touches that address space.
+**Fix**: Fixed upstream by `46709d24` ("fix: keep the dummy root-keygen app config
+self-consistent", #3118), which re-runs `apply_optimizations()` in
+`compute_root_proof_heights` so the dummy root-keygen config keeps `DEFERRAL_AS`
+allocated. We track `develop-v2.1.0` HEAD (`29fc511e`), which includes the fix. If you
+ever need to pin between `a935d8b3d` and `46709d24`, this assert will come back.
+
+### Field-independent instructions (#3109)
+As of `29fc511e` ("refactor(v2.1): make program instructions field-independent"),
+`Instruction` / `Program` / `VmExe` are **non-generic** (no `<F>`); operands are
+`InstructionOperand(i32)` restricted to the signed 30-bit domain. This changes the
+`app.vmexe` serialization format, so any OpenVM bump across this commit requires a
+full force rebuild of guest assets.
 
 ## GPU Features
 
@@ -154,7 +390,7 @@ Do **not** reintroduce `sdk.prover()` / `sdk.agg_vk()` calls in read-only (verif
 # Force rebuild all guest assets (required after OpenVM upgrade).
 # Default RECOMPUTE_MODE=auto falls back to local generation if the download fails.
 # Use RECOMPUTE_MODE=yes to skip the download and force local generation.
-OPENVM_RUST_TOOLCHAIN=nightly-2025-11-20 cargo run --release -p scroll-zkvm-build-guest -- --mode force
+OPENVM_RUST_TOOLCHAIN=openvm-1.94.1 cargo run --release -p scroll-zkvm-build-guest -- --mode force
 
 # Run end-to-end tests (ALWAYS use make, never raw cargo test)
 GPU=1 make test-e2e-bundle
@@ -175,6 +411,20 @@ can waste hours of CPU time. Always run it as:
 ```bash
 cargo test --release -p scroll-zkvm-build-guest test_verifier
 ```
+
+### RVR native execution toolchain (currently disabled)
+
+The optional `rvr` feature of `openvm-sdk` compiles guest code to native C at runtime for
+faster execution. It is **not** enabled in `Cargo.toml` by default (the default path uses
+the interpreter, which is slower but well-tested). If you enable it, you need
+**LLVM clang-22 + lld-22** on the host:
+
+- Set `RVR_CC=clang-22` and `RVR_LD=lld` (or `RVR_LD=ld.lld`) when running tests.
+- If the system clang is older, install clang-22/lld-22 via conda-forge and put it on `PATH`:
+  ```bash
+  mamba install -y -c conda-forge clang=22 lld=22 llvm=22
+  PATH="/home/scroll/miniforge3/bin:$PATH" RVR_CC=clang-22 RVR_LD=lld GPU=1 make test-single-chunk
+  ```
 
 ## Deferral Model (OpenVM v2+)
 
@@ -219,3 +469,5 @@ If any of these mismatch, the EVM verifier will reject proofs with `ProofVerific
 - `chunk-circuit`: requires `system.config.continuation_enabled = true`
 - `batch-circuit` / `bundle-circuit`: aggregation FRI params are supplied in code via `AggregationConfig { params: default_agg_params() }`; the checked-in `openvm.toml` files do not contain `leaf_fri_params`
 - FRI params format in OpenVM v2: `commit_proof_of_work_bits` + `query_proof_of_work_bits`
+- VM extension sections in `openvm.toml` are `[app_vm_config.rv64i]` / `[app_vm_config.rv64m]` (RV64)
+- Guest ELFs land in `target/riscv64im-unknown-openvm-elf/maxperf/`
