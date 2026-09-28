@@ -3,7 +3,7 @@
 mod error;
 pub use error::Error;
 
-mod prover;
+pub mod prover;
 pub use prover::{Prover, ProverConfig};
 
 pub mod setup;

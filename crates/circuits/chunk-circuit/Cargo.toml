@@ -22,7 +22,7 @@ openvm-ecc-guest = { workspace = true }
 openvm-keccak256 = { workspace = true }
 openvm-pairing-guest = { workspace = true, features = ["bn254"] }
 openvm-sha2 = { workspace = true }
-openvm-rv32im-guest= {  workspace = true }
+openvm-riscv-guest= {  workspace = true }
 
 
 [features]

@@ -11,9 +11,9 @@ scroll-zkvm-types-circuit.workspace = true
 scroll-zkvm-types-bundle.workspace = true
 
 openvm = { workspace = true, features = ["std"] }
-openvm-keccak256-guest.workspace = true
+openvm-keccak256 = { workspace = true }
 
-alloy-primitives = { workspace = true }
+alloy-primitives = { workspace = true, features = ["native-keccak"] }
 
 [features]
 default = []

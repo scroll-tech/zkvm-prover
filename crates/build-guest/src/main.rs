@@ -40,7 +40,7 @@ use openvm_continuations::CommitBytes;
 use openvm_instructions::exe::VmExe;
 use openvm_recursion_circuit::batch_constraint::commit_child_vk;
 use openvm_sdk::{
-    F, Sdk,
+    Sdk,
     config::{AggregationConfig, AggregationSystemParams, AggregationTreeConfig, AppConfig},
     fs::write_object_to_file,
     prover::MultiDeferralCircuitProver,
@@ -267,6 +267,21 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
 
         // 1. Build ELF
 
+        // Create the assets dir if not already present.
+        let path_assets = Path::new(release_output_dir).join(project_name);
+        fs::create_dir_all(&path_assets)?;
+
+        // With `perf-metrics`, the transpiler records function bounds in the exe and
+        // requires GUEST_SYMBOLS_PATH to dump the demangled symbol table (consumed by
+        // scripts/flamegraph.py --guest-symbols). `sdk.build` already decodes the ELF,
+        // so this must be set before it.
+        #[cfg(feature = "perf-metrics")]
+        {
+            let guest_symbols_path = path_assets.join("guest.symbols");
+            println!("{LOG_PREFIX} GUEST_SYMBOLS_PATH={guest_symbols_path:?}");
+            std::env::set_var("GUEST_SYMBOLS_PATH", &guest_symbols_path);
+        }
+
         // Store current directory and change to project directory
         let original_dir = env::current_dir()?;
         env::set_current_dir(&project_path)?;
@@ -297,12 +312,9 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
             original_dir.display()
         );
 
-        // Create the assets dir if not already present.
-        let path_assets = Path::new(release_output_dir).join(project_name);
-        fs::create_dir_all(&path_assets)?;
         let elf_src = workspace_dir
             .join("target")
-            .join("riscv32im-risc0-zkvm-elf")
+            .join("riscv64im-unknown-openvm-elf")
             .join("maxperf")
             .join(format!("scroll-zkvm-{project_name}-circuit"));
         let path_app_elf: PathBuf = path_assets.join("app.elf");
@@ -310,7 +322,29 @@ fn generate_app_assets(workspace_dir: &Path, release_output_dir: &PathBuf) -> Re
         println!("{LOG_PREFIX} elf written to {path_app_elf:?}");
 
         // 2. Transpile ELF to VM Executable
-        let app_exe: VmExe<F> = (*sdk.convert_to_exe(elf)?).clone();
+        let app_exe: VmExe = (*sdk.convert_to_exe(elf)?).clone();
+
+        // openvm's `update_current_fn` unwraps the greatest function bound <= pc,
+        // which panics if execution touches a pc below the first STT_FUNC symbol
+        // (entry trampolines etc.). Cover that range with a synthetic bound whose
+        // name is offset 0 in the symbols string table (the empty string).
+        #[cfg(feature = "perf-metrics")]
+        let app_exe = {
+            let mut app_exe = app_exe;
+            if let Some((&min_start, _)) = app_exe.fn_bounds.iter().next() {
+                if min_start > 0 {
+                    app_exe.fn_bounds.insert(
+                        0,
+                        openvm_instructions::exe::FnBound {
+                            start: 0,
+                            end: min_start - 1,
+                            name: "0".to_string(),
+                        },
+                    );
+                }
+            }
+            app_exe
+        };
 
         // Write exe to disc.
         let path_app_exe: PathBuf = path_assets.join("app.vmexe");
@@ -446,7 +480,7 @@ fn build_recompute_sdk(
     let batch_app_config: AppConfig<SdkVmConfig> = if batch_config_path.exists() {
         toml::from_str(&fs::read_to_string(&batch_config_path)?)?
     } else {
-        AppConfig::riscv32(app_params.clone())
+        AppConfig::riscv64(app_params.clone())
     };
     let batch_sdk = Sdk::builder()
         .app_config(batch_app_config)
@@ -459,7 +493,7 @@ fn build_recompute_sdk(
     let bundle_app_config: AppConfig<SdkVmConfig> = if bundle_config_path.exists() {
         toml::from_str(&fs::read_to_string(&bundle_config_path)?)?
     } else {
-        AppConfig::riscv32(app_params.clone())
+        AppConfig::riscv64(app_params.clone())
     };
 
     // The bundle's deferral circuit verifies batch proofs; its memory layout must
@@ -486,6 +520,10 @@ pub fn build_evm_verifier(
     let agg_params = default_agg_params();
     let sdk = build_recompute_sdk(release_output_dir, &app_params, &agg_params)?;
     let verifier = sdk.generate_halo2_verifier_solidity()?;
+    // NOTE: as of openvm develop-v2.1.0 (commit b3c95cd00 "restore byte-sized
+    // public values"), user public values are single bytes again, matching the
+    // SDK's Solidity template. The previous u16-cell workaround
+    // (patch_verifier_for_u16_public_values) is no longer applied.
     Ok((sdk, verifier))
 }
 
@@ -555,15 +593,15 @@ fn compile_solidity_bytecode(verifier_output_dir: &Path) -> Result<Vec<u8>> {
     // matches as closely as possible.
     let sources: std::collections::HashMap<String, String> = [
         (
-            "src/v2.0-deferral/interfaces/IOpenVmHalo2Verifier.sol".to_string(),
+            "src/v2.1-deferral/interfaces/IOpenVmHalo2Verifier.sol".to_string(),
             read(&interface_path)?,
         ),
         (
-            "src/v2.0-deferral/Halo2Verifier.sol".to_string(),
+            "src/v2.1-deferral/Halo2Verifier.sol".to_string(),
             read(&halo2_path)?,
         ),
         (
-            "src/v2.0-deferral/OpenVmHalo2Verifier.sol".to_string(),
+            "src/v2.1-deferral/OpenVmHalo2Verifier.sol".to_string(),
             read(&parent_path)?,
         ),
     ]
@@ -640,7 +678,7 @@ fn compile_solidity_bytecode(verifier_output_dir: &Path) -> Result<Vec<u8>> {
 
     let bytecode_hex = parsed
         .get("contracts")
-        .and_then(|c| c.get("src/v2.0-deferral/OpenVmHalo2Verifier.sol"))
+        .and_then(|c| c.get("src/v2.1-deferral/OpenVmHalo2Verifier.sol"))
         .and_then(|c| c.get("OpenVmHalo2Verifier"))
         .and_then(|c| c.get("evm"))
         .and_then(|c| c.get("bytecode"))
@@ -703,7 +741,7 @@ fn generate_evm_verifier(
         }
         RecomputeMode::No => {
             println!("{LOG_PREFIX} RECOMPUTE_MODE=no: downloading pre-built verifier only.");
-            let sdk = Sdk::riscv32(app_params, agg_params);
+            let sdk = Sdk::riscv64(app_params, agg_params);
             let verifier = verifier::download_evm_verifier()?;
             write_evm_verifier_artifacts(verifier_output_dir, &verifier, &sdk, force_overwrite)?;
         }
@@ -714,7 +752,7 @@ fn generate_evm_verifier(
             match verifier::download_evm_verifier() {
                 Ok(verifier) => {
                     println!("{LOG_PREFIX} Download succeeded; using pre-built verifier.");
-                    let sdk = Sdk::riscv32(app_params, agg_params);
+                    let sdk = Sdk::riscv64(app_params, agg_params);
                     write_evm_verifier_artifacts(
                         verifier_output_dir,
                         &verifier,

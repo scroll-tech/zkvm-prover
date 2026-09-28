@@ -144,9 +144,7 @@ impl super::Payload for GenericPayloadV7 {
     fn from_envelope(envelope: &Self::Envelope) -> Self {
         // Conditionally decode depending on the flag set in the envelope.
         let payload_bytes = if envelope.is_encoded & 1 == 1 {
-            vm_zstd::process(&envelope.unpadded_bytes)
-                .expect("zstd decode should succeed")
-                .decoded_data
+            super::zstd_decode(&envelope.unpadded_bytes)
         } else {
             envelope.unpadded_bytes.to_vec()
         };

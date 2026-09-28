@@ -20,8 +20,11 @@ cleanup() {
 # set trap to cleanup on exit
 trap cleanup EXIT
 
-# run docker image
-docker run --cidfile ./build-guest.cid --platform linux/amd64 build-guest:local make build-guest-local
+# run docker image (mount host SRS params: local EVM verifier generation needs them)
+mkdir -p "$HOME/.openvm/params"
+docker run --cidfile ./build-guest.cid --platform linux/amd64 \
+  -v "$HOME/.openvm/params:/root/.openvm/params:ro" \
+  build-guest:local make build-guest-local
 container_id=$(cat ./build-guest.cid)
 
 # copy vm commitments from container to local

@@ -42,8 +42,11 @@ impl BlobPolynomial {
             "too many bytes in batch data"
         );
 
-        for (i, &byte) in blob_bytes.iter().enumerate() {
-            coefficients[i / 31][1 + (i % 31)] = byte;
+        for (coefficient, bytes) in coefficients
+            .iter_mut()
+            .zip(blob_bytes.chunks(N_DATA_BYTES_PER_COEFFICIENT))
+        {
+            coefficient[1..1 + bytes.len()].copy_from_slice(bytes);
         }
 
         Self(coefficients.map(|coeff| U256::from_be_bytes(coeff)))

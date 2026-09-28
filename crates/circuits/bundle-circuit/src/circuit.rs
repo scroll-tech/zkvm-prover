@@ -15,7 +15,7 @@ use scroll_zkvm_types_circuit::{
 use crate::child_commitments;
 
 #[allow(unused_imports, clippy::single_component_path_imports)]
-use openvm_keccak256_guest;
+use openvm_keccak256; // trigger extern native-keccak256
 
 #[derive(Default)]
 pub struct BundleCircuit;
@@ -79,10 +79,13 @@ impl AggCircuit for BundleCircuit {
         proofs
             .iter()
             .map(|proof| {
+                // Each public value cell is a single byte; the pi hash occupies all
+                // 32 cells.
                 let transformed = proof
                     .public_values
                     .iter()
-                    .map(|&val| u8::try_from(val).expect("0 < public value < 256"))
+                    .take(32)
+                    .map(|&val| val as u8)
                     .collect::<Vec<u8>>();
                 B256::from_slice(transformed.as_slice())
             })

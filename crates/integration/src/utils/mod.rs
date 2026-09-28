@@ -17,7 +17,24 @@ use scroll_zkvm_types::{
     utils::{keccak256, point_eval, serialize_vk},
 };
 use std::env;
-use vm_zstd::zstd_encode;
+use std::io::Write;
+
+/// Encode payload bytes into a single zstd frame without the 4-byte magic number,
+/// matching the scroll envelope format (see `zstd_decode` in scroll-zkvm-types-batch).
+fn zstd_encode(raw_input_bytes: &[u8]) -> Vec<u8> {
+    use encoder_standard::{N_BLOCK_SIZE_TARGET, init_zstd_encoder};
+
+    // compression level = 0 defaults to using level=3, which is zstd's default.
+    let mut encoder = init_zstd_encoder(N_BLOCK_SIZE_TARGET);
+
+    // set source length, which will be reflected in the frame header.
+    encoder
+        .set_pledged_src_size(Some(raw_input_bytes.len() as u64))
+        .unwrap();
+
+    encoder.write_all(raw_input_bytes).unwrap();
+    encoder.finish().unwrap()
+}
 
 #[allow(dead_code)]
 fn final_l1_index(blk: &BlockWitness) -> u64 {
@@ -38,6 +55,18 @@ fn blks_tx_bytes<'a>(blks: impl Iterator<Item = &'a BlockWitness>) -> Vec<u8> {
             tx.encode_2718(&mut tx_bytes);
             tx_bytes
         })
+}
+
+/// Encode a 32-byte pi hash as OpenVM public values: each public value cell is a
+/// single byte, so the 32-byte hash fills all `NUM_PUBLIC_VALUES` (32) cells.
+pub(crate) fn pi_hash_to_public_values(pi_hash: &B256) -> Vec<u32> {
+    let mut public_values = pi_hash
+        .as_slice()
+        .iter()
+        .map(|&b| b as u32)
+        .collect::<Vec<_>>();
+    public_values.resize(scroll_zkvm_types::types_agg::NUM_PUBLIC_VALUES, 0);
+    public_values
 }
 
 #[derive(Clone, Debug)]
@@ -316,11 +345,7 @@ pub fn build_batch_witnesses(
         .map(|chunk_info| {
             let pi_hash = chunk_info.pi_hash_by_version(version);
             AggregationInput {
-                public_values: pi_hash
-                    .as_slice()
-                    .iter()
-                    .map(|&b| b as u32)
-                    .collect::<Vec<_>>(),
+                public_values: pi_hash_to_public_values(&pi_hash),
                 commitment,
             }
         })
@@ -389,11 +414,7 @@ pub fn build_batch_witnesses_validium(
         .map(|chunk_info| {
             let pi_hash = chunk_info.pi_hash_by_version(version);
             AggregationInput {
-                public_values: pi_hash
-                    .as_slice()
-                    .iter()
-                    .map(|&b| b as u32)
-                    .collect::<Vec<_>>(),
+                public_values: pi_hash_to_public_values(&pi_hash),
                 commitment,
             }
         })

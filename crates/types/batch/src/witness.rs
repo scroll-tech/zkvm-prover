@@ -94,6 +94,7 @@ pub struct BatchWitness {
     /// Chunk infos.
     pub chunk_infos: Vec<ChunkInfo>,
     /// Blob bytes.
+    #[serde(with = "bytes_vec")]
     pub blob_bytes: Vec<u8>,
     /// Witness for point evaluation.
     ///
@@ -109,6 +110,51 @@ pub struct BatchWitness {
 impl ProofCarryingWitness for BatchWitness {
     fn get_proofs(&self) -> Vec<AggregationInput> {
         self.chunk_proofs.clone()
+    }
+}
+
+/// Serde helper for large byte vectors. The wire format stays identical to
+/// bincode's default `Vec<u8>` encoding (length prefix + raw bytes), but
+/// deserialization claims the whole slice in one shot instead of decoding
+/// element by element.
+mod bytes_vec {
+    use serde::{Deserializer, Serializer};
+
+    pub fn serialize<S>(bytes: &[u8], serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_bytes(bytes)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct Visitor;
+        impl<'de> serde::de::Visitor<'de> for Visitor {
+            type Value = Vec<u8>;
+
+            fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                f.write_str("a byte array")
+            }
+
+            fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E> {
+                Ok(v.to_vec())
+            }
+
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where
+                A: serde::de::SeqAccess<'de>,
+            {
+                let mut out = Vec::with_capacity(seq.size_hint().unwrap_or(0));
+                while let Some(b) = seq.next_element()? {
+                    out.push(b);
+                }
+                Ok(out)
+            }
+        }
+        deserializer.deserialize_bytes(Visitor)
     }
 }
 

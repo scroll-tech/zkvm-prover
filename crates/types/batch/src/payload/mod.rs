@@ -30,6 +30,25 @@ pub trait Envelope {
     }
 }
 
+/// Decode zstd-compressed payload bytes using the standard pure-Rust decoder.
+///
+/// The scroll envelope stores a single zstd frame without the 4-byte magic number,
+/// so the magic is prepended (zero-copy) before handing the stream to the decoder.
+pub(crate) fn zstd_decode(src: &[u8]) -> Vec<u8> {
+    use ruzstd::decoding::StreamingDecoder;
+    use ruzstd::io::Read;
+
+    const ZSTD_MAGIC: [u8; 4] = [0x28, 0xB5, 0x2F, 0xFD];
+    let mut stream = ZSTD_MAGIC.as_slice().chain(src);
+    let mut decoder =
+        StreamingDecoder::new(&mut stream).expect("zstd decoder init should succeed");
+    let mut decoded = Vec::new();
+    decoder
+        .read_to_end(&mut decoded)
+        .expect("zstd decode should succeed");
+    decoded
+}
+
 pub trait Payload {
     type BatchHeader: BatchHeader;
 
