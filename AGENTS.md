@@ -243,6 +243,87 @@ or the proof model, not more micro-patches.
   `cargo metadata --locked` (must exit 0 without touching the lock).
 
 
+## Host-side proving speed experiments (2026-09)
+
+Compile-option / feature-flag sweep for **end-to-end proving time** (GPU 1, RTX 4090,
+EPYC 9554). Baseline: chunk `test-single-chunk` prove 43.89s (202,969,694 cycles, exec
+2.35s), `test-e2e-batch` 54.9s, `test-e2e-bundle` 163.8s (of which the bundle
+STARK→SNARK→EVM span ≈ 101s).
+
+### Adopted (in tree)
+
+- `openvm-sdk` feature **`mimalloc`** (workspace `Cargo.toml`). Upstream defaults to
+  `jemalloc`; we build with `default-features = false` and had **no** custom allocator.
+  **This is essentially the whole bundle win**: attribution runs show
+  native+LTO *without* mimalloc = 162.6s (≈ baseline 163.8s), adding mimalloc → 125.9s.
+  (halo2 SNARK host code is allocation-dominated; mimalloc also gives chunk exec −11%.)
+- **Cached `StarkProver` per `Prover`** (`crates/prover/src/prover/mod.rs`):
+  `Sdk::prove()` rebuilds a `StarkProver` (re-committing the program on device) on
+  *every* call — ~1.1s per small chunk proof, ~3s for the big 203M-cycle chunk.
+  Caching it (cleared by `reset()`) gives batch e2e 51.3s → 47.3s (−8%) with 3 chunks,
+  and chunk `test-single-chunk` 43.0s → 39.8s.
+- `[profile.release] lto = "thin", codegen-units = 1` — kept, but attribution says its
+  runtime effect here is ≈ 0 (it mainly raises build time; drop it if build time hurts).
+  Does not affect guest builds (`maxperf` already sets fat/1 explicitly).
+- Recommended env (NOT committed; makes binaries machine-specific):
+  `RUSTFLAGS="-C target-cpu=native"` — measured ≈ 0 on both chunk and bundle in
+  isolation; harmless to use on fixed proving hardware.
+
+Final config (mimalloc + LTO + native + prover cache): **chunk 39.8s (−9.3%), batch e2e
+47.3s (−13.8%), bundle e2e ~126-130s (−21%..−23%)**. Per-phase in bundle e2e: chunks −3%
+(−15% with cache), batch −8~15%, exec −15~20%, the 101s bundle STARK+SNARK span → ~69-73s
+(−30%).
+
+### Tried and rejected (measured, do not retry blindly)
+
+- **`jemalloc`**: chunk prove 49.6s — **13% SLOWER** than no custom allocator under the
+  GPU proving flow. (mimalloc and jemalloc behave very differently here.)
+- **`rvr`** (runtime native-compiled execution), even *with* the StarkProver cache:
+  - First proof pays ~85s of clang compiles (metered + preflight-tracer artifacts in
+    `PreparedContinuation::new`); with the cache, *subsequent* chunk proofs do get
+    faster: 7.91s → 6.02s (**−24%**), i.e. preflight ~10s → ~2-3s on a 203M chunk.
+  - But `execute_guest`'s `sdk.compile_metered_cost()` (the cycle-count/precheck call in
+    `gen_proof_stark`) recompiles a native artifact **on every proof** (~22.5s each) —
+    the returned `CompiledExeMeteredCost<'_>` borrows the SDK so it can't be cached in
+    `Prover` without unsafe or an SDK API change. Net: still a loss.
+  - And RVR + deferral is **broken at this rev**: `rvr_ext_deferral.c` fails with
+    `use of undeclared identifier 'OPENVM_MEM_SIZE'` — batch/bundle can't run at all.
+  - Toolchain note if ever retried: prebuilt LLVM 22.1.8 at `/home/scroll/tools/llvm-22`
+    works with `RVR_CC=clang-22 RVR_LD=lld LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/11`
+    (`RVR_LD=ld.lld` is rejected by clang-22; `-lstdc++` needs the GCC dir on
+    `LIBRARY_PATH`).
+- **`VPMM_PAGES` preallocation** (openvm VPMM pool): no measurable effect.
+- **`halo2curves-axiom` `asm` feature** (x86_64 bn254 field asm): bundle e2e 125.81s
+  with vs 125.87s without — no effect; the halo2-gpu SNARK path is not CPU-field-bound.
+  NB: enabling it must be done in a **host-only** crate's dep (e.g. crates/prover),
+  never in workspace deps — the asm module is x86_64-only and would break riscv64 guest
+  builds through feature unification.
+- CUDA side was already optimal: kernels compile for `sm_89` (auto-detected) with
+  `-O3` (`CUDA_OPT_LEVEL` default). `CUDA_ARCH` env override only affects build time.
+
+### Where the remaining chunk time goes (GPU prove, 24 segments)
+
+Per 203M-cycle chunk: ~25s GPU kernels (logup-zerocheck 16.4s, stacked_commit 6.1s,
+whir 4.7s, merkle 5.9s), ~10s CPU preflight (per-segment re-execution), ~3s trace gen,
+~3.3s metered executions. Per segment: CPU ≈ 0.62s (preflight+tracegen+postflight),
+GPU ≈ 0.73s, run **strictly serially** (`sdk-config/src/preflight_driver.rs`) — the GPU
+is idle ~40-45% of app-prove time. A software pipeline (preflight of segment i+1
+overlapping GPU prove of segment i) is the biggest known host-side lever left
+(~20-25% off chunk) but is a medium-large fork of openvm-sdk-config: execution state
+chains sequentially through one `VirtualMachine`, while postflight/tracegen/prove need
+`&mut vm` and the engine — splitting that ownership safely is ~300+ lines with a
+~1-segment-trace VRAM increase. Not done.
+
+A smaller same-direction win inside our own tree: `gen_proof_stark` runs
+`execute_and_check` purely for cycle count + PI≠0 precheck, then `prove()` executes
+again — removing the double execution (take instret from the prove path) saves
+~2s/chunk. Not done (behavioral change: loses the fail-fast precheck).
+
+Span breakdown recipe: run the test with `--no-default-features --features
+scroll-zkvm-integration/scroll,scroll-zkvm-integration/cuda` (the default `limit-logs`
+feature hard-filters to scroll_zkvm_* targets and hides all openvm spans), with
+`RUST_LOG="off,scroll_zkvm_integration=debug,scroll_zkvm_prover=debug,openvm_circuit=info,openvm_cuda_backend=info,openvm_stark_backend=info,openvm_sdk=info,openvm_continuations=info"`.
+
 ## Common Failure Patterns
 
 ### `NativeHintSliceSubEx` assertion failure

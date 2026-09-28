@@ -67,7 +67,8 @@ openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", branch = "devel
   "parallel",
   "evm-prove",
   "tco",
-  "unprotected"
+  "unprotected",
+  "mimalloc"
 ] }
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-v2.1.0", default-features = false }
 
@@ -174,6 +175,10 @@ openvm-mem = { path = "patches/openvm-mem" }
 [profile.maxperf]
 inherits = "release"
 lto = "fat"
+codegen-units = 1
+
+[profile.release]
+lto = "thin"
 codegen-units = 1
 
 [profile.profiling]

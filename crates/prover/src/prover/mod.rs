@@ -174,7 +174,23 @@ pub struct Prover {
     app_config: SdkAppConfig,
     /// Lazily initialized SDK
     sdk: OnceLock<Sdk>,
+    /// Lazily built, cached `StarkProver`. `Sdk::prove()` rebuilds one on every
+    /// call, which re-commits the program on device (and with the `rvr` feature
+    /// would recompile the native execution artifacts from scratch — tens of
+    /// seconds per proof). Cache it once per SDK instance; `reset()` clears it.
+    stark_prover: OnceLock<std::sync::Mutex<SdkStarkProver>>,
 }
+
+#[cfg(feature = "cuda")]
+type SdkStarkProver = openvm_sdk::prover::StarkProver<
+    openvm_cuda_backend::BabyBearPoseidon2GpuEngine,
+    openvm_sdk_config::SdkVmGpuBuilder,
+>;
+#[cfg(not(feature = "cuda"))]
+type SdkStarkProver = openvm_sdk::prover::StarkProver<
+    openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2CpuEngine,
+    openvm_sdk_config::SdkVmCpuBuilder,
+>;
 
 /// Configure the [`Prover`].
 #[derive(Debug, Clone, Default)]
@@ -197,11 +213,13 @@ impl Prover {
             prover_name: name.unwrap_or("universal").to_string(),
             app_config,
             sdk: OnceLock::new(),
+            stark_prover: OnceLock::new(),
         })
     }
 
     /// Release OpenVM SDK resources
     pub fn reset(&mut self) {
+        self.stark_prover = OnceLock::new();
         self.sdk = OnceLock::new();
     }
 
@@ -452,9 +470,22 @@ impl Prover {
         #[cfg(feature = "perf-metrics")]
         profile_dump::install();
         let sdk = self.get_sdk()?;
-        let (vm_stark_proof, baseline) = sdk
-            .prove(self.app_exe.clone(), stdin, def_inputs)
-            .map_err(|e| Error::GenProof(e.to_string()))?;
+        // Reuse a cached `StarkProver` instead of `Sdk::prove()`, which rebuilds
+        // one (re-committing the program on device) on every call.
+        let stark_prover = self.stark_prover.get_or_try_init(|| {
+            sdk.prover(self.app_exe.clone())
+                .map(std::sync::Mutex::new)
+                .map_err(|e| Error::GenProof(e.to_string()))
+        })?;
+        let (vm_stark_proof, baseline) = {
+            let mut prover = stark_prover
+                .lock()
+                .map_err(|e| Error::GenProof(format!("stark prover lock poisoned: {e}")))?;
+            let (proof, _metadata) = prover
+                .prove(stdin, def_inputs)
+                .map_err(|e| Error::GenProof(e.to_string()))?;
+            (proof, prover.generate_baseline())
+        };
         #[cfg(feature = "perf-metrics")]
         profile_dump::dump(&self.prover_name);
         let proving_time_mills = t.elapsed().as_millis() as u64;
